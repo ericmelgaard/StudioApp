@@ -68,7 +68,67 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Persistent Left Sidebar */}
+      <div className="fixed left-0 top-0 h-full w-20 bg-white border-r border-slate-200 shadow-sm z-40 flex flex-col items-center py-6 gap-4">
+        <button
+          onClick={() => setCurrentView('signage')}
+          className="group relative p-4 hover:bg-green-50 rounded-lg transition-all"
+          title="Digital Signage"
+        >
+          <Monitor className="w-6 h-6 text-slate-600 group-hover:text-green-600" />
+          {stats.signageOnline > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+              {stats.signageOnline}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setCurrentView('labels')}
+          className="group relative p-4 hover:bg-blue-50 rounded-lg transition-all"
+          title="Shelf Labels"
+        >
+          <Tag className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
+          {stats.labelsSynced > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+              {stats.labelsSynced}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setCurrentView('store')}
+          className="group p-4 hover:bg-amber-50 rounded-lg transition-all"
+          title="Store Management"
+        >
+          <Store className="w-6 h-6 text-slate-600 group-hover:text-amber-600" />
+        </button>
+
+        <button
+          onClick={() => setCurrentView('products')}
+          className="group relative p-4 hover:bg-purple-50 rounded-lg transition-all"
+          title="Products"
+        >
+          <Package className="w-6 h-6 text-slate-600 group-hover:text-purple-600" />
+          {stats.productsCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+              {stats.productsCount > 99 ? '99+' : stats.productsCount}
+            </span>
+          )}
+        </button>
+
+        <div className="flex-1" />
+
+        <button
+          onClick={() => setSidePanelOpen(true)}
+          className="group p-4 hover:bg-slate-100 rounded-lg transition-all"
+          title="More Options"
+        >
+          <Menu className="w-6 h-6 text-slate-600 group-hover:text-slate-900" />
+        </button>
+      </div>
+
       {/* Side Panel Overlay */}
       {sidePanelOpen && (
         <div
@@ -211,6 +271,7 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
         </div>
       </div>
 
+      <div className="flex-1 ml-20">
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -224,13 +285,6 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setSidePanelOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
-              >
-                <Menu className="w-5 h-5" />
-                Quick Actions
-              </button>
               <NotificationPanel />
               <button
                 onClick={onBack}
@@ -395,6 +449,7 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
           </button>
         </div>
       </main>
+      </div>
     </div>
   );
 }
