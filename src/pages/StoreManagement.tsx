@@ -31,6 +31,12 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     loadGroups();
   }, []);
 
+  useEffect(() => {
+    if (!loading && groups.length > 0) {
+      checkDefaultPlacement();
+    }
+  }, [loading, groups]);
+
   const loadGroups = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -40,10 +46,62 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
     if (error) {
       console.error('Error loading placement groups:', error);
-    } else {
-      setGroups(data || []);
+      setLoading(false);
+      return;
     }
+
+    const groups = data || [];
+    setGroups(groups);
+
+    // Check if default placement group exists
+    const defaultGroup = groups.find(g => g.name === '36355 - WAND Digital Demo');
+
+    if (!defaultGroup) {
+      // Create default placement group
+      const { data: newGroup, error: insertError } = await supabase
+        .from('placement_groups')
+        .insert([{
+          name: '36355 - WAND Digital Demo',
+          description: 'Default store placement group',
+          parent_id: null,
+          daypart_hours: {},
+          meal_stations: [],
+          templates: {},
+          nfc_url: null
+        }])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating default placement group:', insertError);
+      } else if (newGroup) {
+        setGroups([...groups, newGroup]);
+        // Open modal for configuration
+        setEditingGroup(newGroup);
+        setShowModal(true);
+      }
+    }
+
     setLoading(false);
+  };
+
+  const checkDefaultPlacement = () => {
+    const defaultGroup = groups.find(g => g.name === '36355 - WAND Digital Demo');
+
+    if (defaultGroup) {
+      // Check if required fields are configured
+      const hasConfiguration =
+        Object.keys(defaultGroup.daypart_hours || {}).length > 0 ||
+        (defaultGroup.meal_stations && defaultGroup.meal_stations.length > 0) ||
+        Object.keys(defaultGroup.templates || {}).length > 0 ||
+        defaultGroup.nfc_url;
+
+      if (!hasConfiguration && !showModal) {
+        // Open modal to configure
+        setEditingGroup(defaultGroup);
+        setShowModal(true);
+      }
+    }
   };
 
   const toggleNode = (id: string) => {
@@ -58,8 +116,8 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
   const handleDelete = async (id: string) => {
     const groupToDelete = groups.find(g => g.id === id);
-    if (groupToDelete?.name === '7777 - Demo Site') {
-      alert('Cannot delete the default location');
+    if (groupToDelete?.name === '36355 - WAND Digital Demo') {
+      alert('Cannot delete the default store placement group');
       return;
     }
 
@@ -101,7 +159,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     return children.map(group => {
       const hasChildren = groups.some(g => g.parent_id === group.id);
       const isExpanded = expandedNodes.has(group.id);
-      const isDefaultLocation = group.name === '7777 - Demo Site';
+      const isDefaultLocation = group.name === '36355 - WAND Digital Demo';
 
       return (
         <div key={group.id}>
@@ -189,7 +247,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
             </div>
             <button
               onClick={() => {
-                const defaultLocation = groups.find(g => g.name === '7777 - Demo Site');
+                const defaultLocation = groups.find(g => g.name === '36355 - WAND Digital Demo');
                 if (defaultLocation) {
                   handleAddChild(defaultLocation.id);
                 } else {

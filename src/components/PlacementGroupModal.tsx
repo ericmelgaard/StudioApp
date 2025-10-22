@@ -64,8 +64,8 @@ export default function PlacementGroupModal({ group, availableParents, onClose, 
       };
 
       if (group?.id) {
-        if (group.name === '7777 - Demo Site' && data.name !== '7777 - Demo Site') {
-          setError('Cannot rename the default location');
+        if (group.name === '36355 - WAND Digital Demo' && data.name !== '36355 - WAND Digital Demo') {
+          setError('Cannot rename the default store placement group');
           setLoading(false);
           return;
         }
