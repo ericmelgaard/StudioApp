@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, ArrowLeft, Monitor, Tag, ArrowRight, TrendingUp, Store, Package } from 'lucide-react';
+import { Settings, ArrowLeft, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, Menu, X } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import SystemStatus from '../components/SystemStatus';
 import SignageManagement from './SignageManagement';
@@ -16,6 +16,7 @@ interface OperatorDashboardProps {
 
 export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -68,6 +69,148 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Side Panel Overlay */}
+      {sidePanelOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          onClick={() => setSidePanelOpen(false)}
+        />
+      )}
+
+      {/* Side Panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+          sidePanelOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <h2 className="text-lg font-bold text-slate-900">Quick Actions</h2>
+            <button
+              onClick={() => setSidePanelOpen(false)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
+
+          {/* Panel Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <button
+                onClick={() => {
+                  setCurrentView('signage');
+                  setSidePanelOpen(false);
+                }}
+                className="w-full group bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-green-300 transition-all text-left"
+              >
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                    <Monitor className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">
+                      Manage Digital Signage
+                    </h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Configure displays and update content
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-slate-900">{stats.signageCount}</span> displays
+                  </span>
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-green-600">{stats.signageOnline}</span> online
+                  </span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setCurrentView('labels');
+                  setSidePanelOpen(false);
+                }}
+                className="w-full group bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-green-300 transition-all text-left"
+              >
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                    <Tag className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">
+                      Manage Shelf Labels
+                    </h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Update pricing and sync product info
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-slate-900">{stats.labelsCount}</span> labels
+                  </span>
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-blue-600">{stats.labelsSynced}</span> synced
+                  </span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setCurrentView('store');
+                  setSidePanelOpen(false);
+                }}
+                className="w-full group bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-green-300 transition-all text-left"
+              >
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
+                    <Store className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">
+                      Manage Store
+                    </h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Configure placement groups and templates
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setCurrentView('products');
+                  setSidePanelOpen(false);
+                }}
+                className="w-full group bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-green-300 transition-all text-left"
+              >
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
+                    <Package className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">
+                      Manage Products
+                    </h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Sync menu items and manage catalog
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-slate-900">{stats.productsCount}</span> products
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -81,6 +224,13 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSidePanelOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
+              >
+                <Menu className="w-5 h-5" />
+                Quick Actions
+              </button>
               <NotificationPanel />
               <button
                 onClick={onBack}
