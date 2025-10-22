@@ -78,8 +78,8 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
       )}
 
       {/* Full Sidebar */}
-      <div className={`fixed right-0 top-0 h-full w-80 bg-white border-l border-slate-200 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-        sidebarOpen ? 'translate-x-0' : 'translate-x-full'
+      <div className={`fixed left-0 top-0 h-full w-80 bg-white border-r border-slate-200 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
