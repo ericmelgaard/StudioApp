@@ -77,66 +77,136 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
         />
       )}
 
-      {/* Collapsible Left Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-20 bg-white border-r border-slate-200 shadow-sm z-50 flex flex-col items-center py-6 gap-4 transform transition-transform duration-300 ease-in-out ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      {/* Full Sidebar */}
+      <div className={`fixed right-0 top-0 h-full w-80 bg-white border-l border-slate-200 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
-        <button
-          onClick={() => setCurrentView('signage')}
-          className="group relative p-4 hover:bg-green-50 rounded-lg transition-all"
-          title="Digital Signage"
-        >
-          <Monitor className="w-6 h-6 text-slate-600 group-hover:text-green-600" />
-          {stats.signageOnline > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-              {stats.signageOnline}
-            </span>
-          )}
-        </button>
+        <div className="flex flex-col h-full">
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
 
-        <button
-          onClick={() => setCurrentView('labels')}
-          className="group relative p-4 hover:bg-blue-50 rounded-lg transition-all"
-          title="Shelf Labels"
-        >
-          <Tag className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
-          {stats.labelsSynced > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-              {stats.labelsSynced}
-            </span>
-          )}
-        </button>
+          {/* Sidebar Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setCurrentView('signage');
+                  setSidebarOpen(false);
+                }}
+                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-green-300 transition-all text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                    <Monitor className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold text-slate-900 mb-1">
+                      Digital Signage
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      Configure displays and update content
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs mt-3 ml-14">
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-slate-900">{stats.signageCount}</span> displays
+                  </span>
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-green-600">{stats.signageOnline}</span> online
+                  </span>
+                </div>
+              </button>
 
-        <button
-          onClick={() => setCurrentView('store')}
-          className="group p-4 hover:bg-amber-50 rounded-lg transition-all"
-          title="Store Management"
-        >
-          <Store className="w-6 h-6 text-slate-600 group-hover:text-amber-600" />
-        </button>
+              <button
+                onClick={() => {
+                  setCurrentView('labels');
+                  setSidebarOpen(false);
+                }}
+                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-blue-300 transition-all text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                    <Tag className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold text-slate-900 mb-1">
+                      Shelf Labels
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      Update pricing and sync product info
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs mt-3 ml-14">
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-slate-900">{stats.labelsCount}</span> labels
+                  </span>
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-blue-600">{stats.labelsSynced}</span> synced
+                  </span>
+                </div>
+              </button>
 
-        <button
-          onClick={() => setCurrentView('products')}
-          className="group relative p-4 hover:bg-purple-50 rounded-lg transition-all"
-          title="Products"
-        >
-          <Package className="w-6 h-6 text-slate-600 group-hover:text-purple-600" />
-          {stats.productsCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-              {stats.productsCount > 99 ? '99+' : stats.productsCount}
-            </span>
-          )}
-        </button>
+              <button
+                onClick={() => {
+                  setCurrentView('store');
+                  setSidebarOpen(false);
+                }}
+                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-amber-300 transition-all text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
+                    <Store className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold text-slate-900 mb-1">
+                      Store Management
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      Configure placement groups and templates
+                    </p>
+                  </div>
+                </div>
+              </button>
 
-        <div className="flex-1" />
-
-        <button
-          onClick={() => setSidebarOpen(false)}
-          className="group p-4 hover:bg-slate-100 rounded-lg transition-all"
-          title="Close"
-        >
-          <X className="w-6 h-6 text-slate-600 group-hover:text-slate-900" />
-        </button>
+              <button
+                onClick={() => {
+                  setCurrentView('products');
+                  setSidebarOpen(false);
+                }}
+                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-purple-300 transition-all text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
+                    <Package className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold text-slate-900 mb-1">
+                      Products
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      Sync menu items and manage catalog
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs mt-3 ml-14">
+                  <span className="text-slate-500">
+                    <span className="font-semibold text-slate-900">{stats.productsCount}</span> products
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1">
@@ -153,14 +223,14 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <NotificationPanel />
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Menu"
               >
-                <Menu className="w-5 h-5" />
-                Quick Actions
+                <Menu className="w-6 h-6 text-slate-600" />
               </button>
-              <NotificationPanel />
               <button
                 onClick={onBack}
                 className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
