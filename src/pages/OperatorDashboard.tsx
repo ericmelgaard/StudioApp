@@ -16,6 +16,7 @@ interface OperatorDashboardProps {
 
 export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -68,8 +69,18 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Persistent Left Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-20 bg-white border-r border-slate-200 shadow-sm z-40 flex flex-col items-center py-6 gap-4">
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Collapsible Left Sidebar */}
+      <div className={`fixed left-0 top-0 h-full w-20 bg-white border-r border-slate-200 shadow-sm z-50 flex flex-col items-center py-6 gap-4 transform transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
         <button
           onClick={() => setCurrentView('signage')}
           className="group relative p-4 hover:bg-green-50 rounded-lg transition-all"
@@ -117,9 +128,18 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
           )}
         </button>
 
+        <div className="flex-1" />
+
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="group p-4 hover:bg-slate-100 rounded-lg transition-all"
+          title="Close"
+        >
+          <X className="w-6 h-6 text-slate-600 group-hover:text-slate-900" />
+        </button>
       </div>
 
-      <div className="flex-1 ml-20">
+      <div className="flex-1">
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -133,6 +153,13 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
+              >
+                <Menu className="w-5 h-5" />
+                Quick Actions
+              </button>
               <NotificationPanel />
               <button
                 onClick={onBack}
