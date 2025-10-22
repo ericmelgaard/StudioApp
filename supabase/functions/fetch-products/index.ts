@@ -4,7 +4,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const API_URL = 'https://api.wanddigital.com/services/webtrition/client/v2/platform?SapCode=27985&Venue=52814&mealPeriod=&MenuDate=2025-10-26&SourceSystem=1&Days=7&IncludeNutrition=false&includeIcons=false&IncludeAllergens=false&IncludeIngredients=false&IncludeRecipe=false';
+// Fetch 1 day only to reduce payload size
+const API_URL = 'https://api.wanddigital.com/services/webtrition/client/v2/platform?SapCode=27985&Venue=52814&mealPeriod=&MenuDate=2025-10-26&SourceSystem=1&Days=1&IncludeNutrition=false&includeIcons=false&IncludeAllergens=false&IncludeIngredients=false&IncludeRecipe=false';
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -23,8 +24,57 @@ Deno.serve(async (req: Request) => {
 
     const data = await response.json();
 
+    // Process and slim down the data
+    const menuItems = data.menuItems || [];
+
+    // Group by MRN and extract only essential fields
+    const productsByMrn = new Map();
+
+    menuItems.forEach((item: any) => {
+      const mrn = item.mrn;
+      if (!productsByMrn.has(mrn)) {
+        productsByMrn.set(mrn, {
+          mrn: item.mrn,
+          external_id: item.externalId,
+          name: item.name,
+          description: item.description,
+          portion: item.portion,
+          calories: item.calories,
+          price: item.price,
+          meal_periods: [],
+          meal_stations: [],
+        });
+      }
+
+      const product = productsByMrn.get(mrn);
+
+      // Add meal period
+      if (item.mealPeriod && !product.meal_periods.some((mp: any) =>
+        mp.period === item.mealPeriod && mp.date === item.date)) {
+        product.meal_periods.push({
+          period: item.mealPeriod,
+          date: item.date,
+        });
+      }
+
+      // Add meal station
+      if (item.mealStation && !product.meal_stations.some((ms: any) =>
+        ms.station === item.mealStation)) {
+        product.meal_stations.push({
+          station: item.mealStation,
+          station_detail: item.mealStationDetail || {},
+        });
+      }
+    });
+
+    const slimmedProducts = Array.from(productsByMrn.values());
+
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({
+        menuItems: slimmedProducts,
+        hasError: false,
+        totalCount: slimmedProducts.length
+      }),
       {
         status: 200,
         headers: {
