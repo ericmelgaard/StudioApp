@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { mockProducts } from '../data/mockProducts';
 
@@ -30,6 +30,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [selectedMealStation, setSelectedMealStation] = useState<string>('');
   const [mealPeriods, setMealPeriods] = useState<string[]>([]);
   const [mealStations, setMealStations] = useState<string[]>([]);
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -239,6 +240,69 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Side Panel Overlay */}
+      {sidePanelOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          onClick={() => setSidePanelOpen(false)}
+        />
+      )}
+
+      {/* Side Panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+          sidePanelOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <h2 className="text-lg font-bold text-slate-900">Actions</h2>
+            <button
+              onClick={() => setSidePanelOpen(false)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
+
+          {/* Panel Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <button
+                onClick={() => {
+                  loadMockData();
+                  setSidePanelOpen(false);
+                }}
+                disabled={syncing}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Database className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
+                <div className="text-left">
+                  <div className="font-semibold">{syncing ? 'Loading...' : 'Load Mock Data'}</div>
+                  <div className="text-xs text-blue-100">Load sample products</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  syncProducts();
+                  setSidePanelOpen(false);
+                }}
+                disabled={syncing}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
+                <div className="text-left">
+                  <div className="font-semibold">{syncing ? 'Syncing...' : 'Sync from API'}</div>
+                  <div className="text-xs text-purple-100">Fetch latest products</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -259,24 +323,13 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={loadMockData}
-                disabled={syncing}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Database className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? 'Loading...' : 'Load Mock Data'}
-              </button>
-              <button
-                onClick={syncProducts}
-                disabled={syncing}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? 'Syncing...' : 'Sync from API'}
-              </button>
-            </div>
+            <button
+              onClick={() => setSidePanelOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
+            >
+              <Menu className="w-5 h-5" />
+              Actions
+            </button>
           </div>
         </div>
       </nav>
