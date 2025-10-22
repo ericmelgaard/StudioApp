@@ -214,6 +214,13 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Menu"
+              >
+                <Menu className="w-6 h-6 text-slate-600" />
+              </button>
               <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
                 <Settings className="w-6 h-6 text-white" />
               </div>
@@ -224,13 +231,6 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
             </div>
             <div className="flex items-center gap-2">
               <NotificationPanel />
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Menu"
-              >
-                <Menu className="w-6 h-6 text-slate-600" />
-              </button>
               <button
                 onClick={onBack}
                 className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
