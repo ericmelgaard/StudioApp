@@ -41,6 +41,8 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
     if (error) {
       console.error('Error loading placement groups:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      alert(`Failed to load placement groups: ${error.message}`);
       setLoading(false);
       return;
     }
