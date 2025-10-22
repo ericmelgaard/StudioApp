@@ -31,11 +31,6 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     loadGroups();
   }, []);
 
-  useEffect(() => {
-    if (!loading && groups.length > 0) {
-      checkDefaultPlacement();
-    }
-  }, [loading, groups]);
 
   const loadGroups = async () => {
     setLoading(true);
@@ -52,40 +47,9 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
     const groups = data || [];
     setGroups(groups);
-
-    // Check if default placement group exists
-    const defaultGroup = groups.find(g => g.name === '36355 - WAND Digital Demo');
-
-    if (!defaultGroup) {
-      // Create default placement group
-      const { data: newGroup, error: insertError } = await supabase
-        .from('placement_groups')
-        .insert([{
-          name: '36355 - WAND Digital Demo',
-          description: 'Default store placement group',
-          parent_id: null,
-          daypart_hours: {},
-          meal_stations: [],
-          templates: {},
-          nfc_url: null
-        }])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating default placement group:', insertError);
-      } else if (newGroup) {
-        setGroups([...groups, newGroup]);
-        // Open modal for configuration
-        setEditingGroup(newGroup);
-        setShowModal(true);
-      }
-    }
-
     setLoading(false);
-  };
 
-  const checkDefaultPlacement = () => {
+    // Check if default placement group exists and needs configuration
     const defaultGroup = groups.find(g => g.name === '36355 - WAND Digital Demo');
 
     if (defaultGroup) {
@@ -96,13 +60,14 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
         Object.keys(defaultGroup.templates || {}).length > 0 ||
         defaultGroup.nfc_url;
 
-      if (!hasConfiguration && !showModal) {
+      if (!hasConfiguration) {
         // Open modal to configure
         setEditingGroup(defaultGroup);
         setShowModal(true);
       }
     }
   };
+
 
   const toggleNode = (id: string) => {
     const newExpanded = new Set(expandedNodes);
