@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Menu, X, ChevronDown, ChevronRight, Search, HelpCircle, User } from 'lucide-react';
+import { Shield, Menu, X, ChevronDown, ChevronRight, Search, HelpCircle, User, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
@@ -219,6 +219,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             <span className="text-sm font-medium">Digital | Asset Details</span>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 hover:bg-slate-600 px-3 py-2 rounded-lg transition-colors text-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Roles
+            </button>
             <button className="p-2 hover:bg-slate-600 rounded-lg transition-colors">
               <HelpCircle className="w-5 h-5" />
             </button>
