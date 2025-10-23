@@ -20,6 +20,7 @@ export const mockProducts = [
     meal_stations: [
       { station: "A La Minute", station_detail: { customName: "À la minute", imageLogo: null } }
     ],
+    image_url: "https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=600",
   },
   {
     mrn: "80091.0",
@@ -88,6 +89,7 @@ export const mockProducts = [
     meal_stations: [
       { station: "Hot Breakfast", station_detail: { customName: "Hot Breakfast", imageLogo: null } }
     ],
+    image_url: "https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=600",
   },
   {
     mrn: "80094.0",
@@ -156,6 +158,7 @@ export const mockProducts = [
     meal_stations: [
       { station: "Grill", station_detail: { customName: "Grill Station", imageLogo: null } }
     ],
+    image_url: "https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=600",
   },
   {
     mrn: "80097.0",
@@ -201,6 +204,7 @@ export const mockProducts = [
     meal_stations: [
       { station: "Italian", station_detail: { customName: "Italian Kitchen", imageLogo: null } }
     ],
+    image_url: "https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=600",
   },
   {
     mrn: "80099.0",
@@ -269,5 +273,6 @@ export const mockProducts = [
     meal_stations: [
       { station: "Bakery", station_detail: { customName: "Fresh Bakery", imageLogo: null } }
     ],
+    image_url: "https://images.pexels.com/photos/230325/pexels-photo-230325.jpeg?auto=compress&cs=tinysrgb&w=600",
   },
 ];

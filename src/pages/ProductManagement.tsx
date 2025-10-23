@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { mockProducts } from '../data/mockProducts';
+import ProductTile from '../components/ProductTile';
 
 interface Product {
   mrn: string;
@@ -14,6 +15,7 @@ interface Product {
   meal_periods: Array<{ period: string; date: string }>;
   meal_stations: Array<{ station: string; station_detail: any }>;
   last_synced_at: string | null;
+  image_url?: string;
 }
 
 interface ProductManagementProps {
@@ -31,6 +33,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [mealPeriods, setMealPeriods] = useState<string[]>([]);
   const [mealStations, setMealStations] = useState<string[]>([]);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
 
   useEffect(() => {
     loadProducts();
@@ -350,6 +353,30 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
 
               <div className="flex gap-2">
+                <div className="flex bg-slate-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('tile')}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'tile'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                    title="Tile view"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                    title="List view"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="relative">
                   <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <select
@@ -390,10 +417,10 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
             )}
           </div>
 
-          <div className="overflow-x-auto">
+          <div className={viewMode === 'tile' ? 'p-6' : 'overflow-x-auto'}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-8 h-8 border-4 border-slate-200 border-t-purple-600 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
@@ -410,14 +437,14 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                   <button
                     onClick={syncProducts}
                     disabled={syncing}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
                     {syncing ? 'Syncing...' : 'Sync from API'}
                   </button>
                 )}
               </div>
-            ) : (
+            ) : viewMode === 'list' ? (
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
@@ -484,6 +511,12 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                   ))}
                 </tbody>
               </table>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredProducts.map((product) => (
+                  <ProductTile key={product.mrn} product={product} />
+                ))}
+              </div>
             )}
           </div>
 
