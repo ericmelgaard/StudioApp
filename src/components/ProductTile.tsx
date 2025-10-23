@@ -35,6 +35,15 @@ export default function ProductTile({ product }: ProductTileProps) {
             }`}
           />
           <div
+            className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end transition-opacity duration-300 ${
+              isHovered ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <h3 className="font-semibold text-white text-sm p-4 line-clamp-2 w-full">
+              {product.name}
+            </h3>
+          </div>
+          <div
             className={`absolute inset-0 bg-white p-4 flex flex-col justify-between transition-opacity duration-300 ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}
