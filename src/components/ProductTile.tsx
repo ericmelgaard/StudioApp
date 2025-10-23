@@ -21,12 +21,12 @@ export default function ProductTile({ product }: ProductTileProps) {
 
   return (
     <div
-      className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group"
+      className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {product.image_url ? (
-        <div className="relative h-48 overflow-hidden">
+      {product.image_url && (
+        <div className="relative h-48 overflow-hidden flex-shrink-0">
           <img
             src={product.image_url}
             alt={product.name}
@@ -60,7 +60,7 @@ export default function ProductTile({ product }: ProductTileProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-900">
-                  {product.price && parseFloat(product.price) > 0 ? `$${product.price}` : 'Included'}
+                  {product.price ? `$${product.price}` : 'N/A'}
                 </span>
                 {product.calories && (
                   <span className="text-slate-600">{product.calories} cal</span>
@@ -69,9 +69,9 @@ export default function ProductTile({ product }: ProductTileProps) {
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col">
         {!product.image_url && (
           <>
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
@@ -81,61 +81,46 @@ export default function ProductTile({ product }: ProductTileProps) {
           </>
         )}
 
-        {product.image_url && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-900">
-                {product.price && parseFloat(product.price) > 0 ? `$${product.price}` : 'Included'}
-              </span>
-              {product.calories && (
-                <span className="text-sm text-slate-600">{product.calories} cal</span>
-              )}
-            </div>
-          </div>
-        )}
+        <div className="space-y-3 flex-1 flex flex-col justify-between">
+          {!product.image_url && product.description && (
+            <p className="text-sm text-slate-600 line-clamp-2">{product.description}</p>
+          )}
 
-        {!product.image_url && (
-          <div className="space-y-3">
-            {product.description && (
-              <p className="text-sm text-slate-600 line-clamp-2">{product.description}</p>
-            )}
-
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-900">
-                {product.price && parseFloat(product.price) > 0 ? `$${product.price}` : 'Included'}
-              </span>
-              {product.calories && (
-                <span className="text-sm text-slate-600">{product.calories} cal</span>
-              )}
-            </div>
-
-            {product.meal_periods && product.meal_periods.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {product.meal_periods.slice(0, 2).map((mp, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                  >
-                    {mp.period}
-                  </span>
-                ))}
-                {product.meal_periods.length > 2 && (
-                  <span className="text-xs text-slate-500">
-                    +{product.meal_periods.length - 2}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {product.meal_stations && product.meal_stations.length > 0 && (
-              <div className="text-xs text-slate-600">
-                <span className="font-medium">Station:</span>{' '}
-                {product.meal_stations[0].station}
-                {product.meal_stations.length > 1 && ` +${product.meal_stations.length - 1}`}
-              </div>
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-900">
+              {product.price ? `$${product.price}` : 'N/A'}
+            </span>
+            {product.calories && (
+              <span className="text-sm text-slate-600">{product.calories} cal</span>
             )}
           </div>
-        )}
+
+          {!product.image_url && product.meal_periods && product.meal_periods.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {product.meal_periods.slice(0, 2).map((mp, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                >
+                  {mp.period}
+                </span>
+              ))}
+              {product.meal_periods.length > 2 && (
+                <span className="text-xs text-slate-500">
+                  +{product.meal_periods.length - 2}
+                </span>
+              )}
+            </div>
+          )}
+
+          {!product.image_url && product.meal_stations && product.meal_stations.length > 0 && (
+            <div className="text-xs text-slate-600">
+              <span className="font-medium">Station:</span>{' '}
+              {product.meal_stations[0].station}
+              {product.meal_stations.length > 1 && ` +${product.meal_stations.length - 1}`}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
