@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, PanelLeftClose, PanelLeft, X } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -122,18 +122,15 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {/* Left Sidebar Navigation */}
         <aside className={`bg-white border-r border-slate-200 text-slate-700 transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
-        } flex flex-col min-h-[calc(100vh-4rem)]`}>
-          {/* Collapse Toggle */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-            {!sidebarCollapsed && <span className="text-sm font-semibold text-slate-900">Navigation</span>}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-auto"
-              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-            </button>
-          </div>
+        } flex flex-col min-h-[calc(100vh-4rem)] relative`}>
+          {/* Collapse Toggle - Overlay Button */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="absolute -right-3 top-8 z-10 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
 
           {/* Current Selection */}
         {!sidebarCollapsed && (
