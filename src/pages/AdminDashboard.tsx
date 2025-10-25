@@ -217,8 +217,17 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-slate-900">Digital | Asset Details</span>
+          <div className="flex items-center gap-3">
+            <img
+              src="/WandLogoNoText.png"
+              alt="WAND"
+              className="h-8 w-8"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-base font-semibold text-slate-700">TRM</span>
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <button
