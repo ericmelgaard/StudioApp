@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Settings, ArrowLeft, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, ChevronDown } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, ChevronDown, HelpCircle, FileText } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
+import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
 import SignageManagement from './SignageManagement';
 import ShelfLabelManagement from './ShelfLabelManagement';
@@ -117,15 +118,21 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <NotificationPanel />
+            <div className="flex items-center gap-1">
               <button
-                onClick={onBack}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Help"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Roles
+                <HelpCircle className="w-5 h-5" />
               </button>
+              <button
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Documentation"
+              >
+                <FileText className="w-5 h-5" />
+              </button>
+              <NotificationPanel />
+              <UserMenu role="operator" onBackToRoles={onBack} />
             </div>
           </div>
         </div>

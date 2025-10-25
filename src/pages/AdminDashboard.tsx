@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Shield, Menu, X, ChevronDown, ChevronRight, Search, HelpCircle, User, ArrowLeft } from 'lucide-react';
+import { Shield, Menu, X, ChevronDown, ChevronRight, Search, HelpCircle, User, ArrowLeft, FileText } from 'lucide-react';
+import NotificationPanel from '../components/NotificationPanel';
+import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
@@ -214,25 +216,25 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-slate-700 text-white flex items-center justify-between px-6">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium">Digital | Asset Details</span>
+            <span className="text-sm font-medium text-slate-900">Digital | Asset Details</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
             <button
-              onClick={onBack}
-              className="flex items-center gap-2 hover:bg-slate-600 px-3 py-2 rounded-lg transition-colors text-sm"
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Help"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Roles
-            </button>
-            <button className="p-2 hover:bg-slate-600 rounded-lg transition-colors">
               <HelpCircle className="w-5 h-5" />
             </button>
-            <button className="flex items-center gap-2 hover:bg-slate-600 px-3 py-2 rounded-lg transition-colors">
-              <User className="w-5 h-5" />
-              <span className="text-sm">Eric Melgaard</span>
+            <button
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Documentation"
+            >
+              <FileText className="w-5 h-5" />
             </button>
+            <NotificationPanel />
+            <UserMenu role="admin" onBackToRoles={onBack} />
           </div>
         </header>
 
