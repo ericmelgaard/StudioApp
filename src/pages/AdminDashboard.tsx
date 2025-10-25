@@ -120,20 +120,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
       <div className="flex">
         {/* Left Sidebar Navigation */}
-        <aside className={`bg-white border-r border-slate-200 text-slate-700 transition-all duration-300 ${
-          sidebarCollapsed ? 'w-16' : 'w-64'
-        } flex flex-col min-h-[calc(100vh-4rem)] relative`}>
-          {/* Collapse Toggle - Overlay Button */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-8 z-10 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors"
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
-
+        <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col min-h-[calc(100vh-4rem)]">
           {/* Current Selection */}
-        {!sidebarCollapsed && (
           <div className="p-4 border-b border-slate-200">
             <div className="space-y-3">
               <button
@@ -167,7 +155,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               )}
             </div>
           </div>
-        )}
 
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4">
