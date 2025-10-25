@@ -85,22 +85,55 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Left Sidebar Navigation */}
-      <aside className={`bg-slate-800 text-slate-100 transition-all duration-300 ${
-        sidebarCollapsed ? 'w-16' : 'w-64'
-      } flex flex-col`}>
-        {/* Collapse Toggle */}
-        <div className="h-16 flex items-center justify-end px-4 border-b border-slate-700">
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
-          </button>
+    <div className="min-h-screen bg-slate-50">
+      {/* Top Header */}
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <img
+            src="/WandLogoNoText.png"
+            alt="WAND"
+            className="h-8 w-8"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+            <span className="text-slate-400">|</span>
+            <span className="text-base font-semibold text-slate-700">TRM</span>
+          </div>
         </div>
+        <div className="flex items-center gap-1">
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Help"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Documentation"
+          >
+            <FileText className="w-5 h-5" />
+          </button>
+          <NotificationPanel />
+          <UserMenu role="admin" onBackToRoles={onBack} />
+        </div>
+      </header>
 
-        {/* Current Selection */}
+      <div className="flex">
+        {/* Left Sidebar Navigation */}
+        <aside className={`bg-slate-800 text-slate-100 transition-all duration-300 ${
+          sidebarCollapsed ? 'w-16' : 'w-64'
+        } flex flex-col min-h-[calc(100vh-4rem)]`}>
+          {/* Collapse Toggle */}
+          <div className="flex items-center justify-end px-4 py-3 border-b border-slate-700">
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
+            </button>
+          </div>
+
+          {/* Current Selection */}
         {!sidebarCollapsed && (
           <div className="p-4 border-b border-slate-700">
             <div className="space-y-2">
@@ -208,41 +241,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <img
-              src="/WandLogoNoText.png"
-              alt="WAND"
-              className="h-8 w-8"
-            />
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-              <span className="text-slate-400">|</span>
-              <span className="text-base font-semibold text-slate-700">TRM</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Help"
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
-            <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Documentation"
-            >
-              <FileText className="w-5 h-5" />
-            </button>
-            <NotificationPanel />
-            <UserMenu role="admin" onBackToRoles={onBack} />
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-4">
