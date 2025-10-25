@@ -139,151 +139,216 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">
-            Operations Overview
-          </h2>
-          <p className="text-slate-600">
-            Monitor and manage your digital systems
-          </p>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <button
+            onClick={() => setCurrentView('signage')}
+            className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all text-left group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Digital Signage
+                </h3>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
+            </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-          <div className="border-b border-slate-200 bg-slate-50">
-            <div className="flex items-center gap-2 px-6 py-4">
-              <div className="flex gap-2">
-                <button className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-medium shadow-sm border border-slate-200">
-                  All systems
-                </button>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <Monitor className="w-8 h-8 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">{stats.signageCount}</div>
+                  <div className="text-sm text-slate-600">Total displays</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-600">Online</span>
+                  <span className="text-sm font-semibold text-green-600">{stats.signageOnline}</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-500 rounded-full transition-all"
+                    style={{ width: `${stats.signageCount > 0 ? (stats.signageOnline / stats.signageCount) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('labels')}
+            className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all text-left group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Shelf Labels
+                </h3>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Tag className="w-8 h-8 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">{stats.labelsCount}</div>
+                  <div className="text-sm text-slate-600">Total labels</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-600">Synced</span>
+                  <span className="text-sm font-semibold text-blue-600">{stats.labelsSynced}</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all"
+                    style={{ width: `${stats.labelsCount > 0 ? (stats.labelsSynced / stats.labelsCount) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('products')}
+            className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all text-left group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Products
+                </h3>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <Package className="w-8 h-8 text-orange-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">{stats.productsCount}</div>
+                  <div className="text-sm text-slate-600">In catalog</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  Manage product information and pricing
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('store')}
+            className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all text-left group"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Store Configuration
+                </h3>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-100 rounded-lg">
+                  <Store className="w-8 h-8 text-amber-600" />
+                </div>
+                <div>
+                  <div className="text-sm text-slate-900 font-medium">Placement Groups</div>
+                  <div className="text-sm text-slate-600">Configure templates</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  Manage store settings and layouts
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  System Status
+                </h3>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-slate-700">All systems operational</span>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-slate-100 text-xs text-slate-500">
+                Last checked: {new Date().toLocaleTimeString()}
               </div>
             </div>
           </div>
 
-          <div className="divide-y divide-slate-200">
-            <button
-              onClick={() => setCurrentView('signage')}
-              className="w-full px-6 py-5 hover:bg-slate-50 transition-colors text-left group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
-                  <Monitor className="w-5 h-5 text-green-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      Digital signage
-                    </h3>
-                    <span className="text-2xl font-bold text-slate-900">
-                      {stats.signageCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-green-500 rounded-full"
-                          style={{ width: `${stats.signageCount > 0 ? (stats.signageOnline / stats.signageCount) * 100 : 0}%` }}
-                        />
-                      </div>
-                      <span className="text-sm text-slate-600">
-                        {stats.signageCount > 0 ? Math.round((stats.signageOnline / stats.signageCount) * 100) : 0}%
-                      </span>
-                    </div>
-                    <span className="text-sm text-slate-600">
-                      {stats.signageOnline} online
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
-                </div>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Recent Activity
+                </h3>
               </div>
-            </button>
+            </div>
 
-            <button
-              onClick={() => setCurrentView('labels')}
-              className="w-full px-6 py-5 hover:bg-slate-50 transition-colors text-left group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-                  <Tag className="w-5 h-5 text-blue-600" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-slate-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      Shelf labels
-                    </h3>
-                    <span className="text-2xl font-bold text-slate-900">
-                      {stats.labelsCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${stats.labelsCount > 0 ? (stats.labelsSynced / stats.labelsCount) * 100 : 0}%` }}
-                        />
-                      </div>
-                      <span className="text-sm text-slate-600">
-                        {stats.labelsCount > 0 ? Math.round((stats.labelsSynced / stats.labelsCount) * 100) : 0}%
-                      </span>
-                    </div>
-                    <span className="text-sm text-slate-600">
-                      {stats.labelsSynced} synced
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
+                  <div className="text-sm text-slate-900">No recent changes</div>
+                  <div className="text-xs text-slate-500">Demo mode</div>
                 </div>
               </div>
-            </button>
-
-            <button
-              onClick={() => setCurrentView('products')}
-              className="w-full px-6 py-5 hover:bg-slate-50 transition-colors text-left group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-orange-50 rounded-lg group-hover:bg-orange-100 transition-colors">
-                  <Package className="w-5 h-5 text-orange-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      Products
-                    </h3>
-                    <span className="text-2xl font-bold text-slate-900">
-                      {stats.productsCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <span className="text-sm text-slate-600">
-                      Manage product catalog
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
-                </div>
-              </div>
-            </button>
+            </div>
           </div>
-
-          <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
-            <button
-              onClick={() => setCurrentView('store')}
-              className="flex items-center gap-3 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors group"
-            >
-              <Store className="w-4 h-4" />
-              <span>Store configuration</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <SystemStatus />
         </div>
       </main>
     </div>

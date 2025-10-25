@@ -1,4 +1,4 @@
-import { Users, HelpCircle, FileText, ChevronDown, Store } from 'lucide-react';
+import { Users, HelpCircle, FileText, ChevronDown, Store, Layers, Image, BarChart3, Video, FileText as Document, Palette } from 'lucide-react';
 import { useState } from 'react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
@@ -81,26 +81,196 @@ export default function CreatorDashboard({ onBack }: CreatorDashboardProps) {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">
-            Content Creation Hub
-          </h2>
-          <p className="text-slate-600 mb-6">
-            This is your creator workspace. Future features will be added here.
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Content Projects
+                </h3>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-6 bg-blue-50 rounded-lg border border-blue-100">
-              <h3 className="font-semibold text-blue-900 mb-2">Projects</h3>
-              <p className="text-blue-700 text-sm">Manage your content projects</p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Layers className="w-8 h-8 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">12</div>
+                  <div className="text-sm text-slate-600">Active projects</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  Create and manage content projects
+                </div>
+              </div>
             </div>
-            <div className="p-6 bg-blue-50 rounded-lg border border-blue-100">
-              <h3 className="font-semibold text-blue-900 mb-2">Media</h3>
-              <p className="text-blue-700 text-sm">Upload and organize media</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Media Library
+                </h3>
+              </div>
             </div>
-            <div className="p-6 bg-blue-50 rounded-lg border border-blue-100">
-              <h3 className="font-semibold text-blue-900 mb-2">Analytics</h3>
-              <p className="text-blue-700 text-sm">View content performance</p>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <Image className="w-8 h-8 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">248</div>
+                  <div className="text-sm text-slate-600">Media assets</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  Upload and organize media files
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Analytics
+                </h3>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <BarChart3 className="w-8 h-8 text-purple-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">89%</div>
+                  <div className="text-sm text-slate-600">Engagement rate</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  View content performance metrics
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Video Content
+                </h3>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-rose-100 rounded-lg">
+                  <Video className="w-8 h-8 text-rose-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">35</div>
+                  <div className="text-sm text-slate-600">Video assets</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  Manage video content library
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Templates
+                </h3>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-100 rounded-lg">
+                  <Document className="w-8 h-8 text-amber-600" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">18</div>
+                  <div className="text-sm text-slate-600">Design templates</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  Browse and use templates
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                <h3 className="text-sm font-semibold text-slate-900 ml-2">
+                  Brand Guidelines
+                </h3>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-cyan-100 rounded-lg">
+                  <Palette className="w-8 h-8 text-cyan-600" />
+                </div>
+                <div>
+                  <div className="text-sm text-slate-900 font-medium">Style Guide</div>
+                  <div className="text-sm text-slate-600">Brand assets & colors</div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <div className="text-sm text-slate-600">
+                  Access brand resources
+                </div>
+              </div>
             </div>
           </div>
         </div>
