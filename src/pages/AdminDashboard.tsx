@@ -97,7 +97,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-slate-900">WAND Digital</span>
             <span className="text-slate-400">|</span>
-            <span className="text-base font-semibold text-slate-700">TRM</span>
+            <span className="text-base font-semibold text-slate-700">Admin</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
