@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, ArrowLeft, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, Menu, X } from 'lucide-react';
+import { Settings, ArrowLeft, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, ChevronDown } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import SystemStatus from '../components/SystemStatus';
 import SignageManagement from './SignageManagement';
@@ -14,9 +14,18 @@ interface OperatorDashboardProps {
   onBack: () => void;
 }
 
+const STORE_LOCATIONS = [
+  'Admiral Food Market - Portland, OR',
+  'Admiral Food Market - Seattle, WA',
+  'Admiral Food Market - San Francisco, CA',
+  'Admiral Food Market - Los Angeles, CA',
+  'Admiral Food Market - San Diego, CA',
+  'Admiral Food Market - Denver, CO',
+];
+
 export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState(STORE_LOCATIONS[0]);
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -68,165 +77,44 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Full Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-80 bg-white border-r border-slate-200 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-600" />
-            </button>
-          </div>
-
-          {/* Sidebar Content */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-3">
-              <button
-                onClick={() => {
-                  setCurrentView('signage');
-                  setSidebarOpen(false);
-                }}
-                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-green-300 transition-all text-left"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-                    <Monitor className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-bold text-slate-900 mb-1">
-                      Digital Signage
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Configure displays and update content
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-xs mt-3 ml-14">
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-slate-900">{stats.signageCount}</span> displays
-                  </span>
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-green-600">{stats.signageOnline}</span> online
-                  </span>
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  setCurrentView('labels');
-                  setSidebarOpen(false);
-                }}
-                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-blue-300 transition-all text-left"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-                    <Tag className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-bold text-slate-900 mb-1">
-                      Shelf Labels
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Update pricing and sync product info
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-xs mt-3 ml-14">
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-slate-900">{stats.labelsCount}</span> labels
-                  </span>
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-blue-600">{stats.labelsSynced}</span> synced
-                  </span>
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  setCurrentView('store');
-                  setSidebarOpen(false);
-                }}
-                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-amber-300 transition-all text-left"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
-                    <Store className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-bold text-slate-900 mb-1">
-                      Store Management
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Configure placement groups and templates
-                    </p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  setCurrentView('products');
-                  setSidebarOpen(false);
-                }}
-                className="w-full group bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-purple-300 transition-all text-left"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
-                    <Package className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-bold text-slate-900 mb-1">
-                      Products
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Sync menu items and manage catalog
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-xs mt-3 ml-14">
-                  <span className="text-slate-500">
-                    <span className="font-semibold text-slate-900">{stats.productsCount}</span> products
-                  </span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1">
+    <div className="min-h-screen bg-slate-50">
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Menu"
-              >
-                <Menu className="w-6 h-6 text-slate-600" />
-              </button>
-              <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-                <Settings className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+                    <span className="text-slate-400">|</span>
+                    <span className="text-base font-semibold text-slate-700">Studio</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-slate-900">Operator Dashboard</h1>
-                <p className="text-xs text-slate-500">Demo Mode</p>
+              <div className="relative group">
+                <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+                  <Store className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-900 max-w-xs truncate">
+                    {selectedStore}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-slate-500" />
+                </button>
+                <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                  {STORE_LOCATIONS.map((location) => (
+                    <button
+                      key={location}
+                      onClick={() => setSelectedStore(location)}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
+                        selectedStore === location ? 'bg-green-50 text-green-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      {location}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -391,7 +279,6 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
           <SystemStatus />
         </div>
       </main>
-      </div>
     </div>
   );
 }
