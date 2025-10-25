@@ -300,9 +300,6 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Monitor className="w-4 h-4 text-slate-400" />
-                  </button>
                   <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
@@ -343,9 +340,6 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Tag className="w-4 h-4 text-slate-400" />
-                  </button>
                   <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
@@ -375,9 +369,6 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Package className="w-4 h-4 text-slate-400" />
-                  </button>
                   <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
