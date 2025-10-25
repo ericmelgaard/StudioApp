@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Menu, X, ChevronDown, ChevronRight, Search, HelpCircle, User, ArrowLeft, FileText } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, PanelLeftClose, PanelLeft } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -123,15 +123,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <aside className={`bg-white border-r border-slate-200 text-slate-700 transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         } flex flex-col min-h-[calc(100vh-4rem)]`}>
-          {/* Collapse Toggle */}
-          <div className="flex items-center justify-end px-4 py-3 border-b border-slate-200">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
-            </button>
-          </div>
 
           {/* Current Selection */}
         {!sidebarCollapsed && (
@@ -171,70 +162,74 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4">
-          {/* WAND Section */}
-          <div className="mb-2">
-            <div className="px-4 mb-2">
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">WAND</div>
-            </div>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Enterprise</span>}
+          {/* Organization Section */}
+          <div className="mb-6">
+            {!sidebarCollapsed && (
+              <div className="px-4 mb-2">
+                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Organization</div>
+              </div>
+            )}
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <Building2 className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Companies</span>}
             </button>
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <Store className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Sites</span>}
+            </button>
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <Users className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Users</span>}
+            </button>
+          </div>
+
+          {/* Content Section */}
+          <div className="mb-6">
+            {!sidebarCollapsed && (
+              <div className="px-4 mb-2">
+                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Content</div>
+              </div>
+            )}
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <Monitor className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Signage</span>}
+            </button>
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <Tag className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Labels</span>}
+            </button>
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <Package className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Products</span>}
+            </button>
+          </div>
+
+          {/* System Section */}
+          <div className="mb-6">
+            {!sidebarCollapsed && (
+              <div className="px-4 mb-2">
+                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">System</div>
+              </div>
+            )}
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <Settings className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Settings</span>}
+            </button>
+            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <BarChart3 className="w-5 h-5" />
+              {!sidebarCollapsed && <span className="text-sm font-medium">Analytics</span>}
+            </button>
+          </div>
+
+          {/* Collapse Toggle at Bottom */}
+          <div className="mt-auto border-t border-slate-200 pt-4">
             <button
-              onClick={() => toggleSection('wand')}
-              className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors flex items-center justify-between"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 text-slate-500"
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {!sidebarCollapsed && <span className="text-sm">Digital</span>}
-              {!sidebarCollapsed && (expandedSections.wand ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
-            </button>
-          </div>
-
-          {/* CONTENT Section */}
-          <div className="mb-2">
-            <div className="px-4 mb-2">
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">CONTENT</div>
-            </div>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Displays</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Menu Composer</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Responsive Menu Settings</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Smart Labels</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Smart Tags</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Assets</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Campaigns</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Deployments</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Content Forecaster</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Price Scheduler</span>}
-            </button>
-          </div>
-
-          {/* EXPRESS Section */}
-          <div>
-            <div className="px-4 mb-2">
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">EXPRESS</div>
-            </div>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Point-of-Sale</span>}
-            </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
-              {!sidebarCollapsed && <span className="text-sm">Reporting</span>}
+              {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+              {!sidebarCollapsed && <span className="text-sm font-medium">Collapse</span>}
             </button>
           </div>
         </nav>
