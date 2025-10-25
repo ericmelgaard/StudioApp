@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -135,31 +135,32 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {/* Current Selection */}
         {!sidebarCollapsed && (
           <div className="p-4 border-b border-slate-200">
-            <div className="space-y-2">
-              <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Concept</div>
-                <button
-                  onClick={() => setShowLocationSelector(!showLocationSelector)}
-                  className="w-full flex items-center justify-between text-sm hover:bg-slate-100 p-2 rounded transition-colors"
-                >
-                  <span className="font-medium">{selectedBrand?.name || 'Select Concept'}</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="space-y-3">
+              <button
+                onClick={() => setShowLocationSelector(!showLocationSelector)}
+                className="w-full flex items-center gap-3 text-sm hover:bg-slate-100 p-3 rounded-lg transition-colors border border-slate-200 bg-white"
+              >
+                <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
+                <div className="flex-1 text-left">
+                  <div className="text-xs text-slate-500 uppercase tracking-wide">Context</div>
+                  <div className="font-medium text-slate-900">{selectedBrand?.name || 'Select Concept'}</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              </button>
 
               {selectedCompany && (
-                <div>
+                <div className="pl-3 border-l-2 border-slate-200">
                   <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Company</div>
-                  <div className="text-sm p-2 bg-slate-100 rounded">
+                  <div className="text-sm font-medium text-slate-700">
                     {selectedCompany.name}
                   </div>
                 </div>
               )}
 
               {selectedSite && (
-                <div>
+                <div className="pl-3 border-l-2 border-slate-200">
                   <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Store</div>
-                  <div className="text-sm p-2 bg-slate-100 rounded">
+                  <div className="text-sm font-medium text-slate-700">
                     {selectedSite.name}
                   </div>
                 </div>
