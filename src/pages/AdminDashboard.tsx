@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, PanelLeftClose, PanelLeft, X } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -123,6 +123,17 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <aside className={`bg-white border-r border-slate-200 text-slate-700 transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         } flex flex-col min-h-[calc(100vh-4rem)]`}>
+          {/* Collapse Toggle */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+            {!sidebarCollapsed && <span className="text-sm font-semibold text-slate-900">Navigation</span>}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-auto"
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+            </button>
+          </div>
 
           {/* Current Selection */}
         {!sidebarCollapsed && (
@@ -218,18 +229,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
               <BarChart3 className="w-5 h-5" />
               {!sidebarCollapsed && <span className="text-sm font-medium">Analytics</span>}
-            </button>
-          </div>
-
-          {/* Collapse Toggle at Bottom */}
-          <div className="mt-auto border-t border-slate-200 pt-4">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 text-slate-500"
-              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-              {!sidebarCollapsed && <span className="text-sm font-medium">Collapse</span>}
             </button>
           </div>
         </nav>
