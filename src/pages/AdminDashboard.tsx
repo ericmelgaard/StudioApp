@@ -120,14 +120,14 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
       <div className="flex">
         {/* Left Sidebar Navigation */}
-        <aside className={`bg-slate-800 text-slate-100 transition-all duration-300 ${
+        <aside className={`bg-white border-r border-slate-200 text-slate-700 transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         } flex flex-col min-h-[calc(100vh-4rem)]`}>
           {/* Collapse Toggle */}
-          <div className="flex items-center justify-end px-4 py-3 border-b border-slate-700">
+          <div className="flex items-center justify-end px-4 py-3 border-b border-slate-200">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
             >
               {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
             </button>
@@ -135,13 +135,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
           {/* Current Selection */}
         {!sidebarCollapsed && (
-          <div className="p-4 border-b border-slate-700">
+          <div className="p-4 border-b border-slate-200">
             <div className="space-y-2">
               <div>
-                <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Concept</div>
+                <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Concept</div>
                 <button
                   onClick={() => setShowLocationSelector(!showLocationSelector)}
-                  className="w-full flex items-center justify-between text-sm hover:bg-slate-700 p-2 rounded transition-colors"
+                  className="w-full flex items-center justify-between text-sm hover:bg-slate-100 p-2 rounded transition-colors"
                 >
                   <span className="font-medium">{selectedBrand?.name || 'Select Concept'}</span>
                   <ChevronDown className="w-4 h-4" />
@@ -150,8 +150,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
               {selectedCompany && (
                 <div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Company</div>
-                  <div className="text-sm p-2 bg-slate-700/50 rounded">
+                  <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Company</div>
+                  <div className="text-sm p-2 bg-slate-100 rounded">
                     {selectedCompany.name}
                   </div>
                 </div>
@@ -159,8 +159,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
               {selectedSite && (
                 <div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Store</div>
-                  <div className="text-sm p-2 bg-slate-700/50 rounded">
+                  <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Store</div>
+                  <div className="text-sm p-2 bg-slate-100 rounded">
                     {selectedSite.name}
                   </div>
                 </div>
@@ -174,14 +174,14 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {/* WAND Section */}
           <div className="mb-2">
             <div className="px-4 mb-2">
-              <div className="text-xs text-slate-400 uppercase tracking-wide">WAND</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">WAND</div>
             </div>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Enterprise</span>}
             </button>
             <button
               onClick={() => toggleSection('wand')}
-              className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors flex items-center justify-between"
+              className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors flex items-center justify-between"
             >
               {!sidebarCollapsed && <span className="text-sm">Digital</span>}
               {!sidebarCollapsed && (expandedSections.wand ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
@@ -191,36 +191,36 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {/* CONTENT Section */}
           <div className="mb-2">
             <div className="px-4 mb-2">
-              <div className="text-xs text-slate-400 uppercase tracking-wide">CONTENT</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">CONTENT</div>
             </div>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Displays</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Menu Composer</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Responsive Menu Settings</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Smart Labels</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Smart Tags</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Assets</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Campaigns</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Deployments</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Content Forecaster</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Price Scheduler</span>}
             </button>
           </div>
@@ -228,12 +228,12 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {/* EXPRESS Section */}
           <div>
             <div className="px-4 mb-2">
-              <div className="text-xs text-slate-400 uppercase tracking-wide">EXPRESS</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">EXPRESS</div>
             </div>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Point-of-Sale</span>}
             </button>
-            <button className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors">
+            <button className="w-full px-4 py-2 text-left hover:bg-slate-100 transition-colors">
               {!sidebarCollapsed && <span className="text-sm">Reporting</span>}
             </button>
           </div>
