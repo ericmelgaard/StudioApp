@@ -267,15 +267,14 @@ export default function CreatorDashboard({ onBack }: CreatorDashboardProps) {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-                    <span className="text-slate-400">|</span>
-                    <span className="text-base font-semibold text-slate-700">Studio</span>
-                  </div>
+                <img
+                  src="/WAND-Logo_Horizontal_Transp_Full-Color_White.png"
+                  alt="WAND Digital"
+                  className="h-8"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">|</span>
+                  <span className="text-base font-semibold text-slate-700">Studio</span>
                 </div>
               </div>
               <div className="relative group">
