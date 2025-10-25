@@ -90,14 +90,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       <aside className={`bg-slate-800 text-slate-100 transition-all duration-300 ${
         sidebarCollapsed ? 'w-16' : 'w-64'
       } flex flex-col`}>
-        {/* Logo / Brand Section */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-700">
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold">TRM</span>
-              <span className="text-xs text-slate-400">by WAND</span>
-            </div>
-          )}
+        {/* Collapse Toggle */}
+        <div className="h-16 flex items-center justify-end px-4 border-b border-slate-700">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
