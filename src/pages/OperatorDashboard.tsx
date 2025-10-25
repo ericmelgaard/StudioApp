@@ -353,9 +353,11 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-                  <Settings className="w-6 h-6 text-white" />
-                </div>
+                <img
+                  src="/WandLogoNoText.png"
+                  alt="WAND"
+                  className="h-8 w-8"
+                />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-bold text-slate-900">WAND Digital</span>
