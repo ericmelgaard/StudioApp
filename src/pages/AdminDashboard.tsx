@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers, ArrowRight, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -47,12 +47,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
-  const [signageStats, setSignageStats] = useState({ total: 0, online: 0, offline: 0, healthy: 0 });
-  const [labelStats, setLabelStats] = useState({ total: 0, online: 0, offline: 0, healthy: 0 });
-
   useEffect(() => {
     loadData();
-    loadStats();
   }, []);
 
   const loadData = async () => {
@@ -69,24 +65,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     }
   };
 
-  const loadStats = async () => {
-    const { data: signageData } = await supabase.from('digital_signage').select('status');
-    const { data: labelData } = await supabase.from('hardware_devices').select('status, health_status');
-
-    if (signageData) {
-      const online = signageData.filter(s => s.status === 'online').length;
-      const offline = signageData.filter(s => s.status === 'offline').length;
-      const healthy = signageData.filter(s => s.status === 'online').length;
-      setSignageStats({ total: signageData.length, online, offline, healthy });
-    }
-
-    if (labelData) {
-      const online = labelData.filter(l => l.status === 'online').length;
-      const offline = labelData.filter(l => l.status === 'offline').length;
-      const healthy = labelData.filter(l => l.health_status === 'healthy').length;
-      setLabelStats({ total: labelData.length, online, offline, healthy });
-    }
-  };
 
   const filteredCompanies = companies.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -252,130 +230,33 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
         {currentView === 'dashboard' && (
           <div className="max-w-7xl mx-auto">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">
                 System Administration
               </h2>
-              <p className="text-slate-600">
-                Monitor and manage your digital signage and shelf label systems
+              <p className="text-slate-600 mb-6">
+                Configure system-wide settings and access support features.
               </p>
-            </div>
 
-            {/* Content Management Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* Digital Signage Card */}
-              <div
-                onClick={() => setCurrentView('signage')}
-                className="bg-white rounded-lg shadow-sm border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer group"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Monitor className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-900">Digital Signage</h3>
-                        <p className="text-sm text-slate-500">Manage displays and content</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-1 transition-all" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <div className="text-2xl font-bold text-slate-900">{signageStats.total}</div>
-                      <div className="text-xs text-slate-600">Total Devices</div>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-3">
-                      <div className="text-2xl font-bold text-green-700">{signageStats.online}</div>
-                      <div className="text-xs text-green-700">Online</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      <span>{signageStats.healthy} Healthy</span>
-                    </div>
-                    {signageStats.offline > 0 && (
-                      <div className="flex items-center gap-2 text-amber-600">
-                        <AlertCircle className="w-4 h-4" />
-                        <span>{signageStats.offline} Offline</span>
-                      </div>
-                    )}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                  <h3 className="font-semibold text-slate-900 mb-2">Users & Access</h3>
+                  <p className="text-slate-600 text-sm">Manage user accounts and permissions</p>
+                </div>
+                <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                  <h3 className="font-semibold text-slate-900 mb-2">System Config</h3>
+                  <p className="text-slate-600 text-sm">Configure global system settings</p>
+                </div>
+                <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                  <h3 className="font-semibold text-slate-900 mb-2">Support Tools</h3>
+                  <p className="text-slate-600 text-sm">Access diagnostic and support features</p>
                 </div>
               </div>
 
-              {/* Shelf Labels Card */}
-              <div
-                onClick={() => setCurrentView('labels')}
-                className="bg-white rounded-lg shadow-sm border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer group"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Tag className="w-6 h-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-900">Shelf Labels</h3>
-                        <p className="text-sm text-slate-500">Electronic shelf label system</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-1 transition-all" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <div className="text-2xl font-bold text-slate-900">{labelStats.total}</div>
-                      <div className="text-xs text-slate-600">Total Devices</div>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-3">
-                      <div className="text-2xl font-bold text-green-700">{labelStats.online}</div>
-                      <div className="text-xs text-green-700">Online</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      <span>{labelStats.healthy} Healthy</span>
-                    </div>
-                    {labelStats.offline > 0 && (
-                      <div className="flex items-center gap-2 text-amber-600">
-                        <AlertCircle className="w-4 h-4" />
-                        <span>{labelStats.offline} Offline</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* System Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <Users className="w-5 h-5 text-slate-600" />
-                  <h3 className="font-semibold text-slate-900">Users & Access</h3>
-                </div>
-                <p className="text-slate-600 text-sm">Manage user accounts and permissions</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <Settings className="w-5 h-5 text-slate-600" />
-                  <h3 className="font-semibold text-slate-900">System Config</h3>
-                </div>
-                <p className="text-slate-600 text-sm">Configure global system settings</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <HelpCircle className="w-5 h-5 text-slate-600" />
-                  <h3 className="font-semibold text-slate-900">Support Tools</h3>
-                </div>
-                <p className="text-slate-600 text-sm">Access diagnostic and support features</p>
+              <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>Data loaded:</strong> {brands.length} brands, {companies.length} companies, {sites.length} sites
+                </p>
               </div>
             </div>
           </div>

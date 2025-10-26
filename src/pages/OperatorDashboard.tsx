@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, ChevronDown, HelpCircle, FileText, GripVertical } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, ChevronDown, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
@@ -37,8 +37,13 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
+    signageOffline: 0,
+    signageHealthy: 0,
     labelsCount: 0,
     labelsSynced: 0,
+    labelsOnline: 0,
+    labelsOffline: 0,
+    labelsHealthy: 0,
     productsCount: 0,
   });
   const [cards, setCards] = useState<DashboardCard[]>([
@@ -58,21 +63,33 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   const loadStats = async () => {
     const [signageResult, labelsResult, productsResult] = await Promise.all([
       supabase.from('digital_signage').select('status', { count: 'exact' }),
-      supabase.from('shelf_labels').select('status', { count: 'exact' }),
+      supabase.from('hardware_devices').select('status, health_status', { count: 'exact' }),
       supabase.from('products').select('id', { count: 'exact' }),
     ]);
 
     const signageCount = signageResult.count || 0;
     const signageOnline = signageResult.data?.filter(s => s.status === 'online').length || 0;
+    const signageOffline = signageResult.data?.filter(s => s.status === 'offline').length || 0;
+    const signageHealthy = signageResult.data?.filter(s => s.status === 'online').length || 0;
+
     const labelsCount = labelsResult.count || 0;
     const labelsSynced = labelsResult.data?.filter(l => l.status === 'synced').length || 0;
+    const labelsOnline = labelsResult.data?.filter(l => l.status === 'online').length || 0;
+    const labelsOffline = labelsResult.data?.filter(l => l.status === 'offline').length || 0;
+    const labelsHealthy = labelsResult.data?.filter(l => l.health_status === 'healthy').length || 0;
+
     const productsCount = productsResult.count || 0;
 
     setStats({
       signageCount,
       signageOnline,
+      signageOffline,
+      signageHealthy,
       labelsCount,
       labelsSynced,
+      labelsOnline,
+      labelsOffline,
+      labelsHealthy,
       productsCount,
     });
   };
@@ -106,14 +123,21 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   const sortedCards = [...cards].sort((a, b) => a.order - b.order);
 
   const renderCard = (cardId: CardType) => {
+    const isClickableCard = cardId === 'signage' || cardId === 'labels';
+
     const commonProps = {
       draggable: true,
       onDragStart: () => handleDragStart(cardId),
       onDragOver: (e: React.DragEvent) => handleDragOver(e, cardId),
       onDragEnd: handleDragEnd,
+      onClick: isClickableCard ? (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('.drag-handle')) return;
+        if (cardId === 'signage') setCurrentView('signage');
+        if (cardId === 'labels') setCurrentView('labels');
+      } : undefined,
       className: `bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-slate-300 transition-all ${
         draggedCard === cardId ? 'opacity-50' : ''
-      }`,
+      } ${isClickableCard ? 'cursor-pointer' : ''}`,
     };
 
     switch (cardId) {
@@ -122,38 +146,45 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
           <div key={cardId} {...commonProps}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <GripVertical className="w-5 h-5 text-slate-400 cursor-grab active:cursor-grabbing" />
+                <GripVertical className="w-5 h-5 text-slate-400 cursor-grab active:cursor-grabbing drag-handle" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   Digital Signage
                 </h3>
               </div>
-              <button
-                onClick={() => setCurrentView('signage')}
-                className="p-1 hover:bg-slate-100 rounded transition-colors"
-              >
-                <ArrowRight className="w-4 h-4 text-slate-400 hover:text-slate-900 transition-colors" />
-              </button>
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Monitor className="w-8 h-8 text-green-600" />
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Monitor className="w-8 h-8 text-blue-600" />
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-slate-900">{stats.signageCount}</div>
                   <div className="text-sm text-slate-600">Total displays</div>
                 </div>
               </div>
-              <div className="pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-600">Online</span>
-                  <span className="text-sm font-semibold text-green-600">{stats.signageOnline}</span>
+              <div className="pt-3 border-t border-slate-100 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-green-50 rounded-lg p-2">
+                    <div className="text-lg font-bold text-green-700">{stats.signageOnline}</div>
+                    <div className="text-xs text-green-600">Online</div>
+                  </div>
+                  {stats.signageOffline > 0 && (
+                    <div className="bg-amber-50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-amber-700">{stats.signageOffline}</div>
+                      <div className="text-xs text-amber-600">Offline</div>
+                    </div>
+                  )}
                 </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 rounded-full transition-all"
-                    style={{ width: `${stats.signageCount > 0 ? (stats.signageOnline / stats.signageCount) * 100 : 0}%` }}
-                  />
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span>{stats.signageHealthy} Healthy</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                    <Clock className="w-3 h-3" />
+                    <span>Just now</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -165,38 +196,45 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
           <div key={cardId} {...commonProps}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <GripVertical className="w-5 h-5 text-slate-400 cursor-grab active:cursor-grabbing" />
+                <GripVertical className="w-5 h-5 text-slate-400 cursor-grab active:cursor-grabbing drag-handle" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   Shelf Labels
                 </h3>
               </div>
-              <button
-                onClick={() => setCurrentView('labels')}
-                className="p-1 hover:bg-slate-100 rounded transition-colors"
-              >
-                <ArrowRight className="w-4 h-4 text-slate-400 hover:text-slate-900 transition-colors" />
-              </button>
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Tag className="w-8 h-8 text-blue-600" />
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <Tag className="w-8 h-8 text-purple-600" />
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-slate-900">{stats.labelsCount}</div>
                   <div className="text-sm text-slate-600">Total labels</div>
                 </div>
               </div>
-              <div className="pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-600">Synced</span>
-                  <span className="text-sm font-semibold text-blue-600">{stats.labelsSynced}</span>
+              <div className="pt-3 border-t border-slate-100 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-green-50 rounded-lg p-2">
+                    <div className="text-lg font-bold text-green-700">{stats.labelsOnline}</div>
+                    <div className="text-xs text-green-600">Online</div>
+                  </div>
+                  {stats.labelsOffline > 0 && (
+                    <div className="bg-amber-50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-amber-700">{stats.labelsOffline}</div>
+                      <div className="text-xs text-amber-600">Offline</div>
+                    </div>
+                  )}
                 </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all"
-                    style={{ width: `${stats.labelsCount > 0 ? (stats.labelsSynced / stats.labelsCount) * 100 : 0}%` }}
-                  />
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span>{stats.labelsHealthy} Healthy</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                    <Clock className="w-3 h-3" />
+                    <span>Just now</span>
+                  </div>
                 </div>
               </div>
             </div>
