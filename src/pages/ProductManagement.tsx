@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List, Plus, Settings, Link2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { mockProducts } from '../data/mockProducts';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
+import IntegrationProductMapper from '../components/IntegrationProductMapper';
 
 interface Product {
   id: string;
@@ -35,6 +36,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [showMapper, setShowMapper] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -170,6 +172,20 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
             <div className="space-y-4">
               <button
                 onClick={() => {
+                  setShowMapper(true);
+                  setSidePanelOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+              >
+                <Link2 className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-semibold">Map Integration Products</div>
+                  <div className="text-xs text-blue-100">Link integration data to products</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
                   setShowTemplateManager(true);
                   setSidePanelOpen(false);
                 }}
@@ -188,12 +204,12 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                   setSidePanelOpen(false);
                 }}
                 disabled={syncing}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Database className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
                 <div className="text-left">
                   <div className="font-semibold">{syncing ? 'Loading...' : 'Load Mock Data'}</div>
-                  <div className="text-xs text-blue-100">Load sample products</div>
+                  <div className="text-xs text-slate-100">Load sample products</div>
                 </div>
               </button>
 
@@ -422,6 +438,12 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
       <AttributeTemplateManager
         isOpen={showTemplateManager}
         onClose={() => setShowTemplateManager(false)}
+      />
+
+      <IntegrationProductMapper
+        isOpen={showMapper}
+        onClose={() => setShowMapper(false)}
+        onSuccess={loadProducts}
       />
     </div>
   );
