@@ -46,7 +46,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<LocationGroup | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   useEffect(() => {
@@ -143,15 +142,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Company</div>
                   <div className="text-sm font-medium text-slate-700">
                     {selectedCompany.name}
-                  </div>
-                </div>
-              )}
-
-              {selectedGroup && (
-                <div className="pl-3 border-l-2 border-slate-200">
-                  <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Group</div>
-                  <div className="text-sm font-medium text-slate-700">
-                    {selectedGroup.name}
                   </div>
                 </div>
               )}
@@ -297,7 +287,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               </div>
 
               {/* Breadcrumb Navigation */}
-              {(selectedConcept || selectedCompany || selectedGroup) && (
+              {(selectedConcept || selectedCompany) && (
                 <div className="mb-4 p-2 bg-slate-600 rounded text-xs space-y-1">
                   {selectedConcept && (
                     <div className="flex items-center gap-2">
@@ -307,7 +297,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                         onClick={() => {
                           setSelectedConcept(null);
                           setSelectedCompany(null);
-                          setSelectedGroup(null);
                           setSelectedStore(null);
                         }}
                         className="ml-auto text-slate-400 hover:text-white"
@@ -323,22 +312,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                       <button
                         onClick={() => {
                           setSelectedCompany(null);
-                          setSelectedGroup(null);
-                          setSelectedStore(null);
-                        }}
-                        className="ml-auto text-slate-400 hover:text-white"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-                  {selectedGroup && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Group:</span>
-                      <span className="font-medium">{selectedGroup.name}</span>
-                      <button
-                        onClick={() => {
-                          setSelectedGroup(null);
                           setSelectedStore(null);
                         }}
                         className="ml-auto text-slate-400 hover:text-white"
@@ -378,7 +351,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                           onClick={() => {
                             setSelectedConcept(concept);
                             setSelectedCompany(null);
-                            setSelectedGroup(null);
                             setSelectedStore(null);
                           }}
                           className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
@@ -402,48 +374,21 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                     {companies
                       .filter(c => c.concept_id === selectedConcept.id)
                       .map((company) => {
-                        const companyGroups = groups.filter(g => g.company_id === company.id);
+                        const companyStores = stores.filter(s => {
+                          const storeGroup = groups.find(g => g.id === s.location_group_id);
+                          return storeGroup && storeGroup.company_id === company.id;
+                        });
                         return (
                           <button
                             key={company.id}
                             onClick={() => {
                               setSelectedCompany(company);
-                              setSelectedGroup(null);
                               setSelectedStore(null);
                             }}
                             className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
                           >
                             <span>{company.name}</span>
-                            <span className="text-xs text-slate-400">{companyGroups.length} groups</span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
-
-              {/* Groups */}
-              {selectedCompany && !selectedGroup && (
-                <div className="p-4">
-                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    {groups.filter(g => g.company_id === selectedCompany.id).length} Groups in {selectedCompany.name}
-                  </div>
-                  <div className="space-y-1">
-                    {groups
-                      .filter(g => g.company_id === selectedCompany.id)
-                      .map((group) => {
-                        const groupStores = stores.filter(s => s.location_group_id === group.id);
-                        return (
-                          <button
-                            key={group.id}
-                            onClick={() => {
-                              setSelectedGroup(group);
-                              setSelectedStore(null);
-                            }}
-                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
-                          >
-                            <span>{group.name}</span>
-                            <span className="text-xs text-slate-400">{groupStores.length} stores</span>
+                            <span className="text-xs text-slate-400">{companyStores.length} stores</span>
                           </button>
                         );
                       })}
@@ -452,14 +397,20 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               )}
 
               {/* Stores */}
-              {selectedGroup && (
+              {selectedCompany && (
                 <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    {stores.filter(s => s.location_group_id === selectedGroup.id).length} Stores in {selectedGroup.name}
+                    {stores.filter(s => {
+                      const storeGroup = groups.find(g => g.id === s.location_group_id);
+                      return storeGroup && storeGroup.company_id === selectedCompany.id;
+                    }).length} Stores in {selectedCompany.name}
                   </div>
                   <div className="space-y-1">
                     {stores
-                      .filter(s => s.location_group_id === selectedGroup.id)
+                      .filter(s => {
+                        const storeGroup = groups.find(g => g.id === s.location_group_id);
+                        return storeGroup && storeGroup.company_id === selectedCompany.id;
+                      })
                       .map((store) => (
                         <button
                           key={store.id}
