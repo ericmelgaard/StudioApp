@@ -97,14 +97,14 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
       const [sourcesRes, templatesRes, orgSettingsRes] = await Promise.all([
         supabase.from('integration_sources').select('*').order('name'),
         supabase.from('product_attribute_templates').select('*').order('name'),
-        supabase.from('organization_product_settings').select('default_template_id').limit(1).maybeSingle()
+        supabase.from('organization_settings').select('default_product_attribute_template_id').limit(1).maybeSingle()
       ]);
 
       if (sourcesRes.data) setSources(sourcesRes.data);
       if (templatesRes.data) setTemplates(templatesRes.data);
 
-      if (orgSettingsRes.data?.default_template_id) {
-        setSelectedTemplate(orgSettingsRes.data.default_template_id);
+      if (orgSettingsRes.data?.default_product_attribute_template_id) {
+        setSelectedTemplate(orgSettingsRes.data.default_product_attribute_template_id);
       } else if (templatesRes.data && templatesRes.data.length > 0) {
         setSelectedTemplate(templatesRes.data[0].id);
       }

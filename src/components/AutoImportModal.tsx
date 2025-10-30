@@ -78,14 +78,14 @@ export default function AutoImportModal({
       const [sourceRes, templatesRes, orgSettingsRes] = await Promise.all([
         supabase.from('integration_sources').select('*').eq('id', sourceId).maybeSingle(),
         supabase.from('product_attribute_templates').select('id, name').order('name'),
-        supabase.from('organization_product_settings').select('default_template_id').limit(1).maybeSingle()
+        supabase.from('organization_settings').select('default_product_attribute_template_id').limit(1).maybeSingle()
       ]);
 
       if (sourceRes.data) setSource(sourceRes.data);
       if (templatesRes.data) setTemplates(templatesRes.data);
 
-      if (orgSettingsRes.data?.default_template_id) {
-        setSelectedTemplate(orgSettingsRes.data.default_template_id);
+      if (orgSettingsRes.data?.default_product_attribute_template_id) {
+        setSelectedTemplate(orgSettingsRes.data.default_product_attribute_template_id);
       } else if (templatesRes.data && templatesRes.data.length > 0) {
         setSelectedTemplate(templatesRes.data[0].id);
       }
