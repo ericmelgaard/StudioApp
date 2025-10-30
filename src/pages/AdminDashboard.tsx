@@ -11,27 +11,27 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-interface Brand {
-  id: string;
+interface Concept {
+  id: number;
   name: string;
-  code: string;
 }
 
 interface Company {
-  id: string;
+  id: number;
   name: string;
-  code: string;
+  concept_id: number;
 }
 
-interface Site {
-  id: string;
-  company_id: string;
-  brand_id: string;
+interface LocationGroup {
+  id: number;
   name: string;
-  code: string;
-  address: string | null;
-  city: string | null;
-  state: string | null;
+  company_id: number;
+}
+
+interface Store {
+  id: number;
+  name: string;
+  location_group_id: number;
 }
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
@@ -39,43 +39,51 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products'>('dashboard');
 
-  const [brands, setBrands] = useState<Brand[]>([]);
+  const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
+  const [groups, setGroups] = useState<LocationGroup[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
 
-  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
+  const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<LocationGroup | null>(null);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const { data: brandsData } = await supabase.from('brands').select('*').order('name');
+    const { data: conceptsData } = await supabase.from('concepts').select('*').order('name');
     const { data: companiesData } = await supabase.from('companies').select('*').order('name');
-    const { data: sitesData } = await supabase.from('sites').select('*').order('name');
+    const { data: groupsData } = await supabase.from('location_groups').select('*').order('name');
+    const { data: storesData } = await supabase.from('stores').select('*').order('name');
 
-    if (brandsData) setBrands(brandsData);
+    if (conceptsData) setConcepts(conceptsData);
     if (companiesData) setCompanies(companiesData);
-    if (sitesData) setSites(sitesData);
+    if (groupsData) setGroups(groupsData);
+    if (storesData) setStores(storesData);
 
-    if (brandsData && brandsData.length > 0) {
-      setSelectedBrand(brandsData[0]);
+    if (conceptsData && conceptsData.length > 0) {
+      setSelectedConcept(conceptsData[0]);
     }
   };
 
 
-  const filteredCompanies = companies.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.code.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConcepts = concepts.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredSites = sites.filter(s =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.state?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCompanies = companies.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredGroups = groups.filter(g =>
+    g.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredStores = stores.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -125,7 +133,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
                 <div className="flex-1 text-left">
                   <div className="text-xs text-slate-500 uppercase tracking-wide">Context</div>
-                  <div className="font-medium text-slate-900">{selectedBrand?.name || 'Select Concept'}</div>
+                  <div className="font-medium text-slate-900">{selectedConcept?.name || 'Select Concept'}</div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
               </button>
@@ -139,11 +147,20 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 </div>
               )}
 
-              {selectedSite && (
+              {selectedGroup && (
+                <div className="pl-3 border-l-2 border-slate-200">
+                  <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Group</div>
+                  <div className="text-sm font-medium text-slate-700">
+                    {selectedGroup.name}
+                  </div>
+                </div>
+              )}
+
+              {selectedStore && (
                 <div className="pl-3 border-l-2 border-slate-200">
                   <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Store</div>
                   <div className="text-sm font-medium text-slate-700">
-                    {selectedSite.name}
+                    {selectedStore.name}
                   </div>
                 </div>
               )}
@@ -255,7 +272,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
               <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-blue-800">
-                  <strong>Data loaded:</strong> {brands.length} brands, {companies.length} companies, {sites.length} sites
+                  <strong>Data loaded:</strong> {concepts.length} concepts, {companies.length} companies, {groups.length} groups, {stores.length} stores
                 </p>
               </div>
             </div>
@@ -292,81 +309,108 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             </div>
 
             <div className="overflow-y-auto h-[calc(100vh-180px)]">
-              {/* Brands */}
+              {/* Concepts */}
               <div className="p-4">
                 <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                  {brands.length} Concepts
+                  {filteredConcepts.length} Concepts
                 </div>
                 <div className="space-y-1">
-                  {brands.map((brand) => (
+                  {filteredConcepts.map((concept) => (
                     <button
-                      key={brand.id}
+                      key={concept.id}
                       onClick={() => {
-                        setSelectedBrand(brand);
+                        setSelectedConcept(concept);
                         setSelectedCompany(null);
-                        setSelectedSite(null);
+                        setSelectedGroup(null);
+                        setSelectedStore(null);
                         setShowLocationSelector(false);
                       }}
                       className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
-                        selectedBrand?.id === brand.id ? 'bg-slate-600' : ''
+                        selectedConcept?.id === concept.id ? 'bg-slate-600' : ''
                       }`}
                     >
-                      {brand.name}
+                      {concept.name}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Companies */}
-              <div className="p-4 border-t border-slate-600">
-                <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                  {filteredCompanies.length} Companies
+              {selectedConcept && (
+                <div className="p-4 border-t border-slate-600">
+                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
+                    {companies.filter(c => c.concept_id === selectedConcept.id).length} Companies
+                  </div>
+                  <div className="space-y-1">
+                    {companies
+                      .filter(c => c.concept_id === selectedConcept.id)
+                      .map((company) => (
+                        <button
+                          key={company.id}
+                          onClick={() => {
+                            setSelectedCompany(company);
+                            setSelectedGroup(null);
+                            setSelectedStore(null);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
+                            selectedCompany?.id === company.id ? 'bg-slate-600' : ''
+                          }`}
+                        >
+                          <div>{company.name}</div>
+                        </button>
+                      ))}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {filteredCompanies.slice(0, 10).map((company) => (
-                    <button
-                      key={company.id}
-                      onClick={() => {
-                        setSelectedCompany(company);
-                        setSelectedSite(null);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
-                        selectedCompany?.id === company.id ? 'bg-slate-600' : ''
-                      }`}
-                    >
-                      <div>{company.name}</div>
-                      <div className="text-xs text-slate-400">({company.code})</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
-              {/* Sites */}
+              {/* Groups */}
               {selectedCompany && (
                 <div className="p-4 border-t border-slate-600">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    Stores
+                    {groups.filter(g => g.company_id === selectedCompany.id).length} Groups
                   </div>
                   <div className="space-y-1">
-                    {sites
-                      .filter(s => s.company_id === selectedCompany.id)
-                      .map((site) => (
+                    {groups
+                      .filter(g => g.company_id === selectedCompany.id)
+                      .map((group) => (
                         <button
-                          key={site.id}
+                          key={group.id}
                           onClick={() => {
-                            setSelectedSite(site);
+                            setSelectedGroup(group);
+                            setSelectedStore(null);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
+                            selectedGroup?.id === group.id ? 'bg-slate-600' : ''
+                          }`}
+                        >
+                          <div>{group.name}</div>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Stores */}
+              {selectedGroup && (
+                <div className="p-4 border-t border-slate-600">
+                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
+                    {stores.filter(s => s.location_group_id === selectedGroup.id).length} Stores
+                  </div>
+                  <div className="space-y-1">
+                    {stores
+                      .filter(s => s.location_group_id === selectedGroup.id)
+                      .map((store) => (
+                        <button
+                          key={store.id}
+                          onClick={() => {
+                            setSelectedStore(store);
                             setShowLocationSelector(false);
                           }}
                           className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
-                            selectedSite?.id === site.id ? 'bg-slate-600' : ''
+                            selectedStore?.id === store.id ? 'bg-slate-600' : ''
                           }`}
                         >
-                          <div>{site.name}</div>
-                          {site.city && site.state && (
-                            <div className="text-xs text-slate-400">
-                              {site.city}, {site.state}
-                            </div>
-                          )}
+                          <div>{store.name}</div>
                         </button>
                       ))}
                   </div>
