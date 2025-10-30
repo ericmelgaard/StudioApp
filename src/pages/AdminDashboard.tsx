@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import SignageManagement from './SignageManagement';
 import ShelfLabelManagement from './ShelfLabelManagement';
 import ProductManagement from './ProductManagement';
+import IntegrationCatalog from './IntegrationCatalog';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -38,7 +39,7 @@ interface Store {
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'integration'>('dashboard');
 
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -273,6 +274,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             </button>
           </div>
 
+          {/* Integration Section */}
+          <div className="mb-6">
+            <div className="px-4 mb-2">
+              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Integration</div>
+            </div>
+            <button
+              onClick={() => setCurrentView('integration')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'integration' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <Layers className="w-5 h-5" />
+              <span className="text-sm font-medium">Catalog</span>
+            </button>
+          </div>
+
           {/* System Section */}
           <div className="mb-6">
             <div className="px-4 mb-2">
@@ -295,6 +312,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'integration' && <IntegrationCatalog />}
 
         {currentView === 'dashboard' && (
           <div className="max-w-7xl mx-auto">
