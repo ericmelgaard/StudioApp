@@ -26,6 +26,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
   const portion = product.attributes?.portion;
   const mealPeriods = product.attributes?.meal_periods;
   const mealStations = product.attributes?.meal_stations;
+  const sizes = product.attributes?.sizes;
 
   return (
     <div
@@ -133,6 +134,24 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
           {portion && (
             <div className="text-xs text-slate-600">
               <span className="font-medium">Portion:</span> {portion}
+            </div>
+          )}
+
+          {Array.isArray(sizes) && sizes.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {sizes.slice(0, 3).map((size: any, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700"
+                >
+                  {size.label} {size.price && `$${size.price}`}
+                </span>
+              ))}
+              {sizes.length > 3 && (
+                <span className="text-xs text-slate-500">
+                  +{sizes.length - 3}
+                </span>
+              )}
             </div>
           )}
         </div>
