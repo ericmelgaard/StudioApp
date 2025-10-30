@@ -287,7 +287,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           <div className="bg-slate-700 text-white w-96 h-full shadow-xl">
             <div className="p-4 border-b border-slate-600">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Change Level</h3>
+                <h3 className="font-semibold">Select Location</h3>
                 <button
                   onClick={() => setShowLocationSelector(false)}
                   className="p-1 hover:bg-slate-600 rounded transition-colors"
@@ -295,6 +295,60 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Breadcrumb Navigation */}
+              {(selectedConcept || selectedCompany || selectedGroup) && (
+                <div className="mb-4 p-2 bg-slate-600 rounded text-xs space-y-1">
+                  {selectedConcept && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">Concept:</span>
+                      <span className="font-medium">{selectedConcept.name}</span>
+                      <button
+                        onClick={() => {
+                          setSelectedConcept(null);
+                          setSelectedCompany(null);
+                          setSelectedGroup(null);
+                          setSelectedStore(null);
+                        }}
+                        className="ml-auto text-slate-400 hover:text-white"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  {selectedCompany && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">Company:</span>
+                      <span className="font-medium">{selectedCompany.name}</span>
+                      <button
+                        onClick={() => {
+                          setSelectedCompany(null);
+                          setSelectedGroup(null);
+                          setSelectedStore(null);
+                        }}
+                        className="ml-auto text-slate-400 hover:text-white"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  {selectedGroup && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">Group:</span>
+                      <span className="font-medium">{selectedGroup.name}</span>
+                      <button
+                        onClick={() => {
+                          setSelectedGroup(null);
+                          setSelectedStore(null);
+                        }}
+                        className="ml-auto text-slate-400 hover:text-white"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -308,93 +362,100 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               </div>
             </div>
 
-            <div className="overflow-y-auto h-[calc(100vh-180px)]">
+            <div className="overflow-y-auto h-[calc(100vh-240px)]">
               {/* Concepts */}
-              <div className="p-4">
-                <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                  {filteredConcepts.length} Concepts
+              {!selectedConcept && (
+                <div className="p-4">
+                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
+                    {filteredConcepts.length} Concepts
+                  </div>
+                  <div className="space-y-1">
+                    {filteredConcepts.map((concept) => {
+                      const conceptCompanies = companies.filter(c => c.concept_id === concept.id);
+                      return (
+                        <button
+                          key={concept.id}
+                          onClick={() => {
+                            setSelectedConcept(concept);
+                            setSelectedCompany(null);
+                            setSelectedGroup(null);
+                            setSelectedStore(null);
+                          }}
+                          className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
+                        >
+                          <span>{concept.name}</span>
+                          <span className="text-xs text-slate-400">{conceptCompanies.length} companies</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {filteredConcepts.map((concept) => (
-                    <button
-                      key={concept.id}
-                      onClick={() => {
-                        setSelectedConcept(concept);
-                        setSelectedCompany(null);
-                        setSelectedGroup(null);
-                        setSelectedStore(null);
-                        setShowLocationSelector(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
-                        selectedConcept?.id === concept.id ? 'bg-slate-600' : ''
-                      }`}
-                    >
-                      {concept.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* Companies */}
-              {selectedConcept && (
-                <div className="p-4 border-t border-slate-600">
+              {selectedConcept && !selectedCompany && (
+                <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    {companies.filter(c => c.concept_id === selectedConcept.id).length} Companies
+                    {companies.filter(c => c.concept_id === selectedConcept.id).length} Companies in {selectedConcept.name}
                   </div>
                   <div className="space-y-1">
                     {companies
                       .filter(c => c.concept_id === selectedConcept.id)
-                      .map((company) => (
-                        <button
-                          key={company.id}
-                          onClick={() => {
-                            setSelectedCompany(company);
-                            setSelectedGroup(null);
-                            setSelectedStore(null);
-                          }}
-                          className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
-                            selectedCompany?.id === company.id ? 'bg-slate-600' : ''
-                          }`}
-                        >
-                          <div>{company.name}</div>
-                        </button>
-                      ))}
+                      .map((company) => {
+                        const companyGroups = groups.filter(g => g.company_id === company.id);
+                        return (
+                          <button
+                            key={company.id}
+                            onClick={() => {
+                              setSelectedCompany(company);
+                              setSelectedGroup(null);
+                              setSelectedStore(null);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
+                          >
+                            <span>{company.name}</span>
+                            <span className="text-xs text-slate-400">{companyGroups.length} groups</span>
+                          </button>
+                        );
+                      })}
                   </div>
                 </div>
               )}
 
               {/* Groups */}
-              {selectedCompany && (
-                <div className="p-4 border-t border-slate-600">
+              {selectedCompany && !selectedGroup && (
+                <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    {groups.filter(g => g.company_id === selectedCompany.id).length} Groups
+                    {groups.filter(g => g.company_id === selectedCompany.id).length} Groups in {selectedCompany.name}
                   </div>
                   <div className="space-y-1">
                     {groups
                       .filter(g => g.company_id === selectedCompany.id)
-                      .map((group) => (
-                        <button
-                          key={group.id}
-                          onClick={() => {
-                            setSelectedGroup(group);
-                            setSelectedStore(null);
-                          }}
-                          className={`w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors ${
-                            selectedGroup?.id === group.id ? 'bg-slate-600' : ''
-                          }`}
-                        >
-                          <div>{group.name}</div>
-                        </button>
-                      ))}
+                      .map((group) => {
+                        const groupStores = stores.filter(s => s.location_group_id === group.id);
+                        return (
+                          <button
+                            key={group.id}
+                            onClick={() => {
+                              setSelectedGroup(group);
+                              setSelectedStore(null);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
+                          >
+                            <span>{group.name}</span>
+                            <span className="text-xs text-slate-400">{groupStores.length} stores</span>
+                          </button>
+                        );
+                      })}
                   </div>
                 </div>
               )}
 
               {/* Stores */}
               {selectedGroup && (
-                <div className="p-4 border-t border-slate-600">
+                <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    {stores.filter(s => s.location_group_id === selectedGroup.id).length} Stores
+                    {stores.filter(s => s.location_group_id === selectedGroup.id).length} Stores in {selectedGroup.name}
                   </div>
                   <div className="space-y-1">
                     {stores
