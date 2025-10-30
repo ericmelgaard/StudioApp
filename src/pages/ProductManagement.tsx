@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List, Plus } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List, Plus, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { mockProducts } from '../data/mockProducts';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
+import AttributeTemplateManager from '../components/AttributeTemplateManager';
 
 interface Product {
   id: string;
@@ -33,6 +34,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -166,6 +168,20 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
           {/* Panel Content */}
           <div className="flex-1 overflow-y-auto p-6">
             <div className="space-y-4">
+              <button
+                onClick={() => {
+                  setShowTemplateManager(true);
+                  setSidePanelOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+              >
+                <Settings className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-semibold">Manage Templates</div>
+                  <div className="text-xs text-purple-100">Set default attribute template</div>
+                </div>
+              </button>
+
               <button
                 onClick={() => {
                   loadMockData();
@@ -401,6 +417,11 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={loadProducts}
+      />
+
+      <AttributeTemplateManager
+        isOpen={showTemplateManager}
+        onClose={() => setShowTemplateManager(false)}
       />
     </div>
   );

@@ -70,13 +70,18 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
   }, [searchIntegration, showIntegrationSearch]);
 
   async function loadTemplates() {
-    const [attrTemplates, dispTemplates] = await Promise.all([
+    const [attrTemplates, dispTemplates, orgSettings] = await Promise.all([
       supabase.from('product_attribute_templates').select('*').order('name'),
-      supabase.from('product_templates').select('*').order('name')
+      supabase.from('product_templates').select('*').order('name'),
+      supabase.from('organization_settings').select('*').limit(1).maybeSingle()
     ]);
 
     if (attrTemplates.data) setAttributeTemplates(attrTemplates.data);
     if (dispTemplates.data) setDisplayTemplates(dispTemplates.data);
+
+    if (orgSettings.data?.default_product_attribute_template_id) {
+      setSelectedAttributeTemplate(orgSettings.data.default_product_attribute_template_id);
+    }
   }
 
   async function searchIntegrationProducts() {
