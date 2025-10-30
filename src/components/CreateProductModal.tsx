@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Package, Layout, Database, Sparkles } from 'lucide-react';
+import { X, Package, Layout, Database, Sparkles, Plus, Link, Unlink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ImageUploadField from './ImageUploadField';
+import RichTextEditor from './RichTextEditor';
+import LinkProductModal, { LinkData } from './LinkProductModal';
 
 interface AttributeTemplate {
   id: string;
@@ -18,6 +21,183 @@ interface AttributeField {
   type: string;
   required: boolean;
   label: string;
+  minHeight?: string;
+  resolution?: { width: number; height: number };
+  description?: string;
+}
+
+interface Size {
+  id: string;
+  label: string;
+  price: number;
+  is_active: boolean;
+  is_out_of_stock: boolean;
+  link?: LinkData;
+}
+
+interface SizesEditorProps {
+  sizes: Size[];
+  onChange: (sizes: Size[]) => void;
+}
+
+function SizesEditor({ sizes, onChange }: SizesEditorProps) {
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkingSizeId, setLinkingSizeId] = useState<string | null>(null);
+  const [currentLink, setCurrentLink] = useState<LinkData | null>(null);
+
+  const addSize = () => {
+    const newSize: Size = {
+      id: crypto.randomUUID(),
+      label: '',
+      price: 0,
+      is_active: true,
+      is_out_of_stock: false,
+    };
+    onChange([...sizes, newSize]);
+  };
+
+  const updateSize = (id: string, updates: Partial<Size>) => {
+    onChange(sizes.map(size => size.id === id ? { ...size, ...updates } : size));
+  };
+
+  const removeSize = (id: string) => {
+    onChange(sizes.filter(size => size.id !== id));
+  };
+
+  const openLinkModal = (sizeId: string) => {
+    const size = sizes.find(s => s.id === sizeId);
+    setLinkingSizeId(sizeId);
+    setCurrentLink(size?.link || null);
+    setShowLinkModal(true);
+  };
+
+  const handleLink = (linkData: LinkData) => {
+    if (linkingSizeId) {
+      updateSize(linkingSizeId, { link: linkData });
+    }
+  };
+
+  const handleUnlink = (sizeId: string) => {
+    updateSize(sizeId, { link: undefined });
+  };
+
+  return (
+    <div className="space-y-3">
+      {sizes.map((size) => (
+        <div key={size.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="flex-1 grid grid-cols-2 gap-3">
+            <input
+              type="text"
+              value={size.label}
+              onChange={(e) => updateSize(size.id, { label: e.target.value })}
+              placeholder="Size label (e.g., Small)"
+              className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              disabled={!!size.link}
+            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+              <input
+                type="number"
+                step="0.01"
+                value={size.price}
+                onChange={(e) => updateSize(size.id, { price: parseFloat(e.target.value) || 0 })}
+                disabled={!!size.link}
+                placeholder="0.00"
+                className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+              />
+              {size.link && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">Linked</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs text-slate-500">Active</span>
+              <button
+                type="button"
+                onClick={() => updateSize(size.id, { is_active: !size.is_active })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  size.is_active ? 'bg-blue-600' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
+                    size.is_active ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs text-slate-500">Out of Stock</span>
+              <button
+                type="button"
+                onClick={() => updateSize(size.id, { is_out_of_stock: !size.is_out_of_stock })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  size.is_out_of_stock ? 'bg-amber-500' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
+                    size.is_out_of_stock ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {size.link ? (
+              <button
+                type="button"
+                onClick={() => handleUnlink(size.id)}
+                className="p-2 rounded-lg transition-colors bg-green-100 text-green-700 hover:bg-green-200"
+                title={`Linked to ${size.link.name || size.link.id}`}
+              >
+                <Unlink className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openLinkModal(size.id)}
+                className="p-2 rounded-lg transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
+                title="Link to integration product"
+              >
+                <Link className="w-4 h-4" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => removeSize(size.id)}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addSize}
+        className="w-full py-2.5 px-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+      >
+        <Plus className="w-4 h-4" />
+        Add Size
+      </button>
+
+      <LinkProductModal
+        isOpen={showLinkModal}
+        onClose={() => {
+          setShowLinkModal(false);
+          setLinkingSizeId(null);
+          setCurrentLink(null);
+        }}
+        onLink={handleLink}
+        currentLink={currentLink}
+      />
+    </div>
+  );
 }
 
 interface DisplayTemplate {
@@ -147,8 +327,36 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
             required={field.required}
             value={value}
             onChange={(e) => handleAttributeChange(field.name, e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder={field.label}
+          />
+        );
+
+      case 'richtext':
+        return (
+          <RichTextEditor
+            value={value}
+            onChange={(val) => handleAttributeChange(field.name, val)}
+            placeholder={field.label}
+            minHeight={field.minHeight}
+          />
+        );
+
+      case 'image':
+        return (
+          <ImageUploadField
+            value={value}
+            onChange={(url) => handleAttributeChange(field.name, url)}
+            label={field.label}
+            resolution={field.resolution}
+          />
+        );
+
+      case 'sizes':
+        return (
+          <SizesEditor
+            sizes={Array.isArray(value) ? value : []}
+            onChange={(sizes) => handleAttributeChange(field.name, sizes)}
           />
         );
 
@@ -160,7 +368,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
             required={field.required}
             value={value}
             onChange={(e) => handleAttributeChange(field.name, parseFloat(e.target.value) || 0)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder={field.label}
           />
         );
@@ -172,7 +380,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
               type="checkbox"
               checked={value || false}
               onChange={(e) => handleAttributeChange(field.name, e.target.checked)}
-              className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-2 focus:ring-purple-500"
+              className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
             />
             <span className="text-sm text-slate-600">Enabled</span>
           </label>
@@ -185,7 +393,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
             required={field.required}
             value={typeof value === 'string' ? value : JSON.stringify(value)}
             onChange={(e) => handleAttributeChange(field.name, e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder={field.label}
           />
         );
@@ -301,9 +509,20 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
               value={selectedAttributeTemplate}
               onChange={(e) => {
                 setSelectedAttributeTemplate(e.target.value);
-                setAttributes({});
+                const template = attributeTemplates.find(t => t.id === e.target.value);
+                const defaultAttrs: Record<string, any> = {};
+
+                if (template) {
+                  [...template.attribute_schema.core_attributes, ...template.attribute_schema.extended_attributes].forEach(field => {
+                    if (field.type === 'sizes') {
+                      defaultAttrs[field.name] = [];
+                    }
+                  });
+                }
+
+                setAttributes(defaultAttrs);
               }}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select a template...</option>
               {attributeTemplates.map((template) => (
@@ -335,13 +554,16 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
 
               <div className="space-y-4">
                 <h3 className="font-semibold text-slate-900 border-b pb-2">Core Attributes</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   {selectedTemplate.attribute_schema.core_attributes
                     .filter(field => field.name !== 'name')
                     .map((field) => (
-                      <div key={field.name}>
+                      <div key={field.name} className={field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
                           {field.label} {field.required && '*'}
+                          {field.description && (
+                            <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                          )}
                         </label>
                         {renderAttributeField(field)}
                       </div>
@@ -352,11 +574,14 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
               {selectedTemplate.attribute_schema.extended_attributes.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="font-semibold text-slate-900 border-b pb-2">Extended Attributes</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     {selectedTemplate.attribute_schema.extended_attributes.map((field) => (
-                      <div key={field.name}>
+                      <div key={field.name} className={field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
                           {field.label} {field.required && '*'}
+                          {field.description && (
+                            <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                          )}
                         </label>
                         {renderAttributeField(field)}
                       </div>
@@ -402,7 +627,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
             <button
               type="submit"
               disabled={loading || !selectedAttributeTemplate}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Product'}
             </button>
