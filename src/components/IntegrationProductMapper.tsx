@@ -299,7 +299,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
           </button>
         </div>
 
-        <div className="flex-1 overflow-hidden flex flex-col p-6">
+        <div className="flex-1 flex flex-col p-6 overflow-y-auto">
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -383,7 +383,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
           )}
 
           {selectedSource && selectedType && selectedTemplate ? (
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-h-0">
               <div className="h-full grid grid-cols-2 gap-6">
                 <div className="flex flex-col">
                   <div className="mb-4">
