@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
+import RichTextEditor from './RichTextEditor';
 
 interface Product {
   id: string;
@@ -339,6 +340,22 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           targetWidth={meta.resolution.width}
           targetHeight={meta.resolution.height}
           label={meta.label || key}
+        />
+      );
+    }
+
+    if (meta?.type === 'richtext') {
+      return (
+        <RichTextEditor
+          value={actualValue || ''}
+          onChange={(newValue) => {
+            updateAttribute(key, newValue);
+            if (syncStatus && !isLocalOnly && !isOverridden) {
+              lockOverride(key);
+            }
+          }}
+          placeholder={`Enter ${meta.label || key}`}
+          minHeight={meta.minHeight || '120px'}
         />
       );
     }
