@@ -318,10 +318,14 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                       )}
                                     </>
                                   ) : (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                    <button
+                                      onClick={() => lockOverride(key)}
+                                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                      title="Click to lock current value and stop syncing"
+                                    >
                                       <Link className="w-3.5 h-3.5" />
                                       <span>Syncing</span>
-                                    </div>
+                                    </button>
                                   )}
                                 </div>
                               )}
