@@ -179,35 +179,41 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col min-h-[calc(100vh-4rem)]">
           {/* Current Selection */}
           <div className="p-4 border-b border-slate-200">
-            <div className="space-y-3">
+            <div className="space-y-2">
               <button
                 onClick={() => setShowLocationSelector(!showLocationSelector)}
-                className="w-full flex items-center gap-3 text-sm hover:bg-slate-100 p-3 rounded-lg transition-colors border border-slate-200 bg-white"
+                className="w-full flex items-center gap-3 text-sm hover:bg-slate-100 p-3 rounded-lg transition-all border border-slate-200 bg-white"
               >
                 <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
-                <div className="flex-1 text-left">
-                  <div className="text-xs text-slate-500 uppercase tracking-wide">Context</div>
-                  <div className="font-medium text-slate-900">{selectedConcept?.name || 'Select Concept'}</div>
+                <div className="flex-1 text-left min-w-0">
+                  <div className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">Location Context</div>
+                  <div className="font-medium text-slate-900 truncate">{selectedConcept?.name || 'All Concepts'}</div>
+                  {selectedCompany && (
+                    <div className="text-xs text-slate-600 truncate animate-in fade-in slide-in-from-top-1 duration-200">
+                      {selectedCompany.name}
+                    </div>
+                  )}
+                  {selectedStore && (
+                    <div className="text-xs text-slate-500 truncate animate-in fade-in slide-in-from-top-1 duration-200">
+                      {selectedStore.name}
+                    </div>
+                  )}
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
               </button>
 
-              {selectedCompany && (
-                <div className="pl-3 border-l-2 border-slate-200">
-                  <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Company</div>
-                  <div className="text-sm font-medium text-slate-700">
-                    {selectedCompany.name}
-                  </div>
-                </div>
-              )}
-
-              {selectedStore && (
-                <div className="pl-3 border-l-2 border-slate-200">
-                  <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Store</div>
-                  <div className="text-sm font-medium text-slate-700">
-                    {selectedStore.name}
-                  </div>
-                </div>
+              {(selectedConcept || selectedCompany || selectedStore) && (
+                <button
+                  onClick={() => {
+                    setSelectedConcept(null);
+                    setSelectedCompany(null);
+                    setSelectedStore(null);
+                  }}
+                  className="w-full text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 py-2 px-3 rounded transition-colors flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200"
+                >
+                  <X className="w-3 h-3" />
+                  Clear Selection
+                </button>
               )}
             </div>
           </div>
@@ -342,39 +348,38 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 </button>
               </div>
 
-              {/* Breadcrumb Navigation */}
+              {/* Navigation Breadcrumb */}
               {(selectedConcept || selectedCompany) && (
-                <div className="mb-4 p-2 bg-slate-600 rounded text-xs space-y-1">
+                <div className="mb-4 flex items-center gap-2 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
                   {selectedConcept && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Concept:</span>
-                      <span className="font-medium">{selectedConcept.name}</span>
+                    <>
                       <button
                         onClick={() => {
                           setSelectedConcept(null);
                           setSelectedCompany(null);
                           setSelectedStore(null);
                         }}
-                        className="ml-auto text-slate-400 hover:text-white"
+                        className="px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded transition-colors font-medium flex items-center gap-1.5 group"
                       >
-                        <X className="w-3 h-3" />
+                        <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+                        All Concepts
                       </button>
-                    </div>
-                  )}
-                  {selectedCompany && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Company:</span>
-                      <span className="font-medium">{selectedCompany.name}</span>
-                      <button
-                        onClick={() => {
-                          setSelectedCompany(null);
-                          setSelectedStore(null);
-                        }}
-                        className="ml-auto text-slate-400 hover:text-white"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
+                      {selectedCompany && (
+                        <>
+                          <ChevronRight className="w-3 h-3 text-slate-500" />
+                          <button
+                            onClick={() => {
+                              setSelectedCompany(null);
+                              setSelectedStore(null);
+                            }}
+                            className="px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded transition-colors font-medium flex items-center gap-1.5 group"
+                          >
+                            <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+                            {selectedConcept.name}
+                          </button>
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -502,10 +507,10 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               {/* Concepts */}
               {!searchQuery && !selectedConcept && (
                 <div className="p-4">
-                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
+                  <div className="text-xs text-slate-400 uppercase tracking-wide mb-3">
                     {concepts.length} Concepts
                   </div>
-                  <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-2">
                     {concepts.map((concept) => {
                       const conceptCompanies = companies.filter(c => c.concept_id === concept.id);
                       return (
@@ -516,10 +521,10 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                             setSelectedCompany(null);
                             setSelectedStore(null);
                           }}
-                          className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
+                          className="text-left px-3 py-2.5 rounded text-sm hover:bg-slate-600 transition-all border border-slate-600 hover:border-slate-500 group"
                         >
-                          <span>{concept.name}</span>
-                          <span className="text-xs text-slate-400">{conceptCompanies.length} companies</span>
+                          <div className="font-medium truncate mb-0.5">{concept.name}</div>
+                          <div className="text-xs text-slate-400 group-hover:text-slate-300">{conceptCompanies.length} companies</div>
                         </button>
                       );
                     })}
