@@ -304,9 +304,13 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                       </button>
 
                                       {isDropdownOpen && (
-                                        <div className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                                        <div
+                                          className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
                                           <button
-                                            onClick={() => {
+                                            onClick={(e) => {
+                                              e.stopPropagation();
                                               enableSync(key);
                                               setOpenDropdown(null);
                                             }}
