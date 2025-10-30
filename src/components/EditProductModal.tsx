@@ -3,6 +3,7 @@ import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus } from 'luc
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
+import LinkProductModal, { LinkData } from './LinkProductModal';
 
 interface Product {
   id: string;
@@ -33,7 +34,7 @@ interface Size {
   price: number;
   is_active: boolean;
   is_out_of_stock: boolean;
-  linked_integration_product_id?: string;
+  link?: LinkData;
 }
 
 interface SizesEditorProps {
@@ -42,6 +43,9 @@ interface SizesEditorProps {
 }
 
 function SizesEditor({ sizes, onChange }: SizesEditorProps) {
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkingSizeId, setLinkingSizeId] = useState<string | null>(null);
+  const [currentLink, setCurrentLink] = useState<LinkData | null>(null);
   const addSize = () => {
     const newSize: Size = {
       id: crypto.randomUUID(),
@@ -55,6 +59,23 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
 
   const updateSize = (id: string, updates: Partial<Size>) => {
     onChange(sizes.map(size => size.id === id ? { ...size, ...updates } : size));
+  };
+
+  const openLinkModal = (sizeId: string) => {
+    const size = sizes.find(s => s.id === sizeId);
+    setLinkingSizeId(sizeId);
+    setCurrentLink(size?.link || null);
+    setShowLinkModal(true);
+  };
+
+  const handleLink = (linkData: LinkData) => {
+    if (linkingSizeId) {
+      updateSize(linkingSizeId, { link: linkData });
+    }
+  };
+
+  const handleUnlink = (sizeId: string) => {
+    updateSize(sizeId, { link: undefined });
   };
 
   const removeSize = (id: string) => {
@@ -72,6 +93,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
               onChange={(e) => updateSize(size.id, { label: e.target.value })}
               placeholder="Size label (e.g., Small)"
               className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              disabled={!!size.link}
             />
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
@@ -80,12 +102,12 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
                 step="0.01"
                 value={size.price}
                 onChange={(e) => updateSize(size.id, { price: parseFloat(e.target.value) || 0 })}
-                disabled={!!size.linked_integration_product_id}
+                disabled={!!size.link}
                 placeholder="0.00"
                 className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
               />
-              {size.linked_integration_product_id && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">Synced</span>
+              {size.link && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">Linked</span>
               )}
             </div>
           </div>
@@ -123,19 +145,23 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
               </button>
             </div>
 
-            <button
-              onClick={() => {
-                alert('Integration linking will be implemented');
-              }}
-              className={`p-2 rounded-lg transition-colors ${
-                size.linked_integration_product_id
-                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}
-              title={size.linked_integration_product_id ? 'Linked to integration' : 'Link to integration product'}
-            >
-              <Link className="w-4 h-4" />
-            </button>
+            {size.link ? (
+              <button
+                onClick={() => handleUnlink(size.id)}
+                className="p-2 rounded-lg transition-colors bg-green-100 text-green-700 hover:bg-green-200"
+                title={`Linked to ${size.link.name || size.link.id}`}
+              >
+                <Unlink className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => openLinkModal(size.id)}
+                className="p-2 rounded-lg transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
+                title="Link to integration product"
+              >
+                <Link className="w-4 h-4" />
+              </button>
+            )}
 
             <button
               onClick={() => removeSize(size.id)}
@@ -154,6 +180,17 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
         <Plus className="w-4 h-4" />
         Add Size
       </button>
+
+      <LinkProductModal
+        isOpen={showLinkModal}
+        onClose={() => {
+          setShowLinkModal(false);
+          setLinkingSizeId(null);
+          setCurrentLink(null);
+        }}
+        onLink={handleLink}
+        currentLink={currentLink}
+      />
     </div>
   );
 }
