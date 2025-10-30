@@ -17,6 +17,8 @@ interface ProductTileProps {
 export default function ProductTile({ product, onClick }: ProductTileProps) {
   const [isHovered, setIsHovered] = useState(false);
 
+  // Use attributes.name if available, otherwise fall back to product.name
+  const displayName = product.attributes?.name || product.name;
   const imageUrl = product.attributes?.image_url;
   const description = product.attributes?.description;
   const price = product.attributes?.price;
@@ -36,7 +38,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
         <div className="relative h-48 overflow-hidden flex-shrink-0">
           <img
             src={imageUrl}
-            alt={product.name}
+            alt={displayName}
             className={`w-full h-full object-cover transition-opacity duration-300 ${
               isHovered ? 'opacity-0' : 'opacity-100'
             }`}
@@ -47,7 +49,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
             }`}
           >
             <h3 className="font-semibold text-white text-sm p-4 line-clamp-2 w-full">
-              {product.name}
+              {displayName}
             </h3>
           </div>
           <div
@@ -57,7 +59,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
           >
             <div className="space-y-2">
               <h3 className="font-semibold text-slate-900 text-sm line-clamp-2">
-                {product.name}
+                {displayName}
               </h3>
               <p className="text-xs text-slate-500">ID: {product.id.slice(0, 8)}</p>
               {description && (
@@ -82,7 +84,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
         {!imageUrl && (
           <>
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
-              {product.name}
+              {displayName}
             </h3>
             <p className="text-xs text-slate-500 mb-3">ID: {product.id.slice(0, 8)}</p>
           </>
