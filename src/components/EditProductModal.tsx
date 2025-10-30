@@ -332,8 +332,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             </div>
                             <input
                               type="text"
-                              value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue}
+                              value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
                               onChange={(e) => {
+                                e.stopPropagation();
                                 let newValue: any = e.target.value;
                                 try {
                                   newValue = JSON.parse(e.target.value);
@@ -345,6 +346,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   lockOverride(key);
                                 }
                               }}
+                              onFocus={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
                               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                               placeholder="Value"
                             />
