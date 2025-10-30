@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List, Plus, Settings, Link2 } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { mockProducts } from '../data/mockProducts';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
@@ -26,7 +25,6 @@ interface ProductManagementProps {
 export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMealPeriod, setSelectedMealPeriod] = useState<string>('');
   const [selectedMealStation, setSelectedMealStation] = useState<string>('');
@@ -79,47 +77,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
     setMealStations(Array.from(stations).sort());
   };
 
-  const loadMockData = async () => {
-    setSyncing(true);
-    try {
-      console.log('Loading mock products into database...');
-
-      // Clear existing products
-      const { error: deleteError } = await supabase
-        .from('products')
-        .delete()
-        .neq('mrn', '00000000-0000-0000-0000-000000000000');
-
-      if (deleteError) {
-        console.error('Error clearing products:', deleteError);
-        throw new Error(`Failed to clear products: ${deleteError.message}`);
-      }
-
-      // Insert mock products
-      const productsToInsert = mockProducts.map(item => ({
-        ...item,
-        last_synced_at: new Date().toISOString(),
-      }));
-
-      const { error: insertError } = await supabase
-        .from('products')
-        .insert(productsToInsert);
-
-      if (insertError) {
-        console.error('Error inserting mock products:', insertError);
-        throw new Error(`Failed to insert mock products: ${insertError.message}`);
-      }
-
-      console.log('Successfully loaded mock products!');
-      alert(`Successfully loaded ${productsToInsert.length} mock products`);
-      loadProducts();
-    } catch (error) {
-      console.error('Error loading mock products:', error);
-      alert(`Failed to load mock products: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
 
   const filteredProducts = products.filter(product => {
@@ -195,21 +152,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 <div className="text-left">
                   <div className="font-semibold">Manage Templates</div>
                   <div className="text-xs text-purple-100">Set default attribute template</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  loadMockData();
-                  setSidePanelOpen(false);
-                }}
-                disabled={syncing}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Database className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
-                <div className="text-left">
-                  <div className="font-semibold">{syncing ? 'Loading...' : 'Load Mock Data'}</div>
-                  <div className="text-xs text-slate-100">Load sample products</div>
                 </div>
               </button>
 
