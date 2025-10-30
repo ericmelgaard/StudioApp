@@ -233,8 +233,14 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   if (!isOpen || !product) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Edit Product</h2>
@@ -346,6 +352,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   lockOverride(key);
                                 }
                               }}
+                              onKeyDown={(e) => e.stopPropagation()}
                               onFocus={(e) => e.stopPropagation()}
                               onClick={(e) => e.stopPropagation()}
                               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
