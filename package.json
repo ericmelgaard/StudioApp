@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "import-locations": "node import-locations.js",
-    "import-integration-products": "node import-integration-products.js"
+    "import-integration-products": "node import-integration-products.js",
+    "generate-sync-history": "node generate-sync-history.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

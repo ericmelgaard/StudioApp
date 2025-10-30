@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Search, Package, Tag, Percent, DollarSign, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import IntegrationStatus from '../components/IntegrationStatus';
 
 type IntegrationType = 'products' | 'modifiers' | 'discounts';
 
@@ -132,6 +133,8 @@ export default function IntegrationCatalog() {
             </div>
           )}
         </div>
+
+        <IntegrationStatus />
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="border-b border-slate-200">
