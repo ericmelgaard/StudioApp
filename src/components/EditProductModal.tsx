@@ -45,6 +45,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      // Don't close if clicking inside a dropdown
+      if (target.closest('.dropdown-menu')) {
+        return;
+      }
       setOpenDropdown(null);
     }
     if (openDropdown) {
@@ -305,7 +310,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
                                       {isDropdownOpen && (
                                         <div
-                                          className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden"
+                                          className="dropdown-menu absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           <button
