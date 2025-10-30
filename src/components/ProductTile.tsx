@@ -11,9 +11,10 @@ interface Product {
 
 interface ProductTileProps {
   product: Product;
+  onClick?: () => void;
 }
 
-export default function ProductTile({ product }: ProductTileProps) {
+export default function ProductTile({ product, onClick }: ProductTileProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const imageUrl = product.attributes?.image_url;
@@ -29,6 +30,7 @@ export default function ProductTile({ product }: ProductTileProps) {
       className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
     >
       {imageUrl && (
         <div className="relative h-48 overflow-hidden flex-shrink-0">

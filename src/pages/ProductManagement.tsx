@@ -3,6 +3,7 @@ import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, Layou
 import { supabase } from '../lib/supabase';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
+import EditProductModal from '../components/EditProductModal';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
 import IntegrationProductMapper from '../components/IntegrationProductMapper';
 
@@ -33,6 +34,8 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showMapper, setShowMapper] = useState(false);
 
@@ -355,7 +358,14 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProducts.map((product) => (
-                  <ProductTile key={product.id} product={product} />
+                  <ProductTile
+                    key={product.id}
+                    product={product}
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setShowEditModal(true);
+                    }}
+                  />
                 ))}
               </div>
             )}
@@ -374,6 +384,16 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
       <CreateProductModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
+        onSuccess={loadProducts}
+      />
+
+      <EditProductModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
         onSuccess={loadProducts}
       />
 
