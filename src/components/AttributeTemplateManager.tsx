@@ -41,7 +41,8 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     name: '',
     label: '',
     type: 'text',
-    required: false
+    required: false,
+    attributeGroup: 'extended' as 'core' | 'extended'
   });
 
   useEffect(() => {
@@ -101,17 +102,21 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
 
     setLoading(true);
     try {
+      const attributeToAdd = {
+        name: newAttribute.name,
+        label: newAttribute.label,
+        type: newAttribute.type,
+        required: newAttribute.required
+      };
+
       const updatedSchema = {
         ...selectedTemplate.attribute_schema,
-        extended_attributes: [
-          ...selectedTemplate.attribute_schema.extended_attributes,
-          {
-            name: newAttribute.name,
-            label: newAttribute.label,
-            type: newAttribute.type,
-            required: newAttribute.required
-          }
-        ]
+        core_attributes: newAttribute.attributeGroup === 'core'
+          ? [...selectedTemplate.attribute_schema.core_attributes, attributeToAdd]
+          : selectedTemplate.attribute_schema.core_attributes,
+        extended_attributes: newAttribute.attributeGroup === 'extended'
+          ? [...selectedTemplate.attribute_schema.extended_attributes, attributeToAdd]
+          : selectedTemplate.attribute_schema.extended_attributes
       };
 
       await supabase
@@ -119,7 +124,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
         .update({ attribute_schema: updatedSchema })
         .eq('id', selectedTemplate.id);
 
-      setNewAttribute({ name: '', label: '', type: 'text', required: false });
+      setNewAttribute({ name: '', label: '', type: 'text', required: false, attributeGroup: 'extended' });
       setShowAddAttribute(false);
       await loadData();
       alert('Attribute added successfully');
@@ -264,6 +269,30 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
 
                       {showAddAttribute && (
                         <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                          <div className="flex gap-2 mb-2">
+                            <button
+                              type="button"
+                              onClick={() => setNewAttribute({ ...newAttribute, attributeGroup: 'core' })}
+                              className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-colors ${
+                                newAttribute.attributeGroup === 'core'
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-white text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              Core Attribute
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setNewAttribute({ ...newAttribute, attributeGroup: 'extended' })}
+                              className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-colors ${
+                                newAttribute.attributeGroup === 'extended'
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-white text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              Extended Attribute
+                            </button>
+                          </div>
                           <input
                             type="text"
                             placeholder="Field name (e.g., extra_description)"
@@ -285,8 +314,10 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                               className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             >
                               <option value="text">Text</option>
+                              <option value="richtext">Rich Text</option>
                               <option value="number">Number</option>
                               <option value="boolean">Boolean</option>
+                              <option value="image">Image</option>
                               <option value="array">Array</option>
                               <option value="object">Object</option>
                             </select>
@@ -311,7 +342,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                             <button
                               onClick={() => {
                                 setShowAddAttribute(false);
-                                setNewAttribute({ name: '', label: '', type: 'text', required: false });
+                                setNewAttribute({ name: '', label: '', type: 'text', required: false, attributeGroup: 'extended' });
                               }}
                               className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
                             >
