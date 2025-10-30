@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Search, Package, Tag, Percent, DollarSign, Clock } from 'lucide-react';
+import { Search, Package, Tag, Percent, DollarSign, Clock, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IntegrationStatus from '../components/IntegrationStatus';
+import AutoImportModal from '../components/AutoImportModal';
 
 type IntegrationType = 'products' | 'modifiers' | 'discounts';
 
@@ -48,6 +49,7 @@ export default function IntegrationCatalog() {
   const [modifiers, setModifiers] = useState<IntegrationModifier[]>([]);
   const [discounts, setDiscounts] = useState<IntegrationDiscount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAutoImport, setShowAutoImport] = useState(false);
 
   useEffect(() => {
     loadSource();
@@ -202,15 +204,25 @@ export default function IntegrationCatalog() {
           </div>
 
           <div className="p-6">
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder={`Search ${activeTab}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div className="flex items-center gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder={`Search ${activeTab}...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <button
+                onClick={() => setShowAutoImport(true)}
+                disabled={!source}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 whitespace-nowrap"
+              >
+                <Download className="w-4 h-4" />
+                Auto-Import
+              </button>
             </div>
 
             {loading ? (
@@ -346,6 +358,19 @@ export default function IntegrationCatalog() {
           </div>
         </div>
       </div>
+
+      {source && (
+        <AutoImportModal
+          isOpen={showAutoImport}
+          onClose={() => setShowAutoImport(false)}
+          onSuccess={() => {
+            setShowAutoImport(false);
+            loadData();
+          }}
+          sourceId={source.id}
+          integrationType={activeTab}
+        />
+      )}
     </div>
   );
 }
