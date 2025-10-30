@@ -249,17 +249,19 @@ export default function AutoImportModal({
 
         return {
           name: intProduct.data?.displayAttribute?.itemTitle || intProduct.name,
-          external_id: intProduct.external_id,
-          source_id: sourceId,
           integration_product_id: intProduct.id,
-          template_id: selectedTemplate,
-          attributes: attributes,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          attribute_template_id: selectedTemplate,
+          attributes: attributes
         };
       });
 
-      await supabase.from('products').insert(productsToImport);
+      const { error } = await supabase.from('products').insert(productsToImport);
+
+      if (error) {
+        console.error('Error inserting products:', error);
+        alert(`Failed to import products: ${error.message}`);
+        return;
+      }
 
       alert(`Successfully imported ${productsToImport.length} products`);
       onSuccess();
