@@ -34,6 +34,20 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [integrationData, setIntegrationData] = useState<any>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({});
+  const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
+
+  const commonLocales = [
+    { code: 'fr-FR', name: 'French (France)' },
+    { code: 'es-ES', name: 'Spanish (Spain)' },
+    { code: 'de-DE', name: 'German (Germany)' },
+    { code: 'it-IT', name: 'Italian (Italy)' },
+    { code: 'pt-BR', name: 'Portuguese (Brazil)' },
+    { code: 'en-GB', name: 'English (UK)' },
+    { code: 'ja-JP', name: 'Japanese (Japan)' },
+    { code: 'zh-CN', name: 'Chinese (Simplified)' },
+    { code: 'ko-KR', name: 'Korean (Korea)' },
+    { code: 'nl-NL', name: 'Dutch (Netherlands)' },
+  ];
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -435,26 +449,46 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               <label className="block text-sm font-medium text-slate-700">
                 Translations
               </label>
-              <button
-                onClick={() => {
-                  const locale = prompt('Enter locale code (e.g., fr-FR, es-ES, de-DE, en-GB):');
-                  if (locale && locale.trim()) {
-                    const attributeKey = prompt('Enter attribute name to translate:');
-                    if (attributeKey && attributeKey.trim()) {
-                      setTranslations(prev => ({
-                        ...prev,
-                        [locale.trim()]: {
-                          ...(prev[locale.trim()] || {}),
-                          [attributeKey.trim()]: ''
-                        }
-                      }));
-                    }
-                  }
-                }}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                + Add Translation
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowLocaleDropdown(!showLocaleDropdown)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  + Add Translation
+                </button>
+                {showLocaleDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowLocaleDropdown(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-80 overflow-y-auto">
+                      {commonLocales.map((locale) => (
+                        <button
+                          key={locale.code}
+                          onClick={() => {
+                            const attributeKey = prompt('Enter attribute name to translate:');
+                            if (attributeKey && attributeKey.trim()) {
+                              setTranslations(prev => ({
+                                ...prev,
+                                [locale.code]: {
+                                  ...(prev[locale.code] || {}),
+                                  [attributeKey.trim()]: ''
+                                }
+                              }));
+                            }
+                            setShowLocaleDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0"
+                        >
+                          <div className="text-sm font-medium text-slate-900">{locale.name}</div>
+                          <div className="text-xs text-slate-500 font-mono">{locale.code}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">
