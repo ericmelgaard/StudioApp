@@ -341,12 +341,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
                               onChange={(e) => {
                                 e.stopPropagation();
-                                let newValue: any = e.target.value;
-                                try {
-                                  newValue = JSON.parse(e.target.value);
-                                } catch {
-                                  // Keep as string if not valid JSON
-                                }
+                                const newValue = e.target.value;
                                 updateAttribute(key, newValue);
                                 if (!isLocalOnly && !isOverridden) {
                                   lockOverride(key);
@@ -375,12 +370,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           value={typeof value === 'object' ? JSON.stringify(value) : value || ''}
                           onChange={(e) => {
                             e.stopPropagation();
-                            let newValue: any = e.target.value;
-                            try {
-                              newValue = JSON.parse(e.target.value);
-                            } catch {
-                              // Keep as string if not valid JSON
-                            }
+                            const newValue = e.target.value;
                             updateAttribute(key, newValue);
                           }}
                           onKeyDown={(e) => e.stopPropagation()}
