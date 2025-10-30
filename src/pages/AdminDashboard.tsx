@@ -49,6 +49,12 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [loadingStores, setLoadingStores] = useState(false);
+  const [searchResults, setSearchResults] = useState<{
+    concepts: Concept[];
+    companies: Company[];
+    stores: Store[];
+  }>({ concepts: [], companies: [], stores: [] });
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -90,21 +96,53 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   }, [selectedCompany]);
 
 
-  const filteredConcepts = concepts.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults({ concepts: [], companies: [], stores: [] });
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      const query = searchQuery.toLowerCase();
+
+      const matchedConcepts = concepts.filter(c =>
+        c.name.toLowerCase().includes(query)
+      );
+
+      const matchedCompanies = companies.filter(c =>
+        c.name.toLowerCase().includes(query)
+      );
+
+      const { data: matchedStores } = await supabase
+        .from('stores')
+        .select('*')
+        .ilike('name', `%${searchQuery}%`)
+        .order('name')
+        .limit(50);
+
+      setSearchResults({
+        concepts: matchedConcepts,
+        companies: matchedCompanies,
+        stores: matchedStores || []
+      });
+      setIsSearching(false);
+    };
+
+    const timer = setTimeout(performSearch, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, concepts, companies]);
+
+  const filteredConcepts = searchQuery ? searchResults.concepts : concepts.filter(c =>
+    !selectedConcept || c.id === selectedConcept.id
   );
 
-  const filteredCompanies = companies.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCompanies = searchQuery ? searchResults.companies : companies.filter(c =>
+    !selectedConcept || c.concept_id === selectedConcept.id
   );
 
-  const filteredGroups = groups.filter(g =>
-    g.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredStores = stores.filter(s =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStores = searchQuery ? searchResults.stores : stores;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -357,14 +395,121 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             </div>
 
             <div className="overflow-y-auto h-[calc(100vh-240px)]">
+              {/* Search Results */}
+              {searchQuery && (
+                <div className="p-4 space-y-4">
+                  {searchResults.concepts.length > 0 && (
+                    <div>
+                      <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
+                        {searchResults.concepts.length} Concepts
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.concepts.map((concept) => (
+                          <button
+                            key={concept.id}
+                            onClick={() => {
+                              setSelectedConcept(concept);
+                              setSelectedCompany(null);
+                              setSelectedStore(null);
+                              setSearchQuery('');
+                            }}
+                            className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-slate-400" />
+                              <span>{concept.name}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchResults.companies.length > 0 && (
+                    <div>
+                      <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
+                        {searchResults.companies.length} Companies
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.companies.map((company) => {
+                          const concept = concepts.find(c => c.id === company.concept_id);
+                          return (
+                            <button
+                              key={company.id}
+                              onClick={() => {
+                                const concept = concepts.find(c => c.id === company.concept_id);
+                                if (concept) setSelectedConcept(concept);
+                                setSelectedCompany(company);
+                                setSelectedStore(null);
+                                setSearchQuery('');
+                              }}
+                              className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4 text-slate-400" />
+                                <div className="flex-1">
+                                  <div>{company.name}</div>
+                                  {concept && <div className="text-xs text-slate-400">{concept.name}</div>}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchResults.stores.length > 0 && (
+                    <div>
+                      <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
+                        {searchResults.stores.length} Stores
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.stores.map((store) => {
+                          const company = companies.find(c => c.id === store.company_id);
+                          const concept = company ? concepts.find(c => c.id === company.concept_id) : null;
+                          return (
+                            <button
+                              key={store.id}
+                              onClick={() => {
+                                if (concept) setSelectedConcept(concept);
+                                if (company) setSelectedCompany(company);
+                                setSelectedStore(store);
+                                setSearchQuery('');
+                                setShowLocationSelector(false);
+                              }}
+                              className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Store className="w-4 h-4 text-slate-400" />
+                                <div className="flex-1">
+                                  <div>{store.name}</div>
+                                  {company && <div className="text-xs text-slate-400">{company.name}</div>}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchResults.concepts.length === 0 && searchResults.companies.length === 0 && searchResults.stores.length === 0 && !isSearching && (
+                    <div className="text-center py-8 text-slate-400">
+                      No results found for "{searchQuery}"
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Concepts */}
-              {!selectedConcept && (
+              {!searchQuery && !selectedConcept && (
                 <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    {filteredConcepts.length} Concepts
+                    {concepts.length} Concepts
                   </div>
                   <div className="space-y-1">
-                    {filteredConcepts.map((concept) => {
+                    {concepts.map((concept) => {
                       const conceptCompanies = companies.filter(c => c.concept_id === concept.id);
                       return (
                         <button
@@ -386,7 +531,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               )}
 
               {/* Companies */}
-              {selectedConcept && !selectedCompany && (
+              {!searchQuery && selectedConcept && !selectedCompany && (
                 <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
                     {companies.filter(c => c.concept_id === selectedConcept.id).length} Companies in {selectedConcept.name}
@@ -413,7 +558,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               )}
 
               {/* Stores */}
-              {selectedCompany && (
+              {!searchQuery && selectedCompany && (
                 <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
                     {stores.filter(s => s.company_id === selectedCompany.id).length} Stores in {selectedCompany.name}
