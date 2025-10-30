@@ -33,8 +33,14 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [integrationData, setIntegrationData] = useState<any>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'attributes' | 'translations'>('attributes');
   const [frenchTranslations, setFrenchTranslations] = useState<Record<string, string>>({});
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   useEffect(() => {
     if (product) {
@@ -268,47 +274,39 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="border-b border-slate-200 px-6 flex gap-1 flex-shrink-0">
+        {/* Quick Navigation Bookmarks */}
+        <div className="border-b border-slate-200 px-6 py-3 flex gap-2 flex-shrink-0 bg-slate-50">
+          <span className="text-xs font-medium text-slate-500 self-center mr-2">Jump to:</span>
           <button
-            onClick={() => setActiveSection('attributes')}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
-              activeSection === 'attributes'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={() => scrollToSection('attributes-section')}
+            className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 hover:border-slate-300 transition-colors"
           >
             Product Attributes
           </button>
           <button
-            onClick={() => setActiveSection('translations')}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
-              activeSection === 'translations'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={() => scrollToSection('translations-section')}
+            className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 hover:border-slate-300 transition-colors"
           >
             French Translations
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* Attributes Section */}
-          {activeSection === 'attributes' && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-medium text-slate-700">
-                  Product Attributes
-                </label>
-                {!product.integration_product_id && (
-                  <button
-                    onClick={addAttribute}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    + Add Attribute
-                  </button>
-                )}
-              </div>
+          <div id="attributes-section">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-slate-700">
+                Product Attributes
+              </label>
+              {!product.integration_product_id && (
+                <button
+                  onClick={addAttribute}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  + Add Attribute
+                </button>
+              )}
+            </div>
 
             <div className="space-y-2">
               {Object.keys(attributes).length === 0 ? (
@@ -429,36 +427,34 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 ))
               )}
             </div>
-            </div>
-          )}
+          </div>
 
           {/* French Translations Section */}
-          {activeSection === 'translations' && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-medium text-slate-700">
-                  French Translations
-                </label>
-                <button
-                  onClick={() => {
-                    const key = prompt('Enter attribute name to translate:');
-                    if (key && key.trim()) {
-                      setFrenchTranslations(prev => ({ ...prev, [key.trim()]: '' }));
-                    }
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  + Add Translation
-                </button>
-              </div>
+          <div id="translations-section" className="pt-6 border-t-2 border-slate-200">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-slate-700">
+                French Translations
+              </label>
+              <button
+                onClick={() => {
+                  const key = prompt('Enter attribute name to translate:');
+                  if (key && key.trim()) {
+                    setFrenchTranslations(prev => ({ ...prev, [key.trim()]: '' }));
+                  }
+                }}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                + Add Translation
+              </button>
+            </div>
 
-              <div className="space-y-2">
-                {Object.keys(frenchTranslations).length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-8">
-                    No French translations yet.
-                  </p>
-                ) : (
-                  Object.entries(frenchTranslations).map(([key, value]) => (
+            <div className="space-y-2">
+              {Object.keys(frenchTranslations).length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-8">
+                  No French translations yet.
+                </p>
+              ) : (
+                Object.entries(frenchTranslations).map(([key, value]) => (
                     <div key={key} className="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="flex-1 space-y-2">
@@ -492,10 +488,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       </div>
                     </div>
                   ))
-                )}
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
         </div>
 
