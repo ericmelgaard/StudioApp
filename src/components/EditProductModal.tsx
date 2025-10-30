@@ -162,6 +162,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [name, setName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [attributeOverrides, setAttributeOverrides] = useState<Record<string, boolean>>({});
+  const [attributeMappings, setAttributeMappings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [integrationData, setIntegrationData] = useState<any>(null);
@@ -170,6 +171,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
   const [templateAttributes, setTemplateAttributes] = useState<string[]>([]);
   const [templateSchema, setTemplateSchema] = useState<any>(null);
+  const [showMappingModal, setShowMappingModal] = useState(false);
+  const [mappingAttributeKey, setMappingAttributeKey] = useState<string | null>(null);
 
   const commonLocales = [
     { code: 'fr-FR', name: 'French (France)' },
@@ -196,6 +199,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       setName(product.name);
       loadTemplateAttributes();
       setAttributeOverrides(product.attribute_overrides || {});
+      setAttributeMappings((product as any).attribute_mappings || {});
       setTranslations(product.attributes?.translations || {});
       loadIntegrationData();
     }
@@ -304,12 +308,20 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
       const currentAttributes = product.attributes || {};
       const overrides = product.attribute_overrides || {};
+      const productMappings = (product as any).attribute_mappings || {};
 
       for (const key of Object.keys(currentAttributes)) {
-        const mapping = mappings.find((m: any) => m.wand_field === key);
+        // Check for product-level mapping first
+        const productMapping = productMappings[key];
+
+        // Then check for template-level mapping
+        const templateMapping = mappings.find((m: any) => m.wand_field === key);
+
+        const mapping = productMapping || (templateMapping ? templateMapping.integration_field : null);
 
         if (mapping) {
-          const integrationValue = getNestedValue(integrationProduct.data, mapping.integration_field);
+          const integrationValue = getNestedValue(integrationProduct.data,
+            typeof mapping === 'string' ? mapping : mapping);
           const currentValue = currentAttributes[key];
 
           // Check if this attribute is marked as overridden
@@ -372,6 +384,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           name: name,
           attributes: updatedAttributes,
           attribute_overrides: attributeOverrides,
+          attribute_mappings: attributeMappings,
           updated_at: new Date().toISOString()
         })
         .eq('id', product.id);
@@ -462,6 +475,48 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     const allAttrs = [...coreAttrs, ...extendedAttrs];
 
     return allAttrs.find((attr: any) => attr.name === key);
+  }
+
+  function openMappingModal(key: string) {
+    setMappingAttributeKey(key);
+    setShowMappingModal(true);
+  }
+
+  function handleSetMapping(integrationPath: string) {
+    if (!mappingAttributeKey) return;
+
+    setAttributeMappings(prev => ({
+      ...prev,
+      [mappingAttributeKey]: integrationPath
+    }));
+
+    // Update the attribute value from integration data
+    if (integrationData) {
+      const value = getNestedValue(integrationData, integrationPath);
+      updateAttribute(mappingAttributeKey, value);
+    }
+
+    setShowMappingModal(false);
+    setMappingAttributeKey(null);
+  }
+
+  function removeMapping(key: string) {
+    setAttributeMappings(prev => {
+      const newMappings = { ...prev };
+      delete newMappings[key];
+      return newMappings;
+    });
+  }
+
+  function canMapAttribute(key: string): boolean {
+    // Can only map if there's integration data available
+    if (!integrationData) return false;
+
+    // Check if attribute type is mappable (not complex objects or arrays except for specific types)
+    const meta = getAttributeMeta(key);
+    if (meta?.type === 'sizes') return false; // Sizes have their own linking mechanism
+
+    return true;
   }
 
   function renderAttributeField(key: string, actualValue: any, syncStatus: SyncStatus | null, isOverridden: any, isLocalOnly: boolean) {
@@ -875,6 +930,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           const value = attributes[key];
                           const isOverridden = syncStatus?.overridden[key];
                           const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                          const isMapped = attributeMappings[key] !== undefined;
                           const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
                           const integrationValue = isOverridden?.integration;
                           const isDropdownOpen = openDropdown === key;
@@ -884,48 +940,90 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
                                 <label className="text-xs font-medium text-slate-600">{key}</label>
-                                {syncStatus && !isLocalOnly && hasValue && (
-                                  <div className="relative">
-                                    {isOverridden ? (
-                                      <>
-                                        <button
-                                          onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-                                        >
-                                          <Unlink className="w-3 h-3" />
-                                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                        </button>
-                                        {isDropdownOpen && (
-                                          <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                enableSync(key);
-                                                setOpenDropdown(null);
-                                              }}
-                                              className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
-                                            >
-                                              <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                              <div className="flex-1">
-                                                <div className="font-medium text-slate-900">Revert</div>
-                                                <div className="text-xs text-slate-500 mt-0.5 truncate">
-                                                  {typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}
-                                                </div>
-                                              </div>
-                                            </button>
-                                          </div>
-                                        )}
-                                      </>
-                                    ) : (
+                                <div className="flex items-center gap-1">
+                                  {/* Product-level mapping button */}
+                                  {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && (
+                                    <button
+                                      onClick={() => openMappingModal(key)}
+                                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                                      title="Link to integration field"
+                                    >
+                                      <Link className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                  {/* Show mapped indicator */}
+                                  {isMapped && (
+                                    <button
+                                      onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
+                                      title={`Mapped to ${attributeMappings[key]}`}
+                                    >
+                                      <Link className="w-3 h-3" />
+                                      <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                  )}
+                                  {isDropdownOpen && isMapped && (
+                                    <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
                                       <button
-                                        onClick={() => lockOverride(key)}
-                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          removeMapping(key);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
                                       >
-                                        <Link className="w-3 h-3" />
+                                        <Unlink className="w-3.5 h-3.5 text-red-600 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1">
+                                          <div className="font-medium text-slate-900">Remove Mapping</div>
+                                          <div className="text-xs text-slate-500 mt-0.5 truncate">{attributeMappings[key]}</div>
+                                        </div>
                                       </button>
-                                    )}
-                                  </div>
-                                )}
+                                    </div>
+                                  )}
+                                  {/* Template-level sync status */}
+                                  {syncStatus && !isLocalOnly && hasValue && !isMapped && (
+                                    <div className="relative">
+                                      {isOverridden ? (
+                                        <>
+                                          <button
+                                            onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                                          >
+                                            <Unlink className="w-3 h-3" />
+                                            <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                          </button>
+                                          {isDropdownOpen && (
+                                            <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  enableSync(key);
+                                                  setOpenDropdown(null);
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
+                                              >
+                                                <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                                <div className="flex-1">
+                                                  <div className="font-medium text-slate-900">Revert</div>
+                                                  <div className="text-xs text-slate-500 mt-0.5 truncate">
+                                                    {typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}
+                                                  </div>
+                                                </div>
+                                              </button>
+                                            </div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <button
+                                          onClick={() => lockOverride(key)}
+                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                        >
+                                          <Link className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                             </div>
@@ -1101,6 +1199,70 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           </div>
         </div>
       </div>
+
+      {/* Integration Field Mapping Modal */}
+      {showMappingModal && mappingAttributeKey && integrationData && (
+        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[70vh] flex flex-col">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <h3 className="text-lg font-bold text-slate-900">Link to Integration Field</h3>
+              <button
+                onClick={() => {
+                  setShowMappingModal(false);
+                  setMappingAttributeKey(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="mb-4">
+                <div className="text-sm text-slate-600">
+                  Linking attribute: <span className="font-semibold text-slate-900">{mappingAttributeKey}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-slate-600 uppercase tracking-wide mb-3">
+                  Select Integration Field
+                </div>
+                {Object.entries(flattenObject(integrationData)).map(([path, value]) => (
+                  <button
+                    key={path}
+                    onClick={() => handleSetMapping(path)}
+                    className="w-full text-left p-3 border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group"
+                  >
+                    <div className="font-medium text-sm text-slate-900 group-hover:text-blue-700">{path}</div>
+                    <div className="text-xs text-slate-500 mt-1 truncate">
+                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+// Helper function to flatten nested objects for field selection
+function flattenObject(obj: any, prefix = ''): Record<string, any> {
+  const flattened: Record<string, any> = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    const newKey = prefix ? `${prefix}.${key}` : key;
+
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      Object.assign(flattened, flattenObject(value, newKey));
+    } else {
+      flattened[newKey] = value;
+    }
+  }
+
+  return flattened;
 }
