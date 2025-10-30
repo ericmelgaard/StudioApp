@@ -74,6 +74,12 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
   }, [isOpen]);
 
   useEffect(() => {
+    if (sources.length > 0 && !selectedSource) {
+      setSelectedSource(sources[0].id);
+    }
+  }, [sources]);
+
+  useEffect(() => {
     if (selectedSource && selectedType) {
       loadExistingMapping();
       loadSampleProducts();
@@ -116,9 +122,15 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
       if (data) {
         setSavedMapping(data);
         setMappings(data.attribute_mappings.mappings || []);
+        if (!selectedTemplate && templates.length > 0) {
+          setSelectedTemplate(templates[0].id);
+        }
       } else {
         setSavedMapping(null);
         setMappings([]);
+        if (!selectedTemplate && templates.length > 0) {
+          setSelectedTemplate(templates[0].id);
+        }
       }
     } catch (error) {
       console.error('Error loading mapping:', error);
