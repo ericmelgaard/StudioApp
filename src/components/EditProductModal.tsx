@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ImageUploadField from './ImageUploadField';
 
 interface Product {
   id: string;
@@ -36,6 +37,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({});
   const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
   const [templateAttributes, setTemplateAttributes] = useState<string[]>([]);
+  const [templateSchema, setTemplateSchema] = useState<any>(null);
 
   const commonLocales = [
     { code: 'fr-FR', name: 'French (France)' },
@@ -84,6 +86,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
         if (template?.attribute_schema) {
           const schema = template.attribute_schema as any;
+          setTemplateSchema(schema);
+
           const coreAttrs = schema.core_attributes || [];
           const extendedAttrs = schema.extended_attributes || [];
           const allTemplateAttrs = [...coreAttrs, ...extendedAttrs];
@@ -309,6 +313,53 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     }));
   }
 
+  function getAttributeMeta(key: string) {
+    if (!templateSchema) return null;
+
+    const coreAttrs = templateSchema.core_attributes || [];
+    const extendedAttrs = templateSchema.extended_attributes || [];
+    const allAttrs = [...coreAttrs, ...extendedAttrs];
+
+    return allAttrs.find((attr: any) => attr.name === key);
+  }
+
+  function renderAttributeField(key: string, actualValue: any, syncStatus: SyncStatus | null, isOverridden: any, isLocalOnly: boolean) {
+    const meta = getAttributeMeta(key);
+
+    if (meta?.type === 'image' && meta?.resolution) {
+      return (
+        <ImageUploadField
+          value={actualValue || ''}
+          onChange={(newValue) => {
+            updateAttribute(key, newValue);
+            if (syncStatus && !isLocalOnly && !isOverridden) {
+              lockOverride(key);
+            }
+          }}
+          targetWidth={meta.resolution.width}
+          targetHeight={meta.resolution.height}
+          label={meta.label || key}
+        />
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          updateAttribute(key, newValue);
+          if (syncStatus && !isLocalOnly && !isOverridden) {
+            lockOverride(key);
+          }
+        }}
+        className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
+        placeholder={`Enter ${key}`}
+      />
+    );
+  }
+
   if (!isOpen || !product) return null;
 
   return (
@@ -435,19 +486,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             </div>
                           )}
                         </div>
-                        <input
-                          type="text"
-                          value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
-                          onChange={(e) => {
-                            const newValue = e.target.value;
-                            updateAttribute(key, newValue);
-                            if (syncStatus && !isLocalOnly && !isOverridden) {
-                              lockOverride(key);
-                            }
-                          }}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
-                          placeholder={`Enter ${key}`}
-                        />
+                        {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                       </div>
                     );
                   })}
@@ -513,19 +552,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               </div>
                             )}
                           </div>
-                          <input
-                            type="text"
-                            value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
-                            onChange={(e) => {
-                              const newValue = e.target.value;
-                              updateAttribute(key, newValue);
-                              if (syncStatus && !isLocalOnly && !isOverridden) {
-                                lockOverride(key);
-                              }
-                            }}
-                            className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
-                            placeholder={`Enter ${key}`}
-                          />
+                          {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                         </div>
                       );
                     })}
@@ -599,19 +626,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   </div>
                                 )}
                               </div>
-                              <input
-                                type="text"
-                                value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
-                                onChange={(e) => {
-                                  const newValue = e.target.value;
-                                  updateAttribute(key, newValue);
-                                  if (syncStatus && !isLocalOnly && !isOverridden) {
-                                    lockOverride(key);
-                                  }
-                                }}
-                                className="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
-                                placeholder="Value"
-                              />
+                              {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                             </div>
                           );
                         })}
