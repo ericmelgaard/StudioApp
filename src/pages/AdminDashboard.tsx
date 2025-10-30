@@ -68,10 +68,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     if (conceptsData) setConcepts(conceptsData);
     if (companiesData) setCompanies(companiesData);
     if (groupsData) setGroups(groupsData);
-
-    if (conceptsData && conceptsData.length > 0) {
-      setSelectedConcept(conceptsData[0]);
-    }
   };
 
   const loadStoresForCompany = async (companyId: number) => {
