@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ArrowRight, Save, Package, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, ArrowRight, Save, Package, Sparkles, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface IntegrationSource {
@@ -265,6 +265,73 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
     }
   }
 
+  async function reapplyToExistingProducts() {
+    if (!selectedSource || !mappings.length) {
+      alert('Please save the mapping template first');
+      return;
+    }
+
+    const confirmed = confirm('This will update all existing products imported from this source. Continue?');
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const { data: integrationProducts } = await supabase
+        .from('integration_products')
+        .select('id, data')
+        .eq('source_id', selectedSource);
+
+      if (!integrationProducts || integrationProducts.length === 0) {
+        alert('No products found for this source');
+        return;
+      }
+
+      const { data: existingProducts } = await supabase
+        .from('products')
+        .select('id, integration_product_id')
+        .in('integration_product_id', integrationProducts.map(p => p.id));
+
+      if (!existingProducts || existingProducts.length === 0) {
+        alert('No products have been imported from this source yet');
+        return;
+      }
+
+      const updates = existingProducts.map(product => {
+        const integrationProduct = integrationProducts.find(ip => ip.id === product.integration_product_id);
+        if (!integrationProduct) return null;
+
+        const attributes: any = {};
+        mappings.forEach((mapping: any) => {
+          const value = getNestedValue(integrationProduct.data, mapping.integration_field);
+          if (value !== undefined) {
+            attributes[mapping.wand_field] = value;
+          }
+        });
+
+        return {
+          id: product.id,
+          attributes: attributes,
+          updated_at: new Date().toISOString()
+        };
+      }).filter(Boolean);
+
+      for (const update of updates) {
+        await supabase
+          .from('products')
+          .update({ attributes: update!.attributes })
+          .eq('id', update!.id);
+      }
+
+      alert(`Successfully updated ${updates.length} products`);
+      onSuccess();
+    } catch (error) {
+      console.error('Error reapplying mapping:', error);
+      alert('Failed to update products');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (!isOpen) return null;
 
   const selectedTemplateData = templates.find(t => t.id === selectedTemplate);
@@ -508,6 +575,16 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
             >
               Close
             </button>
+            {savedMapping && (
+              <button
+                onClick={reapplyToExistingProducts}
+                disabled={loading || mappings.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Update Existing Products
+              </button>
+            )}
             <button
               onClick={saveMapping}
               disabled={loading || mappings.length === 0 || !selectedTemplate || !selectedSource}
