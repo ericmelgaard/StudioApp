@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -25,6 +25,137 @@ interface SyncStatus {
   synced: Record<string, any>;
   overridden: Record<string, any>;
   localOnly: Record<string, any>;
+}
+
+interface Size {
+  id: string;
+  label: string;
+  price: number;
+  is_active: boolean;
+  is_out_of_stock: boolean;
+  linked_integration_product_id?: string;
+}
+
+interface SizesEditorProps {
+  sizes: Size[];
+  onChange: (sizes: Size[]) => void;
+}
+
+function SizesEditor({ sizes, onChange }: SizesEditorProps) {
+  const addSize = () => {
+    const newSize: Size = {
+      id: crypto.randomUUID(),
+      label: '',
+      price: 0,
+      is_active: true,
+      is_out_of_stock: false,
+    };
+    onChange([...sizes, newSize]);
+  };
+
+  const updateSize = (id: string, updates: Partial<Size>) => {
+    onChange(sizes.map(size => size.id === id ? { ...size, ...updates } : size));
+  };
+
+  const removeSize = (id: string) => {
+    onChange(sizes.filter(size => size.id !== id));
+  };
+
+  return (
+    <div className="space-y-3">
+      {sizes.map((size) => (
+        <div key={size.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="flex-1 grid grid-cols-2 gap-3">
+            <input
+              type="text"
+              value={size.label}
+              onChange={(e) => updateSize(size.id, { label: e.target.value })}
+              placeholder="Size label (e.g., Small)"
+              className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+              <input
+                type="number"
+                step="0.01"
+                value={size.price}
+                onChange={(e) => updateSize(size.id, { price: parseFloat(e.target.value) || 0 })}
+                disabled={!!size.linked_integration_product_id}
+                placeholder="0.00"
+                className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+              />
+              {size.linked_integration_product_id && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">Synced</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs text-slate-500">Active</span>
+              <button
+                onClick={() => updateSize(size.id, { is_active: !size.is_active })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  size.is_active ? 'bg-blue-600' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
+                    size.is_active ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs text-slate-500">Out of Stock</span>
+              <button
+                onClick={() => updateSize(size.id, { is_out_of_stock: !size.is_out_of_stock })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  size.is_out_of_stock ? 'bg-amber-500' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
+                    size.is_out_of_stock ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                alert('Integration linking will be implemented');
+              }}
+              className={`p-2 rounded-lg transition-colors ${
+                size.linked_integration_product_id
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+              title={size.linked_integration_product_id ? 'Linked to integration' : 'Link to integration product'}
+            >
+              <Link className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => removeSize(size.id)}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <button
+        onClick={addSize}
+        className="w-full py-2.5 px-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+      >
+        <Plus className="w-4 h-4" />
+        Add Size
+      </button>
+    </div>
+  );
 }
 
 export default function EditProductModal({ isOpen, onClose, product, onSuccess }: EditProductModalProps) {
@@ -365,6 +496,20 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           }}
           placeholder={`Enter ${meta.label || key}`}
           minHeight={meta.minHeight || '120px'}
+        />
+      );
+    }
+
+    if (meta?.type === 'sizes') {
+      return (
+        <SizesEditor
+          sizes={Array.isArray(actualValue) ? actualValue : []}
+          onChange={(newSizes) => {
+            updateAttribute(key, newSizes);
+            if (syncStatus && !isLocalOnly && !isOverridden) {
+              lockOverride(key);
+            }
+          }}
         />
       );
     }
