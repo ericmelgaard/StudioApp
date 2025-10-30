@@ -1,13 +1,30 @@
 import { useState, useEffect } from 'react';
-import { X, Package, DollarSign, Utensils, Flame, Layout } from 'lucide-react';
+import { X, Package, Layout, Database, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-interface ProductTemplate {
+interface AttributeTemplate {
+  id: string;
+  name: string;
+  description: string;
+  is_system: boolean;
+  attribute_schema: {
+    core_attributes: AttributeField[];
+    extended_attributes: AttributeField[];
+  };
+}
+
+interface AttributeField {
+  name: string;
+  type: string;
+  required: boolean;
+  label: string;
+}
+
+interface DisplayTemplate {
   id: string;
   name: string;
   description: string;
   template_type: string;
-  dimensions: any;
 }
 
 interface IntegrationProduct {
@@ -25,41 +42,41 @@ interface CreateProductModalProps {
 
 export default function CreateProductModal({ isOpen, onClose, onSuccess }: CreateProductModalProps) {
   const [loading, setLoading] = useState(false);
-  const [templates, setTemplates] = useState<ProductTemplate[]>([]);
+  const [attributeTemplates, setAttributeTemplates] = useState<AttributeTemplate[]>([]);
+  const [displayTemplates, setDisplayTemplates] = useState<DisplayTemplate[]>([]);
   const [integrationProducts, setIntegrationProducts] = useState<IntegrationProduct[]>([]);
   const [searchIntegration, setSearchIntegration] = useState('');
   const [showIntegrationSearch, setShowIntegrationSearch] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    calories: '',
-    portion: '',
-    template_id: '',
-    integration_product_id: '',
-    image_url: ''
-  });
+  const [selectedAttributeTemplate, setSelectedAttributeTemplate] = useState<string>('');
+  const [selectedDisplayTemplate, setSelectedDisplayTemplate] = useState<string>('');
+  const [selectedIntegrationProduct, setSelectedIntegrationProduct] = useState<string>('');
+  const [productName, setProductName] = useState('');
+  const [attributes, setAttributes] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (isOpen) {
       loadTemplates();
+      resetForm();
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (searchIntegration && showIntegrationSearch) {
       searchIntegrationProducts();
+    } else {
+      setIntegrationProducts([]);
     }
-  }, [searchIntegration]);
+  }, [searchIntegration, showIntegrationSearch]);
 
   async function loadTemplates() {
-    const { data } = await supabase
-      .from('product_templates')
-      .select('*')
-      .order('name');
+    const [attrTemplates, dispTemplates] = await Promise.all([
+      supabase.from('product_attribute_templates').select('*').order('name'),
+      supabase.from('product_templates').select('*').order('name')
+    ]);
 
-    if (data) setTemplates(data);
+    if (attrTemplates.data) setAttributeTemplates(attrTemplates.data);
+    if (dispTemplates.data) setDisplayTemplates(dispTemplates.data);
   }
 
   async function searchIntegrationProducts() {
@@ -72,20 +89,102 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     if (data) setIntegrationProducts(data);
   }
 
-  function handleSelectIntegrationProduct(product: IntegrationProduct) {
-    const price = product.data?.prices?.prices?.[0]?.price ||
-                  product.data?.priceAttribute?.prices?.[0]?.price;
-
-    setFormData({
-      ...formData,
-      name: product.data?.displayAttribute?.itemTitle || product.name,
-      description: product.data?.description || '',
-      price: price ? price.toString() : '',
-      integration_product_id: product.id,
-      image_url: product.data?.imageUrl || ''
-    });
+  function resetForm() {
+    setSelectedAttributeTemplate('');
+    setSelectedDisplayTemplate('');
+    setSelectedIntegrationProduct('');
+    setProductName('');
+    setAttributes({});
     setShowIntegrationSearch(false);
     setSearchIntegration('');
+  }
+
+  function handleSelectIntegrationProduct(product: IntegrationProduct) {
+    setSelectedIntegrationProduct(product.id);
+    setProductName(product.data?.displayAttribute?.itemTitle || product.name);
+
+    const mappedAttributes: Record<string, any> = {};
+
+    if (product.data?.description) {
+      mappedAttributes.description = product.data.description;
+    }
+
+    const price = product.data?.prices?.prices?.[0]?.price ||
+                  product.data?.priceAttribute?.prices?.[0]?.price;
+    if (price) {
+      mappedAttributes.price = parseFloat(price);
+    }
+
+    if (product.data?.imageUrl) {
+      mappedAttributes.image_url = product.data.imageUrl;
+    }
+
+    setAttributes(mappedAttributes);
+    setShowIntegrationSearch(false);
+    setSearchIntegration('');
+  }
+
+  function handleAttributeChange(fieldName: string, value: any) {
+    setAttributes(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  }
+
+  function renderAttributeField(field: AttributeField) {
+    const value = attributes[field.name] || '';
+
+    switch (field.type) {
+      case 'text':
+        return (
+          <input
+            type="text"
+            required={field.required}
+            value={value}
+            onChange={(e) => handleAttributeChange(field.name, e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder={field.label}
+          />
+        );
+
+      case 'number':
+        return (
+          <input
+            type="number"
+            step="any"
+            required={field.required}
+            value={value}
+            onChange={(e) => handleAttributeChange(field.name, parseFloat(e.target.value) || 0)}
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder={field.label}
+          />
+        );
+
+      case 'boolean':
+        return (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={value || false}
+              onChange={(e) => handleAttributeChange(field.name, e.target.checked)}
+              className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-2 focus:ring-purple-500"
+            />
+            <span className="text-sm text-slate-600">Enabled</span>
+          </label>
+        );
+
+      default:
+        return (
+          <textarea
+            rows={2}
+            required={field.required}
+            value={typeof value === 'string' ? value : JSON.stringify(value)}
+            onChange={(e) => handleAttributeChange(field.name, e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder={field.label}
+          />
+        );
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -96,29 +195,16 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
       const { error } = await supabase
         .from('products')
         .insert({
-          name: formData.name,
-          description: formData.description,
-          price: formData.price,
-          calories: formData.calories,
-          portion: formData.portion,
-          template_id: formData.template_id || null,
-          integration_product_id: formData.integration_product_id || null,
-          image_url: formData.image_url || null,
+          name: productName,
+          attribute_template_id: selectedAttributeTemplate || null,
+          display_template_id: selectedDisplayTemplate || null,
+          integration_product_id: selectedIntegrationProduct || null,
+          attributes: attributes
         });
 
       if (error) throw error;
 
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        calories: '',
-        portion: '',
-        template_id: '',
-        integration_product_id: '',
-        image_url: ''
-      });
-
+      resetForm();
       onSuccess();
       onClose();
     } catch (error) {
@@ -131,9 +217,11 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
 
   if (!isOpen) return null;
 
+  const selectedTemplate = attributeTemplates.find(t => t.id === selectedAttributeTemplate);
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
@@ -152,11 +240,11 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-2">
-              <Package className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-blue-900 mb-1">Link Integration Product</h3>
+              <Database className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 mb-1">Link Integration Product (Optional)</h3>
                 <p className="text-sm text-blue-700 mb-3">
-                  Optionally map this product to an external integration product to auto-fill details
+                  Import data from an external integration product to auto-fill attributes
                 </p>
                 <button
                   type="button"
@@ -196,120 +284,106 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Product Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="e.g., Classic Cheeseburger"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Product Attribute Template *
+              </div>
+            </label>
+            <select
+              required
+              value={selectedAttributeTemplate}
+              onChange={(e) => {
+                setSelectedAttributeTemplate(e.target.value);
+                setAttributes({});
+              }}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="">Select a template...</option>
+              {attributeTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name} - {template.description}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Defines the shape and attributes of your product
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Description
-              </label>
-              <textarea
-                rows={3}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Describe this product..."
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
+          {selectedTemplate && (
+            <>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Price
-                  </div>
+                  Product Name *
                 </label>
                 <input
                   type="text"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  required
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="0.00"
+                  placeholder="Enter product name"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <div className="flex items-center gap-2">
-                    <Flame className="w-4 h-4" />
-                    Calories
-                  </div>
-                </label>
-                <input
-                  type="text"
-                  value={formData.calories}
-                  onChange={(e) => setFormData({ ...formData, calories: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <div className="flex items-center gap-2">
-                    <Utensils className="w-4 h-4" />
-                    Portion
-                  </div>
-                </label>
-                <input
-                  type="text"
-                  value={formData.portion}
-                  onChange={(e) => setFormData({ ...formData, portion: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="1 serving"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Image URL
-              </label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <Layout className="w-4 h-4" />
-                  Product Template
+              <div className="space-y-4">
+                <h3 className="font-semibold text-slate-900 border-b pb-2">Core Attributes</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedTemplate.attribute_schema.core_attributes
+                    .filter(field => field.name !== 'name')
+                    .map((field) => (
+                      <div key={field.name}>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {field.label} {field.required && '*'}
+                        </label>
+                        {renderAttributeField(field)}
+                      </div>
+                    ))}
                 </div>
-              </label>
-              <select
-                value={formData.template_id}
-                onChange={(e) => setFormData({ ...formData, template_id: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="">No template</option>
-                {templates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name} ({template.template_type})
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-slate-500">
-                Select a template to define how this product should be displayed
-              </p>
-            </div>
+              </div>
+
+              {selectedTemplate.attribute_schema.extended_attributes.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-slate-900 border-b pb-2">Extended Attributes</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedTemplate.attribute_schema.extended_attributes.map((field) => (
+                      <div key={field.name}>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {field.label} {field.required && '*'}
+                        </label>
+                        {renderAttributeField(field)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              <div className="flex items-center gap-2">
+                <Layout className="w-4 h-4" />
+                Display Template (Optional)
+              </div>
+            </label>
+            <select
+              value={selectedDisplayTemplate}
+              onChange={(e) => setSelectedDisplayTemplate(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              <option value="">No display template</option>
+              {displayTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name} ({template.template_type})
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Defines how this product should be visually displayed
+            </p>
           </div>
 
           <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
@@ -322,7 +396,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !selectedAttributeTemplate}
               className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Product'}

@@ -1,15 +1,12 @@
 import { useState } from 'react';
 
 interface Product {
-  mrn: string;
+  id: string;
   name: string;
-  description: string | null;
-  price: string | null;
-  calories: string | null;
-  portion: string | null;
-  meal_periods: Array<{ period: string; date: string }>;
-  meal_stations: Array<{ station: string; station_detail: any }>;
-  image_url?: string;
+  attributes: Record<string, any>;
+  attribute_template_id: string | null;
+  display_template_id: string | null;
+  integration_product_id: string | null;
 }
 
 interface ProductTileProps {
@@ -19,16 +16,24 @@ interface ProductTileProps {
 export default function ProductTile({ product }: ProductTileProps) {
   const [isHovered, setIsHovered] = useState(false);
 
+  const imageUrl = product.attributes?.image_url;
+  const description = product.attributes?.description;
+  const price = product.attributes?.price;
+  const calories = product.attributes?.calories;
+  const portion = product.attributes?.portion;
+  const mealPeriods = product.attributes?.meal_periods;
+  const mealStations = product.attributes?.meal_stations;
+
   return (
     <div
       className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {product.image_url && (
+      {imageUrl && (
         <div className="relative h-48 overflow-hidden flex-shrink-0">
           <img
-            src={product.image_url}
+            src={imageUrl}
             alt={product.name}
             className={`w-full h-full object-cover transition-opacity duration-300 ${
               isHovered ? 'opacity-0' : 'opacity-100'
@@ -52,18 +57,18 @@ export default function ProductTile({ product }: ProductTileProps) {
               <h3 className="font-semibold text-slate-900 text-sm line-clamp-2">
                 {product.name}
               </h3>
-              <p className="text-xs text-slate-500">MRN: {product.mrn}</p>
-              {product.description && (
-                <p className="text-xs text-slate-600 line-clamp-3">{product.description}</p>
+              <p className="text-xs text-slate-500">ID: {product.id.slice(0, 8)}</p>
+              {description && (
+                <p className="text-xs text-slate-600 line-clamp-3">{description}</p>
               )}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-900">
-                  {product.price ? `$${product.price}` : 'N/A'}
+                  {price ? `$${price}` : 'N/A'}
                 </span>
-                {product.calories && (
-                  <span className="text-slate-600">{product.calories} cal</span>
+                {calories && (
+                  <span className="text-slate-600">{calories} cal</span>
                 )}
               </div>
             </div>
@@ -72,32 +77,32 @@ export default function ProductTile({ product }: ProductTileProps) {
       )}
 
       <div className="p-4 flex-1 flex flex-col">
-        {!product.image_url && (
+        {!imageUrl && (
           <>
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
               {product.name}
             </h3>
-            <p className="text-xs text-slate-500 mb-3">MRN: {product.mrn}</p>
+            <p className="text-xs text-slate-500 mb-3">ID: {product.id.slice(0, 8)}</p>
           </>
         )}
 
         <div className="space-y-3 flex-1 flex flex-col justify-between">
-          {!product.image_url && product.description && (
-            <p className="text-sm text-slate-600 line-clamp-2">{product.description}</p>
+          {!imageUrl && description && (
+            <p className="text-sm text-slate-600 line-clamp-2">{description}</p>
           )}
 
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-900">
-              {product.price ? `$${product.price}` : 'N/A'}
+              {price ? `$${price}` : 'N/A'}
             </span>
-            {product.calories && (
-              <span className="text-sm text-slate-600">{product.calories} cal</span>
+            {calories && (
+              <span className="text-sm text-slate-600">{calories} cal</span>
             )}
           </div>
 
-          {!product.image_url && product.meal_periods && product.meal_periods.length > 0 && (
+          {!imageUrl && Array.isArray(mealPeriods) && mealPeriods.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {product.meal_periods.slice(0, 2).map((mp, idx) => (
+              {mealPeriods.slice(0, 2).map((mp: any, idx: number) => (
                 <span
                   key={idx}
                   className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -105,19 +110,25 @@ export default function ProductTile({ product }: ProductTileProps) {
                   {mp.period}
                 </span>
               ))}
-              {product.meal_periods.length > 2 && (
+              {mealPeriods.length > 2 && (
                 <span className="text-xs text-slate-500">
-                  +{product.meal_periods.length - 2}
+                  +{mealPeriods.length - 2}
                 </span>
               )}
             </div>
           )}
 
-          {!product.image_url && product.meal_stations && product.meal_stations.length > 0 && (
+          {!imageUrl && Array.isArray(mealStations) && mealStations.length > 0 && (
             <div className="text-xs text-slate-600">
               <span className="font-medium">Station:</span>{' '}
-              {product.meal_stations[0].station}
-              {product.meal_stations.length > 1 && ` +${product.meal_stations.length - 1}`}
+              {mealStations[0].station}
+              {mealStations.length > 1 && ` +${mealStations.length - 1}`}
+            </div>
+          )}
+
+          {portion && (
+            <div className="text-xs text-slate-600">
+              <span className="font-medium">Portion:</span> {portion}
             </div>
           )}
         </div>

@@ -6,17 +6,14 @@ import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 
 interface Product {
-  mrn: string;
-  external_id: string | null;
+  id: string;
   name: string;
-  description: string | null;
-  price: string | null;
-  calories: string | null;
-  portion: string | null;
-  meal_periods: Array<{ period: string; date: string }>;
-  meal_stations: Array<{ station: string; station_detail: any }>;
-  last_synced_at: string | null;
-  image_url?: string;
+  attributes: Record<string, any>;
+  attribute_template_id: string | null;
+  display_template_id: string | null;
+  integration_product_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ProductManagementProps {
@@ -62,8 +59,16 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
     const stations = new Set<string>();
 
     products.forEach(p => {
-      p.meal_periods?.forEach(mp => periods.add(mp.period));
-      p.meal_stations?.forEach(ms => stations.add(ms.station));
+      const mealPeriods = p.attributes?.meal_periods;
+      const mealStations = p.attributes?.meal_stations;
+
+      if (Array.isArray(mealPeriods)) {
+        mealPeriods.forEach((mp: any) => periods.add(mp.period));
+      }
+
+      if (Array.isArray(mealStations)) {
+        mealStations.forEach((ms: any) => stations.add(ms.station));
+      }
     });
 
     setMealPeriods(Array.from(periods).sort());
@@ -116,12 +121,16 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const filteredProducts = products.filter(product => {
     const matchesSearch = !searchQuery ||
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      product.attributes?.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const mealPeriods = product.attributes?.meal_periods;
+    const mealStations = product.attributes?.meal_stations;
 
     const matchesPeriod = !selectedMealPeriod ||
-      product.meal_periods?.some(mp => mp.period === selectedMealPeriod);
+      (Array.isArray(mealPeriods) && mealPeriods.some((mp: any) => mp.period === selectedMealPeriod));
+
     const matchesStation = !selectedMealStation ||
-      product.meal_stations?.some(ms => ms.station === selectedMealStation);
+      (Array.isArray(mealStations) && mealStations.some((ms: any) => ms.station === selectedMealStation));
 
     return matchesSearch && matchesPeriod && matchesStation;
   });
@@ -287,11 +296,11 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
             </div>
 
-            {products.length > 0 && products[0].last_synced_at && (
+            {products.length > 0 && products[0].updated_at && (
               <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
                 <Calendar className="w-4 h-4" />
                 <span>
-                  Last synced: {new Date(products[0].last_synced_at).toLocaleString()}
+                  Last updated: {new Date(products[0].updated_at).toLocaleString()}
                 </span>
               </div>
             )}
@@ -322,60 +331,48 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                       Product
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Meal Period
+                      Attributes
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Station
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Calories
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Portion
+                      Template
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {filteredProducts.map((product) => (
-                    <tr key={product.mrn} className="hover:bg-slate-50 transition-colors">
+                    <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-slate-900">{product.name}</div>
-                          {product.description && (
+                          {product.attributes?.description && (
                             <div className="text-sm text-slate-500 mt-1 line-clamp-1">
-                              {product.description}
+                              {product.attributes.description}
                             </div>
                           )}
-                          <div className="text-xs text-slate-400 mt-1">MRN: {product.mrn}</div>
+                          <div className="text-xs text-slate-400 mt-1">ID: {product.id.slice(0, 8)}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {product.meal_periods?.map((mp, idx) => (
-                            <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {mp.period}
-                            </span>
-                          ))}
+                        <div className="text-sm text-slate-600 space-y-1">
+                          {product.attributes?.price && (
+                            <div>Price: ${product.attributes.price}</div>
+                          )}
+                          {product.attributes?.calories && (
+                            <div>Calories: {product.attributes.calories}</div>
+                          )}
+                          {product.attributes?.portion && (
+                            <div>Portion: {product.attributes.portion}</div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        <div className="flex flex-col gap-1">
-                          {product.meal_stations?.map((ms, idx) => (
-                            <span key={idx}>{ms.station}</span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                        {product.price ? `$${product.price}` : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {product.calories ? `${product.calories} cal` : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {product.portion || '-'}
+                        {product.attribute_template_id ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Has Template
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -384,7 +381,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProducts.map((product) => (
-                  <ProductTile key={product.mrn} product={product} />
+                  <ProductTile key={product.id} product={product} />
                 ))}
               </div>
             )}
