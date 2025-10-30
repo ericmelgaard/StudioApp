@@ -28,13 +28,16 @@ interface AutoImportModalProps {
   onClose: () => void;
   onSuccess: () => void;
   sourceId: string;
-  integrationType: 'product' | 'modifier' | 'discount';
+  integrationType: 'products' | 'modifiers' | 'discounts';
 }
 
-const INTEGRATION_TYPES = {
+const INTEGRATION_TYPES: Record<string, string> = {
   product: 'Products',
+  products: 'Products',
   modifier: 'Modifiers',
-  discount: 'Discounts'
+  modifiers: 'Modifiers',
+  discount: 'Discounts',
+  discounts: 'Discounts'
 };
 
 export default function AutoImportModal({
@@ -119,12 +122,16 @@ export default function AutoImportModal({
     }
   }
 
+  function normalizeType(type: string): string {
+    return type.replace(/s$/, '');
+  }
+
   async function loadExistingRule() {
     const { data } = await supabase
       .from('integration_auto_import_rules')
       .select('*')
       .eq('source_id', sourceId)
-      .eq('integration_type', integrationType)
+      .eq('integration_type', normalizeType(integrationType))
       .maybeSingle();
 
     if (data) {
@@ -159,7 +166,7 @@ export default function AutoImportModal({
     try {
       const ruleData = {
         source_id: sourceId,
-        integration_type: integrationType,
+        integration_type: normalizeType(integrationType),
         filter_type: filterType,
         filter_value: filterType === 'all' ? null : (filterType === 'category' ? selectedCategory : selectedSubcategory),
         target_template_id: selectedTemplate,
@@ -219,7 +226,7 @@ export default function AutoImportModal({
         .from('integration_attribute_mappings')
         .select('attribute_mappings')
         .eq('source_id', sourceId)
-        .eq('integration_type', integrationType)
+        .eq('integration_type', normalizeType(integrationType))
         .eq('is_template', true)
         .maybeSingle();
 
