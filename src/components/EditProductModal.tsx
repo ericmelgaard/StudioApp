@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2 } from 'lucide-react';
+import { X, Save, Trash2, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Product {
@@ -18,17 +18,102 @@ interface EditProductModalProps {
   onSuccess: () => void;
 }
 
+interface SyncStatus {
+  synced: Record<string, any>;
+  overridden: Record<string, any>;
+  localOnly: Record<string, any>;
+}
+
 export default function EditProductModal({ isOpen, onClose, product, onSuccess }: EditProductModalProps) {
   const [name, setName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [integrationData, setIntegrationData] = useState<any>(null);
 
   useEffect(() => {
     if (product) {
       setName(product.name);
       setAttributes(product.attributes || {});
+      loadIntegrationData();
     }
   }, [product]);
+
+  async function loadIntegrationData() {
+    if (!product?.integration_product_id) {
+      setSyncStatus(null);
+      return;
+    }
+
+    try {
+      const { data: integrationProduct } = await supabase
+        .from('integration_products')
+        .select('data, source_id')
+        .eq('id', product.integration_product_id)
+        .maybeSingle();
+
+      if (!integrationProduct) return;
+
+      setIntegrationData(integrationProduct.data);
+
+      const { data: mappingData } = await supabase
+        .from('integration_attribute_mappings')
+        .select('attribute_mappings')
+        .eq('source_id', integrationProduct.source_id)
+        .eq('is_template', true)
+        .maybeSingle();
+
+      if (!mappingData) return;
+
+      const mappings = mappingData.attribute_mappings?.mappings || [];
+      const syncedAttrs: Record<string, any> = {};
+      const overriddenAttrs: Record<string, any> = {};
+      const localOnlyAttrs: Record<string, any> = {};
+
+      const currentAttributes = product.attributes || {};
+
+      for (const key of Object.keys(currentAttributes)) {
+        const mapping = mappings.find((m: any) => m.wand_field === key);
+
+        if (mapping) {
+          const integrationValue = getNestedValue(integrationProduct.data, mapping.integration_field);
+          const currentValue = currentAttributes[key];
+
+          if (JSON.stringify(integrationValue) === JSON.stringify(currentValue)) {
+            syncedAttrs[key] = currentValue;
+          } else {
+            overriddenAttrs[key] = {
+              current: currentValue,
+              integration: integrationValue
+            };
+          }
+        } else {
+          localOnlyAttrs[key] = currentAttributes[key];
+        }
+      }
+
+      setSyncStatus({
+        synced: syncedAttrs,
+        overridden: overriddenAttrs,
+        localOnly: localOnlyAttrs
+      });
+    } catch (error) {
+      console.error('Error loading integration data:', error);
+    }
+  }
+
+  function getNestedValue(obj: any, path: string): any {
+    try {
+      const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+      let value = obj;
+      for (const part of parts) {
+        value = value?.[part];
+      }
+      return value;
+    } catch {
+      return undefined;
+    }
+  }
 
   async function handleSave() {
     if (!product) return;
@@ -108,6 +193,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     updateAttribute(key, '');
   }
 
+  function revertToIntegrationValue(key: string) {
+    if (!syncStatus?.overridden[key]) return;
+    updateAttribute(key, syncStatus.overridden[key].integration);
+  }
+
   if (!isOpen || !product) return null;
 
   return (
@@ -153,45 +243,185 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {Object.keys(attributes).length === 0 ? (
                 <p className="text-sm text-slate-500 text-center py-8">
                   No attributes yet. Click "Add Attribute" to create one.
                 </p>
               ) : (
-                Object.entries(attributes).map(([key, value]) => (
-                  <div key={key} className="flex gap-3 items-start">
-                    <div className="flex-1 grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={key}
-                        disabled
-                        className="px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={typeof value === 'object' ? JSON.stringify(value) : value}
-                        onChange={(e) => {
-                          let newValue: any = e.target.value;
-                          try {
-                            newValue = JSON.parse(e.target.value);
-                          } catch {
-                            // Keep as string if not valid JSON
-                          }
-                          updateAttribute(key, newValue);
-                        }}
-                        className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        placeholder="Value"
-                      />
+                <>
+                  {syncStatus && Object.keys(syncStatus.synced).length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-green-700 uppercase tracking-wide">
+                        <RefreshCw className="w-3 h-3" />
+                        Synced from Integration
+                      </div>
+                      {Object.entries(syncStatus.synced).map(([key, value]) => (
+                        <div key={key} className="flex gap-3 items-start">
+                          <div className="flex-1 grid grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              value={key}
+                              disabled
+                              className="px-3 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 text-sm font-medium"
+                            />
+                            <input
+                              type="text"
+                              value={typeof value === 'object' ? JSON.stringify(value) : value}
+                              onChange={(e) => {
+                                let newValue: any = e.target.value;
+                                try {
+                                  newValue = JSON.parse(e.target.value);
+                                } catch {
+                                  // Keep as string if not valid JSON
+                                }
+                                updateAttribute(key, newValue);
+                              }}
+                              className="px-3 py-2 border border-green-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                              placeholder="Value"
+                            />
+                          </div>
+                          <button
+                            onClick={() => removeAttribute(key)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <button
-                      onClick={() => removeAttribute(key)}
-                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))
+                  )}
+
+                  {syncStatus && Object.keys(syncStatus.overridden).length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                        Local Override
+                      </div>
+                      {Object.entries(syncStatus.overridden).map(([key, data]: [string, any]) => (
+                        <div key={key} className="space-y-2">
+                          <div className="flex gap-3 items-start">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                              <input
+                                type="text"
+                                value={key}
+                                disabled
+                                className="px-3 py-2 border border-amber-300 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium"
+                              />
+                              <input
+                                type="text"
+                                value={typeof data.current === 'object' ? JSON.stringify(data.current) : data.current}
+                                onChange={(e) => {
+                                  let newValue: any = e.target.value;
+                                  try {
+                                    newValue = JSON.parse(e.target.value);
+                                  } catch {
+                                    // Keep as string if not valid JSON
+                                  }
+                                  updateAttribute(key, newValue);
+                                }}
+                                className="px-3 py-2 border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm font-semibold"
+                                placeholder="Value"
+                              />
+                            </div>
+                            <button
+                              onClick={() => removeAttribute(key)}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="ml-0 pl-4 border-l-2 border-slate-200 flex items-center justify-between">
+                            <p className="text-xs text-slate-600">
+                              Integration value: <span className="font-mono text-slate-800">{typeof data.integration === 'object' ? JSON.stringify(data.integration) : data.integration}</span>
+                            </p>
+                            <button
+                              onClick={() => revertToIntegrationValue(key)}
+                              className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              Revert
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {syncStatus && Object.keys(syncStatus.localOnly).length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        Local Only
+                      </div>
+                      {Object.entries(syncStatus.localOnly).map(([key, value]) => (
+                        <div key={key} className="flex gap-3 items-start">
+                          <div className="flex-1 grid grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              value={key}
+                              disabled
+                              className="px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 text-sm"
+                            />
+                            <input
+                              type="text"
+                              value={typeof value === 'object' ? JSON.stringify(value) : value}
+                              onChange={(e) => {
+                                let newValue: any = e.target.value;
+                                try {
+                                  newValue = JSON.parse(e.target.value);
+                                } catch {
+                                  // Keep as string if not valid JSON
+                                }
+                                updateAttribute(key, newValue);
+                              }}
+                              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="Value"
+                            />
+                          </div>
+                          <button
+                            onClick={() => removeAttribute(key)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!syncStatus && Object.entries(attributes).map(([key, value]) => (
+                    <div key={key} className="flex gap-3 items-start">
+                      <div className="flex-1 grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          value={key}
+                          disabled
+                          className="px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 text-sm"
+                        />
+                        <input
+                          type="text"
+                          value={typeof value === 'object' ? JSON.stringify(value) : value}
+                          onChange={(e) => {
+                            let newValue: any = e.target.value;
+                            try {
+                              newValue = JSON.parse(e.target.value);
+                            } catch {
+                              // Keep as string if not valid JSON
+                            }
+                            updateAttribute(key, newValue);
+                          }}
+                          className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          placeholder="Value"
+                        />
+                      </div>
+                      <button
+                        onClick={() => removeAttribute(key)}
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
           </div>
