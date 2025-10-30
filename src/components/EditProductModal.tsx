@@ -33,12 +33,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [integrationData, setIntegrationData] = useState<any>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<'attributes' | 'translations'>('attributes');
+  const [frenchTranslations, setFrenchTranslations] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (product) {
       setName(product.name);
       setAttributes(product.attributes || {});
       setAttributeOverrides(product.attribute_overrides || {});
+      setFrenchTranslations(product.attributes?.translations_fr || {});
       loadIntegrationData();
     }
   }, [product]);
@@ -147,11 +150,17 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
     setLoading(true);
     try {
+      // Merge French translations into attributes
+      const updatedAttributes = {
+        ...attributes,
+        translations_fr: frenchTranslations
+      };
+
       const { error } = await supabase
         .from('products')
         .update({
           name: name,
-          attributes: attributes,
+          attributes: updatedAttributes,
           attribute_overrides: attributeOverrides,
           updated_at: new Date().toISOString()
         })
@@ -243,7 +252,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative z-[60]"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[60]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
@@ -259,21 +268,47 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           </button>
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="border-b border-slate-200 px-6 flex gap-1 flex-shrink-0">
+          <button
+            onClick={() => setActiveSection('attributes')}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeSection === 'attributes'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Product Attributes
+          </button>
+          <button
+            onClick={() => setActiveSection('translations')}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeSection === 'translations'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            French Translations
+          </button>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-slate-700">
-                Product Attributes
-              </label>
-              {!product.integration_product_id && (
-                <button
-                  onClick={addAttribute}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  + Add Attribute
-                </button>
-              )}
-            </div>
+          {/* Attributes Section */}
+          {activeSection === 'attributes' && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-slate-700">
+                  Product Attributes
+                </label>
+                {!product.integration_product_id && (
+                  <button
+                    onClick={addAttribute}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    + Add Attribute
+                  </button>
+                )}
+              </div>
 
             <div className="space-y-2">
               {Object.keys(attributes).length === 0 ? (
@@ -394,7 +429,73 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 ))
               )}
             </div>
-          </div>
+            </div>
+          )}
+
+          {/* French Translations Section */}
+          {activeSection === 'translations' && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-slate-700">
+                  French Translations
+                </label>
+                <button
+                  onClick={() => {
+                    const key = prompt('Enter attribute name to translate:');
+                    if (key && key.trim()) {
+                      setFrenchTranslations(prev => ({ ...prev, [key.trim()]: '' }));
+                    }
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  + Add Translation
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {Object.keys(frenchTranslations).length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-8">
+                    No French translations yet.
+                  </p>
+                ) : (
+                  Object.entries(frenchTranslations).map(([key, value]) => (
+                    <div key={key} className="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-slate-900">{key}</span>
+                            <span className="text-xs text-slate-500 bg-blue-50 px-2 py-1 rounded">FR</span>
+                          </div>
+                          <input
+                            type="text"
+                            value={value || ''}
+                            onChange={(e) => {
+                              setFrenchTranslations(prev => ({
+                                ...prev,
+                                [key]: e.target.value
+                              }));
+                            }}
+                            className="w-full min-h-[40px] px-3 py-2 bg-white border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 font-medium"
+                            placeholder="Enter French translation"
+                          />
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newTranslations = { ...frenchTranslations };
+                            delete newTranslations[key];
+                            setFrenchTranslations(newTranslations);
+                          }}
+                          className="text-slate-400 hover:text-red-600 transition-colors mt-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
 
