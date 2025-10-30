@@ -35,6 +35,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({});
   const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
+  const [templateAttributes, setTemplateAttributes] = useState<string[]>([]);
 
   const commonLocales = [
     { code: 'fr-FR', name: 'French (France)' },
@@ -59,12 +60,56 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   useEffect(() => {
     if (product) {
       setName(product.name);
-      setAttributes(product.attributes || {});
+      loadTemplateAttributes();
       setAttributeOverrides(product.attribute_overrides || {});
       setTranslations(product.attributes?.translations || {});
       loadIntegrationData();
     }
   }, [product]);
+
+  async function loadTemplateAttributes() {
+    if (!product) return;
+
+    // Start with actual product attributes
+    const productAttrs = product.attributes || {};
+
+    // If product has a template, fetch and merge template attributes
+    if (product.attribute_template_id) {
+      try {
+        const { data: template } = await supabase
+          .from('product_attribute_templates')
+          .select('attribute_schema')
+          .eq('id', product.attribute_template_id)
+          .maybeSingle();
+
+        if (template?.attribute_schema) {
+          const schema = template.attribute_schema as any;
+          const coreAttrs = schema.core_attributes || [];
+          const extendedAttrs = schema.extended_attributes || [];
+          const allTemplateAttrs = [...coreAttrs, ...extendedAttrs];
+
+          // Store list of template attribute names
+          setTemplateAttributes(allTemplateAttrs.map((attr: any) => attr.name));
+
+          // Merge template attributes with existing product attributes
+          const mergedAttributes = { ...productAttrs };
+          allTemplateAttrs.forEach((attr: any) => {
+            if (!(attr.name in mergedAttributes)) {
+              mergedAttributes[attr.name] = '';
+            }
+          });
+
+          setAttributes(mergedAttributes);
+          return;
+        }
+      } catch (error) {
+        console.error('Error loading template:', error);
+      }
+    }
+
+    // No template or error - just use product attributes
+    setAttributes(productAttrs);
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -332,7 +377,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 <div className="space-y-4">
                   {/* Name and Description - Full Width */}
                   {['name', 'description'].map(key => {
-                    if (!attributes[key] && key !== 'name' && key !== 'description') return null;
+                    if (!(key in attributes)) return null;
                     const value = attributes[key];
                     const isOverridden = syncStatus?.overridden[key];
                     const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
@@ -410,7 +455,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   {/* Price and Calories - Side by Side */}
                   <div className="grid grid-cols-2 gap-4">
                     {['price', 'calories'].map(key => {
-                      if (!attributes[key]) return null;
+                      if (!(key in attributes)) return null;
                       const value = attributes[key];
                       const isOverridden = syncStatus?.overridden[key];
                       const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
@@ -489,7 +534,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
                 {/* Extended Attributes - Flexible Grid */}
                 {(() => {
-                  const extendedKeys = Object.keys(attributes).filter(k => !['name', 'description', 'price', 'calories'].includes(k));
+                  const extendedKeys = Object.keys(attributes).filter(k =>
+                    !['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k)
+                  );
                   if (extendedKeys.length === 0) return null;
 
                   return (
