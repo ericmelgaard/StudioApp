@@ -48,6 +48,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [loadingStores, setLoadingStores] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -58,23 +59,35 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     const { data: companiesData } = await supabase.from('companies').select('*').order('name');
     const { data: groupsData } = await supabase.from('location_groups').select('*').order('name');
 
-    const { data: storesData, count } = await supabase
-      .from('stores')
-      .select('*', { count: 'exact' })
-      .order('name')
-      .limit(10000);
-
-    console.log('Stores loaded:', storesData?.length, 'of', count, 'total stores');
-
     if (conceptsData) setConcepts(conceptsData);
     if (companiesData) setCompanies(companiesData);
     if (groupsData) setGroups(groupsData);
-    if (storesData) setStores(storesData);
 
     if (conceptsData && conceptsData.length > 0) {
       setSelectedConcept(conceptsData[0]);
     }
   };
+
+  const loadStoresForCompany = async (companyId: number) => {
+    setLoadingStores(true);
+    const { data: storesData } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('name');
+
+    console.log('Loaded stores for company', companyId, ':', storesData?.length, 'stores');
+    if (storesData) setStores(storesData);
+    setLoadingStores(false);
+  };
+
+  useEffect(() => {
+    if (selectedCompany) {
+      loadStoresForCompany(selectedCompany.id);
+    } else {
+      setStores([]);
+    }
+  }, [selectedCompany]);
 
 
   const filteredConcepts = concepts.filter(c =>
@@ -382,21 +395,16 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                     {companies
                       .filter(c => c.concept_id === selectedConcept.id)
                       .map((company) => {
-                        const companyStores = stores.filter(s => s.company_id === company.id);
                         return (
                           <button
                             key={company.id}
                             onClick={() => {
-                              console.log('Selected company:', company);
-                              console.log('Total stores in state:', stores.length);
-                              console.log('Stores for this company:', companyStores);
                               setSelectedCompany(company);
                               setSelectedStore(null);
                             }}
                             className="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-600 transition-colors flex items-center justify-between"
                           >
                             <span>{company.name}</span>
-                            <span className="text-xs text-slate-400">{companyStores.length} stores</span>
                           </button>
                         );
                       })}
