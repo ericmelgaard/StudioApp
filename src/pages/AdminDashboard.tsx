@@ -32,6 +32,7 @@ interface Store {
   id: number;
   name: string;
   location_group_id: number;
+  company_id: number;
 }
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
@@ -374,10 +375,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                     {companies
                       .filter(c => c.concept_id === selectedConcept.id)
                       .map((company) => {
-                        const companyStores = stores.filter(s => {
-                          const storeGroup = groups.find(g => g.id === s.location_group_id);
-                          return storeGroup && storeGroup.company_id === company.id;
-                        });
+                        const companyStores = stores.filter(s => s.company_id === company.id);
                         return (
                           <button
                             key={company.id}
@@ -400,17 +398,11 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               {selectedCompany && (
                 <div className="p-4">
                   <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">
-                    {stores.filter(s => {
-                      const storeGroup = groups.find(g => g.id === s.location_group_id);
-                      return storeGroup && storeGroup.company_id === selectedCompany.id;
-                    }).length} Stores in {selectedCompany.name}
+                    {stores.filter(s => s.company_id === selectedCompany.id).length} Stores in {selectedCompany.name}
                   </div>
                   <div className="space-y-1">
                     {stores
-                      .filter(s => {
-                        const storeGroup = groups.find(g => g.id === s.location_group_id);
-                        return storeGroup && storeGroup.company_id === selectedCompany.id;
-                      })
+                      .filter(s => s.company_id === selectedCompany.id)
                       .map((store) => (
                         <button
                           key={store.id}

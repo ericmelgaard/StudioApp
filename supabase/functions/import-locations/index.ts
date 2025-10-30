@@ -122,6 +122,7 @@ Deno.serve(async (req: Request) => {
       id: s.key,
       name: s.name,
       location_group_id: s.parentKey,
+      company_id: s.grandParentKey,
       privilege_level: s.privilegeLevel,
       parent_level: s.parentLevel,
       domain_level: s.domainLevel,
