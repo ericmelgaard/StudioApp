@@ -54,15 +54,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   }, []);
 
   const loadData = async () => {
-    const { data: conceptsData } = await supabase.from('concepts').select('*').order('name');
-    const { data: companiesData } = await supabase.from('companies').select('*').order('name');
-    const { data: groupsData } = await supabase.from('location_groups').select('*').order('name');
-    const { data: storesData } = await supabase.from('stores').select('*').order('name');
+    const { data: conceptsData, error: conceptsError } = await supabase.from('concepts').select('*').order('name');
+    const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').order('name');
+    const { data: groupsData, error: groupsError } = await supabase.from('location_groups').select('*').order('name');
+    const { data: storesData, error: storesError } = await supabase.from('stores').select('*').order('name');
+
+    console.log('Stores loaded:', storesData?.length, 'stores');
+    console.log('Stores error:', storesError);
+    console.log('Sample stores:', storesData?.slice(0, 3));
 
     if (conceptsData) setConcepts(conceptsData);
     if (companiesData) setCompanies(companiesData);
     if (groupsData) setGroups(groupsData);
-    if (storesData) setStores(storesData);
+    if (storesData) {
+      console.log('Setting stores state with', storesData.length, 'stores');
+      setStores(storesData);
+    }
 
     if (conceptsData && conceptsData.length > 0) {
       setSelectedConcept(conceptsData[0]);
@@ -380,6 +387,9 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                           <button
                             key={company.id}
                             onClick={() => {
+                              console.log('Selected company:', company);
+                              console.log('Total stores in state:', stores.length);
+                              console.log('Stores for this company:', companyStores);
                               setSelectedCompany(company);
                               setSelectedStore(null);
                             }}
