@@ -54,22 +54,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   }, []);
 
   const loadData = async () => {
-    const { data: conceptsData, error: conceptsError } = await supabase.from('concepts').select('*').order('name');
-    const { data: companiesData, error: companiesError } = await supabase.from('companies').select('*').order('name');
-    const { data: groupsData, error: groupsError } = await supabase.from('location_groups').select('*').order('name');
-    const { data: storesData, error: storesError } = await supabase.from('stores').select('*').order('name');
+    const { data: conceptsData } = await supabase.from('concepts').select('*').order('name');
+    const { data: companiesData } = await supabase.from('companies').select('*').order('name');
+    const { data: groupsData } = await supabase.from('location_groups').select('*').order('name');
 
-    console.log('Stores loaded:', storesData?.length, 'stores');
-    console.log('Stores error:', storesError);
-    console.log('Sample stores:', storesData?.slice(0, 3));
+    const { data: storesData, count } = await supabase
+      .from('stores')
+      .select('*', { count: 'exact' })
+      .order('name')
+      .limit(10000);
+
+    console.log('Stores loaded:', storesData?.length, 'of', count, 'total stores');
 
     if (conceptsData) setConcepts(conceptsData);
     if (companiesData) setCompanies(companiesData);
     if (groupsData) setGroups(groupsData);
-    if (storesData) {
-      console.log('Setting stores state with', storesData.length, 'stores');
-      setStores(storesData);
-    }
+    if (storesData) setStores(storesData);
 
     if (conceptsData && conceptsData.length > 0) {
       setSelectedConcept(conceptsData[0]);
