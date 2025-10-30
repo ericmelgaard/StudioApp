@@ -63,7 +63,6 @@ Deno.serve(async (req: Request) => {
 
     const data: LocationData = await req.json();
 
-    // Insert concepts
     const conceptsData = data.concepts.map(c => ({
       id: c.key,
       name: c.name,
@@ -80,7 +79,6 @@ Deno.serve(async (req: Request) => {
 
     if (conceptsError) throw conceptsError;
 
-    // Insert companies
     const companiesData = data.companies.map(c => ({
       id: c.key,
       name: c.name,
@@ -98,7 +96,6 @@ Deno.serve(async (req: Request) => {
 
     if (companiesError) throw companiesError;
 
-    // Insert groups
     const groupsData = data.groups.map(g => ({
       id: g.key,
       name: g.name,
@@ -117,15 +114,15 @@ Deno.serve(async (req: Request) => {
 
     if (groupsError) throw groupsError;
 
-    // Insert stores
     const companyIds = new Set(data.companies.map(c => c.key));
     const storesData = data.stores.map(s => {
       const parentIsCompany = companyIds.has(s.parentKey);
+      const companyId = parentIsCompany ? s.parentKey : (s.grandParentKey && companyIds.has(s.grandParentKey) ? s.grandParentKey : null);
       return {
         id: s.key,
         name: s.name,
         location_group_id: parentIsCompany ? null : s.parentKey,
-        company_id: parentIsCompany ? s.parentKey : s.grandParentKey,
+        company_id: companyId,
         privilege_level: s.privilegeLevel,
         parent_level: s.parentLevel,
         domain_level: s.domainLevel,
