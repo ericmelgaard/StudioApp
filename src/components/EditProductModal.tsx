@@ -559,11 +559,89 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   </div>
                 </div>
 
+                {/* Image Attributes Section */}
+                {(() => {
+                  const imageKeys = Object.keys(attributes).filter(k => {
+                    const meta = getAttributeMeta(k);
+                    return meta?.type === 'image';
+                  });
+                  if (imageKeys.length === 0) return null;
+
+                  return (
+                    <div className="pt-4 border-t border-slate-200">
+                      <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Images</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {imageKeys.map(key => {
+                          const value = attributes[key];
+                          const isOverridden = syncStatus?.overridden[key];
+                          const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                          const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
+                          const integrationValue = isOverridden?.integration;
+                          const isDropdownOpen = openDropdown === key;
+                          const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+                          const meta = getAttributeMeta(key);
+
+                          return (
+                            <div key={key} className="flex flex-col">
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="text-xs font-medium text-slate-600">{meta?.label || key}</label>
+                                {syncStatus && !isLocalOnly && hasValue && (
+                                  <div className="relative">
+                                    {isOverridden ? (
+                                      <>
+                                        <button
+                                          onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                                        >
+                                          <Unlink className="w-3 h-3" />
+                                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+                                        {isDropdownOpen && (
+                                          <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                enableSync(key);
+                                                setOpenDropdown(null);
+                                              }}
+                                              className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
+                                            >
+                                              <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                              <div className="flex-1">
+                                                <div className="font-medium text-slate-900">Revert to Sync</div>
+                                                <div className="text-xs text-slate-500 mt-0.5">Restore from integration</div>
+                                              </div>
+                                            </button>
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <button
+                                        onClick={() => lockOverride(key)}
+                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                      >
+                                        <Link className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Extended Attributes - Flexible Grid */}
                 {(() => {
-                  const extendedKeys = Object.keys(attributes).filter(k =>
-                    !['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k)
-                  );
+                  const extendedKeys = Object.keys(attributes).filter(k => {
+                    const meta = getAttributeMeta(k);
+                    return !['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k) &&
+                           meta?.type !== 'image';
+                  });
                   if (extendedKeys.length === 0) return null;
 
                   return (
