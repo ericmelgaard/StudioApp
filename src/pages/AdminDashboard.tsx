@@ -31,7 +31,7 @@ interface LocationGroup {
 interface Store {
   id: number;
   name: string;
-  location_group_id: number;
+  location_group_id: number | null;
   company_id: number;
 }
 
