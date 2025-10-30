@@ -233,6 +233,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
   const [selectedIntegrationProduct, setSelectedIntegrationProduct] = useState<string>('');
   const [productName, setProductName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
+  const [linkedAttributes, setLinkedAttributes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen) {
@@ -280,6 +281,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     setSelectedIntegrationProduct('');
     setProductName('');
     setAttributes({});
+    setLinkedAttributes(new Set());
     setShowIntegrationSearch(false);
     setSearchIntegration('');
   }
@@ -289,22 +291,27 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     setProductName(product.data?.displayAttribute?.itemTitle || product.name);
 
     const mappedAttributes: Record<string, any> = {};
+    const linkedAttrs = new Set<string>();
 
     if (product.data?.description) {
       mappedAttributes.description = product.data.description;
+      linkedAttrs.add('description');
     }
 
     const price = product.data?.prices?.prices?.[0]?.price ||
                   product.data?.priceAttribute?.prices?.[0]?.price;
     if (price) {
       mappedAttributes.price = parseFloat(price);
+      linkedAttrs.add('price');
     }
 
     if (product.data?.imageUrl) {
       mappedAttributes.image_url = product.data.imageUrl;
+      linkedAttrs.add('image_url');
     }
 
     setAttributes(mappedAttributes);
+    setLinkedAttributes(linkedAttrs);
     setShowIntegrationSearch(false);
     setSearchIntegration('');
   }
@@ -318,18 +325,29 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
 
   function renderAttributeField(field: AttributeField) {
     const value = attributes[field.name] || '';
+    const isLinked = linkedAttributes.has(field.name);
 
     switch (field.type) {
       case 'text':
         return (
-          <input
-            type="text"
-            required={field.required}
-            value={value}
-            onChange={(e) => handleAttributeChange(field.name, e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder={field.label}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              required={field.required}
+              value={value}
+              onChange={(e) => handleAttributeChange(field.name, e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                isLinked ? 'border-green-400 bg-green-50 pr-20' : 'border-slate-300'
+              }`}
+              placeholder={field.label}
+            />
+            {isLinked && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
+                <Link className="w-3 h-3" />
+                Synced
+              </div>
+            )}
+          </div>
         );
 
       case 'richtext':
@@ -344,12 +362,20 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
 
       case 'image':
         return (
-          <ImageUploadField
-            value={value}
-            onChange={(url) => handleAttributeChange(field.name, url)}
-            label={field.label}
-            resolution={field.resolution}
-          />
+          <div className="relative">
+            <ImageUploadField
+              value={value}
+              onChange={(url) => handleAttributeChange(field.name, url)}
+              label={field.label}
+              resolution={field.resolution}
+            />
+            {isLinked && (
+              <div className="absolute top-2 right-2 bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                <Link className="w-3 h-3" />
+                Synced from Integration
+              </div>
+            )}
+          </div>
         );
 
       case 'sizes':
@@ -362,15 +388,25 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
 
       case 'number':
         return (
-          <input
-            type="number"
-            step="any"
-            required={field.required}
-            value={value}
-            onChange={(e) => handleAttributeChange(field.name, parseFloat(e.target.value) || 0)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder={field.label}
-          />
+          <div className="relative">
+            <input
+              type="number"
+              step="any"
+              required={field.required}
+              value={value}
+              onChange={(e) => handleAttributeChange(field.name, parseFloat(e.target.value) || 0)}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                isLinked ? 'border-green-400 bg-green-50 pr-20' : 'border-slate-300'
+              }`}
+              placeholder={field.label}
+            />
+            {isLinked && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
+                <Link className="w-3 h-3" />
+                Synced
+              </div>
+            )}
+          </div>
         );
 
       case 'boolean':
