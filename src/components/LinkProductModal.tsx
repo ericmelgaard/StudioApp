@@ -19,8 +19,8 @@ export interface LinkData {
 interface IntegrationProduct {
   id: string;
   name: string;
-  integration_id: string;
-  raw_data: any;
+  external_id: string;
+  data: any;
 }
 
 export default function LinkProductModal({ isOpen, onClose, onLink, currentLink }: LinkProductModalProps) {
@@ -51,16 +51,16 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
       setFilteredProducts(
         integrationProducts.filter(p =>
           p.name.toLowerCase().includes(term) ||
-          p.integration_id.toLowerCase().includes(term)
+          p.external_id.toLowerCase().includes(term)
         )
       );
     }
   }, [searchTerm, integrationProducts]);
 
   useEffect(() => {
-    if (selectedProduct && selectedProduct.raw_data) {
-      const fields = Object.keys(selectedProduct.raw_data).filter(key =>
-        typeof selectedProduct.raw_data[key] !== 'object' || selectedProduct.raw_data[key] === null
+    if (selectedProduct && selectedProduct.data) {
+      const fields = Object.keys(selectedProduct.data).filter(key =>
+        typeof selectedProduct.data[key] !== 'object' || selectedProduct.data[key] === null
       );
       setAvailableFields(fields);
     } else {
@@ -73,7 +73,7 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
     try {
       const { data, error } = await supabase
         .from('integration_products')
-        .select('id, name, integration_id, raw_data')
+        .select('id, name, external_id, data')
         .order('name');
 
       if (error) throw error;
@@ -183,7 +183,7 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
                     }`}
                   >
                     <div className="font-medium text-slate-900">{product.name}</div>
-                    <div className="text-xs text-slate-500 mt-1">ID: {product.integration_id}</div>
+                    <div className="text-xs text-slate-500 mt-1">ID: {product.external_id}</div>
                   </button>
                 ))}
               </div>
@@ -208,10 +208,10 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
                   </option>
                 ))}
               </select>
-              {selectedField && selectedProduct.raw_data[selectedField] && (
+              {selectedField && selectedProduct.data[selectedField] && (
                 <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
                   <span className="font-medium">Current value: </span>
-                  {String(selectedProduct.raw_data[selectedField])}
+                  {String(selectedProduct.data[selectedField])}
                 </div>
               )}
             </div>
