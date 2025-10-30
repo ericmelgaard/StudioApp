@@ -280,7 +280,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   {[...Object.entries(syncStatus.synced), ...Object.entries(syncStatus.overridden), ...Object.entries(syncStatus.localOnly)].map(([key, value]) => {
                     const isOverridden = syncStatus.overridden[key];
                     const isLocalOnly = syncStatus.localOnly[key] !== undefined;
-                    const actualValue = isOverridden ? isOverridden.current : value;
+                    const actualValue = attributes[key] ?? (isOverridden ? isOverridden.current : value);
                     const integrationValue = isOverridden?.integration;
                     const isDropdownOpen = openDropdown === key;
 
