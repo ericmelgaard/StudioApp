@@ -118,18 +118,22 @@ Deno.serve(async (req: Request) => {
     if (groupsError) throw groupsError;
 
     // Insert stores
-    const storesData = data.stores.map(s => ({
-      id: s.key,
-      name: s.name,
-      location_group_id: s.parentKey,
-      company_id: s.grandParentKey,
-      privilege_level: s.privilegeLevel,
-      parent_level: s.parentLevel,
-      domain_level: s.domainLevel,
-      group_type_string: s.groupTypeString,
-      parent_key: s.parentKey,
-      grand_parent_key: s.grandParentKey,
-    }));
+    const companyIds = new Set(data.companies.map(c => c.key));
+    const storesData = data.stores.map(s => {
+      const parentIsCompany = companyIds.has(s.parentKey);
+      return {
+        id: s.key,
+        name: s.name,
+        location_group_id: parentIsCompany ? null : s.parentKey,
+        company_id: parentIsCompany ? s.parentKey : s.grandParentKey,
+        privilege_level: s.privilegeLevel,
+        parent_level: s.parentLevel,
+        domain_level: s.domainLevel,
+        group_type_string: s.groupTypeString,
+        parent_key: s.parentKey,
+        grand_parent_key: s.grandParentKey,
+      };
+    });
 
     const { error: storesError } = await supabase
       .from('stores')

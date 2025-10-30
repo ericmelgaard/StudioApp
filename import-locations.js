@@ -49,7 +49,7 @@ async function importLocations() {
 
     data.companies = data.companies.filter(c => conceptKeys.has(c.parentKey));
     data.groups = data.groups.filter(g => companyKeys.has(g.parentKey));
-    data.stores = data.stores.filter(s => groupKeys.has(s.parentKey));
+    data.stores = data.stores.filter(s => groupKeys.has(s.parentKey) || companyKeys.has(s.parentKey));
 
     console.log(`Found ${data.concepts.length} concepts`);
     console.log(`Found ${data.companies.length} companies`);
