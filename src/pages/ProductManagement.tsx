@@ -110,123 +110,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
     }
   };
 
-  const syncProducts = async () => {
-    setSyncing(true);
-    try {
-      const apiUrl = 'https://api.wanddigital.com/services/webtrition/client/v2/platform?SapCode=27985&Venue=52814&mealPeriod=&MenuDate=2025-10-26&SourceSystem=1&Days=7&IncludeNutrition=false&includeIcons=false&IncludeAllergens=false&IncludeIngredients=false&IncludeRecipe=false';
-      console.log('Fetching products from API...');
-      const response = await fetch(apiUrl);
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('API Response:', data);
-      console.log('Menu items count:', data.menuItems?.length || 0);
-
-      if (data.hasError) {
-        alert(`Failed to fetch products from API: ${data.error || 'Unknown error'}`);
-        setSyncing(false);
-        return;
-      }
-
-      const menuItems = data.menuItems || [];
-      console.log('Processing', menuItems.length, 'menu items...');
-
-      // Group items by MRN
-      const productsByMrn = new Map<string, any>();
-
-      menuItems.forEach((item: any) => {
-        const mrn = item.mrn;
-        if (!productsByMrn.has(mrn)) {
-          productsByMrn.set(mrn, {
-            mrn: item.mrn,
-            external_id: item.externalId,
-            string_id: item.stringId,
-            name: item.name,
-            source_name: item.sourceName,
-            description: item.description,
-            enticing_description: item.enticingDescription,
-            portion: item.portion,
-            calories: item.calories,
-            price: item.price,
-            sort_order: item.sortOrder,
-            is_combo: item.isCombo,
-            languages: item.languages || {},
-            icons: item.icons || [],
-            meal_periods: [],
-            meal_stations: [],
-            last_synced_at: new Date().toISOString(),
-          });
-        }
-
-        const product = productsByMrn.get(mrn);
-
-        // Add meal period if not already present
-        if (item.mealPeriod && !product.meal_periods.some((mp: any) => mp.period === item.mealPeriod && mp.date === item.date)) {
-          product.meal_periods.push({
-            period: item.mealPeriod,
-            date: item.date,
-          });
-        }
-
-        // Add meal station if not already present
-        if (item.mealStation && !product.meal_stations.some((ms: any) => ms.station === item.mealStation)) {
-          product.meal_stations.push({
-            station: item.mealStation,
-            station_detail: item.mealStationDetail || {},
-          });
-        }
-      });
-
-      const productsToInsert = Array.from(productsByMrn.values());
-      console.log('Aggregated into', productsToInsert.length, 'unique products by MRN');
-
-      console.log('Clearing existing products...');
-      const { error: deleteError } = await supabase
-        .from('products')
-        .delete()
-        .neq('mrn', '00000000-0000-0000-0000-000000000000');
-
-      if (deleteError) {
-        console.error('Error clearing products:', deleteError);
-        throw new Error(`Failed to clear products: ${deleteError.message}`);
-      }
-
-      console.log('Inserting', productsToInsert.length, 'products into database in batches...');
-
-      // Insert in batches of 100 to avoid size limits
-      const batchSize = 100;
-      let insertedCount = 0;
-
-      for (let i = 0; i < productsToInsert.length; i += batchSize) {
-        const batch = productsToInsert.slice(i, i + batchSize);
-        console.log(`Inserting batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(productsToInsert.length / batchSize)} (${batch.length} items)...`);
-
-        const { error: insertError } = await supabase
-          .from('products')
-          .insert(batch);
-
-        if (insertError) {
-          console.error('Error inserting batch:', insertError);
-          throw new Error(`Failed to insert batch at index ${i}: ${insertError.message}`);
-        }
-
-        insertedCount += batch.length;
-      }
-
-      console.log('Successfully synced all products!');
-      alert(`Successfully synced ${insertedCount} products`);
-      loadProducts();
-    } catch (error) {
-      console.error('Error syncing products:', error);
-      alert(`Failed to sync products: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = !searchQuery ||
@@ -287,20 +170,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </div>
               </button>
 
-              <button
-                onClick={() => {
-                  syncProducts();
-                  setSidePanelOpen(false);
-                }}
-                disabled={syncing}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RefreshCw className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
-                <div className="text-left">
-                  <div className="font-semibold">{syncing ? 'Syncing...' : 'Sync from API'}</div>
-                  <div className="text-xs text-purple-100">Fetch latest products</div>
-                </div>
-              </button>
             </div>
           </div>
         </div>
@@ -428,21 +297,11 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">
                   {products.length === 0 ? 'No products yet' : 'No products found'}
                 </h3>
-                <p className="text-slate-600 mb-6">
+                <p className="text-slate-600">
                   {products.length === 0
-                    ? 'Sync products from the API to get started'
+                    ? 'Load sample data to get started, or manage integrations to sync products from external sources'
                     : 'Try adjusting your search or filters'}
                 </p>
-                {products.length === 0 && (
-                  <button
-                    onClick={syncProducts}
-                    disabled={syncing}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                    {syncing ? 'Syncing...' : 'Sync from API'}
-                  </button>
-                )}
               </div>
             ) : viewMode === 'list' ? (
               <table className="w-full">
