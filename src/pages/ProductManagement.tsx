@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Database, Menu, X, LayoutGrid, List, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { mockProducts } from '../data/mockProducts';
 import ProductTile from '../components/ProductTile';
+import CreateProductModal from '../components/CreateProductModal';
 
 interface Product {
   mrn: string;
@@ -34,6 +35,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [mealStations, setMealStations] = useState<string[]>([]);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -195,13 +197,22 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setSidePanelOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
-            >
-              <Menu className="w-5 h-5" />
-              Actions
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                Create Product
+              </button>
+              <button
+                onClick={() => setSidePanelOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
+              >
+                <Menu className="w-5 h-5" />
+                Actions
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -388,6 +399,12 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
           )}
         </div>
       </main>
+
+      <CreateProductModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={loadProducts}
+      />
     </div>
   );
 }
