@@ -308,7 +308,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* Attributes Section */}
           <div id="attributes-section">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <label className="block text-sm font-medium text-slate-700">
                 Product Attributes
               </label>
@@ -322,125 +322,258 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               )}
             </div>
 
-            <div className="space-y-2">
-              {Object.keys(attributes).length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8">
-                  No attributes yet.
-                </p>
-              ) : syncStatus ? (
-                <>
-                  {[...Object.entries(syncStatus.synced), ...Object.entries(syncStatus.overridden), ...Object.entries(syncStatus.localOnly)].map(([key, value]) => {
-                    const isOverridden = syncStatus.overridden[key];
-                    const isLocalOnly = syncStatus.localOnly[key] !== undefined;
-                    const actualValue = attributes[key] ?? (isOverridden ? isOverridden.current : value);
+            {Object.keys(attributes).length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-8">
+                No attributes yet.
+              </p>
+            ) : (
+              <div className="space-y-6">
+                {/* Required Attributes - Structured Layout */}
+                <div className="space-y-4">
+                  {/* Name and Description - Full Width */}
+                  {['name', 'description'].map(key => {
+                    if (!attributes[key] && key !== 'name' && key !== 'description') return null;
+                    const value = attributes[key];
+                    const isOverridden = syncStatus?.overridden[key];
+                    const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                    const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
                     const integrationValue = isOverridden?.integration;
                     const isDropdownOpen = openDropdown === key;
+                    const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
 
                     return (
-                      <div key={key} className="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-semibold text-slate-900">{key}</span>
-                              {!isLocalOnly && (
-                                <div className="relative">
-                                  {isOverridden ? (
-                                    <>
+                      <div key={key}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{key}</label>
+                          {syncStatus && !isLocalOnly && hasValue && (
+                            <div className="relative">
+                              {isOverridden ? (
+                                <>
+                                  <button
+                                    onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                    className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                                  >
+                                    <Unlink className="w-3 h-3" />
+                                    <span>Local</span>
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                  </button>
+                                  {isDropdownOpen && (
+                                    <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
                                       <button
-                                        onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          enableSync(key);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
                                       >
-                                        <Unlink className="w-3.5 h-3.5" />
-                                        <span>Locally Applied</span>
-                                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                      </button>
-
-                                      {isDropdownOpen && (
-                                        <div
-                                          className="dropdown-menu absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              enableSync(key);
-                                              setOpenDropdown(null);
-                                            }}
-                                            className="w-full px-3 py-2.5 text-left text-sm hover:bg-slate-50 flex items-start gap-2"
-                                          >
-                                            <RotateCcw className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1">
-                                              <div className="font-medium text-slate-900">Revert to API Sync</div>
-                                              <div className="text-xs text-slate-500 mt-1">
-                                                API value: <span className="font-mono bg-slate-100 px-1 py-0.5 rounded">{typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}</span>
-                                              </div>
-                                            </div>
-                                          </button>
+                                        <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1">
+                                          <div className="font-medium text-slate-900">Revert to Sync</div>
+                                          <div className="text-xs text-slate-500 mt-0.5 truncate">
+                                            {typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}
+                                          </div>
                                         </div>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <button
-                                      onClick={() => lockOverride(key)}
-                                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
-                                      title="Click to lock current value and stop syncing"
-                                    >
-                                      <Link className="w-3.5 h-3.5" />
-                                      <span>Syncing</span>
-                                    </button>
+                                      </button>
+                                    </div>
                                   )}
-                                </div>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => lockOverride(key)}
+                                  className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                >
+                                  <Link className="w-3 h-3" />
+                                  <span>Syncing</span>
+                                </button>
                               )}
                             </div>
-                            <input
-                              type="text"
-                              value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                const newValue = e.target.value;
-                                updateAttribute(key, newValue);
-                                if (!isLocalOnly && !isOverridden) {
-                                  lockOverride(key);
-                                }
-                              }}
-                              onKeyDown={(e) => e.stopPropagation()}
-                              onFocus={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full min-h-[40px] px-3 py-2 bg-white border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 font-medium"
-                              placeholder="Enter value"
-                            />
-                          </div>
+                          )}
                         </div>
+                        <input
+                          type="text"
+                          value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            updateAttribute(key, newValue);
+                            if (syncStatus && !isLocalOnly && !isOverridden) {
+                              lockOverride(key);
+                            }
+                          }}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
+                          placeholder={`Enter ${key}`}
+                        />
                       </div>
                     );
                   })}
-                </>
-              ) : (
-                Object.entries(attributes).map(([key, value]) => (
-                  <div key={key} className="bg-slate-50 rounded-lg p-3">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1 space-y-2">
-                          <span className="text-sm font-medium text-slate-700 block">{key}</span>
-                        <input
-                          type="text"
-                          value={typeof value === 'object' ? JSON.stringify(value) : value || ''}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            const newValue = e.target.value;
-                            updateAttribute(key, newValue);
-                          }}
-                          onKeyDown={(e) => e.stopPropagation()}
-                          onFocus={(e) => e.stopPropagation()}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-full min-h-[40px] px-3 py-2 bg-white border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 font-medium"
-                          placeholder="Enter value"
-                        />
+
+                  {/* Price and Calories - Side by Side */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {['price', 'calories'].map(key => {
+                      if (!attributes[key]) return null;
+                      const value = attributes[key];
+                      const isOverridden = syncStatus?.overridden[key];
+                      const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                      const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
+                      const integrationValue = isOverridden?.integration;
+                      const isDropdownOpen = openDropdown === key;
+                      const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+
+                      return (
+                        <div key={key}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{key}</label>
+                            {syncStatus && !isLocalOnly && hasValue && (
+                              <div className="relative">
+                                {isOverridden ? (
+                                  <>
+                                    <button
+                                      onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                      className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                                    >
+                                      <Unlink className="w-3 h-3" />
+                                      <span>Local</span>
+                                      <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {isDropdownOpen && (
+                                      <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            enableSync(key);
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
+                                        >
+                                          <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1">
+                                            <div className="font-medium text-slate-900">Revert to Sync</div>
+                                            <div className="text-xs text-slate-500 mt-0.5 truncate">
+                                              {typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}
+                                            </div>
+                                          </div>
+                                        </button>
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => lockOverride(key)}
+                                    className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                  >
+                                    <Link className="w-3 h-3" />
+                                    <span>Syncing</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              updateAttribute(key, newValue);
+                              if (syncStatus && !isLocalOnly && !isOverridden) {
+                                lockOverride(key);
+                              }
+                            }}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
+                            placeholder={`Enter ${key}`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Extended Attributes - Flexible Grid */}
+                {(() => {
+                  const extendedKeys = Object.keys(attributes).filter(k => !['name', 'description', 'price', 'calories'].includes(k));
+                  if (extendedKeys.length === 0) return null;
+
+                  return (
+                    <div className="pt-4 border-t border-slate-200">
+                      <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Extended Attributes</h3>
+                      <div className="flex flex-wrap gap-3">
+                        {extendedKeys.map(key => {
+                          const value = attributes[key];
+                          const isOverridden = syncStatus?.overridden[key];
+                          const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                          const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
+                          const integrationValue = isOverridden?.integration;
+                          const isDropdownOpen = openDropdown === key;
+                          const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+
+                          return (
+                            <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="text-xs font-medium text-slate-600">{key}</label>
+                                {syncStatus && !isLocalOnly && hasValue && (
+                                  <div className="relative">
+                                    {isOverridden ? (
+                                      <>
+                                        <button
+                                          onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                                        >
+                                          <Unlink className="w-3 h-3" />
+                                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+                                        {isDropdownOpen && (
+                                          <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                enableSync(key);
+                                                setOpenDropdown(null);
+                                              }}
+                                              className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
+                                            >
+                                              <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                              <div className="flex-1">
+                                                <div className="font-medium text-slate-900">Revert</div>
+                                                <div className="text-xs text-slate-500 mt-0.5 truncate">
+                                                  {typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}
+                                                </div>
+                                              </div>
+                                            </button>
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <button
+                                        onClick={() => lockOverride(key)}
+                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                      >
+                                        <Link className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <input
+                                type="text"
+                                value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
+                                onChange={(e) => {
+                                  const newValue = e.target.value;
+                                  updateAttribute(key, newValue);
+                                  if (syncStatus && !isLocalOnly && !isOverridden) {
+                                    lockOverride(key);
+                                  }
+                                }}
+                                className="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
+                                placeholder="Value"
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Translations Section */}
