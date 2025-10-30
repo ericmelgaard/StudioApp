@@ -100,7 +100,16 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           const mergedAttributes = { ...productAttrs };
           allTemplateAttrs.forEach((attr: any) => {
             if (!(attr.name in mergedAttributes)) {
-              mergedAttributes[attr.name] = '';
+              // Initialize with appropriate default based on type
+              if (attr.type === 'sizes') {
+                mergedAttributes[attr.name] = [];
+              } else if (attr.type === 'boolean') {
+                mergedAttributes[attr.name] = false;
+              } else if (attr.type === 'number') {
+                mergedAttributes[attr.name] = null;
+              } else {
+                mergedAttributes[attr.name] = '';
+              }
             }
           });
 
@@ -676,12 +685,40 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   );
                 })()}
 
+                {/* Sizes Section */}
+                {(() => {
+                  const sizesKeys = Object.keys(attributes).filter(k => {
+                    const meta = getAttributeMeta(k);
+                    return meta?.type === 'sizes';
+                  });
+                  if (sizesKeys.length === 0) return null;
+
+                  return (
+                    <div className="pt-4 border-t border-slate-200">
+                      {sizesKeys.map(key => {
+                        const value = attributes[key];
+                        const isOverridden = syncStatus?.overridden[key];
+                        const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                        const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
+                        const meta = getAttributeMeta(key);
+
+                        return (
+                          <div key={key}>
+                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">{meta?.label || key}</h3>
+                            {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
                 {/* Extended Attributes - Flexible Grid */}
                 {(() => {
                   const extendedKeys = Object.keys(attributes).filter(k => {
                     const meta = getAttributeMeta(k);
                     return !['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k) &&
-                           meta?.type !== 'image';
+                           meta?.type !== 'image' && meta?.type !== 'sizes';
                   });
                   if (extendedKeys.length === 0) return null;
 
