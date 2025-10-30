@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2, RefreshCw, Lock, Unlock } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Product {
@@ -187,12 +187,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     }));
   }
 
-  function removeAttribute(key: string) {
-    const newAttributes = { ...attributes };
-    delete newAttributes[key];
-    setAttributes(newAttributes);
-  }
-
   function addAttribute() {
     const key = prompt('Enter attribute name:');
     if (!key) return;
@@ -245,164 +239,58 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Product Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter product name"
-            />
-          </div>
-
-          <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-slate-700">
-                Attributes
+                Product Attributes
               </label>
-              <button
-                onClick={addAttribute}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                + Add Attribute
-              </button>
+              {!product.integration_product_id && (
+                <button
+                  onClick={addAttribute}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  + Add Attribute
+                </button>
+              )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-2">
               {Object.keys(attributes).length === 0 ? (
                 <p className="text-sm text-slate-500 text-center py-8">
-                  No attributes yet. Click "Add Attribute" to create one.
+                  No attributes yet.
                 </p>
-              ) : (
+              ) : syncStatus ? (
                 <>
-                  {syncStatus && Object.keys(syncStatus.synced).length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-green-700 uppercase tracking-wide">
-                        <RefreshCw className="w-3 h-3" />
-                        Synced from Integration
-                      </div>
-                      {Object.entries(syncStatus.synced).map(([key, value]) => (
-                        <div key={key} className="space-y-2">
-                          <div className="flex gap-3 items-start">
-                            <div className="flex-1 grid grid-cols-2 gap-3">
-                              <input
-                                type="text"
-                                value={key}
-                                disabled
-                                className="px-3 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 text-sm font-medium"
-                              />
-                              <input
-                                type="text"
-                                value={typeof value === 'object' ? JSON.stringify(value) : value}
-                                onChange={(e) => {
-                                  let newValue: any = e.target.value;
-                                  try {
-                                    newValue = JSON.parse(e.target.value);
-                                  } catch {
-                                    // Keep as string if not valid JSON
-                                  }
-                                  updateAttribute(key, newValue);
-                                  lockOverride(key);
-                                }}
-                                className="px-3 py-2 border border-green-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                                placeholder="Value"
-                              />
-                            </div>
-                            <button
-                              onClick={() => lockOverride(key)}
-                              className="p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
-                              title="Lock this value (stop syncing)"
-                            >
-                              <Lock className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => removeAttribute(key)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="ml-0 pl-4 border-l-2 border-green-300 text-xs text-green-700">
-                            Auto-syncing from integration
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {[...Object.entries(syncStatus.synced), ...Object.entries(syncStatus.overridden), ...Object.entries(syncStatus.localOnly)].map(([key, value]) => {
+                    const isOverridden = syncStatus.overridden[key];
+                    const isLocalOnly = syncStatus.localOnly[key] !== undefined;
+                    const actualValue = isOverridden ? isOverridden.current : value;
+                    const integrationValue = isOverridden?.integration;
 
-                  {syncStatus && Object.keys(syncStatus.overridden).length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 uppercase tracking-wide">
-                        <Lock className="w-3 h-3" />
-                        Locked (Not Syncing)
-                      </div>
-                      {Object.entries(syncStatus.overridden).map(([key, data]: [string, any]) => (
-                        <div key={key} className="space-y-2">
-                          <div className="flex gap-3 items-start">
-                            <div className="flex-1 grid grid-cols-2 gap-3">
-                              <input
-                                type="text"
-                                value={key}
-                                disabled
-                                className="px-3 py-2 border border-amber-300 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium"
-                              />
-                              <input
-                                type="text"
-                                value={typeof data.current === 'object' ? JSON.stringify(data.current) : data.current}
-                                onChange={(e) => {
-                                  let newValue: any = e.target.value;
-                                  try {
-                                    newValue = JSON.parse(e.target.value);
-                                  } catch {
-                                    // Keep as string if not valid JSON
-                                  }
-                                  updateAttribute(key, newValue);
-                                }}
-                                className="px-3 py-2 border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm font-semibold"
-                                placeholder="Value"
-                              />
+                    return (
+                      <div key={key} className="bg-slate-50 rounded-lg p-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-slate-700">{key}</span>
+                              {!isLocalOnly && (
+                                <div className="flex items-center gap-1.5">
+                                  {isOverridden ? (
+                                    <>
+                                      <Unlink className="w-3.5 h-3.5 text-amber-600" />
+                                      <span className="text-xs text-amber-600 font-medium">Local Override</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Link className="w-3.5 h-3.5 text-green-600" />
+                                      <span className="text-xs text-green-600 font-medium">Syncing</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <button
-                              onClick={() => enableSync(key)}
-                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Enable sync (use integration value)"
-                            >
-                              <Unlock className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => removeAttribute(key)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="ml-0 pl-4 border-l-2 border-amber-300 text-xs text-amber-700">
-                            Local value (overriding integration: <span className="font-mono">{typeof data.integration === 'object' ? JSON.stringify(data.integration) : data.integration}</span>)
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {syncStatus && Object.keys(syncStatus.localOnly).length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                        Local Only
-                      </div>
-                      {Object.entries(syncStatus.localOnly).map(([key, value]) => (
-                        <div key={key} className="flex gap-3 items-start">
-                          <div className="flex-1 grid grid-cols-2 gap-3">
                             <input
                               type="text"
-                              value={key}
-                              disabled
-                              className="px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 text-sm"
-                            />
-                            <input
-                              type="text"
-                              value={typeof value === 'object' ? JSON.stringify(value) : value}
+                              value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue}
                               onChange={(e) => {
                                 let newValue: any = e.target.value;
                                 try {
@@ -411,31 +299,37 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   // Keep as string if not valid JSON
                                 }
                                 updateAttribute(key, newValue);
+                                if (!isLocalOnly && !isOverridden) {
+                                  lockOverride(key);
+                                }
                               }}
-                              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                               placeholder="Value"
                             />
+                            {isOverridden && (
+                              <div className="flex items-center justify-between text-xs text-slate-500">
+                                <span>Integration: <span className="font-mono">{typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}</span></span>
+                                <button
+                                  onClick={() => enableSync(key)}
+                                  className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                  Revert
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          <button
-                            onClick={() => removeAttribute(key)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!syncStatus && Object.entries(attributes).map(([key, value]) => (
-                    <div key={key} className="flex gap-3 items-start">
-                      <div className="flex-1 grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          value={key}
-                          disabled
-                          className="px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 text-sm"
-                        />
+                      </div>
+                    );
+                  })}
+                </>
+              ) : (
+                Object.entries(attributes).map(([key, value]) => (
+                  <div key={key} className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 space-y-2">
+                        <span className="text-sm font-medium text-slate-700 block">{key}</span>
                         <input
                           type="text"
                           value={typeof value === 'object' ? JSON.stringify(value) : value}
@@ -448,41 +342,27 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             }
                             updateAttribute(key, newValue);
                           }}
-                          className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                           placeholder="Value"
                         />
                       </div>
-                      <button
-                        onClick={() => removeAttribute(key)}
-                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
-                  ))}
-                </>
+                  </div>
+                ))
               )}
             </div>
           </div>
 
-          {product.integration_product_id && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> This product was imported from an integration. Changes may be overwritten on the next sync.
-              </p>
-            </div>
-          )}
         </div>
 
         <div className="border-t border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
-          <button
-            onClick={handleDelete}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
+          {product.integration_product_id && (
+            <div className="text-xs text-slate-500">
+              <Link className="w-3 h-3 inline mr-1" />
+              Synced from integration
+            </div>
+          )}
+          {!product.integration_product_id && <div></div>}
           <div className="flex gap-3">
             <button
               onClick={onClose}
@@ -492,7 +372,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             </button>
             <button
               onClick={handleSave}
-              disabled={loading || !name.trim()}
+              disabled={loading}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
