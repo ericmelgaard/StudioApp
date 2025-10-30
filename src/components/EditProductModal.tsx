@@ -355,8 +355,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               onKeyDown={(e) => e.stopPropagation()}
                               onFocus={(e) => e.stopPropagation()}
                               onClick={(e) => e.stopPropagation()}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                              placeholder="Value"
+                              className="w-full min-h-[40px] px-3 py-2 bg-white border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 font-medium"
+                              placeholder="Enter value"
                             />
                           </div>
                         </div>
@@ -372,8 +372,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           <span className="text-sm font-medium text-slate-700 block">{key}</span>
                         <input
                           type="text"
-                          value={typeof value === 'object' ? JSON.stringify(value) : value}
+                          value={typeof value === 'object' ? JSON.stringify(value) : value || ''}
                           onChange={(e) => {
+                            e.stopPropagation();
                             let newValue: any = e.target.value;
                             try {
                               newValue = JSON.parse(e.target.value);
@@ -382,8 +383,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             }
                             updateAttribute(key, newValue);
                           }}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                          placeholder="Value"
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onFocus={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full min-h-[40px] px-3 py-2 bg-white border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 font-medium"
+                          placeholder="Enter value"
                         />
                       </div>
                     </div>
