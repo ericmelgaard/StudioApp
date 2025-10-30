@@ -94,13 +94,20 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
   async function loadData() {
     setLoading(true);
     try {
-      const [sourcesRes, templatesRes] = await Promise.all([
+      const [sourcesRes, templatesRes, orgSettingsRes] = await Promise.all([
         supabase.from('integration_sources').select('*').order('name'),
-        supabase.from('product_attribute_templates').select('*').order('name')
+        supabase.from('product_attribute_templates').select('*').order('name'),
+        supabase.from('organization_product_settings').select('default_template_id').limit(1).maybeSingle()
       ]);
 
       if (sourcesRes.data) setSources(sourcesRes.data);
       if (templatesRes.data) setTemplates(templatesRes.data);
+
+      if (orgSettingsRes.data?.default_template_id) {
+        setSelectedTemplate(orgSettingsRes.data.default_template_id);
+      } else if (templatesRes.data && templatesRes.data.length > 0) {
+        setSelectedTemplate(templatesRes.data[0].id);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -122,15 +129,9 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
       if (data) {
         setSavedMapping(data);
         setMappings(data.attribute_mappings.mappings || []);
-        if (!selectedTemplate && templates.length > 0) {
-          setSelectedTemplate(templates[0].id);
-        }
       } else {
         setSavedMapping(null);
         setMappings([]);
-        if (!selectedTemplate && templates.length > 0) {
-          setSelectedTemplate(templates[0].id);
-        }
       }
     } catch (error) {
       console.error('Error loading mapping:', error);
