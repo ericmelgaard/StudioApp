@@ -272,9 +272,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               ) : syncStatus ? (
                 <>
                   {[...Object.entries(syncStatus.synced), ...Object.entries(syncStatus.overridden), ...Object.entries(syncStatus.localOnly)].map(([key, value]) => {
-                    // Skip the 'name' attribute as it's displayed separately at the product level
-                    if (key === 'name') return null;
-
                     const isOverridden = syncStatus.overridden[key];
                     const isLocalOnly = syncStatus.localOnly[key] !== undefined;
                     const actualValue = isOverridden ? isOverridden.current : value;
@@ -354,12 +351,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   })}
                 </>
               ) : (
-                Object.entries(attributes).map(([key, value]) => {
-                  // Skip the 'name' attribute as it's displayed separately at the product level
-                  if (key === 'name') return null;
-
-                  return (
-                    <div key={key} className="bg-slate-50 rounded-lg p-3">
+                Object.entries(attributes).map(([key, value]) => (
+                  <div key={key} className="bg-slate-50 rounded-lg p-3">
                       <div className="flex items-start gap-3">
                         <div className="flex-1 space-y-2">
                           <span className="text-sm font-medium text-slate-700 block">{key}</span>
@@ -381,8 +374,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       </div>
                     </div>
                   </div>
-                  );
-                })
+                ))
               )}
             </div>
           </div>
