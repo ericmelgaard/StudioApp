@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2, RefreshCw } from 'lucide-react';
+import { X, Save, Trash2, RefreshCw, Lock, Unlock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Product {
@@ -9,6 +9,7 @@ interface Product {
   attribute_template_id: string | null;
   display_template_id: string | null;
   integration_product_id: string | null;
+  attribute_overrides?: Record<string, boolean>;
 }
 
 interface EditProductModalProps {
@@ -27,6 +28,7 @@ interface SyncStatus {
 export default function EditProductModal({ isOpen, onClose, product, onSuccess }: EditProductModalProps) {
   const [name, setName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
+  const [attributeOverrides, setAttributeOverrides] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [integrationData, setIntegrationData] = useState<any>(null);
@@ -35,6 +37,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     if (product) {
       setName(product.name);
       setAttributes(product.attributes || {});
+      setAttributeOverrides(product.attribute_overrides || {});
       loadIntegrationData();
     }
   }, [product]);
@@ -71,6 +74,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       const localOnlyAttrs: Record<string, any> = {};
 
       const currentAttributes = product.attributes || {};
+      const overrides = product.attribute_overrides || {};
 
       for (const key of Object.keys(currentAttributes)) {
         const mapping = mappings.find((m: any) => m.wand_field === key);
@@ -79,9 +83,16 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           const integrationValue = getNestedValue(integrationProduct.data, mapping.integration_field);
           const currentValue = currentAttributes[key];
 
-          if (JSON.stringify(integrationValue) === JSON.stringify(currentValue)) {
+          // Check if this attribute is marked as overridden
+          if (overrides[key]) {
+            overriddenAttrs[key] = {
+              current: currentValue,
+              integration: integrationValue
+            };
+          } else if (JSON.stringify(integrationValue) === JSON.stringify(currentValue)) {
             syncedAttrs[key] = currentValue;
           } else {
+            // Value differs but not marked as override - treat as synced with different value
             overriddenAttrs[key] = {
               current: currentValue,
               integration: integrationValue
@@ -125,6 +136,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         .update({
           name: name,
           attributes: attributes,
+          attribute_overrides: attributeOverrides,
           updated_at: new Date().toISOString()
         })
         .eq('id', product.id);
@@ -193,9 +205,24 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     updateAttribute(key, '');
   }
 
-  function revertToIntegrationValue(key: string) {
+  function enableSync(key: string) {
     if (!syncStatus?.overridden[key]) return;
+
+    // Update the attribute to match integration value
     updateAttribute(key, syncStatus.overridden[key].integration);
+
+    // Remove from overrides to allow syncing
+    const newOverrides = { ...attributeOverrides };
+    delete newOverrides[key];
+    setAttributeOverrides(newOverrides);
+  }
+
+  function lockOverride(key: string) {
+    // Mark this attribute as overridden so it won't sync
+    setAttributeOverrides(prev => ({
+      ...prev,
+      [key]: true
+    }));
   }
 
   if (!isOpen || !product) return null;
@@ -257,36 +284,49 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                         Synced from Integration
                       </div>
                       {Object.entries(syncStatus.synced).map(([key, value]) => (
-                        <div key={key} className="flex gap-3 items-start">
-                          <div className="flex-1 grid grid-cols-2 gap-3">
-                            <input
-                              type="text"
-                              value={key}
-                              disabled
-                              className="px-3 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 text-sm font-medium"
-                            />
-                            <input
-                              type="text"
-                              value={typeof value === 'object' ? JSON.stringify(value) : value}
-                              onChange={(e) => {
-                                let newValue: any = e.target.value;
-                                try {
-                                  newValue = JSON.parse(e.target.value);
-                                } catch {
-                                  // Keep as string if not valid JSON
-                                }
-                                updateAttribute(key, newValue);
-                              }}
-                              className="px-3 py-2 border border-green-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                              placeholder="Value"
-                            />
+                        <div key={key} className="space-y-2">
+                          <div className="flex gap-3 items-start">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                              <input
+                                type="text"
+                                value={key}
+                                disabled
+                                className="px-3 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 text-sm font-medium"
+                              />
+                              <input
+                                type="text"
+                                value={typeof value === 'object' ? JSON.stringify(value) : value}
+                                onChange={(e) => {
+                                  let newValue: any = e.target.value;
+                                  try {
+                                    newValue = JSON.parse(e.target.value);
+                                  } catch {
+                                    // Keep as string if not valid JSON
+                                  }
+                                  updateAttribute(key, newValue);
+                                  lockOverride(key);
+                                }}
+                                className="px-3 py-2 border border-green-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="Value"
+                              />
+                            </div>
+                            <button
+                              onClick={() => lockOverride(key)}
+                              className="p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                              title="Lock this value (stop syncing)"
+                            >
+                              <Lock className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => removeAttribute(key)}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button
-                            onClick={() => removeAttribute(key)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="ml-0 pl-4 border-l-2 border-green-300 text-xs text-green-700">
+                            Auto-syncing from integration
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -295,7 +335,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   {syncStatus && Object.keys(syncStatus.overridden).length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 uppercase tracking-wide">
-                        Local Override
+                        <Lock className="w-3 h-3" />
+                        Locked (Not Syncing)
                       </div>
                       {Object.entries(syncStatus.overridden).map(([key, data]: [string, any]) => (
                         <div key={key} className="space-y-2">
@@ -324,23 +365,21 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               />
                             </div>
                             <button
+                              onClick={() => enableSync(key)}
+                              className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Enable sync (use integration value)"
+                            >
+                              <Unlock className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => removeAttribute(key)}
                               className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                          <div className="ml-0 pl-4 border-l-2 border-slate-200 flex items-center justify-between">
-                            <p className="text-xs text-slate-600">
-                              Integration value: <span className="font-mono text-slate-800">{typeof data.integration === 'object' ? JSON.stringify(data.integration) : data.integration}</span>
-                            </p>
-                            <button
-                              onClick={() => revertToIntegrationValue(key)}
-                              className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                            >
-                              <RefreshCw className="w-3 h-3" />
-                              Revert
-                            </button>
+                          <div className="ml-0 pl-4 border-l-2 border-amber-300 text-xs text-amber-700">
+                            Local value (overriding integration: <span className="font-mono">{typeof data.integration === 'object' ? JSON.stringify(data.integration) : data.integration}</span>)
                           </div>
                         </div>
                       ))}

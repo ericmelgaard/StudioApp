@@ -14,6 +14,7 @@ interface Product {
   attribute_template_id: string | null;
   display_template_id: string | null;
   integration_product_id: string | null;
+  attribute_overrides?: Record<string, boolean>;
   created_at: string;
   updated_at: string;
 }
