@@ -276,11 +276,14 @@ export default function AutoImportModal({
         .filter(intProduct => !existingProductIds.has(intProduct.id))
         .map(intProduct => {
           const attributes: any = {};
+          const attributeMappings: any = {};
 
           mappings.forEach((mapping: any) => {
             const value = getNestedValue(intProduct.data, mapping.integration_field);
             if (value !== undefined) {
               attributes[mapping.wand_field] = value;
+              // Create product-level mapping so field will sync from integration
+              attributeMappings[mapping.wand_field] = mapping.integration_field;
             }
           });
 
@@ -288,7 +291,8 @@ export default function AutoImportModal({
             name: intProduct.data?.displayAttribute?.itemTitle || intProduct.name,
             integration_product_id: intProduct.id,
             attribute_template_id: selectedTemplate,
-            attributes: attributes
+            attributes: attributes,
+            attribute_mappings: attributeMappings
           };
         });
 
