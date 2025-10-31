@@ -559,39 +559,6 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                 </button>
               ) : null}
             </div>
-
-            {hasCalculation && fieldLink.calculation && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-slate-700 mb-3">Combo Pricing:</p>
-                <div className="bg-white px-4 py-3 rounded-lg border border-slate-200">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {fieldLink.calculation.map((part, index) => (
-                      <div key={part.id} className="flex items-center gap-3">
-                        {index > 0 && (
-                          <span className="text-xl font-bold text-slate-600">
-                            {part.operation === 'add' ? '+' :
-                             part.operation === 'subtract' ? '−' :
-                             part.operation === 'multiply' ? '×' :
-                             '÷'}
-                          </span>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <div className="text-sm font-medium text-slate-700">{part.productName}</div>
-                            <div className="text-xs text-slate-500">{part.linkType}</div>
-                          </div>
-                          {part.value !== undefined && part.value !== null && (
-                            <div className="text-xl font-bold text-blue-600">
-                              {part.value}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         );
 
@@ -779,17 +746,57 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                 <div className="space-y-4">
                   {selectedTemplate.attribute_schema.core_attributes
                     .filter(field => field.name !== 'name')
-                    .map((field) => (
-                      <div key={field.name} className={field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          {field.label} {field.required && '*'}
-                          {field.description && (
-                            <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                    .map((field) => {
+                      const fieldLink = fieldLinks[field.name];
+                      const hasCalculation = fieldLink?.type === 'calculation';
+                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' || (field.type === 'number' && hasCalculation);
+
+                      return (
+                        <div key={field.name}>
+                          <div className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              {field.label} {field.required && '*'}
+                              {field.description && (
+                                <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                              )}
+                            </label>
+                            {renderAttributeField(field)}
+                          </div>
+                          {field.type === 'number' && hasCalculation && fieldLink.calculation && (
+                            <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-4">
+                              <p className="text-sm font-medium text-slate-700 mb-3">Combo Pricing:</p>
+                              <div className="bg-white px-4 py-3 rounded-lg border border-slate-200">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  {fieldLink.calculation.map((part, index) => (
+                                    <div key={part.id} className="flex items-center gap-3">
+                                      {index > 0 && (
+                                        <span className="text-xl font-bold text-slate-600">
+                                          {part.operation === 'add' ? '+' :
+                                           part.operation === 'subtract' ? '−' :
+                                           part.operation === 'multiply' ? '×' :
+                                           '÷'}
+                                        </span>
+                                      )}
+                                      <div className="flex items-center gap-2">
+                                        <div>
+                                          <div className="text-sm font-medium text-slate-700">{part.productName}</div>
+                                          <div className="text-xs text-slate-500">{part.linkType}</div>
+                                        </div>
+                                        {part.value !== undefined && part.value !== null && (
+                                          <div className="text-xl font-bold text-blue-600">
+                                            {part.value}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                           )}
-                        </label>
-                        {renderAttributeField(field)}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -797,17 +804,57 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                 <div className="space-y-4">
                   <h3 className="font-semibold text-slate-900 border-b pb-2">Extended Attributes</h3>
                   <div className="space-y-4">
-                    {selectedTemplate.attribute_schema.extended_attributes.map((field) => (
-                      <div key={field.name} className={field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          {field.label} {field.required && '*'}
-                          {field.description && (
-                            <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                    {selectedTemplate.attribute_schema.extended_attributes.map((field) => {
+                      const fieldLink = fieldLinks[field.name];
+                      const hasCalculation = fieldLink?.type === 'calculation';
+                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' || (field.type === 'number' && hasCalculation);
+
+                      return (
+                        <div key={field.name}>
+                          <div className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              {field.label} {field.required && '*'}
+                              {field.description && (
+                                <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                              )}
+                            </label>
+                            {renderAttributeField(field)}
+                          </div>
+                          {field.type === 'number' && hasCalculation && fieldLink.calculation && (
+                            <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-4">
+                              <p className="text-sm font-medium text-slate-700 mb-3">Combo Pricing:</p>
+                              <div className="bg-white px-4 py-3 rounded-lg border border-slate-200">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  {fieldLink.calculation.map((part, index) => (
+                                    <div key={part.id} className="flex items-center gap-3">
+                                      {index > 0 && (
+                                        <span className="text-xl font-bold text-slate-600">
+                                          {part.operation === 'add' ? '+' :
+                                           part.operation === 'subtract' ? '−' :
+                                           part.operation === 'multiply' ? '×' :
+                                           '÷'}
+                                        </span>
+                                      )}
+                                      <div className="flex items-center gap-2">
+                                        <div>
+                                          <div className="text-sm font-medium text-slate-700">{part.productName}</div>
+                                          <div className="text-xs text-slate-500">{part.linkType}</div>
+                                        </div>
+                                        {part.value !== undefined && part.value !== null && (
+                                          <div className="text-xl font-bold text-blue-600">
+                                            {part.value}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                           )}
-                        </label>
-                        {renderAttributeField(field)}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
