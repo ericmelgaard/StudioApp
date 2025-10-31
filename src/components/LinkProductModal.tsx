@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Link as LinkIcon } from 'lucide-react';
+import { X, Search, Link as LinkIcon, Plus, Trash2, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface LinkProductModalProps {
@@ -10,10 +10,24 @@ interface LinkProductModalProps {
 }
 
 export interface LinkData {
-  type: 'product' | 'modifier' | 'discount';
+  type: 'direct' | 'calculation';
+  directLink?: {
+    productId: string;
+    productName: string;
+    field: string;
+    linkType: 'product' | 'modifier' | 'discount';
+  };
+  calculation?: CalculationPart[];
+}
+
+export interface CalculationPart {
   id: string;
+  productId: string;
+  productName: string;
   field: string;
-  name?: string;
+  linkType: 'product' | 'modifier' | 'discount';
+  operation: 'add' | 'subtract';
+  value?: any;
 }
 
 interface IntegrationProduct {
@@ -24,22 +38,31 @@ interface IntegrationProduct {
 }
 
 export default function LinkProductModal({ isOpen, onClose, onLink, currentLink }: LinkProductModalProps) {
-  const [linkType, setLinkType] = useState<'product' | 'modifier' | 'discount'>(currentLink?.type || 'product');
+  const [mode, setMode] = useState<'direct' | 'calculation'>('direct');
+  const [linkType, setLinkType] = useState<'product' | 'modifier' | 'discount'>('product');
   const [searchTerm, setSearchTerm] = useState('');
   const [integrationProducts, setIntegrationProducts] = useState<IntegrationProduct[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<IntegrationProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<IntegrationProduct | null>(null);
-  const [selectedField, setSelectedField] = useState<string>(currentLink?.field || '');
+  const [selectedField, setSelectedField] = useState<string>('');
   const [availableFields, setAvailableFields] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [calculationParts, setCalculationParts] = useState<CalculationPart[]>([]);
+  const [editingPart, setEditingPart] = useState<CalculationPart | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       loadIntegrationProducts();
       if (currentLink) {
-        setLinkType(currentLink.type);
-        setSelectedField(currentLink.field);
+        setMode(currentLink.type);
+        if (currentLink.type === 'calculation' && currentLink.calculation) {
+          setCalculationParts(currentLink.calculation);
+        } else if (currentLink.type === 'direct' && currentLink.directLink) {
+          setLinkType(currentLink.directLink.linkType);
+        }
       }
+    } else {
+      resetModal();
     }
   }, [isOpen, currentLink]);
 
@@ -86,23 +109,69 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
     }
   };
 
-  const handleLink = () => {
+  const addCalculationPart = () => {
     if (!selectedProduct || !selectedField) return;
 
-    onLink({
-      type: linkType,
-      id: selectedProduct.id,
+    const newPart: CalculationPart = {
+      id: crypto.randomUUID(),
+      productId: selectedProduct.id,
+      productName: selectedProduct.name,
       field: selectedField,
-      name: selectedProduct.name,
-    });
+      linkType: linkType,
+      operation: calculationParts.length === 0 ? 'add' : 'add',
+      value: selectedProduct.data[selectedField]
+    };
+
+    setCalculationParts([...calculationParts, newPart]);
+    setSelectedProduct(null);
+    setSelectedField('');
+    setSearchTerm('');
+  };
+
+  const updateCalculationPart = (id: string, operation: 'add' | 'subtract') => {
+    setCalculationParts(calculationParts.map(part =>
+      part.id === id ? { ...part, operation } : part
+    ));
+  };
+
+  const removeCalculationPart = (id: string) => {
+    setCalculationParts(calculationParts.filter(part => part.id !== id));
+  };
+
+  const handleLink = () => {
+    if (mode === 'direct') {
+      if (!selectedProduct || !selectedField) return;
+      onLink({
+        type: 'direct',
+        directLink: {
+          productId: selectedProduct.id,
+          productName: selectedProduct.name,
+          field: selectedField,
+          linkType: linkType
+        }
+      });
+    } else {
+      if (calculationParts.length === 0) return;
+      onLink({
+        type: 'calculation',
+        calculation: calculationParts
+      });
+    }
     handleClose();
   };
 
-  const handleClose = () => {
+  const resetModal = () => {
+    setMode('direct');
+    setLinkType('product');
     setSearchTerm('');
     setSelectedProduct(null);
     setSelectedField('');
-    setLinkType('product');
+    setCalculationParts([]);
+    setEditingPart(null);
+  };
+
+  const handleClose = () => {
+    resetModal();
     onClose();
   };
 
@@ -122,6 +191,37 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Mode Selection */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Link Mode
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMode('direct')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  mode === 'direct'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <LinkIcon className="w-4 h-4" />
+                Direct Link
+              </button>
+              <button
+                onClick={() => setMode('calculation')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  mode === 'calculation'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Calculator className="w-4 h-4" />
+                Calculation
+              </button>
+            </div>
+          </div>
+
           {/* Link Type Selection */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -214,6 +314,69 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
                   {String(selectedProduct.data[selectedField])}
                 </div>
               )}
+              {mode === 'calculation' && (
+                <button
+                  onClick={addCalculationPart}
+                  disabled={!selectedField}
+                  className="mt-3 w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add to Calculation
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Calculation Parts */}
+          {mode === 'calculation' && calculationParts.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Calculation
+              </label>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div className="space-y-2">
+                  {calculationParts.map((part, index) => {
+                    const isSubtract = index > 0 && part.operation === 'subtract';
+                    return (
+                      <div key={part.id} className="flex items-center gap-2 text-sm">
+                        {index > 0 && (
+                          <select
+                            value={part.operation}
+                            onChange={(e) => updateCalculationPart(part.id, e.target.value as 'add' | 'subtract')}
+                            className={`w-16 px-2 py-1 border rounded text-xs font-bold ${
+                              part.operation === 'subtract' ? 'text-red-600 border-red-300' : 'text-slate-600 border-slate-300'
+                            }`}
+                          >
+                            <option value="add">+</option>
+                            <option value="subtract">−</option>
+                          </select>
+                        )}
+                        {index === 0 && <span className="w-16"></span>}
+                        <div className="flex-1 flex items-center justify-between bg-white px-3 py-2 rounded border border-slate-200">
+                          <div>
+                            <span className={`font-medium ${
+                              isSubtract ? 'text-red-700' : 'text-slate-700'
+                            }`}>{part.productName}</span>
+                            <span className="text-xs text-slate-500 ml-2">({part.field})</span>
+                          </div>
+                          {part.value !== undefined && part.value !== null && (
+                            <span className={`font-bold ${
+                              isSubtract ? 'text-red-600' : 'text-blue-600'
+                            }`}>${part.value}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => removeCalculationPart(part.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Remove"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -227,11 +390,11 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
           </button>
           <button
             onClick={handleLink}
-            disabled={!selectedProduct || !selectedField}
+            disabled={(mode === 'direct' && (!selectedProduct || !selectedField)) || (mode === 'calculation' && calculationParts.length === 0)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <LinkIcon className="w-4 h-4" />
-            Link Field
+            {mode === 'calculation' ? 'Link Calculation' : 'Link Field'}
           </button>
         </div>
       </div>

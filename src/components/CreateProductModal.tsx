@@ -116,7 +116,10 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
                 />
                 {size.link ? (
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <span className="text-xs text-green-700 font-medium">Linked</span>
+                    <div className="flex items-center gap-1 text-xs font-medium text-green-700">
+                      {size.link.type === 'calculation' ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
+                      {size.link.type === 'calculation' ? 'Calculated' : 'Linked'}
+                    </div>
                     <button
                       type="button"
                       onClick={() => handleUnlink(size.id)}
@@ -184,6 +187,39 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
               </button>
             </label>
           </div>
+
+          {size.link?.type === 'calculation' && size.link.calculation && (
+            <div className="bg-white border border-slate-200 rounded-lg p-3 ml-2">
+              <p className="text-xs font-medium text-slate-600 mb-2">Price Calculation:</p>
+              <div className="space-y-1">
+                {size.link.calculation.map((part, index) => {
+                  const isSubtract = index > 0 && part.operation === 'subtract';
+                  return (
+                    <div key={part.id} className="flex items-center gap-2 text-sm">
+                      {index > 0 && (
+                        <span className={`font-bold w-4 text-center ${
+                          part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
+                        }`}>
+                          {part.operation === 'add' ? '+' : '−'}
+                        </span>
+                      )}
+                      {index === 0 && <span className="w-4"></span>}
+                      <div className="flex-1 flex items-center justify-between bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
+                        <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
+                          {part.productName}
+                        </span>
+                        {part.value !== undefined && part.value !== null && (
+                          <span className={`font-bold ${isSubtract ? 'text-red-600' : 'text-blue-600'}`}>
+                            ${part.value}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       ))}
 
