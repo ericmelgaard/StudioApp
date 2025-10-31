@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
 import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
+import TranslationEditor from './TranslationEditor';
 
 interface AttributeTemplate {
   id: string;
@@ -556,6 +557,17 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
           />
         );
 
+      case 'translation':
+        return (
+          <TranslationEditor
+            value={value || {}}
+            onChange={(val) => handleAttributeChange(field.name, val)}
+            locale={(field as any).locale || 'Unknown'}
+            sourceAttributes={attributes}
+            templateSchema={selectedTemplate?.attribute_schema}
+          />
+        );
+
       case 'number':
         const fieldLink = fieldLinks[field.name];
         const hasCalculation = fieldLink?.type === 'calculation';
@@ -752,6 +764,8 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                   [...template.attribute_schema.core_attributes, ...template.attribute_schema.extended_attributes].forEach(field => {
                     if (field.type === 'sizes') {
                       defaultAttrs[field.name] = [];
+                    } else if (field.type === 'translation') {
+                      defaultAttrs[field.name] = {};
                     }
                   });
                 }
@@ -796,7 +810,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                     .map((field) => {
                       const fieldLink = fieldLinks[field.name];
                       const hasCalculation = fieldLink?.type === 'calculation';
-                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image';
+                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' || field.type === 'translation';
 
                       return (
                         <div key={field.name} className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
@@ -854,7 +868,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                     {selectedTemplate.attribute_schema.extended_attributes.map((field) => {
                       const fieldLink = fieldLinks[field.name];
                       const hasCalculation = fieldLink?.type === 'calculation';
-                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image';
+                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' || field.type === 'translation';
 
                       return (
                         <div key={field.name} className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>

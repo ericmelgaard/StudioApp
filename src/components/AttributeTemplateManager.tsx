@@ -318,6 +318,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                               <option value="number">Number</option>
                               <option value="boolean">Boolean</option>
                               <option value="image">Image</option>
+                              <option value="translation">Translation</option>
                               <option value="array">Array</option>
                               <option value="object">Object</option>
                             </select>

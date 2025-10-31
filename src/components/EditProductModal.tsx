@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
 import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
+import TranslationEditor from './TranslationEditor';
 
 interface Product {
   id: string;
@@ -703,6 +704,23 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               lockOverride(key);
             }
           }}
+        />
+      );
+    }
+
+    if (meta?.type === 'translation') {
+      return (
+        <TranslationEditor
+          value={actualValue || {}}
+          onChange={(newValue) => {
+            updateAttribute(key, newValue);
+            if (syncStatus && !isLocalOnly && !isOverridden) {
+              lockOverride(key);
+            }
+          }}
+          locale={meta.locale || 'Unknown'}
+          sourceAttributes={attributes}
+          templateSchema={templateSchema}
         />
       );
     }
