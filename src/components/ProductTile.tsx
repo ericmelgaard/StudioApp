@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Calculator, Link } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Product {
   id: string;
   name: string;
   attributes: Record<string, any>;
-  attribute_mappings?: Record<string, any>;
   attribute_template_id: string | null;
   display_template_id: string | null;
   integration_product_id: string | null;
@@ -47,10 +46,6 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
   const mealPeriods = product.attributes?.meal_periods;
   const mealStations = product.attributes?.meal_stations;
   const sizes = product.attributes?.sizes;
-
-  const fieldLinks = product.attribute_mappings || {};
-  const priceLink = fieldLinks['price'];
-  const hasCalculation = priceLink?.type === 'calculation';
 
   return (
     <div
@@ -98,52 +93,14 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
               )}
             </div>
             <div className="space-y-2">
-              <div className="relative">
-                <div className={`text-xs font-semibold px-3 py-1.5 rounded border ${
-                  priceLink ? 'border-green-400 bg-green-50 pr-20' : 'border-slate-300 bg-white'
-                }`}>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-900">
                   {price ? `$${price}` : 'N/A'}
-                </div>
-                {priceLink && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
-                    {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
-                    {hasCalculation ? 'Calculated' : 'Synced'}
-                  </div>
+                </span>
+                {calories && (
+                  <span className="text-slate-600">{calories} cal</span>
                 )}
               </div>
-              {hasCalculation && priceLink.calculation && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
-                  <p className="text-[10px] font-medium text-slate-600 mb-1">Combo Pricing:</p>
-                  <div className="space-y-1">
-                    {priceLink.calculation.map((part: any, index: number) => {
-                      const isSubtract = index > 0 && part.operation === 'subtract';
-                      return (
-                        <div key={part.id} className="flex items-center gap-1 text-[10px]">
-                          {index > 0 && (
-                            <span className={`font-bold w-3 text-center ${
-                              part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
-                            }`}>
-                              {part.operation === 'add' ? '+' : '−'}
-                            </span>
-                          )}
-                          {index === 0 && <span className="w-3"></span>}
-                          <div className="flex-1 flex items-center justify-between bg-white px-2 py-1 rounded border border-slate-200">
-                            <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
-                              {part.productName}
-                            </span>
-                            <span className={`font-semibold ${isSubtract ? 'text-red-700' : 'text-slate-900'}`}>
-                              ${typeof part.value === 'number' ? part.value.toFixed(2) : part.value}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {calories && (
-                <span className="text-xs text-slate-600">{calories} cal</span>
-              )}
             </div>
           </div>
         </div>
@@ -164,58 +121,14 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
             <p className="text-sm text-slate-600 line-clamp-2">{description}</p>
           )}
 
-          {!imageUrl && (
-            <div className="space-y-2">
-              <div className="relative">
-                <div className={`text-sm font-semibold px-3 py-1.5 rounded border ${
-                  priceLink ? 'border-green-400 bg-green-50 pr-20' : 'border-slate-300 bg-white'
-                }`}>
-                  {price ? `$${price}` : 'N/A'}
-                </div>
-                {priceLink && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
-                    {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
-                    {hasCalculation ? 'Calculated' : 'Synced'}
-                  </div>
-                )}
-              </div>
-
-              {hasCalculation && priceLink.calculation && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                  <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
-                  <div className="space-y-1">
-                    {priceLink.calculation.map((part: any, index: number) => {
-                      const isSubtract = index > 0 && part.operation === 'subtract';
-                      return (
-                        <div key={part.id} className="flex items-center gap-2 text-sm">
-                          {index > 0 && (
-                            <span className={`font-bold w-4 text-center ${
-                              part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
-                            }`}>
-                              {part.operation === 'add' ? '+' : '−'}
-                            </span>
-                          )}
-                          {index === 0 && <span className="w-4"></span>}
-                          <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
-                            <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
-                              {part.productName}
-                            </span>
-                            <span className={`font-semibold ${isSubtract ? 'text-red-700' : 'text-slate-900'}`}>
-                              ${typeof part.value === 'number' ? part.value.toFixed(2) : part.value}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {calories && (
-                <div className="text-sm text-slate-600">{calories} cal</div>
-              )}
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-900">
+              {price ? `$${price}` : 'N/A'}
+            </span>
+            {calories && (
+              <span className="text-sm text-slate-600">{calories} cal</span>
+            )}
+          </div>
 
           {!imageUrl && Array.isArray(mealPeriods) && mealPeriods.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -250,62 +163,18 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
           )}
 
           {Array.isArray(sizes) && sizes.length > 0 && (
-            <div className="space-y-2">
-              {sizes.slice(0, 3).map((size: any, idx: number) => {
-                const sizeLink = size.link;
-                const hasSizeCalculation = sizeLink?.type === 'calculation';
-
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div className="relative">
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                        sizeLink ? 'bg-green-50 border border-green-400 text-slate-700 pr-16' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {size.label} {size.price && `$${size.price}`}
-                      </span>
-                      {sizeLink && (
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] font-medium text-green-700">
-                          {hasSizeCalculation ? <Calculator className="w-2.5 h-2.5" /> : <Link className="w-2.5 h-2.5" />}
-                          {hasSizeCalculation ? 'Calc' : 'Sync'}
-                        </div>
-                      )}
-                    </div>
-                    {hasSizeCalculation && sizeLink.calculation && (
-                      <div className="bg-white border border-slate-200 rounded-lg p-2 ml-2">
-                        <p className="text-[10px] font-medium text-slate-600 mb-1">Price Calculation:</p>
-                        <div className="space-y-0.5">
-                          {sizeLink.calculation.map((part: any, partIdx: number) => {
-                            const isSubtract = partIdx > 0 && part.operation === 'subtract';
-                            return (
-                              <div key={part.id} className="flex items-center gap-1 text-[10px]">
-                                {partIdx > 0 && (
-                                  <span className={`font-bold w-3 text-center ${
-                                    part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
-                                  }`}>
-                                    {part.operation === 'add' ? '+' : '−'}
-                                  </span>
-                                )}
-                                {partIdx === 0 && <span className="w-3"></span>}
-                                <div className="flex-1 flex items-center justify-between bg-slate-50 px-2 py-1 rounded border border-slate-200">
-                                  <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
-                                    {part.productName}
-                                  </span>
-                                  <span className={`font-semibold ${isSubtract ? 'text-red-700' : 'text-slate-900'}`}>
-                                    ${typeof part.value === 'number' ? part.value.toFixed(2) : part.value}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="flex flex-wrap gap-1">
+              {sizes.slice(0, 3).map((size: any, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700"
+                >
+                  {size.label} {size.price && `$${size.price}`}
+                </span>
+              ))}
               {sizes.length > 3 && (
                 <span className="text-xs text-slate-500">
-                  +{sizes.length - 3} more
+                  +{sizes.length - 3}
                 </span>
               )}
             </div>
