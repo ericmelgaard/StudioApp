@@ -416,6 +416,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         }
       }
 
+      console.log('🔍 Setting syncStatus:', {
+        synced: syncedAttrs,
+        overridden: overriddenAttrs,
+        localOnly: localOnlyAttrs
+      });
+
       setSyncStatus({
         synced: syncedAttrs,
         overridden: overriddenAttrs,
@@ -1131,6 +1137,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           const integrationValue = isOverridden?.integration;
                           const isDropdownOpen = openDropdown === key;
                           const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+
+                          console.log(`🔍 Extended attr ${key}:`, {
+                            syncStatus: !!syncStatus,
+                            inSynced: syncStatus?.synced[key] !== undefined,
+                            inOverridden: !!syncStatus?.overridden[key],
+                            isMapped,
+                            hasValue,
+                            willShowLink: syncStatus && (syncStatus.synced[key] !== undefined || syncStatus.overridden[key]) && hasValue && !isMapped
+                          });
 
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
