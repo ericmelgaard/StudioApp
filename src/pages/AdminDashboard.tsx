@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers, ImageIcon } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -9,6 +9,7 @@ import ProductManagement from './ProductManagement';
 import IntegrationCatalog from './IntegrationCatalog';
 import IntegrationDashboard from './IntegrationDashboard';
 import IntegrationAccess from './IntegrationAccess';
+import ResourceManagement from './ResourceManagement';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -41,7 +42,7 @@ interface Store {
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'integration' | 'integration-dashboard' | 'integration-access'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access'>('dashboard');
 
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -274,6 +275,15 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <Package className="w-5 h-5" />
               <span className="text-sm font-medium">Products</span>
             </button>
+            <button
+              onClick={() => setCurrentView('resources')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'resources' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <ImageIcon className="w-5 h-5" />
+              <span className="text-sm font-medium">Resources</span>
+            </button>
           </div>
 
           {/* Integration Section */}
@@ -332,6 +342,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'integration-dashboard' && (
           <IntegrationDashboard
             onNavigate={(page) => setCurrentView(page === 'access' ? 'integration-access' : 'integration')}
