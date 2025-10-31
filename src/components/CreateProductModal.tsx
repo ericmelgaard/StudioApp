@@ -749,51 +749,45 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                     .map((field) => {
                       const fieldLink = fieldLinks[field.name];
                       const hasCalculation = fieldLink?.type === 'calculation';
-                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' || (field.type === 'number' && hasCalculation);
+                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image';
 
                       return (
-                        <div key={field.name}>
-                          <div className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                              {field.label} {field.required && '*'}
-                              {field.description && (
-                                <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
-                              )}
-                            </label>
+                        <div key={field.name} className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            {field.label} {field.required && '*'}
+                            {field.description && (
+                              <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                            )}
+                          </label>
+                          <div className="space-y-2">
                             {renderAttributeField(field)}
-                          </div>
-                          {field.type === 'number' && hasCalculation && fieldLink.calculation && (
-                            <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-4">
-                              <p className="text-sm font-medium text-slate-700 mb-3">Combo Pricing:</p>
-                              <div className="bg-white px-4 py-3 rounded-lg border border-slate-200">
-                                <div className="flex items-center gap-3 flex-wrap">
+                            {field.type === 'number' && hasCalculation && fieldLink.calculation && (
+                              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                                <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
+                                <div className="space-y-1">
                                   {fieldLink.calculation.map((part, index) => (
-                                    <div key={part.id} className="flex items-center gap-3">
+                                    <div key={part.id} className="flex items-center gap-2 text-sm">
                                       {index > 0 && (
-                                        <span className="text-xl font-bold text-slate-600">
+                                        <span className="text-slate-600 font-bold w-4 text-center">
                                           {part.operation === 'add' ? '+' :
                                            part.operation === 'subtract' ? '−' :
                                            part.operation === 'multiply' ? '×' :
                                            '÷'}
                                         </span>
                                       )}
-                                      <div className="flex items-center gap-2">
-                                        <div>
-                                          <div className="text-sm font-medium text-slate-700">{part.productName}</div>
-                                          <div className="text-xs text-slate-500">{part.linkType}</div>
-                                        </div>
+                                      {index === 0 && <span className="w-4"></span>}
+                                      <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
+                                        <span className="font-medium text-slate-700">{part.productName}</span>
                                         {part.value !== undefined && part.value !== null && (
-                                          <div className="text-xl font-bold text-blue-600">
-                                            {part.value}
-                                          </div>
+                                          <span className="font-bold text-blue-600">{part.value}</span>
                                         )}
                                       </div>
                                     </div>
                                   ))}
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -807,51 +801,45 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                     {selectedTemplate.attribute_schema.extended_attributes.map((field) => {
                       const fieldLink = fieldLinks[field.name];
                       const hasCalculation = fieldLink?.type === 'calculation';
-                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' || (field.type === 'number' && hasCalculation);
+                      const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image';
 
                       return (
-                        <div key={field.name}>
-                          <div className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                              {field.label} {field.required && '*'}
-                              {field.description && (
-                                <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
-                              )}
-                            </label>
+                        <div key={field.name} className={isFullWidth ? '' : 'md:grid md:grid-cols-2 md:gap-4'}>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            {field.label} {field.required && '*'}
+                            {field.description && (
+                              <span className="block text-xs font-normal text-slate-500 mt-1">{field.description}</span>
+                            )}
+                          </label>
+                          <div className="space-y-2">
                             {renderAttributeField(field)}
-                          </div>
-                          {field.type === 'number' && hasCalculation && fieldLink.calculation && (
-                            <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-4">
-                              <p className="text-sm font-medium text-slate-700 mb-3">Combo Pricing:</p>
-                              <div className="bg-white px-4 py-3 rounded-lg border border-slate-200">
-                                <div className="flex items-center gap-3 flex-wrap">
+                            {field.type === 'number' && hasCalculation && fieldLink.calculation && (
+                              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                                <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
+                                <div className="space-y-1">
                                   {fieldLink.calculation.map((part, index) => (
-                                    <div key={part.id} className="flex items-center gap-3">
+                                    <div key={part.id} className="flex items-center gap-2 text-sm">
                                       {index > 0 && (
-                                        <span className="text-xl font-bold text-slate-600">
+                                        <span className="text-slate-600 font-bold w-4 text-center">
                                           {part.operation === 'add' ? '+' :
                                            part.operation === 'subtract' ? '−' :
                                            part.operation === 'multiply' ? '×' :
                                            '÷'}
                                         </span>
                                       )}
-                                      <div className="flex items-center gap-2">
-                                        <div>
-                                          <div className="text-sm font-medium text-slate-700">{part.productName}</div>
-                                          <div className="text-xs text-slate-500">{part.linkType}</div>
-                                        </div>
+                                      {index === 0 && <span className="w-4"></span>}
+                                      <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
+                                        <span className="font-medium text-slate-700">{part.productName}</span>
                                         {part.value !== undefined && part.value !== null && (
-                                          <div className="text-xl font-bold text-blue-600">
-                                            {part.value}
-                                          </div>
+                                          <span className="font-bold text-blue-600">{part.value}</span>
                                         )}
                                       </div>
                                     </div>
                                   ))}
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       );
                     })}
