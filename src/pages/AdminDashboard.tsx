@@ -177,9 +177,9 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex h-[calc(100vh-4rem)]">
         {/* Left Sidebar Navigation */}
-        <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col min-h-[calc(100vh-4rem)]">
+        <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col overflow-y-auto">
           {/* Current Selection */}
           <div className="p-4 border-b border-slate-200">
             <div className="space-y-2">
