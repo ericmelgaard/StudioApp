@@ -58,6 +58,8 @@ export default function FieldLinkModal({
   const [selectedField, setSelectedField] = useState<string>('');
   const [availableFields, setAvailableFields] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [mappedField, setMappedField] = useState<string>('');
+  const [hasMapping, setHasMapping] = useState(false);
 
   const [calculationParts, setCalculationParts] = useState<CalculationPart[]>([]);
   const [editingPart, setEditingPart] = useState<CalculationPart | null>(null);
@@ -99,10 +101,14 @@ export default function FieldLinkModal({
     if (selectedProduct && selectedProduct.data) {
       const fields = extractAllFields(selectedProduct.data);
       setAvailableFields(fields);
+
+      if (mappedField && fields.includes(mappedField)) {
+        setSelectedField(mappedField);
+      }
     } else {
       setAvailableFields([]);
     }
-  }, [selectedProduct]);
+  }, [selectedProduct, mappedField]);
 
   function extractAllFields(obj: any, prefix = ''): string[] {
     let fields: string[] = [];
@@ -155,10 +161,37 @@ export default function FieldLinkModal({
       if (error) throw error;
       setIntegrationProducts(data || []);
       setFilteredProducts(data || []);
+
+      await loadAttributeMappings();
     } catch (error) {
       console.error('Error loading integration products:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAttributeMappings = async () => {
+    try {
+      const { data: mappings, error } = await supabase
+        .from('integration_attribute_mappings')
+        .select('integration_field, item_type')
+        .eq('product_attribute', fieldName);
+
+      if (error) throw error;
+
+      if (mappings && mappings.length > 0) {
+        const mapping = mappings[0];
+        if (mapping.item_type && ['product', 'modifier', 'discount'].includes(mapping.item_type)) {
+          setLinkType(mapping.item_type as 'product' | 'modifier' | 'discount');
+        }
+        if (mapping.integration_field) {
+          setMappedField(mapping.integration_field);
+          setSelectedField(mapping.integration_field);
+          setHasMapping(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading attribute mappings:', error);
     }
   };
 
@@ -228,6 +261,8 @@ export default function FieldLinkModal({
     setSelectedField('');
     setCalculationParts([]);
     setEditingPart(null);
+    setMappedField('');
+    setHasMapping(false);
   };
 
   if (!isOpen) return null;
@@ -388,20 +423,33 @@ export default function FieldLinkModal({
             </div>
           )}
 
+          {hasMapping && mappedField && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-green-900 mb-1">Auto-Mapped Field:</p>
+              <p className="text-sm text-green-700">
+                Based on your integration mapping, this will link to the <span className="font-medium">{mappedField}</span> field
+              </p>
+            </div>
+          )}
+
           {selectedProduct && availableFields.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Select Field to Link
+                {hasMapping ? 'Field (Auto-Selected)' : 'Select Field to Link'}
               </label>
               <select
                 value={selectedField}
                 onChange={(e) => setSelectedField(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  hasMapping && selectedField === mappedField
+                    ? 'border-green-300 bg-green-50'
+                    : 'border-slate-300'
+                }`}
               >
                 <option value="">Choose a field...</option>
                 {availableFields.map((field) => (
                   <option key={field} value={field}>
-                    {field}
+                    {field} {field === mappedField ? '(Mapped)' : ''}
                   </option>
                 ))}
               </select>
