@@ -162,25 +162,15 @@ export default function FieldLinkModal({
   const loadIntegrationProducts = async () => {
     setLoading(true);
     try {
-      let tableName = 'integration_products';
-      if (linkType === 'modifier') {
-        tableName = 'integration_modifiers';
-      } else if (linkType === 'discount') {
-        tableName = 'integration_discounts';
-      }
-
       const { data, error } = await supabase
-        .from(tableName)
-        .select('id, name, external_id, data')
+        .from('integration_products')
+        .select('id, name, external_id, data, item_type')
+        .eq('item_type', linkType)
         .order('name');
 
       if (error) throw error;
-      const items = (data || []).map((item: any) => ({
-        ...item,
-        item_type: linkType
-      }));
-      setIntegrationProducts(items);
-      setFilteredProducts(items);
+      setIntegrationProducts(data || []);
+      setFilteredProducts(data || []);
     } catch (error) {
       console.error('Error loading integration items:', error);
     } finally {
