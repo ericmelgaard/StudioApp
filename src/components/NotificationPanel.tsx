@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
+import { Bell, X, AlertCircle, CheckCircle, Info, AlertTriangle, Settings } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -45,10 +45,10 @@ export default function NotificationPanel() {
       {showPanel && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[100]"
             onClick={() => setShowPanel(false)}
           />
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-slate-200 z-50 max-h-[600px] flex flex-col">
+          <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-slate-200 z-[101] max-h-[600px] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <h3 className="font-semibold text-slate-900">Notifications</h3>
               <div className="flex items-center gap-2">
@@ -99,6 +99,13 @@ export default function NotificationPanel() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="border-t border-slate-200 p-3">
+              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+                <Settings className="w-4 h-4" />
+                Notification Policies
+              </button>
             </div>
           </div>
         </>
