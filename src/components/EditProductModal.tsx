@@ -1177,7 +1177,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                     </div>
                                   )}
                                   {/* Template-level sync status */}
-                                  {syncStatus && !isLocalOnly && hasValue && !isMapped && (
+                                  {syncStatus && (syncStatus.synced[key] !== undefined || syncStatus.overridden[key]) && hasValue && !isMapped && (
                                     <div className="relative">
                                       {isOverridden ? (
                                         <>
