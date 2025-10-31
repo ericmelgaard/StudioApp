@@ -769,10 +769,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                                     <div key={part.id} className="flex items-center gap-2 text-sm">
                                       {index > 0 && (
                                         <span className="text-slate-600 font-bold w-4 text-center">
-                                          {part.operation === 'add' ? '+' :
-                                           part.operation === 'subtract' ? '−' :
-                                           part.operation === 'multiply' ? '×' :
-                                           '÷'}
+                                          {part.operation === 'add' ? '+' : '−'}
                                         </span>
                                       )}
                                       {index === 0 && <span className="w-4"></span>}
@@ -821,10 +818,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                                     <div key={part.id} className="flex items-center gap-2 text-sm">
                                       {index > 0 && (
                                         <span className="text-slate-600 font-bold w-4 text-center">
-                                          {part.operation === 'add' ? '+' :
-                                           part.operation === 'subtract' ? '−' :
-                                           part.operation === 'multiply' ? '×' :
-                                           '÷'}
+                                          {part.operation === 'add' ? '+' : '−'}
                                         </span>
                                       )}
                                       {index === 0 && <span className="w-4"></span>}

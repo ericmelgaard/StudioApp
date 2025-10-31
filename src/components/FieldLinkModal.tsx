@@ -29,7 +29,7 @@ export interface CalculationPart {
   productName: string;
   field: string;
   linkType: 'product' | 'modifier' | 'discount';
-  operation: 'add' | 'subtract' | 'multiply' | 'divide';
+  operation: 'add' | 'subtract';
   value?: any;
 }
 
@@ -258,7 +258,7 @@ export default function FieldLinkModal({
     setCalculationParts(calculationParts.filter(p => p.id !== id));
   };
 
-  const handleUpdateOperation = (id: string, operation: 'add' | 'subtract' | 'multiply' | 'divide') => {
+  const handleUpdateOperation = (id: string, operation: 'add' | 'subtract') => {
     setCalculationParts(calculationParts.map(p =>
       p.id === id ? { ...p, operation } : p
     ));
@@ -376,8 +376,6 @@ export default function FieldLinkModal({
                         >
                           <option value="add">+</option>
                           <option value="subtract">-</option>
-                          <option value="multiply">×</option>
-                          <option value="divide">÷</option>
                         </select>
                       )}
                       <div className="flex-1">
