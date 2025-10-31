@@ -347,37 +347,49 @@ export default function FieldLinkModal({
             </div>
           </div>
 
-          {mode === 'calculation' && calculationParts.length > 0 && (
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium text-slate-700">Calculation Parts:</p>
-              {calculationParts.map((part, index) => (
-                <div key={part.id} className="flex items-center gap-2 bg-white p-3 rounded-lg">
-                  {index > 0 && (
-                    <select
-                      value={part.operation}
-                      onChange={(e) => handleUpdateOperation(part.id, e.target.value as any)}
-                      className="px-2 py-1 border border-slate-300 rounded text-sm"
-                    >
-                      <option value="add">+</option>
-                      <option value="subtract">-</option>
-                      <option value="multiply">×</option>
-                      <option value="divide">÷</option>
-                    </select>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900">{part.productName}</p>
-                    <p className="text-xs text-slate-500">{part.field}</p>
-                    <span className="text-xs text-slate-400">({part.linkType})</span>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveCalculationPart(part.id)}
-                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+          {mode === 'calculation' && (
+            <>
+              {calculationParts.length === 0 ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-blue-900 mb-2">Create a Calculation</p>
+                  <p className="text-sm text-blue-700">
+                    Select items and fields below, then click "Add Part" to build your calculation.
+                    You can combine multiple values using mathematical operations (+, -, ×, ÷).
+                  </p>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+                  <p className="text-sm font-medium text-slate-700">Calculation Parts:</p>
+                  {calculationParts.map((part, index) => (
+                    <div key={part.id} className="flex items-center gap-2 bg-white p-3 rounded-lg">
+                      {index > 0 && (
+                        <select
+                          value={part.operation}
+                          onChange={(e) => handleUpdateOperation(part.id, e.target.value as any)}
+                          className="px-2 py-1 border border-slate-300 rounded text-sm"
+                        >
+                          <option value="add">+</option>
+                          <option value="subtract">-</option>
+                          <option value="multiply">×</option>
+                          <option value="divide">÷</option>
+                        </select>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-900">{part.productName}</p>
+                        <p className="text-xs text-slate-500">{part.field}</p>
+                        <span className="text-xs text-slate-400">({part.linkType})</span>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveCalculationPart(part.id)}
+                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           <div>
