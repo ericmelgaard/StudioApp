@@ -58,85 +58,44 @@ export default function TranslationEditor({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-        <Globe className="w-4 h-4" />
-        <span className="font-medium">{locale} Translations</span>
-        <span className="text-xs text-slate-500">({translatableFields.length} translatable fields)</span>
-      </div>
-
+    <div className="space-y-3">
       {translatableFields.length === 0 ? (
         <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-center text-sm text-slate-500">
-          No translatable fields available in this template
+          No translatable fields available
         </div>
       ) : (
-        <div className="space-y-3">
-          {translatableFields.map((field: any) => {
-            const sourceValue = sourceAttributes[field.name];
-            const translatedValue = translations[field.name];
-            const isTranslated = translatedValue !== undefined && translatedValue !== '';
+        translatableFields.map((field: any) => {
+          const translatedValue = translations[field.name];
 
-            return (
-              <div key={field.name} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-slate-900">{field.label}</span>
-                      {field.required && (
-                        <span className="text-xs font-medium text-red-600">Required</span>
-                      )}
-                      {isTranslated && (
-                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                          Translated
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-500 mb-2">
-                      Original: <span className="font-mono text-slate-700">{sourceValue || '(empty)'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {field.type === 'number' ? (
-                    <input
-                      type="number"
-                      value={translatedValue ?? ''}
-                      onChange={(e) => handleFieldChange(field.name, parseFloat(e.target.value) || 0)}
-                      placeholder={`${locale} translation...`}
-                      disabled={disabled}
-                      className="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={translatedValue ?? ''}
-                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                      placeholder={`${locale} translation...`}
-                      disabled={disabled}
-                      className="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
-                    />
-                  )}
-
-                  {isTranslated && !disabled && (
-                    <button
-                      onClick={() => handleFieldRemove(field.name)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Clear translation"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          return (
+            <div key={field.name} className="space-y-1">
+              <label className="block text-sm font-medium text-slate-700">
+                {field.label}
+                {field.required && <span className="text-red-600 ml-1">*</span>}
+              </label>
+              {field.type === 'number' ? (
+                <input
+                  type="number"
+                  value={translatedValue ?? ''}
+                  onChange={(e) => handleFieldChange(field.name, parseFloat(e.target.value) || 0)}
+                  placeholder={`Enter ${locale} translation`}
+                  disabled={disabled}
+                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={translatedValue ?? ''}
+                  onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                  placeholder={`Enter ${locale} translation`}
+                  disabled={disabled}
+                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+                />
+              )}
+            </div>
+          );
+        })
       )}
-
-      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
-        <strong>Note:</strong> Translations are for text and number fields only. Provide {locale} translations for all required fields.
-      </div>
     </div>
   );
 }
