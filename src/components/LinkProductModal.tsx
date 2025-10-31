@@ -52,6 +52,7 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
   const [editingPart, setEditingPart] = useState<CalculationPart | null>(null);
   const [mappedField, setMappedField] = useState<string>('');
   const [hasMapping, setHasMapping] = useState(false);
+  const [selectedFieldValue, setSelectedFieldValue] = useState<any>(undefined);
 
   useEffect(() => {
     if (isOpen) {
@@ -106,6 +107,15 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
       setAvailableFields([]);
     }
   }, [selectedProduct, mappedField]);
+
+  useEffect(() => {
+    if (selectedProduct && selectedField) {
+      const value = getFieldValue(selectedProduct.data, selectedField);
+      setSelectedFieldValue(value);
+    } else {
+      setSelectedFieldValue(undefined);
+    }
+  }, [selectedProduct, selectedField]);
 
   function extractAllFields(obj: any, prefix = ''): string[] {
     let fields: string[] = [];
@@ -365,27 +375,51 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
             <div className="text-center py-8 text-slate-500">Loading products...</div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
-              {searchTerm ? 'No products found matching your search.' : 'No integration products available.'}
+              {searchTerm
+                ? 'No items found matching your search.'
+                : `No integration ${linkType}s available. ${linkType !== 'product' ? 'Import modifiers and discounts from your integration first.' : ''}`}
             </div>
           ) : (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Select Product
+                Select {linkType.charAt(0).toUpperCase() + linkType.slice(1)}
               </label>
-              <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-lg">
-                {filteredProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => setSelectedProduct(product)}
-                    className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${
-                      selectedProduct?.id === product.id ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="font-medium text-slate-900">{product.name}</div>
-                    <div className="text-xs text-slate-500 mt-1">ID: {product.external_id}</div>
-                  </button>
-                ))}
+              <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg">
+                {filteredProducts.map((product) => {
+                  const priceValue = mappedField ? getFieldValue(product.data, mappedField) : null;
+                  return (
+                    <button
+                      key={product.id}
+                      onClick={() => setSelectedProduct(product)}
+                      className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${
+                        selectedProduct?.id === product.id ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900">{product.name}</div>
+                          <div className="text-xs text-slate-500 mt-1">ID: {product.external_id}</div>
+                        </div>
+                        {priceValue !== null && priceValue !== undefined && (
+                          <div className="ml-4 text-right">
+                            <div className="text-sm font-semibold text-slate-900">${priceValue}</div>
+                            <div className="text-xs text-slate-500">Price</div>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
+          )}
+
+          {hasMapping && mappedField && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-green-900 mb-1">Auto-Mapped Field:</p>
+              <p className="text-sm text-green-700">
+                Based on your integration mapping, this will link to the <span className="font-medium">{mappedField}</span> field
+              </p>
             </div>
           )}
 
@@ -393,34 +427,28 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
           {selectedProduct && availableFields.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Select Field to Link
+                {hasMapping ? 'Field (Auto-Selected)' : 'Select Field to Link'}
               </label>
               <select
                 value={selectedField}
                 onChange={(e) => setSelectedField(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  hasMapping && selectedField === mappedField
+                    ? 'border-green-300 bg-green-50'
+                    : 'border-slate-300'
+                }`}
               >
                 <option value="">Choose a field...</option>
                 {availableFields.map((field) => (
                   <option key={field} value={field}>
-                    {field}
+                    {field} {field === mappedField ? '(Mapped)' : ''}
                   </option>
                 ))}
               </select>
-              {selectedField && (
-                <div className="mt-2">
-                  {hasMapping && selectedField === mappedField && (
-                    <div className="mb-2 text-xs text-blue-600 bg-blue-50 p-2 rounded flex items-center gap-1">
-                      <LinkIcon className="w-3 h-3" />
-                      Auto-mapped field from template
-                    </div>
-                  )}
-                  {getFieldValue(selectedProduct.data, selectedField) !== undefined && (
-                    <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                      <span className="font-medium">Current value: </span>
-                      {String(getFieldValue(selectedProduct.data, selectedField))}
-                    </div>
-                  )}
+              {selectedFieldValue !== undefined && (
+                <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
+                  <span className="font-medium">Integration value: </span>
+                  {String(selectedFieldValue)}
                 </div>
               )}
               {mode === 'calculation' && (
@@ -437,56 +465,52 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
           )}
 
           {/* Calculation Parts */}
-          {mode === 'calculation' && calculationParts.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Calculation
-              </label>
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div className="space-y-2">
-                  {calculationParts.map((part, index) => {
-                    const isSubtract = index > 0 && part.operation === 'subtract';
-                    return (
-                      <div key={part.id} className="flex items-center gap-2 text-sm">
-                        {index > 0 && (
-                          <select
-                            value={part.operation}
-                            onChange={(e) => updateCalculationPart(part.id, e.target.value as 'add' | 'subtract')}
-                            className={`w-16 px-2 py-1 border rounded text-xs font-bold ${
-                              part.operation === 'subtract' ? 'text-red-600 border-red-300' : 'text-slate-600 border-slate-300'
-                            }`}
-                          >
-                            <option value="add">+</option>
-                            <option value="subtract">−</option>
-                          </select>
-                        )}
-                        {index === 0 && <span className="w-16"></span>}
-                        <div className="flex-1 flex items-center justify-between bg-white px-3 py-2 rounded border border-slate-200">
-                          <div>
-                            <span className={`font-medium ${
-                              isSubtract ? 'text-red-700' : 'text-slate-700'
-                            }`}>{part.productName}</span>
-                            <span className="text-xs text-slate-500 ml-2">({part.field})</span>
-                          </div>
-                          {part.value !== undefined && part.value !== null && (
-                            <span className={`font-bold ${
-                              isSubtract ? 'text-red-600' : 'text-blue-600'
-                            }`}>${part.value}</span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => removeCalculationPart(part.id)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Remove"
+          {mode === 'calculation' && (
+            <>
+              {calculationParts.length === 0 ? (
+                !hasMapping && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm font-medium text-blue-900 mb-2">Create a Calculation</p>
+                    <p className="text-sm text-blue-700">
+                      Select items and fields below, then click "Add to Calculation" to build your price calculation.
+                      You can combine multiple values using + or − operations.
+                    </p>
+                  </div>
+                )
+              ) : (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+                  <p className="text-sm font-medium text-slate-700">Calculation Parts:</p>
+                  {calculationParts.map((part, index) => (
+                    <div key={part.id} className="flex items-center gap-2 bg-white p-3 rounded-lg">
+                      {index > 0 && (
+                        <select
+                          value={part.operation}
+                          onChange={(e) => updateCalculationPart(part.id, e.target.value as 'add' | 'subtract')}
+                          className="px-2 py-1 border border-slate-300 rounded text-sm"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <option value="add">+</option>
+                          <option value="subtract">−</option>
+                        </select>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-900">{part.productName}</p>
+                        <p className="text-xs text-slate-500">{part.field}</p>
+                        <span className="text-xs text-slate-400">({part.linkType})</span>
+                        {part.value !== undefined && part.value !== null && (
+                          <p className="text-xs font-semibold text-blue-600 mt-1">Value: ${part.value}</p>
+                        )}
                       </div>
-                    );
-                  })}
+                      <button
+                        onClick={() => removeCalculationPart(part.id)}
+                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
         </div>
 
