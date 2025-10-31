@@ -1043,7 +1043,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                 <label className="text-xs font-medium text-slate-600">{key}</label>
                                 <div className="flex items-center gap-1">
                                   {/* Product-level mapping button */}
-                                  {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && (
+                                  {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && !isLocalOnly && (
                                     <button
                                       onClick={() => openMappingModal(key)}
                                       className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
@@ -1244,7 +1244,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                 <label className="text-xs font-medium text-slate-600">{key}</label>
                                 <div className="flex items-center gap-1">
                                   {/* Product-level mapping button */}
-                                  {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && (
+                                  {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && !isLocalOnly && (
                                     <button
                                       onClick={() => openMappingModal(key)}
                                       className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
