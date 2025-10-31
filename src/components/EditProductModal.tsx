@@ -213,6 +213,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
   const [templateAttributes, setTemplateAttributes] = useState<string[]>([]);
   const [templateSchema, setTemplateSchema] = useState<any>(null);
+  const [template, setTemplate] = useState<any>(null);
   const [showMappingModal, setShowMappingModal] = useState(false);
   const [mappingAttributeKey, setMappingAttributeKey] = useState<string | null>(null);
   const [pendingPublication, setPendingPublication] = useState<any>(null);
@@ -287,14 +288,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     // If product has a template, fetch and merge template attributes
     if (product.attribute_template_id) {
       try {
-        const { data: template } = await supabase
+        const { data: templateData } = await supabase
           .from('product_attribute_templates')
-          .select('attribute_schema')
+          .select('*')
           .eq('id', product.attribute_template_id)
           .maybeSingle();
 
-        if (template?.attribute_schema) {
-          const schema = template.attribute_schema as any;
+        if (templateData?.attribute_schema) {
+          setTemplate(templateData);
+          const schema = templateData.attribute_schema as any;
           setTemplateSchema(schema);
 
           const coreAttrs = schema.core_attributes || [];
