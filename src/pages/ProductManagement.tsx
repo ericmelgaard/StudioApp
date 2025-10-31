@@ -6,6 +6,7 @@ import CreateProductModal from '../components/CreateProductModal';
 import EditProductModal from '../components/EditProductModal';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
 import IntegrationProductMapper from '../components/IntegrationProductMapper';
+import AdvancedFilter, { FilterSection, FilterState } from '../components/AdvancedFilter';
 
 interface Product {
   id: string;
@@ -28,10 +29,8 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMealPeriod, setSelectedMealPeriod] = useState<string>('');
-  const [selectedMealStation, setSelectedMealStation] = useState<string>('');
-  const [mealPeriods, setMealPeriods] = useState<string[]>([]);
-  const [mealStations, setMealStations] = useState<string[]>([]);
+  const [filterSections, setFilterSections] = useState<FilterSection[]>([]);
+  const [filterState, setFilterState] = useState<FilterState>({});
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,8 +76,29 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
       }
     });
 
-    setMealPeriods(Array.from(periods).sort());
-    setMealStations(Array.from(stations).sort());
+    const sections: FilterSection[] = [];
+
+    if (periods.size > 0) {
+      sections.push({
+        id: 'periods',
+        label: 'Meal Periods',
+        options: Array.from(periods).sort().map(p => ({ value: p, label: p }))
+      });
+    }
+
+    if (stations.size > 0) {
+      sections.push({
+        id: 'stations',
+        label: 'Meal Stations',
+        options: Array.from(stations).sort().map(s => ({ value: s, label: s }))
+      });
+    }
+
+    setFilterSections(sections);
+    setFilterState({
+      periods: [],
+      stations: []
+    });
   };
 
 
@@ -88,14 +108,17 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.attributes?.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
+    const selectedPeriods = filterState.periods || [];
+    const selectedStations = filterState.stations || [];
+
     const mealPeriods = product.attributes?.meal_periods;
     const mealStations = product.attributes?.meal_stations;
 
-    const matchesPeriod = !selectedMealPeriod ||
-      (Array.isArray(mealPeriods) && mealPeriods.some((mp: any) => mp.period === selectedMealPeriod));
+    const matchesPeriod = selectedPeriods.length === 0 ||
+      (Array.isArray(mealPeriods) && mealPeriods.some((mp: any) => selectedPeriods.includes(mp.period)));
 
-    const matchesStation = !selectedMealStation ||
-      (Array.isArray(mealStations) && mealStations.some((ms: any) => ms.station === selectedMealStation));
+    const matchesStation = selectedStations.length === 0 ||
+      (Array.isArray(mealStations) && mealStations.some((ms: any) => selectedStations.includes(ms.station)));
 
     return matchesSearch && matchesPeriod && matchesStation;
   });
@@ -244,33 +267,12 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                     <List className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <select
-                    value={selectedMealPeriod}
-                    onChange={(e) => setSelectedMealPeriod(e.target.value)}
-                    className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white"
-                  >
-                    <option value="">All Periods</option>
-                    {mealPeriods.map(period => (
-                      <option key={period} value={period}>{period}</option>
-                    ))}
-                  </select>
-                </div>
 
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <select
-                    value={selectedMealStation}
-                    onChange={(e) => setSelectedMealStation(e.target.value)}
-                    className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white"
-                  >
-                    <option value="">All Stations</option>
-                    {mealStations.map(station => (
-                      <option key={station} value={station}>{station}</option>
-                    ))}
-                  </select>
-                </div>
+                <AdvancedFilter
+                  sections={filterSections}
+                  value={filterState}
+                  onChange={setFilterState}
+                />
               </div>
             </div>
 
