@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Sparkles, Check, Plus, Settings, Tag } from 'lucide-react';
+import { X, Sparkles, Check, Plus, Settings, Tag, Edit2, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface AttributeTemplate {
@@ -36,6 +36,8 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<AttributeTemplate | null>(null);
   const [showAddAttribute, setShowAddAttribute] = useState(false);
+  const [editingAttributeName, setEditingAttributeName] = useState<string | null>(null);
+  const [editedName, setEditedName] = useState('');
 
   const [newAttribute, setNewAttribute] = useState({
     name: '',
@@ -131,6 +133,45 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     } catch (error) {
       console.error('Error adding attribute:', error);
       alert('Failed to add attribute');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateAttributeName(oldName: string, newName: string, isCore: boolean) {
+    if (!selectedTemplate || !newName.trim()) {
+      alert('Please provide a valid field name');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const updatedSchema = {
+        ...selectedTemplate.attribute_schema,
+        core_attributes: isCore
+          ? selectedTemplate.attribute_schema.core_attributes.map(attr =>
+              attr.name === oldName ? { ...attr, name: newName } : attr
+            )
+          : selectedTemplate.attribute_schema.core_attributes,
+        extended_attributes: !isCore
+          ? selectedTemplate.attribute_schema.extended_attributes.map(attr =>
+              attr.name === oldName ? { ...attr, name: newName } : attr
+            )
+          : selectedTemplate.attribute_schema.extended_attributes
+      };
+
+      await supabase
+        .from('product_attribute_templates')
+        .update({ attribute_schema: updatedSchema })
+        .eq('id', selectedTemplate.id);
+
+      setEditingAttributeName(null);
+      setEditedName('');
+      await loadData();
+      alert('Attribute name updated successfully');
+    } catch (error) {
+      console.error('Error updating attribute name:', error);
+      alert('Failed to update attribute name');
     } finally {
       setLoading(false);
     }
@@ -246,7 +287,51 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                 )}
                               </div>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">Field: {attr.name}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              {editingAttributeName === attr.name ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={editedName}
+                                    onChange={(e) => setEditedName(e.target.value)}
+                                    className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="Field name"
+                                  />
+                                  <button
+                                    onClick={() => updateAttributeName(attr.name, editedName, true)}
+                                    disabled={loading}
+                                    className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                    title="Save"
+                                  >
+                                    <Save className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingAttributeName(null);
+                                      setEditedName('');
+                                    }}
+                                    className="p-1 text-slate-400 hover:bg-slate-100 rounded transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-xs text-slate-500 flex-1">Field: {attr.name}</span>
+                                  <button
+                                    onClick={() => {
+                                      setEditingAttributeName(attr.name);
+                                      setEditedName(attr.name);
+                                    }}
+                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    title="Edit field name"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -370,7 +455,51 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                   )}
                                 </div>
                               </div>
-                              <div className="text-xs text-slate-500 mt-1">Field: {attr.name}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                {editingAttributeName === attr.name ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={editedName}
+                                      onChange={(e) => setEditedName(e.target.value)}
+                                      className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                      placeholder="Field name"
+                                    />
+                                    <button
+                                      onClick={() => updateAttributeName(attr.name, editedName, false)}
+                                      disabled={loading}
+                                      className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                      title="Save"
+                                    >
+                                      <Save className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingAttributeName(null);
+                                        setEditedName('');
+                                      }}
+                                      className="p-1 text-slate-400 hover:bg-slate-100 rounded transition-colors"
+                                      title="Cancel"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-xs text-slate-500 flex-1">Field: {attr.name}</span>
+                                    <button
+                                      onClick={() => {
+                                        setEditingAttributeName(attr.name);
+                                        setEditedName(attr.name);
+                                      }}
+                                      className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                      title="Edit field name"
+                                    >
+                                      <Edit2 className="w-3 h-3" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           ))
                         )}

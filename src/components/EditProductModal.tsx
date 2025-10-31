@@ -1038,7 +1038,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       if (['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k)) return false;
                       // Exclude special types that have their own sections
                       const meta = getAttributeMeta(k);
-                      if (meta?.type === 'image' || meta?.type === 'sizes') return false;
+                      if (meta?.type === 'image' || meta?.type === 'sizes' || meta?.type === 'translation') return false;
                       return true;
                     });
                     if (otherCoreKeys.length === 0) return null;
@@ -1359,135 +1359,48 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
           {/* Translations Section */}
           <div id="translations-section" className="pt-6 border-t-2 border-slate-200">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <label className="block text-sm font-medium text-slate-700">
                 Translations
               </label>
-              <div className="relative">
-                <button
-                  onClick={() => setShowLocaleDropdown(!showLocaleDropdown)}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  + Add Translation
-                </button>
-                {showLocaleDropdown && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowLocaleDropdown(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-80 overflow-y-auto">
-                      {commonLocales.map((locale) => (
-                        <button
-                          key={locale.code}
-                          onClick={() => {
-                            const attributeKey = prompt('Enter attribute name to translate:');
-                            if (attributeKey && attributeKey.trim()) {
-                              setTranslations(prev => ({
-                                ...prev,
-                                [locale.code]: {
-                                  ...(prev[locale.code] || {}),
-                                  [attributeKey.trim()]: ''
-                                }
-                              }));
-                            }
-                            setShowLocaleDropdown(false);
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0"
-                        >
-                          <div className="text-sm font-medium text-slate-900">{locale.name}</div>
-                          <div className="text-xs text-slate-500 font-mono">{locale.code}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
             </div>
 
-            <div className="space-y-4">
-              {Object.keys(translations).length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8">
-                  No translations yet. Click "+ Add Translation" to add translations in any language.
-                </p>
-              ) : (
-                Object.entries(translations).map(([locale, localeTranslations]) => (
-                  <div key={locale} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-bold text-slate-900 uppercase">{locale}</h3>
-                      <button
-                        onClick={() => {
-                          const newTranslations = { ...translations };
-                          delete newTranslations[locale];
-                          setTranslations(newTranslations);
-                        }}
-                        className="text-xs text-red-600 hover:text-red-700 font-medium"
-                      >
-                        Remove Language
-                      </button>
+            <div className="space-y-6">
+              {(() => {
+                // Get all translation-type attributes from the template
+                const translationKeys = Object.keys(attributes).filter(k => {
+                  const meta = getAttributeMeta(k);
+                  return meta?.type === 'translation';
+                });
+
+                if (translationKeys.length === 0) {
+                  return (
+                    <p className="text-sm text-slate-500 text-center py-8">
+                      No translation fields in template. Add translation fields in the Product Attribute Template Manager.
+                    </p>
+                  );
+                }
+
+                return translationKeys.map(key => {
+                  const meta = getAttributeMeta(key);
+                  const value = attributes[key];
+                  const isOverridden = syncStatus?.overridden[key];
+                  const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                  const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
+
+                  return (
+                    <div key={key} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-slate-900">{meta?.label || key}</h3>
+                        {meta?.required && (
+                          <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded">Required</span>
+                        )}
+                      </div>
+                      {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                     </div>
-                    <div className="space-y-2">
-                      {Object.entries(localeTranslations).map(([key, value]) => (
-                        <div key={key} className="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 transition-colors">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold text-slate-900">{key}</span>
-                                <span className="text-xs text-slate-500 bg-blue-50 px-2 py-1 rounded font-mono">{locale}</span>
-                              </div>
-                              <input
-                                type="text"
-                                value={value || ''}
-                                onChange={(e) => {
-                                  setTranslations(prev => ({
-                                    ...prev,
-                                    [locale]: {
-                                      ...prev[locale],
-                                      [key]: e.target.value
-                                    }
-                                  }));
-                                }}
-                                className="w-full min-h-[40px] px-3 py-2 bg-white border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 font-medium"
-                                placeholder={`Enter ${locale} translation for ${key}`}
-                              />
-                            </div>
-                            <button
-                              onClick={() => {
-                                const newLocaleTranslations = { ...localeTranslations };
-                                delete newLocaleTranslations[key];
-                                setTranslations(prev => ({
-                                  ...prev,
-                                  [locale]: newLocaleTranslations
-                                }));
-                              }}
-                              className="text-slate-400 hover:text-red-600 transition-colors mt-1"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => {
-                          const attributeKey = prompt('Enter attribute name to translate:');
-                          if (attributeKey && attributeKey.trim()) {
-                            setTranslations(prev => ({
-                              ...prev,
-                              [locale]: {
-                                ...prev[locale],
-                                [attributeKey.trim()]: ''
-                              }
-                            }));
-                          }
-                        }}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-2"
-                      >
-                        + Add attribute to {locale}
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+                  );
+                });
+              })()}
             </div>
           </div>
 

@@ -806,7 +806,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                 <h3 className="font-semibold text-slate-900 border-b pb-2">Core Attributes</h3>
                 <div className="space-y-4">
                   {selectedTemplate.attribute_schema.core_attributes
-                    .filter(field => field.name !== 'name')
+                    .filter(field => field.name !== 'name' && field.type !== 'translation')
                     .map((field) => {
                       const fieldLink = fieldLinks[field.name];
                       const hasCalculation = fieldLink?.type === 'calculation';
@@ -865,7 +865,9 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                 <div className="space-y-4">
                   <h3 className="font-semibold text-slate-900 border-b pb-2">Extended Attributes</h3>
                   <div className="space-y-4">
-                    {selectedTemplate.attribute_schema.extended_attributes.map((field) => {
+                    {selectedTemplate.attribute_schema.extended_attributes
+                      .filter(field => field.type !== 'translation')
+                      .map((field) => {
                       const fieldLink = fieldLinks[field.name];
                       const hasCalculation = fieldLink?.type === 'calculation';
                       const isFullWidth = field.type === 'sizes' || field.type === 'richtext' || field.type === 'image' || field.type === 'translation';
@@ -919,6 +921,32 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                   </div>
                 </div>
               )}
+
+              {/* Translations Section */}
+              {(() => {
+                const translationFields = [
+                  ...selectedTemplate.attribute_schema.core_attributes,
+                  ...selectedTemplate.attribute_schema.extended_attributes
+                ].filter(field => field.type === 'translation');
+
+                if (translationFields.length === 0) return null;
+
+                return (
+                  <div className="space-y-4 pt-4 border-t-2 border-slate-200">
+                    <h3 className="font-semibold text-slate-900 border-b pb-2">Translations</h3>
+                    <div className="space-y-4">
+                      {translationFields.map((field) => (
+                        <div key={field.name}>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            {field.label} {field.required && '*'}
+                          </label>
+                          {renderAttributeField(field)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           )}
 
