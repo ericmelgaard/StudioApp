@@ -1,14 +1,35 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Link as LinkIcon } from 'lucide-react';
+import { X, Search, Link as LinkIcon, Plus, Trash2, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface FieldLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLink: (integrationProductId: string, integrationField: string) => void;
+  onLink: (linkData: FieldLinkData) => void;
   fieldName: string;
   fieldLabel: string;
   currentValue?: any;
+  currentLink?: FieldLinkData | null;
+}
+
+export interface FieldLinkData {
+  type: 'direct' | 'calculation';
+  directLink?: {
+    productId: string;
+    productName: string;
+    field: string;
+    linkType: 'product' | 'modifier' | 'discount';
+  };
+  calculation?: CalculationPart[];
+}
+
+export interface CalculationPart {
+  id: string;
+  productId: string;
+  productName: string;
+  field: string;
+  linkType: 'product' | 'modifier' | 'discount';
+  operation: 'add' | 'subtract' | 'multiply' | 'divide';
 }
 
 interface IntegrationProduct {
@@ -16,6 +37,7 @@ interface IntegrationProduct {
   name: string;
   external_id: string;
   data: any;
+  item_type: string;
 }
 
 export default function FieldLinkModal({
@@ -24,8 +46,11 @@ export default function FieldLinkModal({
   onLink,
   fieldName,
   fieldLabel,
-  currentValue
+  currentValue,
+  currentLink
 }: FieldLinkModalProps) {
+  const [mode, setMode] = useState<'direct' | 'calculation'>('direct');
+  const [linkType, setLinkType] = useState<'product' | 'modifier' | 'discount'>('product');
   const [searchTerm, setSearchTerm] = useState('');
   const [integrationProducts, setIntegrationProducts] = useState<IntegrationProduct[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<IntegrationProduct[]>([]);
@@ -34,13 +59,24 @@ export default function FieldLinkModal({
   const [availableFields, setAvailableFields] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [calculationParts, setCalculationParts] = useState<CalculationPart[]>([]);
+  const [editingPart, setEditingPart] = useState<CalculationPart | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       loadIntegrationProducts();
+      if (currentLink) {
+        setMode(currentLink.type);
+        if (currentLink.type === 'calculation' && currentLink.calculation) {
+          setCalculationParts(currentLink.calculation);
+        } else if (currentLink.type === 'direct' && currentLink.directLink) {
+          setLinkType(currentLink.directLink.linkType);
+        }
+      }
     } else {
       resetModal();
     }
-  }, [isOpen]);
+  }, [isOpen, currentLink]);
 
   useEffect(() => {
     if (searchTerm.trim() === '') {
@@ -49,12 +85,15 @@ export default function FieldLinkModal({
       const term = searchTerm.toLowerCase();
       setFilteredProducts(
         integrationProducts.filter(p =>
-          p.name.toLowerCase().includes(term) ||
-          p.external_id.toLowerCase().includes(term)
+          (p.name.toLowerCase().includes(term) ||
+          p.external_id.toLowerCase().includes(term)) &&
+          (linkType === 'product' ? p.item_type === 'product' :
+           linkType === 'modifier' ? p.item_type === 'modifier' :
+           p.item_type === 'discount')
         )
       );
     }
-  }, [searchTerm, integrationProducts]);
+  }, [searchTerm, integrationProducts, linkType]);
 
   useEffect(() => {
     if (selectedProduct && selectedProduct.data) {
@@ -110,7 +149,7 @@ export default function FieldLinkModal({
     try {
       const { data, error } = await supabase
         .from('integration_products')
-        .select('id, name, external_id, data')
+        .select('id, name, external_id, data, item_type')
         .order('name');
 
       if (error) throw error;
@@ -123,9 +162,56 @@ export default function FieldLinkModal({
     }
   };
 
-  const handleLink = () => {
+  const handleDirectLink = () => {
     if (!selectedProduct || !selectedField) return;
-    onLink(selectedProduct.id, selectedField);
+
+    onLink({
+      type: 'direct',
+      directLink: {
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        field: selectedField,
+        linkType
+      }
+    });
+    handleClose();
+  };
+
+  const handleAddCalculationPart = () => {
+    if (!selectedProduct || !selectedField) return;
+
+    const newPart: CalculationPart = {
+      id: crypto.randomUUID(),
+      productId: selectedProduct.id,
+      productName: selectedProduct.name,
+      field: selectedField,
+      linkType,
+      operation: calculationParts.length === 0 ? 'add' : 'add'
+    };
+
+    setCalculationParts([...calculationParts, newPart]);
+    setSelectedProduct(null);
+    setSelectedField('');
+    setSearchTerm('');
+  };
+
+  const handleRemoveCalculationPart = (id: string) => {
+    setCalculationParts(calculationParts.filter(p => p.id !== id));
+  };
+
+  const handleUpdateOperation = (id: string, operation: 'add' | 'subtract' | 'multiply' | 'divide') => {
+    setCalculationParts(calculationParts.map(p =>
+      p.id === id ? { ...p, operation } : p
+    ));
+  };
+
+  const handleSaveCalculation = () => {
+    if (calculationParts.length === 0) return;
+
+    onLink({
+      type: 'calculation',
+      calculation: calculationParts
+    });
     handleClose();
   };
 
@@ -135,9 +221,13 @@ export default function FieldLinkModal({
   };
 
   const resetModal = () => {
+    setMode('direct');
+    setLinkType('product');
     setSearchTerm('');
     setSelectedProduct(null);
     setSelectedField('');
+    setCalculationParts([]);
+    setEditingPart(null);
   };
 
   if (!isOpen) return null;
@@ -148,7 +238,7 @@ export default function FieldLinkModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Link Field to Integration Data</h2>
@@ -173,8 +263,90 @@ export default function FieldLinkModal({
           )}
 
           <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Link Mode</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMode('direct')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  mode === 'direct'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <LinkIcon className="w-4 h-4" />
+                Direct Link
+              </button>
+              <button
+                onClick={() => setMode('calculation')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  mode === 'calculation'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Calculator className="w-4 h-4" />
+                Calculation
+              </button>
+            </div>
+          </div>
+
+          {mode === 'calculation' && calculationParts.length > 0 && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+              <p className="text-sm font-medium text-slate-700">Calculation Parts:</p>
+              {calculationParts.map((part, index) => (
+                <div key={part.id} className="flex items-center gap-2 bg-white p-3 rounded-lg">
+                  {index > 0 && (
+                    <select
+                      value={part.operation}
+                      onChange={(e) => handleUpdateOperation(part.id, e.target.value as any)}
+                      className="px-2 py-1 border border-slate-300 rounded text-sm"
+                    >
+                      <option value="add">+</option>
+                      <option value="subtract">-</option>
+                      <option value="multiply">×</option>
+                      <option value="divide">÷</option>
+                    </select>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">{part.productName}</p>
+                    <p className="text-xs text-slate-500">{part.field}</p>
+                    <span className="text-xs text-slate-400">({part.linkType})</span>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveCalculationPart(part.id)}
+                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Search Integration Products
+              {mode === 'calculation' ? 'Add to Calculation' : 'Link Type'}
+            </label>
+            <div className="flex gap-2">
+              {(['product', 'modifier', 'discount'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setLinkType(type)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    linkType === type
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Search Integration {linkType.charAt(0).toUpperCase() + linkType.slice(1)}s
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -192,12 +364,12 @@ export default function FieldLinkModal({
             <div className="text-center py-8 text-slate-500">Loading products...</div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
-              {searchTerm ? 'No products found matching your search.' : 'No integration products available.'}
+              {searchTerm ? 'No items found matching your search.' : `No integration ${linkType}s available.`}
             </div>
           ) : (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Select Product
+                Select {linkType.charAt(0).toUpperCase() + linkType.slice(1)}
               </label>
               <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg">
                 {filteredProducts.map((product) => (
@@ -250,14 +422,35 @@ export default function FieldLinkModal({
           >
             Cancel
           </button>
-          <button
-            onClick={handleLink}
-            disabled={!selectedProduct || !selectedField}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <LinkIcon className="w-4 h-4" />
-            Link Field
-          </button>
+          {mode === 'calculation' ? (
+            <>
+              <button
+                onClick={handleAddCalculationPart}
+                disabled={!selectedProduct || !selectedField}
+                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Part
+              </button>
+              <button
+                onClick={handleSaveCalculation}
+                disabled={calculationParts.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Calculator className="w-4 h-4" />
+                Save Calculation
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleDirectLink}
+              disabled={!selectedProduct || !selectedField}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <LinkIcon className="w-4 h-4" />
+              Link Field
+            </button>
+          )}
         </div>
       </div>
     </div>

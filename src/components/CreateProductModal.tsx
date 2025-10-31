@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Package, Layout, Database, Sparkles, Plus, Link, Unlink, RefreshCw } from 'lucide-react';
+import { X, Package, Layout, Database, Sparkles, Plus, Link, Unlink, RefreshCw, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
 import LinkProductModal, { LinkData } from './LinkProductModal';
-import FieldLinkModal from './FieldLinkModal';
+import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
 
 interface AttributeTemplate {
   id: string;
@@ -238,7 +238,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
   const [mappedFields, setMappedFields] = useState<Set<string>>(new Set());
   const [showFieldLinkModal, setShowFieldLinkModal] = useState(false);
   const [linkingField, setLinkingField] = useState<{ name: string; label: string } | null>(null);
-  const [fieldLinks, setFieldLinks] = useState<Record<string, { productId: string; field: string }>>({});
+  const [fieldLinks, setFieldLinks] = useState<Record<string, FieldLinkData>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -354,12 +354,12 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     setShowFieldLinkModal(true);
   }
 
-  function handleFieldLink(integrationProductId: string, integrationField: string) {
+  function handleFieldLink(linkData: FieldLinkData) {
     if (!linkingField) return;
 
     setFieldLinks(prev => ({
       ...prev,
-      [linkingField.name]: { productId: integrationProductId, field: integrationField }
+      [linkingField.name]: linkData
     }));
 
     setLinkedAttributes(prev => new Set([...prev, linkingField.name]));
@@ -442,39 +442,67 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
         );
 
       case 'number':
+        const fieldLink = fieldLinks[field.name];
+        const hasCalculation = fieldLink?.type === 'calculation';
+
         return (
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="decimal"
-              required={field.required}
-              value={value}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '' || !isNaN(parseFloat(val))) {
-                  handleAttributeChange(field.name, val === '' ? 0 : parseFloat(val));
-                }
-              }}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                isLinked ? 'border-green-400 bg-green-50 pr-20' : showSyncIcon ? 'pr-10 border-slate-300' : 'border-slate-300'
-              }`}
-              placeholder={field.label}
-            />
-            {isLinked ? (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
-                <Link className="w-3 h-3" />
-                Synced
+          <div className="space-y-2">
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="decimal"
+                required={field.required}
+                value={value}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || !isNaN(parseFloat(val))) {
+                    handleAttributeChange(field.name, val === '' ? 0 : parseFloat(val));
+                  }
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  isLinked ? 'border-green-400 bg-green-50 pr-20' : showSyncIcon ? 'pr-10 border-slate-300' : 'border-slate-300'
+                }`}
+                placeholder={field.label}
+              />
+              {isLinked ? (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
+                  {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
+                  {hasCalculation ? 'Calculated' : 'Synced'}
+                </div>
+              ) : showSyncIcon ? (
+                <button
+                  type="button"
+                  onClick={() => openFieldLinkModal(field.name, field.label)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  title="Link to integration field"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              ) : null}
+            </div>
+
+            {hasCalculation && fieldLink.calculation && (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                <p className="text-xs font-medium text-slate-600 mb-2">Calculation Parts:</p>
+                {fieldLink.calculation.map((part, index) => (
+                  <div key={part.id} className="flex items-center gap-2 text-xs">
+                    {index > 0 && (
+                      <span className="text-slate-400 font-medium">
+                        {part.operation === 'add' ? '+' :
+                         part.operation === 'subtract' ? '-' :
+                         part.operation === 'multiply' ? '×' :
+                         '÷'}
+                      </span>
+                    )}
+                    <div className="flex-1 bg-white px-2 py-1.5 rounded border border-slate-200">
+                      <span className="font-medium text-slate-900">{part.productName}</span>
+                      <span className="text-slate-500"> · {part.field}</span>
+                      <span className="text-slate-400 ml-1">({part.linkType})</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : showSyncIcon ? (
-              <button
-                type="button"
-                onClick={() => openFieldLinkModal(field.name, field.label)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                title="Link to integration field"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            ) : null}
+            )}
           </div>
         );
 
@@ -750,6 +778,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
         fieldName={linkingField?.name || ''}
         fieldLabel={linkingField?.label || ''}
         currentValue={linkingField ? attributes[linkingField.name] : undefined}
+        currentLink={linkingField ? fieldLinks[linkingField.name] : undefined}
       />
     </div>
   );
