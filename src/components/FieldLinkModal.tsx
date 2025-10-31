@@ -299,8 +299,8 @@ export default function FieldLinkModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-      <div className="relative z-[71] bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+      <div className="relative z-[71] bg-white rounded-xl shadow-2xl w-full max-w-3xl h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Link Field to Integration Data</h2>
             <p className="text-sm text-slate-600 mt-1">
@@ -315,7 +315,7 @@ export default function FieldLinkModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
           {currentValue && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm font-medium text-blue-900">Current Value:</p>
@@ -519,7 +519,7 @@ export default function FieldLinkModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 flex-shrink-0">
           <button
             onClick={handleClose}
             className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
