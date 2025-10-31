@@ -354,7 +354,43 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     setShowFieldLinkModal(true);
   }
 
-  function handleFieldLink(linkData: FieldLinkData) {
+  async function evaluateFieldLink(linkData: FieldLinkData): Promise<any> {
+    if (linkData.type === 'direct' && linkData.directLink) {
+      return linkData.directLink.productId;
+    } else if (linkData.type === 'calculation' && linkData.calculation) {
+      let result = 0;
+
+      for (let i = 0; i < linkData.calculation.length; i++) {
+        const part = linkData.calculation[i];
+        const value = typeof part.value === 'number' ? part.value : parseFloat(part.value || '0');
+
+        if (i === 0) {
+          result = value;
+        } else {
+          switch (part.operation) {
+            case 'add':
+              result += value;
+              break;
+            case 'subtract':
+              result -= value;
+              break;
+            case 'multiply':
+              result *= value;
+              break;
+            case 'divide':
+              result = value !== 0 ? result / value : 0;
+              break;
+          }
+        }
+      }
+
+      return result;
+    }
+
+    return undefined;
+  }
+
+  async function handleFieldLink(linkData: FieldLinkData) {
     if (!linkingField) return;
 
     setFieldLinks(prev => ({
@@ -363,6 +399,15 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     }));
 
     setLinkedAttributes(prev => new Set([...prev, linkingField.name]));
+
+    const calculatedValue = await evaluateFieldLink(linkData);
+    if (calculatedValue !== undefined) {
+      setAttributes(prev => ({
+        ...prev,
+        [linkingField.name]: calculatedValue
+      }));
+    }
+
     setShowFieldLinkModal(false);
     setLinkingField(null);
   }
@@ -532,6 +577,9 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                       <span className="font-medium text-slate-900">{part.productName}</span>
                       <span className="text-slate-500"> · {part.field}</span>
                       <span className="text-slate-400 ml-1">({part.linkType})</span>
+                      {part.value !== undefined && part.value !== null && (
+                        <span className="text-blue-600 font-semibold ml-2">= {part.value}</span>
+                      )}
                     </div>
                   </div>
                 ))}
