@@ -332,6 +332,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
           mapped.add(mapping.wand_field);
         }
       });
+      console.log('Mapped fields from template:', Array.from(mapped));
       setMappedFields(mapped);
     }
   }
@@ -476,7 +477,9 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     const value = attributes[field.name] || '';
     const isLinked = linkedAttributes.has(field.name);
     const isMapped = mappedFields.has(field.name) && !selectedIntegrationProduct;
-    const showSyncIcon = (field.type === 'number' || isMapped) && !isLinked;
+    const showSyncIcon = isMapped && !isLinked;
+
+    console.log(`Field: ${field.name}, isMapped: ${mappedFields.has(field.name)}, selectedIntegrationProduct: ${!!selectedIntegrationProduct}, showSyncIcon: ${showSyncIcon}`);
 
     switch (field.type) {
       case 'text':
