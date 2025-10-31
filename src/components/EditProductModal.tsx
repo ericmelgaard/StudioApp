@@ -657,7 +657,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[60]"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[61]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">

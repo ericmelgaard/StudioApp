@@ -393,7 +393,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col">
+      <div className="relative z-[61] bg-white rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col">
         <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">

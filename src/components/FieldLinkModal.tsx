@@ -299,7 +299,7 @@ export default function FieldLinkModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+      <div className="relative z-[61] bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Link Field to Integration Data</h2>
