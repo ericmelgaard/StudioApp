@@ -350,13 +350,15 @@ export default function FieldLinkModal({
           {mode === 'calculation' && (
             <>
               {calculationParts.length === 0 ? (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900 mb-2">Create a Calculation</p>
-                  <p className="text-sm text-blue-700">
-                    Select items and fields below, then click "Add Part" to build your calculation.
-                    You can combine multiple values using mathematical operations (+, -, ×, ÷).
-                  </p>
-                </div>
+                !hasMapping && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm font-medium text-blue-900 mb-2">Create a Calculation</p>
+                    <p className="text-sm text-blue-700">
+                      Select items and fields below, then click "Add Part" to build your calculation.
+                      You can combine multiple values using mathematical operations (+, -, ×, ÷).
+                    </p>
+                  </div>
+                )
               ) : (
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
                   <p className="text-sm font-medium text-slate-700">Calculation Parts:</p>
@@ -443,18 +445,31 @@ export default function FieldLinkModal({
                 Select {linkType.charAt(0).toUpperCase() + linkType.slice(1)}
               </label>
               <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg">
-                {filteredProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => setSelectedProduct(product)}
-                    className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${
-                      selectedProduct?.id === product.id ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="font-medium text-slate-900">{product.name}</div>
-                    <div className="text-xs text-slate-500 mt-1">ID: {product.external_id}</div>
-                  </button>
-                ))}
+                {filteredProducts.map((product) => {
+                  const priceValue = mappedField ? getFieldValue(product.data, mappedField) : null;
+                  return (
+                    <button
+                      key={product.id}
+                      onClick={() => setSelectedProduct(product)}
+                      className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${
+                        selectedProduct?.id === product.id ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900">{product.name}</div>
+                          <div className="text-xs text-slate-500 mt-1">ID: {product.external_id}</div>
+                        </div>
+                        {priceValue !== null && priceValue !== undefined && (
+                          <div className="ml-4 text-right">
+                            <div className="text-sm font-semibold text-slate-900">{priceValue}</div>
+                            <div className="text-xs text-slate-500">Price</div>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
