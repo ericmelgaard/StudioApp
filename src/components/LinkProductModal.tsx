@@ -35,6 +35,7 @@ interface IntegrationProduct {
   name: string;
   external_id: string;
   data: any;
+  item_type: string;
 }
 
 export default function LinkProductModal({ isOpen, onClose, onLink, currentLink }: LinkProductModalProps) {
@@ -49,6 +50,8 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
   const [loading, setLoading] = useState(false);
   const [calculationParts, setCalculationParts] = useState<CalculationPart[]>([]);
   const [editingPart, setEditingPart] = useState<CalculationPart | null>(null);
+  const [mappedField, setMappedField] = useState<string>('');
+  const [hasMapping, setHasMapping] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,6 +70,17 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
   }, [isOpen, currentLink]);
 
   useEffect(() => {
+    if (isOpen) {
+      setMappedField('');
+      setHasMapping(false);
+      setSelectedField('');
+      setSelectedProduct(null);
+      loadIntegrationProducts();
+      loadAttributeMappings();
+    }
+  }, [linkType, isOpen]);
+
+  useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredProducts(integrationProducts);
     } else {
@@ -82,35 +96,120 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
 
   useEffect(() => {
     if (selectedProduct && selectedProduct.data) {
-      const fields = Object.keys(selectedProduct.data).filter(key =>
-        typeof selectedProduct.data[key] !== 'object' || selectedProduct.data[key] === null
-      );
+      const fields = extractAllFields(selectedProduct.data);
       setAvailableFields(fields);
+
+      if (mappedField && fields.includes(mappedField)) {
+        setSelectedField(mappedField);
+      }
     } else {
       setAvailableFields([]);
     }
-  }, [selectedProduct]);
+  }, [selectedProduct, mappedField]);
+
+  function extractAllFields(obj: any, prefix = ''): string[] {
+    let fields: string[] = [];
+
+    for (const key in obj) {
+      const fullPath = prefix ? `${prefix}.${key}` : key;
+      const value = obj[key];
+
+      if (value === null || value === undefined) {
+        fields.push(fullPath);
+      } else if (Array.isArray(value)) {
+        fields.push(fullPath);
+        if (value.length > 0 && typeof value[0] === 'object') {
+          fields = fields.concat(extractAllFields(value[0], `${fullPath}[0]`));
+        }
+      } else if (typeof value === 'object') {
+        fields = fields.concat(extractAllFields(value, fullPath));
+      } else {
+        fields.push(fullPath);
+      }
+    }
+
+    return fields;
+  }
+
+  function getFieldValue(obj: any, path: string): any {
+    try {
+      const parts = path.split(/[.\[\]]+/).filter(Boolean);
+      let value = obj;
+
+      for (const part of parts) {
+        if (value === null || value === undefined) return undefined;
+        value = value[part];
+      }
+
+      return value;
+    } catch {
+      return undefined;
+    }
+  }
 
   const loadIntegrationProducts = async () => {
     setLoading(true);
     try {
+      let tableName = 'integration_products';
+      if (linkType === 'modifier') {
+        tableName = 'integration_modifiers';
+      } else if (linkType === 'discount') {
+        tableName = 'integration_discounts';
+      }
+
       const { data, error } = await supabase
-        .from('integration_products')
+        .from(tableName)
         .select('id, name, external_id, data')
         .order('name');
 
       if (error) throw error;
-      setIntegrationProducts(data || []);
-      setFilteredProducts(data || []);
+      const items = (data || []).map((item: any) => ({
+        ...item,
+        item_type: linkType
+      }));
+      setIntegrationProducts(items);
+      setFilteredProducts(items);
     } catch (error) {
-      console.error('Error loading integration products:', error);
+      console.error('Error loading integration items:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadAttributeMappings = async () => {
+    try {
+      const { data: mappings, error } = await supabase
+        .from('integration_attribute_mappings')
+        .select('attribute_mappings, integration_type')
+        .eq('is_template', true)
+        .eq('integration_type', linkType);
+
+      if (error) throw error;
+
+      if (mappings && mappings.length > 0) {
+        const mapping = mappings[0];
+
+        if (mapping.attribute_mappings?.mappings) {
+          const fieldMapping = mapping.attribute_mappings.mappings.find(
+            (m: any) => m.wand_field === 'price'
+          );
+
+          if (fieldMapping?.integration_field) {
+            setMappedField(fieldMapping.integration_field);
+            setSelectedField(fieldMapping.integration_field);
+            setHasMapping(true);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading attribute mappings:', error);
+    }
+  };
+
   const addCalculationPart = () => {
     if (!selectedProduct || !selectedField) return;
+
+    const fieldValue = getFieldValue(selectedProduct.data, selectedField);
 
     const newPart: CalculationPart = {
       id: crypto.randomUUID(),
@@ -119,7 +218,7 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
       field: selectedField,
       linkType: linkType,
       operation: calculationParts.length === 0 ? 'add' : 'add',
-      value: selectedProduct.data[selectedField]
+      value: fieldValue
     };
 
     setCalculationParts([...calculationParts, newPart]);
@@ -308,10 +407,20 @@ export default function LinkProductModal({ isOpen, onClose, onLink, currentLink 
                   </option>
                 ))}
               </select>
-              {selectedField && selectedProduct.data[selectedField] && (
-                <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                  <span className="font-medium">Current value: </span>
-                  {String(selectedProduct.data[selectedField])}
+              {selectedField && (
+                <div className="mt-2">
+                  {hasMapping && selectedField === mappedField && (
+                    <div className="mb-2 text-xs text-blue-600 bg-blue-50 p-2 rounded flex items-center gap-1">
+                      <LinkIcon className="w-3 h-3" />
+                      Auto-mapped field from template
+                    </div>
+                  )}
+                  {getFieldValue(selectedProduct.data, selectedField) !== undefined && (
+                    <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
+                      <span className="font-medium">Current value: </span>
+                      {String(getFieldValue(selectedProduct.data, selectedField))}
+                    </div>
+                  )}
                 </div>
               )}
               {mode === 'calculation' && (
