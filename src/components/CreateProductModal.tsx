@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Package, Layout, Database, Sparkles, Plus, Link, Unlink, RefreshCw, Calculator } from 'lucide-react';
+import { X, Package, Layout, Database, Sparkles, Plus, Link, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -104,10 +104,31 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
                 onChange={(e) => updateSize(size.id, { price: parseFloat(e.target.value) || 0 })}
                 disabled={!!size.link}
                 placeholder="0.00"
-                className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                className={`w-full pl-7 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500 ${
+                  size.link ? 'pr-20' : 'pr-12'
+                }`}
               />
-              {size.link && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">Linked</span>
+              {size.link ? (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <span className="text-xs text-green-700 font-medium">Linked</span>
+                  <button
+                    type="button"
+                    onClick={() => handleUnlink(size.id)}
+                    className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Unlink"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openLinkModal(size.id)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  title="Link to integration product"
+                >
+                  <Link className="w-4 h-4" />
+                </button>
               )}
             </div>
           </div>
@@ -146,26 +167,6 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
                 />
               </button>
             </div>
-
-            {size.link ? (
-              <button
-                type="button"
-                onClick={() => handleUnlink(size.id)}
-                className="p-2 rounded-lg transition-colors bg-green-100 text-green-700 hover:bg-green-200"
-                title={`Linked to ${size.link.name || size.link.id}`}
-              >
-                <Unlink className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openLinkModal(size.id)}
-                className="p-2 rounded-lg transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
-                title="Link to integration product"
-              >
-                <Link className="w-4 h-4" />
-              </button>
-            )}
 
             <button
               type="button"
@@ -468,7 +469,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                 title="Link to integration field"
               >
-                <RefreshCw className="w-4 h-4" />
+                <Link className="w-4 h-4" />
               </button>
             ) : null}
           </div>
@@ -555,7 +556,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                   title="Link to integration field"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <Link className="w-4 h-4" />
                 </button>
               ) : null}
             </div>
