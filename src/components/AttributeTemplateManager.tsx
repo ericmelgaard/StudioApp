@@ -44,7 +44,6 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
   const [selectedTemplate, setSelectedTemplate] = useState<AttributeTemplate | null>(null);
   const [showAddAttribute, setShowAddAttribute] = useState(false);
   const [showAddTranslation, setShowAddTranslation] = useState(false);
-  const [editingTranslation, setEditingTranslation] = useState<string | null>(null);
 
   const [newAttribute, setNewAttribute] = useState({
     name: '',
@@ -567,59 +566,51 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                               ...selectedTemplate.attribute_schema.extended_attributes
                             ].filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
 
-                            const isEditing = editingTranslation === translation.locale;
-
                             return (
-                              <div key={translation.locale} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                <div className="flex items-center justify-between mb-3">
+                              <div key={translation.locale} className="p-4 bg-white rounded-lg border-2 border-slate-300">
+                                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
                                   <div>
-                                    <h5 className="font-semibold text-slate-900">{translation.locale_name}</h5>
-                                    <p className="text-xs text-slate-500 font-mono">{translation.locale}</p>
+                                    <h5 className="font-semibold text-slate-900 flex items-center gap-2">
+                                      <Globe className="w-4 h-4 text-blue-600" />
+                                      {translation.locale_name}
+                                    </h5>
+                                    <p className="text-xs text-slate-500 font-mono mt-0.5">{translation.locale}</p>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => setEditingTranslation(isEditing ? null : translation.locale)}
-                                      className="px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                                    >
-                                      {isEditing ? 'Done' : 'Edit Labels'}
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        if (confirm(`Remove ${translation.locale_name} translation?`)) {
-                                          removeTranslation(translation.locale);
-                                        }
-                                      }}
-                                      className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                      title="Remove translation"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Remove ${translation.locale_name} translation?`)) {
+                                        removeTranslation(translation.locale);
+                                      }
+                                    }}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    title="Remove translation"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
                                 </div>
 
-                                {isEditing && (
-                                  <div className="space-y-2 mt-3 pt-3 border-t border-slate-300">
-                                    <p className="text-xs text-slate-600 mb-2">Customize field labels for this language:</p>
-                                    {translatableFields.map(field => (
-                                      <div key={field.name} className="flex items-center gap-2">
-                                        <span className="text-xs text-slate-600 w-32 flex-shrink-0">{field.label}:</span>
-                                        <input
-                                          type="text"
-                                          value={translation.field_labels[field.name] || field.label}
-                                          onChange={(e) => updateTranslationLabel(translation.locale, field.name, e.target.value)}
-                                          className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                          placeholder={`${translation.locale_name} label`}
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {!isEditing && (
-                                  <div className="text-xs text-slate-600 mt-2">
-                                    {translatableFields.length} translatable fields configured
-                                  </div>
-                                )}
+                                <div className="space-y-3">
+                                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                                    Customize Field Labels:
+                                  </p>
+                                  {translatableFields.map(field => (
+                                    <div key={field.name} className="space-y-1">
+                                      <label className="block text-xs font-medium text-slate-600">
+                                        {field.label} → {translation.locale_name} Translation
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={translation.field_labels[field.name] || field.label}
+                                        onChange={(e) => updateTranslationLabel(translation.locale, field.name, e.target.value)}
+                                        className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder={`Enter ${translation.locale_name} label for "${field.label}"`}
+                                      />
+                                      <p className="text-xs text-slate-500 italic">
+                                        Field: <span className="font-mono">{field.name}</span>
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             );
                           })
