@@ -104,43 +104,54 @@ export default function AutoImportModal({
     const { data } = await supabase
       .from('integration_products')
       .select('path_id, name, data')
-      .eq('source_id', sourceId)
-      .not('path_id', 'is', null);
+      .eq('source_id', sourceId);
 
     if (data) {
-      const categoryMap = new Map<string, { count: number; sampleName: string; subcategories: Map<string, { count: number; sampleName: string }> }>();
+      const categoryMap = new Map<string, { count: number; items: Set<string>; pathIds: Map<string, { name: string; count: number }> }>();
 
       data.forEach(item => {
-        if (!item.path_id) return;
-        const [categoryId, subcategoryId] = item.path_id.split('-');
+        const displayGroupId = item.data?.displayAttribute?.displayGroupId;
+        if (!displayGroupId) return;
 
-        let category = categoryMap.get(categoryId);
+        let category = categoryMap.get(displayGroupId);
         if (!category) {
-          category = { count: 0, sampleName: item.name, subcategories: new Map() };
-          categoryMap.set(categoryId, category);
+          category = { count: 0, items: new Set(), pathIds: new Map() };
+          categoryMap.set(displayGroupId, category);
         }
+
+        const itemTitle = item.data?.displayAttribute?.itemTitle || item.name;
+        category.items.add(itemTitle);
         category.count++;
 
-        if (subcategoryId) {
-          const subcat = category.subcategories.get(subcategoryId);
-          if (!subcat) {
-            category.subcategories.set(subcategoryId, { count: 1, sampleName: item.name });
-          } else {
-            subcat.count++;
+        if (item.path_id) {
+          const [pathCategory, pathSubcategory] = item.path_id.split('-');
+          if (pathSubcategory) {
+            const existingSub = category.pathIds.get(item.path_id);
+            if (!existingSub) {
+              category.pathIds.set(item.path_id, { name: itemTitle, count: 1 });
+            } else {
+              existingSub.count++;
+            }
           }
         }
       });
 
-      const cats = Array.from(categoryMap.entries()).map(([id, info]) => ({
-        id,
-        name: info.sampleName,
-        count: info.count,
-        subcategories: Array.from(info.subcategories.entries()).map(([subId, subInfo]) => ({
-          id: `${id}-${subId}`,
-          name: subInfo.sampleName,
-          count: subInfo.count
-        })).sort((a, b) => a.name.localeCompare(b.name))
-      })).sort((a, b) => a.id.localeCompare(b.id));
+      const cats = Array.from(categoryMap.entries()).map(([id, info]) => {
+        const itemNames = Array.from(info.items).sort();
+        const categoryName = itemNames.length > 0 ? itemNames[0] : `Category ${id}`;
+        const displayName = itemNames.length > 1 ? `${categoryName} (+${itemNames.length - 1} more)` : categoryName;
+
+        return {
+          id,
+          name: displayName,
+          count: info.count,
+          subcategories: Array.from(info.pathIds.entries()).map(([pathId, subInfo]) => ({
+            id: pathId,
+            name: subInfo.name,
+            count: subInfo.count
+          })).sort((a, b) => a.name.localeCompare(b.name))
+        };
+      }).sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
       setCategories(cats);
     }
@@ -235,22 +246,23 @@ export default function AutoImportModal({
           .eq('source_id', sourceId);
         integrationProducts = data || [];
       } else if (filterType === 'category' && selectedCategories.size > 0) {
-        const categoryArray = Array.from(selectedCategories);
-        for (const categoryPathId of categoryArray) {
-          const isFullPath = categoryPathId.includes('-');
-          let query = supabase
-            .from('integration_products')
-            .select('*')
-            .eq('source_id', sourceId);
+        const { data: allProducts } = await supabase
+          .from('integration_products')
+          .select('*')
+          .eq('source_id', sourceId);
 
-          if (isFullPath) {
-            query = query.eq('path_id', categoryPathId);
-          } else {
-            query = query.like('path_id', `${categoryPathId}-%`);
-          }
+        if (allProducts) {
+          const categoryArray = Array.from(selectedCategories);
+          integrationProducts = allProducts.filter(product => {
+            const isPathId = categoryArray.some(cat => cat.includes('-'));
 
-          const { data } = await query;
-          if (data) integrationProducts.push(...data);
+            if (isPathId) {
+              return categoryArray.includes(product.path_id);
+            } else {
+              const displayGroupId = product.data?.displayAttribute?.displayGroupId;
+              return displayGroupId && categoryArray.includes(displayGroupId);
+            }
+          });
         }
       }
 
