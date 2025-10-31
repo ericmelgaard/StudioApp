@@ -332,7 +332,6 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
           mapped.add(mapping.wand_field);
         }
       });
-      console.log('Mapped fields from template:', Array.from(mapped));
       setMappedFields(mapped);
     }
   }
@@ -397,10 +396,8 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
   }
 
   function openFieldLinkModal(fieldName: string, fieldLabel: string) {
-    console.log('openFieldLinkModal called with:', fieldName, fieldLabel);
     setLinkingField({ name: fieldName, label: fieldLabel });
     setShowFieldLinkModal(true);
-    console.log('Modal should now be open, showFieldLinkModal:', true);
   }
 
   async function evaluateFieldLink(linkData: FieldLinkData): Promise<any> {
@@ -480,8 +477,6 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     const isLinked = linkedAttributes.has(field.name);
     const isMapped = mappedFields.has(field.name) && !selectedIntegrationProduct;
     const showSyncIcon = isMapped && !isLinked;
-
-    console.log(`Field: ${field.name}, isMapped: ${mappedFields.has(field.name)}, selectedIntegrationProduct: ${!!selectedIntegrationProduct}, showSyncIcon: ${showSyncIcon}`);
 
     switch (field.type) {
       case 'text':
