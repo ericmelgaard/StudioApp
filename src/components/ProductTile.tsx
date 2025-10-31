@@ -39,7 +39,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
 
   // Use attributes.name if available, otherwise fall back to product.name
   const displayName = product.attributes?.name || product.name;
-  const imageUrl = product.attributes?.image_url;
+  const imageUrl = product.attributes?.thumbnail || product.attributes?.image_url;
   const description = product.attributes?.description;
   const price = product.attributes?.price;
   const calories = product.attributes?.calories;
