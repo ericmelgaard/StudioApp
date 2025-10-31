@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Package, Layout, Database, Sparkles, Plus, Link, Calculator } from 'lucide-react';
+import { X, Package, LayoutGrid as Layout, Database, Sparkles, Plus, Link, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
