@@ -268,7 +268,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       setShowEditChoice(true);
     } else {
       setPendingPublication(null);
-      setEditMode('immediate');
+      setEditMode(null);
     }
   }
 
