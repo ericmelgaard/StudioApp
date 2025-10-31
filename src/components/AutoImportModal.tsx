@@ -101,21 +101,29 @@ export default function AutoImportModal({
   async function loadCategories() {
     const { data } = await supabase
       .from('integration_products')
-      .select('path_id')
-      .eq('source_id', sourceId);
+      .select('path_id, name, data')
+      .eq('source_id', sourceId)
+      .not('path_id', 'is', null);
 
     if (data) {
-      const categoryMap = new Map<string, number>();
+      const categoryMap = new Map<string, { count: number; sampleName: string }>();
 
       data.forEach(item => {
+        if (!item.path_id) return;
         const categoryId = item.path_id.split('-')[0];
-        categoryMap.set(categoryId, (categoryMap.get(categoryId) || 0) + 1);
+        const existing = categoryMap.get(categoryId);
+
+        if (!existing) {
+          categoryMap.set(categoryId, { count: 1, sampleName: item.name });
+        } else {
+          existing.count++;
+        }
       });
 
-      const cats = Array.from(categoryMap.entries()).map(([id, count]) => ({
+      const cats = Array.from(categoryMap.entries()).map(([id, info]) => ({
         id,
-        name: `Category ${id}`,
-        count
+        name: info.sampleName,
+        count: info.count
       })).sort((a, b) => a.id.localeCompare(b.id));
 
       setCategories(cats);

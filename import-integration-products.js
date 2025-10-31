@@ -46,6 +46,7 @@ async function importIntegrationData() {
     const products = quApiData.menuItems.map(item => ({
       source_id: sourceId,
       external_id: item.id.toString(),
+      path_id: item.pathId || null,
       name: item.name,
       item_type: 'product',
       data: item,
