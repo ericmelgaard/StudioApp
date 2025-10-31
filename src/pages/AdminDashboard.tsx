@@ -379,7 +379,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
       {/* Location Selector Overlay */}
       {showLocationSelector && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-start">
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-start justify-start">
           <div className="bg-slate-700 text-white w-96 h-full shadow-xl">
             <div className="p-4 border-b border-slate-600">
               <div className="flex items-center justify-between mb-4">

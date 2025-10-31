@@ -108,7 +108,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="flex items-center gap-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -120,7 +120,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900">Select Location</h2>

@@ -668,7 +668,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
   const selectedTemplate = attributeTemplates.find(t => t.id === selectedAttributeTemplate);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

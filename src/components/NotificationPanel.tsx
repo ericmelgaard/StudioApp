@@ -45,10 +45,10 @@ export default function NotificationPanel() {
       {showPanel && (
         <>
           <div
-            className="fixed inset-0 z-[100]"
+            className="fixed inset-0 z-40"
             onClick={() => setShowPanel(false)}
           />
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-slate-200 z-[101] max-h-[600px] flex flex-col">
+          <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-slate-200 z-50 max-h-[600px] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <h3 className="font-semibold text-slate-900">Notifications</h3>
               <div className="flex items-center gap-2">
