@@ -445,11 +445,16 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
         return (
           <div className="relative">
             <input
-              type="number"
-              step="any"
+              type="text"
+              inputMode="decimal"
               required={field.required}
               value={value}
-              onChange={(e) => handleAttributeChange(field.name, parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || !isNaN(parseFloat(val))) {
+                  handleAttributeChange(field.name, val === '' ? 0 : parseFloat(val));
+                }
+              }}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 isLinked ? 'border-green-400 bg-green-50 pr-20' : showSyncIcon ? 'pr-10 border-slate-300' : 'border-slate-300'
               }`}
