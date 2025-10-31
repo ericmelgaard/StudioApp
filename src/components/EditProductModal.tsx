@@ -1010,6 +1010,102 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       );
                     })}
                   </div>
+
+                  {/* Other Core Attributes - Dynamic based on template */}
+                  {(() => {
+                    const otherCoreKeys = Object.keys(attributes).filter(k => {
+                      // Must be in template's core_attributes
+                      if (!isAttributeInCoreSchema(k)) return false;
+                      // Exclude already-rendered attributes
+                      if (['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k)) return false;
+                      // Exclude special types that have their own sections
+                      const meta = getAttributeMeta(k);
+                      if (meta?.type === 'image' || meta?.type === 'sizes') return false;
+                      return true;
+                    });
+                    if (otherCoreKeys.length === 0) return null;
+
+                    return (
+                      <div className="flex flex-wrap gap-3 pt-4">
+                        {otherCoreKeys.map(key => {
+                          const value = attributes[key];
+                          const isOverridden = syncStatus?.overridden[key];
+                          const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
+                          const isMapped = attributeMappings[key] !== undefined;
+                          const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
+                          const integrationValue = isOverridden?.integration;
+                          const isDropdownOpen = openDropdown === key;
+                          const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+
+                          return (
+                            <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="text-xs font-medium text-slate-600">{key}</label>
+                                <div className="flex items-center gap-1">
+                                  {/* Product-level mapping button */}
+                                  {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && (
+                                    <button
+                                      onClick={() => openMappingModal(key)}
+                                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                                      title="Link to integration field"
+                                    >
+                                      <Link className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                  {/* Mapped indicator */}
+                                  {isMapped && (
+                                    <button
+                                      onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
+                                      title={`Mapped to ${attributeMappings[key]}`}
+                                    >
+                                      <Link className="w-3 h-3" />
+                                      <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                  )}
+                                  {isDropdownOpen && isMapped && (
+                                    <div className="dropdown-menu absolute right-0 mt-8 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUnmapAttribute(key);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
+                                      >
+                                        <Unlink className="w-3.5 h-3.5 text-red-600 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1">
+                                          <div className="font-medium text-slate-900">Remove Mapping</div>
+                                          <div className="text-xs text-slate-500 mt-0.5 truncate">
+                                            Currently: {attributeMappings[key]}
+                                          </div>
+                                        </div>
+                                      </button>
+                                    </div>
+                                  )}
+                                  {/* Sync status badges */}
+                                  {syncStatus && !isLocalOnly && !isMapped && hasValue && (
+                                    isOverridden ? (
+                                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                        <Unlink className="w-3 h-3" />
+                                        Local
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                        <Link className="w-3 h-3" />
+                                        Synced
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                              {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Image Attributes Section */}
