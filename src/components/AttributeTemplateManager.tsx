@@ -355,20 +355,40 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                         Core Attributes
                       </h4>
                       <div className="space-y-2">
-                        {selectedTemplate.attribute_schema.core_attributes.map((attr) => (
-                          <div key={attr.name} className="p-3 bg-slate-50 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm text-slate-900">{attr.label}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500">{attr.type}</span>
-                                {attr.required && (
-                                  <span className="text-xs font-medium text-red-600">Required</span>
-                                )}
+                        {selectedTemplate.attribute_schema.core_attributes.map((attr) => {
+                          const translatableFields = selectedTemplate.translations || [];
+                          const isTranslatable = attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext';
+
+                          return (
+                            <div key={attr.name} className="p-3 bg-slate-50 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium text-sm text-slate-900">{attr.label}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-500">{attr.type}</span>
+                                  {attr.required && (
+                                    <span className="text-xs font-medium text-red-600">Required</span>
+                                  )}
+                                </div>
                               </div>
+                              {isTranslatable && translatableFields.length > 0 && (
+                                <div className="mt-2 space-y-1.5">
+                                  {translatableFields.map((translation) => (
+                                    <div key={translation.locale} className="flex items-center gap-2">
+                                      <span className="text-xs text-slate-600 w-20 flex-shrink-0">{translation.locale_name}:</span>
+                                      <input
+                                        type="text"
+                                        value={translation.field_labels[attr.name] || attr.label}
+                                        onChange={(e) => updateTranslationLabel(translation.locale, attr.name, e.target.value)}
+                                        className="flex-1 px-2 py-1 text-xs bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder={`${translation.locale_name} label`}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">Field: {attr.name}</div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -479,20 +499,40 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                             No extended attributes yet. Add one above.
                           </p>
                         ) : (
-                          selectedTemplate.attribute_schema.extended_attributes.map((attr) => (
-                            <div key={attr.name} className="p-3 bg-slate-50 rounded-lg">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-sm text-slate-900">{attr.label}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-slate-500">{attr.type}</span>
-                                  {attr.required && (
-                                    <span className="text-xs font-medium text-red-600">Required</span>
-                                  )}
+                          selectedTemplate.attribute_schema.extended_attributes.map((attr) => {
+                            const translatableFields = selectedTemplate.translations || [];
+                            const isTranslatable = attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext';
+
+                            return (
+                              <div key={attr.name} className="p-3 bg-slate-50 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-sm text-slate-900">{attr.label}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500">{attr.type}</span>
+                                    {attr.required && (
+                                      <span className="text-xs font-medium text-red-600">Required</span>
+                                    )}
+                                  </div>
                                 </div>
+                                {isTranslatable && translatableFields.length > 0 && (
+                                  <div className="mt-2 space-y-1.5">
+                                    {translatableFields.map((translation) => (
+                                      <div key={translation.locale} className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-600 w-20 flex-shrink-0">{translation.locale_name}:</span>
+                                        <input
+                                          type="text"
+                                          value={translation.field_labels[attr.name] || attr.label}
+                                          onChange={(e) => updateTranslationLabel(translation.locale, attr.name, e.target.value)}
+                                          className="flex-1 px-2 py-1 text-xs bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                          placeholder={`${translation.locale_name} label`}
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-xs text-slate-500 mt-1">Field: {attr.name}</div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>
