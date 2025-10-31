@@ -261,23 +261,41 @@ export default function AutoImportModal({
 
       const mappings = mappingData.attribute_mappings.mappings;
 
-      const productsToImport = integrationProducts.map(intProduct => {
-        const attributes: any = {};
+      const integrationProductIds = integrationProducts.map(p => p.id);
 
-        mappings.forEach((mapping: any) => {
-          const value = getNestedValue(intProduct.data, mapping.integration_field);
-          if (value !== undefined) {
-            attributes[mapping.wand_field] = value;
-          }
+      const { data: existingProducts } = await supabase
+        .from('products')
+        .select('integration_product_id')
+        .in('integration_product_id', integrationProductIds);
+
+      const existingProductIds = new Set(
+        (existingProducts || []).map(p => p.integration_product_id)
+      );
+
+      const productsToImport = integrationProducts
+        .filter(intProduct => !existingProductIds.has(intProduct.id))
+        .map(intProduct => {
+          const attributes: any = {};
+
+          mappings.forEach((mapping: any) => {
+            const value = getNestedValue(intProduct.data, mapping.integration_field);
+            if (value !== undefined) {
+              attributes[mapping.wand_field] = value;
+            }
+          });
+
+          return {
+            name: intProduct.data?.displayAttribute?.itemTitle || intProduct.name,
+            integration_product_id: intProduct.id,
+            attribute_template_id: selectedTemplate,
+            attributes: attributes
+          };
         });
 
-        return {
-          name: intProduct.data?.displayAttribute?.itemTitle || intProduct.name,
-          integration_product_id: intProduct.id,
-          attribute_template_id: selectedTemplate,
-          attributes: attributes
-        };
-      });
+      if (productsToImport.length === 0) {
+        alert('All selected products have already been imported. No new products to add.');
+        return;
+      }
 
       const { error } = await supabase.from('products').insert(productsToImport);
 
@@ -287,7 +305,12 @@ export default function AutoImportModal({
         return;
       }
 
-      alert(`Successfully imported ${productsToImport.length} products`);
+      const skippedCount = integrationProducts.length - productsToImport.length;
+      const message = skippedCount > 0
+        ? `Successfully imported ${productsToImport.length} products (${skippedCount} duplicates skipped)`
+        : `Successfully imported ${productsToImport.length} products`;
+
+      alert(message);
       onSuccess();
       onClose();
     } catch (error) {
