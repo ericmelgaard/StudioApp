@@ -174,20 +174,28 @@ export default function FieldLinkModal({
     try {
       const { data: mappings, error } = await supabase
         .from('integration_attribute_mappings')
-        .select('integration_field, item_type')
-        .eq('product_attribute', fieldName);
+        .select('attribute_mappings, integration_type')
+        .eq('is_template', true);
 
       if (error) throw error;
 
       if (mappings && mappings.length > 0) {
         const mapping = mappings[0];
-        if (mapping.item_type && ['product', 'modifier', 'discount'].includes(mapping.item_type)) {
-          setLinkType(mapping.item_type as 'product' | 'modifier' | 'discount');
+
+        if (mapping.integration_type && ['product', 'modifier', 'discount'].includes(mapping.integration_type)) {
+          setLinkType(mapping.integration_type as 'product' | 'modifier' | 'discount');
         }
-        if (mapping.integration_field) {
-          setMappedField(mapping.integration_field);
-          setSelectedField(mapping.integration_field);
-          setHasMapping(true);
+
+        if (mapping.attribute_mappings?.mappings) {
+          const fieldMapping = mapping.attribute_mappings.mappings.find(
+            (m: any) => m.wand_field === fieldName
+          );
+
+          if (fieldMapping?.integration_field) {
+            setMappedField(fieldMapping.integration_field);
+            setSelectedField(fieldMapping.integration_field);
+            setHasMapping(true);
+          }
         }
       }
     } catch (error) {
