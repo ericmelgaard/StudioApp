@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Download, Sparkles, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Save, Download, Sparkles, Filter, CheckCircle2, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface IntegrationSource {
@@ -11,6 +11,13 @@ interface IntegrationSource {
 interface AttributeTemplate {
   id: string;
   name: string;
+}
+
+interface CategoryNode {
+  id: string;
+  name: string;
+  count: number;
+  subcategories: Array<{ id: string; name: string; count: number }>;
 }
 
 interface AutoImportRule {
@@ -51,11 +58,11 @@ export default function AutoImportModal({
   const [importing, setImporting] = useState(false);
   const [source, setSource] = useState<IntegrationSource | null>(null);
   const [templates, setTemplates] = useState<AttributeTemplate[]>([]);
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; count: number }>>([]);
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
 
-  const [filterType, setFilterType] = useState<'all' | 'category' | 'subcategory'>('all');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [filterType, setFilterType] = useState<'all' | 'category'>('all');
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [existingRule, setExistingRule] = useState<AutoImportRule | null>(null);
 
@@ -66,11 +73,6 @@ export default function AutoImportModal({
     }
   }, [isOpen, sourceId, integrationType]);
 
-  useEffect(() => {
-    if (filterType === 'category' && categories.length > 0 && !selectedCategory) {
-      setSelectedCategory(categories[0].id);
-    }
-  }, [filterType, categories]);
 
   async function loadData() {
     setLoading(true);
@@ -106,24 +108,38 @@ export default function AutoImportModal({
       .not('path_id', 'is', null);
 
     if (data) {
-      const categoryMap = new Map<string, { count: number; sampleName: string }>();
+      const categoryMap = new Map<string, { count: number; sampleName: string; subcategories: Map<string, { count: number; sampleName: string }> }>();
 
       data.forEach(item => {
         if (!item.path_id) return;
-        const categoryId = item.path_id.split('-')[0];
-        const existing = categoryMap.get(categoryId);
+        const [categoryId, subcategoryId] = item.path_id.split('-');
 
-        if (!existing) {
-          categoryMap.set(categoryId, { count: 1, sampleName: item.name });
-        } else {
-          existing.count++;
+        let category = categoryMap.get(categoryId);
+        if (!category) {
+          category = { count: 0, sampleName: item.name, subcategories: new Map() };
+          categoryMap.set(categoryId, category);
+        }
+        category.count++;
+
+        if (subcategoryId) {
+          const subcat = category.subcategories.get(subcategoryId);
+          if (!subcat) {
+            category.subcategories.set(subcategoryId, { count: 1, sampleName: item.name });
+          } else {
+            subcat.count++;
+          }
         }
       });
 
       const cats = Array.from(categoryMap.entries()).map(([id, info]) => ({
         id,
         name: info.sampleName,
-        count: info.count
+        count: info.count,
+        subcategories: Array.from(info.subcategories.entries()).map(([subId, subInfo]) => ({
+          id: `${id}-${subId}`,
+          name: subInfo.sampleName,
+          count: subInfo.count
+        })).sort((a, b) => a.name.localeCompare(b.name))
       })).sort((a, b) => a.id.localeCompare(b.id));
 
       setCategories(cats);
@@ -145,10 +161,13 @@ export default function AutoImportModal({
     if (data) {
       setExistingRule(data);
       setFilterType(data.filter_type);
-      if (data.filter_type === 'category') {
-        setSelectedCategory(data.filter_value || '');
-      } else if (data.filter_type === 'subcategory') {
-        setSelectedSubcategory(data.filter_value || '');
+      if (data.filter_type === 'category' && data.filter_value) {
+        try {
+          const categories = JSON.parse(data.filter_value);
+          setSelectedCategories(new Set(categories));
+        } catch {
+          setSelectedCategories(new Set());
+        }
       }
       setSelectedTemplate(data.target_template_id);
     }
@@ -160,13 +179,8 @@ export default function AutoImportModal({
       return;
     }
 
-    if (filterType === 'category' && !selectedCategory) {
-      alert('Please select a category');
-      return;
-    }
-
-    if (filterType === 'subcategory' && !selectedSubcategory) {
-      alert('Please select a subcategory');
+    if (filterType === 'category' && selectedCategories.size === 0) {
+      alert('Please select at least one category');
       return;
     }
 
@@ -176,7 +190,7 @@ export default function AutoImportModal({
         source_id: sourceId,
         integration_type: normalizeType(integrationType),
         filter_type: filterType,
-        filter_value: filterType === 'all' ? null : (filterType === 'category' ? selectedCategory : selectedSubcategory),
+        filter_value: filterType === 'all' ? null : JSON.stringify(Array.from(selectedCategories)),
         target_template_id: selectedTemplate,
         is_active: true,
         updated_at: new Date().toISOString()
@@ -212,18 +226,33 @@ export default function AutoImportModal({
 
     setImporting(true);
     try {
-      let query = supabase
-        .from('integration_products')
-        .select('*')
-        .eq('source_id', sourceId);
+      let integrationProducts: any[] = [];
 
-      if (filterType === 'category' && selectedCategory) {
-        query = query.like('path_id', `${selectedCategory}-%`);
-      } else if (filterType === 'subcategory' && selectedSubcategory) {
-        query = query.eq('path_id', selectedSubcategory);
+      if (filterType === 'all') {
+        const { data } = await supabase
+          .from('integration_products')
+          .select('*')
+          .eq('source_id', sourceId);
+        integrationProducts = data || [];
+      } else if (filterType === 'category' && selectedCategories.size > 0) {
+        const categoryArray = Array.from(selectedCategories);
+        for (const categoryPathId of categoryArray) {
+          const isFullPath = categoryPathId.includes('-');
+          let query = supabase
+            .from('integration_products')
+            .select('*')
+            .eq('source_id', sourceId);
+
+          if (isFullPath) {
+            query = query.eq('path_id', categoryPathId);
+          } else {
+            query = query.like('path_id', `${categoryPathId}-%`);
+          }
+
+          const { data } = await query;
+          if (data) integrationProducts.push(...data);
+        }
       }
-
-      const { data: integrationProducts } = await query;
 
       if (!integrationProducts || integrationProducts.length === 0) {
         alert('No products found matching the filter');
@@ -293,6 +322,67 @@ export default function AutoImportModal({
     } catch {
       return undefined;
     }
+  }
+
+  function toggleCategory(categoryId: string) {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }
+
+  function toggleCategorySelection(categoryId: string, hasSubcategories: boolean) {
+    setSelectedCategories(prev => {
+      const next = new Set(prev);
+
+      if (hasSubcategories) {
+        const category = categories.find(c => c.id === categoryId);
+        const allSubIds = category?.subcategories.map(s => s.id) || [];
+        const allSelected = allSubIds.every(id => next.has(id));
+
+        if (allSelected) {
+          allSubIds.forEach(id => next.delete(id));
+        } else {
+          allSubIds.forEach(id => next.add(id));
+        }
+      } else {
+        if (next.has(categoryId)) {
+          next.delete(categoryId);
+        } else {
+          next.add(categoryId);
+        }
+      }
+
+      return next;
+    });
+  }
+
+  function isCategorySelected(categoryId: string): boolean {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return false;
+
+    if (category.subcategories.length === 0) {
+      return selectedCategories.has(categoryId);
+    }
+
+    const allSubIds = category.subcategories.map(s => s.id);
+    return allSubIds.every(id => selectedCategories.has(id));
+  }
+
+  function isCategoryIndeterminate(categoryId: string): boolean {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category || category.subcategories.length === 0) return false;
+
+    const allSubIds = category.subcategories.map(s => s.id);
+    const someSelected = allSubIds.some(id => selectedCategories.has(id));
+    const allSelected = allSubIds.every(id => selectedCategories.has(id));
+
+    return someSelected && !allSelected;
   }
 
   if (!isOpen) return null;
@@ -365,51 +455,72 @@ export default function AutoImportModal({
                 />
                 <div className="flex-1">
                   <div className="font-medium text-slate-900">Import by Category</div>
-                  <div className="text-xs text-slate-500">Import items from a specific category</div>
+                  <div className="text-xs text-slate-500">Select one or more categories to import</div>
                 </div>
               </label>
 
               {filterType === 'category' && (
-                <div className="ml-7 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select a category...</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name} ({cat.count} items)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                <div className="ml-7 p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-80 overflow-y-auto">
+                  {categories.length === 0 ? (
+                    <p className="text-sm text-slate-500">No categories available</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {categories.map(category => (
+                        <div key={category.id} className="space-y-1">
+                          <div className="flex items-center gap-2 py-2 px-2 hover:bg-white rounded transition-colors">
+                            {category.subcategories.length > 0 && (
+                              <button
+                                onClick={() => toggleCategory(category.id)}
+                                className="p-0.5 hover:bg-slate-200 rounded"
+                              >
+                                {expandedCategories.has(category.id) ? (
+                                  <ChevronDown className="w-4 h-4 text-slate-600" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 text-slate-600" />
+                                )}
+                              </button>
+                            )}
+                            {category.subcategories.length === 0 && <div className="w-5" />}
+                            <label className="flex items-center gap-2 flex-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isCategorySelected(category.id)}
+                                ref={(el) => {
+                                  if (el) el.indeterminate = isCategoryIndeterminate(category.id);
+                                }}
+                                onChange={() => toggleCategorySelection(category.id, category.subcategories.length > 0)}
+                                className="w-4 h-4 text-blue-600 rounded"
+                              />
+                              <span className="text-sm font-medium text-slate-700">
+                                {category.name}
+                              </span>
+                              <span className="text-xs text-slate-500">({category.count} items)</span>
+                            </label>
+                          </div>
 
-              <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
-                <input
-                  type="radio"
-                  name="filterType"
-                  value="subcategory"
-                  checked={filterType === 'subcategory'}
-                  onChange={(e) => setFilterType(e.target.value as any)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-slate-900">Import by Subcategory</div>
-                  <div className="text-xs text-slate-500">Import items from a specific subcategory (path_id)</div>
-                </div>
-              </label>
-
-              {filterType === 'subcategory' && (
-                <div className="ml-7 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <input
-                    type="text"
-                    placeholder="Enter full path_id (e.g., 43209-102303)"
-                    value={selectedSubcategory}
-                    onChange={(e) => setSelectedSubcategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                          {expandedCategories.has(category.id) && category.subcategories.length > 0 && (
+                            <div className="ml-9 space-y-1">
+                              {category.subcategories.map(subcategory => (
+                                <label
+                                  key={subcategory.id}
+                                  className="flex items-center gap-2 py-1.5 px-2 hover:bg-white rounded cursor-pointer transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedCategories.has(subcategory.id)}
+                                    onChange={() => toggleCategorySelection(subcategory.id, false)}
+                                    className="w-4 h-4 text-blue-600 rounded"
+                                  />
+                                  <span className="text-sm text-slate-600">{subcategory.name}</span>
+                                  <span className="text-xs text-slate-400">({subcategory.count})</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
