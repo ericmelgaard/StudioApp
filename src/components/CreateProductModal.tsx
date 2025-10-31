@@ -3,7 +3,6 @@ import { X, Package, Layout, Database, Sparkles, Plus, Link, Calculator } from '
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
-import LinkProductModal, { LinkData } from './LinkProductModal';
 import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
 
 interface AttributeTemplate {
@@ -33,7 +32,7 @@ interface Size {
   price: number;
   is_active: boolean;
   is_out_of_stock: boolean;
-  link?: LinkData;
+  link?: FieldLinkData;
 }
 
 interface SizesEditorProps {
@@ -44,7 +43,7 @@ interface SizesEditorProps {
 function SizesEditor({ sizes, onChange }: SizesEditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkingSizeId, setLinkingSizeId] = useState<string | null>(null);
-  const [currentLink, setCurrentLink] = useState<LinkData | null>(null);
+  const [currentLink, setCurrentLink] = useState<FieldLinkData | null>(null);
 
   const addSize = () => {
     const newSize: Size = {
@@ -72,7 +71,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
     setShowLinkModal(true);
   };
 
-  const handleLink = (linkData: LinkData) => {
+  const handleLink = (linkData: FieldLinkData) => {
     if (linkingSizeId) {
       updateSize(linkingSizeId, { link: linkData });
     }
@@ -232,7 +231,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
         Add Size
       </button>
 
-      <LinkProductModal
+      <FieldLinkModal
         isOpen={showLinkModal}
         onClose={() => {
           setShowLinkModal(false);
@@ -240,6 +239,8 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
           setCurrentLink(null);
         }}
         onLink={handleLink}
+        fieldName="price"
+        fieldLabel="Size Price"
         currentLink={currentLink}
       />
     </div>

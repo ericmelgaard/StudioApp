@@ -3,7 +3,7 @@ import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus } from 'luc
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
-import LinkProductModal, { LinkData } from './LinkProductModal';
+import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
 
 interface Product {
   id: string;
@@ -34,7 +34,7 @@ interface Size {
   price: number;
   is_active: boolean;
   is_out_of_stock: boolean;
-  link?: LinkData;
+  link?: FieldLinkData;
 }
 
 interface SizesEditorProps {
@@ -45,7 +45,7 @@ interface SizesEditorProps {
 function SizesEditor({ sizes, onChange }: SizesEditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkingSizeId, setLinkingSizeId] = useState<string | null>(null);
-  const [currentLink, setCurrentLink] = useState<LinkData | null>(null);
+  const [currentLink, setCurrentLink] = useState<FieldLinkData | null>(null);
   const addSize = () => {
     const newSize: Size = {
       id: crypto.randomUUID(),
@@ -68,7 +68,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
     setShowLinkModal(true);
   };
 
-  const handleLink = (linkData: LinkData) => {
+  const handleLink = (linkData: FieldLinkData) => {
     if (linkingSizeId) {
       updateSize(linkingSizeId, { link: linkData });
     }
@@ -149,7 +149,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
               <button
                 onClick={() => handleUnlink(size.id)}
                 className="p-2 rounded-lg transition-colors bg-green-100 text-green-700 hover:bg-green-200"
-                title={`Linked to ${size.link.name || size.link.id}`}
+                title="Linked to integration product"
               >
                 <Unlink className="w-4 h-4" />
               </button>
@@ -181,7 +181,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
         Add Size
       </button>
 
-      <LinkProductModal
+      <FieldLinkModal
         isOpen={showLinkModal}
         onClose={() => {
           setShowLinkModal(false);
@@ -189,6 +189,8 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
           setCurrentLink(null);
         }}
         onLink={handleLink}
+        fieldName="price"
+        fieldLabel="Size Price"
         currentLink={currentLink}
       />
     </div>
