@@ -561,28 +561,37 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
             </div>
 
             {hasCalculation && fieldLink.calculation && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
-                <p className="text-xs font-medium text-slate-600 mb-2">Calculation Parts:</p>
-                {fieldLink.calculation.map((part, index) => (
-                  <div key={part.id} className="flex items-center gap-2 text-xs">
-                    {index > 0 && (
-                      <span className="text-slate-400 font-medium">
-                        {part.operation === 'add' ? '+' :
-                         part.operation === 'subtract' ? '-' :
-                         part.operation === 'multiply' ? '×' :
-                         '÷'}
-                      </span>
-                    )}
-                    <div className="flex-1 bg-white px-2 py-1.5 rounded border border-slate-200">
-                      <span className="font-medium text-slate-900">{part.productName}</span>
-                      <span className="text-slate-500"> · {part.field}</span>
-                      <span className="text-slate-400 ml-1">({part.linkType})</span>
-                      {part.value !== undefined && part.value !== null && (
-                        <span className="text-blue-600 font-semibold ml-2">= {part.value}</span>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+                <p className="text-sm font-medium text-slate-700 mb-3">Calculation:</p>
+                <div className="space-y-2">
+                  {fieldLink.calculation.map((part, index) => (
+                    <div key={part.id}>
+                      {index > 0 && (
+                        <div className="flex items-center justify-center py-1">
+                          <span className="text-lg font-bold text-slate-600">
+                            {part.operation === 'add' ? '+' :
+                             part.operation === 'subtract' ? '−' :
+                             part.operation === 'multiply' ? '×' :
+                             '÷'}
+                          </span>
+                        </div>
                       )}
+                      <div className="bg-white px-4 py-3 rounded-lg border border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-slate-900">{part.productName}</div>
+                            <div className="text-xs text-slate-500 mt-0.5">{part.linkType}</div>
+                          </div>
+                          {part.value !== undefined && part.value !== null && (
+                            <div className="text-right ml-4">
+                              <div className="text-lg font-bold text-blue-600">{part.value}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
