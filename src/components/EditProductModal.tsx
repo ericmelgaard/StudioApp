@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -13,6 +13,7 @@ interface Product {
   display_template_id: string | null;
   integration_product_id: string | null;
   attribute_overrides?: Record<string, boolean>;
+  attribute_mappings?: Record<string, FieldLinkData>;
 }
 
 interface EditProductModalProps {
@@ -202,6 +203,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [attributeOverrides, setAttributeOverrides] = useState<Record<string, boolean>>({});
   const [attributeMappings, setAttributeMappings] = useState<Record<string, string>>({});
+  const [fieldLinks, setFieldLinks] = useState<Record<string, FieldLinkData>>({});
   const [loading, setLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [integrationData, setIntegrationData] = useState<any>(null);
@@ -244,7 +246,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       setName(product.name);
       loadTemplateAttributes();
       setAttributeOverrides(product.attribute_overrides || {});
-      setAttributeMappings((product as any).attribute_mappings || {});
+      const prodAttrMappings = (product as any).attribute_mappings || {};
+      setAttributeMappings(prodAttrMappings);
+      setFieldLinks(product.attribute_mappings || {});
       setTranslations(product.attributes?.translations || {});
       loadIntegrationData();
       checkPendingPublication();
@@ -448,7 +452,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         name: name,
         attributes: updatedAttributes,
         attribute_overrides: attributeOverrides,
-        attribute_mappings: attributeMappings,
+        attribute_mappings: fieldLinks,
       };
 
       if (editMode === 'scheduled' && pendingPublication) {
@@ -768,7 +772,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   setName(pendingPublication.changes.name || product.name);
                   setAttributes(pendingPublication.changes.attributes || product.attributes);
                   setAttributeOverrides(pendingPublication.changes.attribute_overrides || {});
-                  setAttributeMappings(pendingPublication.changes.attribute_mappings || {});
+                  setFieldLinks(pendingPublication.changes.attribute_mappings || {});
                 }
               }}
               className="w-full flex items-center gap-3 px-4 py-4 bg-purple-50 hover:bg-purple-100 border-2 border-purple-300 rounded-lg transition-colors text-left"
@@ -997,6 +1001,36 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             )}
                           </div>
                           {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
+                          {key === 'price' && fieldLinks['price']?.type === 'calculation' && fieldLinks['price'].calculation && (
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
+                              <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
+                              <div className="space-y-1">
+                                {fieldLinks['price'].calculation.map((part: any, index: number) => {
+                                  const isSubtract = index > 0 && part.operation === 'subtract';
+                                  return (
+                                    <div key={part.id} className="flex items-center gap-2 text-sm">
+                                      {index > 0 && (
+                                        <span className={`font-bold w-4 text-center ${
+                                          part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
+                                        }`}>
+                                          {part.operation === 'add' ? '+' : '−'}
+                                        </span>
+                                      )}
+                                      {index === 0 && <span className="w-4"></span>}
+                                      <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
+                                        <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
+                                          {part.productName}
+                                        </span>
+                                        <span className={`font-semibold ${isSubtract ? 'text-red-700' : 'text-slate-900'}`}>
+                                          ${typeof part.value === 'number' ? part.value.toFixed(2) : part.value}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
