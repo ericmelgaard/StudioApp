@@ -81,6 +81,15 @@ export default function FieldLinkModal({
   }, [isOpen, currentLink]);
 
   useEffect(() => {
+    if (isOpen) {
+      setMappedField('');
+      setHasMapping(false);
+      setSelectedField('');
+      loadAttributeMappings();
+    }
+  }, [linkType, isOpen]);
+
+  useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredProducts(integrationProducts);
     } else {
@@ -161,8 +170,6 @@ export default function FieldLinkModal({
       if (error) throw error;
       setIntegrationProducts(data || []);
       setFilteredProducts(data || []);
-
-      await loadAttributeMappings();
     } catch (error) {
       console.error('Error loading integration products:', error);
     } finally {
@@ -175,16 +182,13 @@ export default function FieldLinkModal({
       const { data: mappings, error } = await supabase
         .from('integration_attribute_mappings')
         .select('attribute_mappings, integration_type')
-        .eq('is_template', true);
+        .eq('is_template', true)
+        .eq('integration_type', linkType);
 
       if (error) throw error;
 
       if (mappings && mappings.length > 0) {
         const mapping = mappings[0];
-
-        if (mapping.integration_type && ['product', 'modifier', 'discount'].includes(mapping.integration_type)) {
-          setLinkType(mapping.integration_type as 'product' | 'modifier' | 'discount');
-        }
 
         if (mapping.attribute_mappings?.mappings) {
           const fieldMapping = mapping.attribute_mappings.mappings.find(
