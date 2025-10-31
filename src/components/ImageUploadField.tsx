@@ -179,11 +179,12 @@ export default function ImageUploadField({
           </label>
         </div>
       ) : (
-        <div className="relative">
+        <div className="relative inline-block">
           <img
             src={value}
             alt={label}
-            className="w-full h-32 object-cover rounded-lg border border-slate-300"
+            style={{ width: `${targetWidth}px`, height: `${targetHeight}px` }}
+            className="object-contain rounded-lg border border-slate-300"
           />
           <button
             onClick={handleRemove}
