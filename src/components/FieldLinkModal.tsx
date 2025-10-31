@@ -30,6 +30,7 @@ export interface CalculationPart {
   field: string;
   linkType: 'product' | 'modifier' | 'discount';
   operation: 'add' | 'subtract' | 'multiply' | 'divide';
+  value?: any;
 }
 
 interface IntegrationProduct {
@@ -235,13 +236,16 @@ export default function FieldLinkModal({
   const handleAddCalculationPart = () => {
     if (!selectedProduct || !selectedField) return;
 
+    const fieldValue = getFieldValue(selectedProduct.data, selectedField);
+
     const newPart: CalculationPart = {
       id: crypto.randomUUID(),
       productId: selectedProduct.id,
       productName: selectedProduct.name,
       field: selectedField,
       linkType,
-      operation: calculationParts.length === 0 ? 'add' : 'add'
+      operation: calculationParts.length === 0 ? 'add' : 'add',
+      value: fieldValue
     };
 
     setCalculationParts([...calculationParts, newPart]);
@@ -380,6 +384,9 @@ export default function FieldLinkModal({
                         <p className="text-sm font-medium text-slate-900">{part.productName}</p>
                         <p className="text-xs text-slate-500">{part.field}</p>
                         <span className="text-xs text-slate-400">({part.linkType})</span>
+                        {part.value !== undefined && part.value !== null && (
+                          <p className="text-xs font-semibold text-blue-600 mt-1">Value: {part.value}</p>
+                        )}
                       </div>
                       <button
                         onClick={() => handleRemoveCalculationPart(part.id)}
