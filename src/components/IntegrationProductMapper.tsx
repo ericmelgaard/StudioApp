@@ -154,7 +154,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
 
       if (data && data.length > 0) {
         setSampleProducts(data);
-        extractIntegrationFields(data[0].data);
+        extractIntegrationFieldsFromAll(data);
       } else {
         setSampleProducts([]);
         setIntegrationFields([]);
@@ -164,6 +164,40 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
       setSampleProducts([]);
       setIntegrationFields([]);
     }
+  }
+
+  function extractIntegrationFieldsFromAll(records: any[]): void {
+    const fieldSet = new Set<string>();
+
+    function traverse(obj: any, path: string) {
+      if (obj === null || obj === undefined) return;
+
+      if (typeof obj !== 'object') {
+        fieldSet.add(path);
+        return;
+      }
+
+      if (Array.isArray(obj)) {
+        if (obj.length > 0) {
+          traverse(obj[0], `${path}[0]`);
+        }
+        return;
+      }
+
+      Object.keys(obj).forEach(key => {
+        const newPath = path ? `${path}.${key}` : key;
+        traverse(obj[key], newPath);
+      });
+    }
+
+    records.forEach(record => {
+      if (record.data) {
+        traverse(record.data, '');
+      }
+    });
+
+    const fields = Array.from(fieldSet).sort();
+    setIntegrationFields(fields);
   }
 
   function extractIntegrationFields(data: any, prefix = ''): void {
