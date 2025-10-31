@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Download, Sparkles, Filter, CheckCircle2, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, Save, Download, Sparkles, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface IntegrationSource {
@@ -17,7 +17,6 @@ interface CategoryNode {
   id: string;
   name: string;
   count: number;
-  subcategories: Array<{ id: string; name: string; count: number }>;
 }
 
 interface AutoImportRule {
@@ -62,7 +61,6 @@ export default function AutoImportModal({
 
   const [filterType, setFilterType] = useState<'all' | 'category'>('all');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [existingRule, setExistingRule] = useState<AutoImportRule | null>(null);
 
@@ -103,11 +101,11 @@ export default function AutoImportModal({
   async function loadCategories() {
     const { data } = await supabase
       .from('integration_products')
-      .select('path_id, name, data')
+      .select('name, data')
       .eq('source_id', sourceId);
 
     if (data) {
-      const categoryMap = new Map<string, { count: number; items: Set<string>; pathIds: Map<string, { name: string; count: number }> }>();
+      const categoryMap = new Map<string, { count: number; items: Set<string> }>();
 
       data.forEach(item => {
         const displayGroupId = item.data?.displayAttribute?.displayGroupId;
@@ -115,25 +113,13 @@ export default function AutoImportModal({
 
         let category = categoryMap.get(displayGroupId);
         if (!category) {
-          category = { count: 0, items: new Set(), pathIds: new Map() };
+          category = { count: 0, items: new Set() };
           categoryMap.set(displayGroupId, category);
         }
 
         const itemTitle = item.data?.displayAttribute?.itemTitle || item.name;
         category.items.add(itemTitle);
         category.count++;
-
-        if (item.path_id) {
-          const [pathCategory, pathSubcategory] = item.path_id.split('-');
-          if (pathSubcategory) {
-            const existingSub = category.pathIds.get(item.path_id);
-            if (!existingSub) {
-              category.pathIds.set(item.path_id, { name: itemTitle, count: 1 });
-            } else {
-              existingSub.count++;
-            }
-          }
-        }
       });
 
       const cats = Array.from(categoryMap.entries()).map(([id, info]) => {
@@ -144,12 +130,7 @@ export default function AutoImportModal({
         return {
           id,
           name: displayName,
-          count: info.count,
-          subcategories: Array.from(info.pathIds.entries()).map(([pathId, subInfo]) => ({
-            id: pathId,
-            name: subInfo.name,
-            count: subInfo.count
-          })).sort((a, b) => a.name.localeCompare(b.name))
+          count: info.count
         };
       }).sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
@@ -254,14 +235,8 @@ export default function AutoImportModal({
         if (allProducts) {
           const categoryArray = Array.from(selectedCategories);
           integrationProducts = allProducts.filter(product => {
-            const isPathId = categoryArray.some(cat => cat.includes('-'));
-
-            if (isPathId) {
-              return categoryArray.includes(product.path_id);
-            } else {
-              const displayGroupId = product.data?.displayAttribute?.displayGroupId;
-              return displayGroupId && categoryArray.includes(displayGroupId);
-            }
+            const displayGroupId = product.data?.displayAttribute?.displayGroupId;
+            return displayGroupId && categoryArray.includes(displayGroupId);
           });
         }
       }
@@ -336,8 +311,8 @@ export default function AutoImportModal({
     }
   }
 
-  function toggleCategory(categoryId: string) {
-    setExpandedCategories(prev => {
+  function toggleCategorySelection(categoryId: string) {
+    setSelectedCategories(prev => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
         next.delete(categoryId);
@@ -346,55 +321,6 @@ export default function AutoImportModal({
       }
       return next;
     });
-  }
-
-  function toggleCategorySelection(categoryId: string, hasSubcategories: boolean) {
-    setSelectedCategories(prev => {
-      const next = new Set(prev);
-
-      if (hasSubcategories) {
-        const category = categories.find(c => c.id === categoryId);
-        const allSubIds = category?.subcategories.map(s => s.id) || [];
-        const allSelected = allSubIds.every(id => next.has(id));
-
-        if (allSelected) {
-          allSubIds.forEach(id => next.delete(id));
-        } else {
-          allSubIds.forEach(id => next.add(id));
-        }
-      } else {
-        if (next.has(categoryId)) {
-          next.delete(categoryId);
-        } else {
-          next.add(categoryId);
-        }
-      }
-
-      return next;
-    });
-  }
-
-  function isCategorySelected(categoryId: string): boolean {
-    const category = categories.find(c => c.id === categoryId);
-    if (!category) return false;
-
-    if (category.subcategories.length === 0) {
-      return selectedCategories.has(categoryId);
-    }
-
-    const allSubIds = category.subcategories.map(s => s.id);
-    return allSubIds.every(id => selectedCategories.has(id));
-  }
-
-  function isCategoryIndeterminate(categoryId: string): boolean {
-    const category = categories.find(c => c.id === categoryId);
-    if (!category || category.subcategories.length === 0) return false;
-
-    const allSubIds = category.subcategories.map(s => s.id);
-    const someSelected = allSubIds.some(id => selectedCategories.has(id));
-    const allSelected = allSubIds.every(id => selectedCategories.has(id));
-
-    return someSelected && !allSelected;
   }
 
   if (!isOpen) return null;
@@ -476,60 +402,25 @@ export default function AutoImportModal({
                   {categories.length === 0 ? (
                     <p className="text-sm text-slate-500">No categories available</p>
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {categories.map(category => (
-                        <div key={category.id} className="space-y-1">
-                          <div className="flex items-center gap-2 py-2 px-2 hover:bg-white rounded transition-colors">
-                            {category.subcategories.length > 0 && (
-                              <button
-                                onClick={() => toggleCategory(category.id)}
-                                className="p-0.5 hover:bg-slate-200 rounded"
-                              >
-                                {expandedCategories.has(category.id) ? (
-                                  <ChevronDown className="w-4 h-4 text-slate-600" />
-                                ) : (
-                                  <ChevronRight className="w-4 h-4 text-slate-600" />
-                                )}
-                              </button>
-                            )}
-                            {category.subcategories.length === 0 && <div className="w-5" />}
-                            <label className="flex items-center gap-2 flex-1 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isCategorySelected(category.id)}
-                                ref={(el) => {
-                                  if (el) el.indeterminate = isCategoryIndeterminate(category.id);
-                                }}
-                                onChange={() => toggleCategorySelection(category.id, category.subcategories.length > 0)}
-                                className="w-4 h-4 text-blue-600 rounded"
-                              />
-                              <span className="text-sm font-medium text-slate-700">
-                                {category.name}
-                              </span>
-                              <span className="text-xs text-slate-500">({category.count} items)</span>
-                            </label>
+                        <label
+                          key={category.id}
+                          className="flex items-center gap-3 py-2 px-3 hover:bg-white rounded-lg cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCategories.has(category.id)}
+                            onChange={() => toggleCategorySelection(category.id)}
+                            className="w-4 h-4 text-blue-600 rounded"
+                          />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-slate-700">
+                              {category.name}
+                            </span>
+                            <span className="text-xs text-slate-500 ml-2">({category.count} items)</span>
                           </div>
-
-                          {expandedCategories.has(category.id) && category.subcategories.length > 0 && (
-                            <div className="ml-9 space-y-1">
-                              {category.subcategories.map(subcategory => (
-                                <label
-                                  key={subcategory.id}
-                                  className="flex items-center gap-2 py-1.5 px-2 hover:bg-white rounded cursor-pointer transition-colors"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedCategories.has(subcategory.id)}
-                                    onChange={() => toggleCategorySelection(subcategory.id, false)}
-                                    className="w-4 h-4 text-blue-600 rounded"
-                                  />
-                                  <span className="text-sm text-slate-600">{subcategory.name}</span>
-                                  <span className="text-xs text-slate-400">({subcategory.count})</span>
-                                </label>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        </label>
                       ))}
                     </div>
                   )}
