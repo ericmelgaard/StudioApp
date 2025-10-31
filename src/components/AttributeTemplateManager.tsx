@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Sparkles, Check, Plus, Settings, Tag, Edit2, Save } from 'lucide-react';
+import { X, Sparkles, Check, Plus, Settings, Tag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface AttributeTemplate {
@@ -36,8 +36,6 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<AttributeTemplate | null>(null);
   const [showAddAttribute, setShowAddAttribute] = useState(false);
-  const [editingAttributeName, setEditingAttributeName] = useState<string | null>(null);
-  const [editedName, setEditedName] = useState('');
 
   const [newAttribute, setNewAttribute] = useState({
     name: '',
@@ -138,45 +136,6 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     }
   }
 
-  async function updateAttributeName(oldName: string, newName: string, isCore: boolean) {
-    if (!selectedTemplate || !newName.trim()) {
-      alert('Please provide a valid field name');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const updatedSchema = {
-        ...selectedTemplate.attribute_schema,
-        core_attributes: isCore
-          ? selectedTemplate.attribute_schema.core_attributes.map(attr =>
-              attr.name === oldName ? { ...attr, name: newName } : attr
-            )
-          : selectedTemplate.attribute_schema.core_attributes,
-        extended_attributes: !isCore
-          ? selectedTemplate.attribute_schema.extended_attributes.map(attr =>
-              attr.name === oldName ? { ...attr, name: newName } : attr
-            )
-          : selectedTemplate.attribute_schema.extended_attributes
-      };
-
-      await supabase
-        .from('product_attribute_templates')
-        .update({ attribute_schema: updatedSchema })
-        .eq('id', selectedTemplate.id);
-
-      setEditingAttributeName(null);
-      setEditedName('');
-      await loadData();
-      alert('Attribute name updated successfully');
-    } catch (error) {
-      console.error('Error updating attribute name:', error);
-      alert('Failed to update attribute name');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   if (!isOpen) return null;
 
   const defaultTemplateId = settings?.default_product_attribute_template_id;
@@ -264,12 +223,101 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
 
             <div>
               {selectedTemplate ? (
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                    Template Details: {selectedTemplate.name}
-                  </h3>
+                (() => {
+                  // Check if template has translation fields
+                  const translationFields = [
+                    ...selectedTemplate.attribute_schema.core_attributes,
+                    ...selectedTemplate.attribute_schema.extended_attributes
+                  ].filter(attr => attr.type === 'translation');
 
-                  <div className="space-y-6">
+                  const hasTranslations = translationFields.length > 0;
+
+                  if (hasTranslations) {
+                    // Show side-by-side comparison
+                    return (
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                          Template Details: {selectedTemplate.name}
+                        </h3>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          {/* Left: Template Fields */}
+                          <div className="border-2 border-blue-300 bg-blue-50 rounded-lg p-4">
+                            <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                              <Tag className="w-4 h-4" />
+                              Template Fields (English)
+                            </h4>
+                            <div className="space-y-2">
+                              {[...selectedTemplate.attribute_schema.core_attributes, ...selectedTemplate.attribute_schema.extended_attributes]
+                                .filter(attr => attr.type !== 'translation')
+                                .filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext')
+                                .map((attr) => (
+                                  <div key={attr.name} className="p-2 bg-white rounded border border-blue-200">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium text-sm text-slate-900">{attr.label}</span>
+                                      <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded font-mono">{attr.type}</span>
+                                    </div>
+                                    <div className="text-xs text-slate-600 mt-1 font-mono bg-slate-100 px-2 py-1 rounded">
+                                      {attr.name}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+
+                          {/* Right: Translation Field Info */}
+                          <div className="border-2 border-green-300 bg-green-50 rounded-lg p-4">
+                            <h4 className="font-bold text-green-900 mb-3 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4" />
+                              Translation Field
+                            </h4>
+                            {translationFields.map(transField => (
+                              <div key={transField.name} className="space-y-3">
+                                <div className="p-3 bg-white rounded border-2 border-green-300">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-bold text-green-900">{transField.label}</span>
+                                    {(transField as any).required && (
+                                      <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded">REQUIRED</span>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-slate-600 mb-2">
+                                    <span className="font-semibold">Locale:</span> <span className="font-mono bg-green-100 px-2 py-1 rounded">{(transField as any).locale || 'Not set'}</span>
+                                  </div>
+                                  <div className="text-xs text-slate-600 font-mono bg-slate-100 px-2 py-1 rounded">
+                                    Field: {transField.name}
+                                  </div>
+                                </div>
+
+                                <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg">
+                                  <p className="text-xs font-semibold text-amber-900 mb-2">📋 How Translation Works:</p>
+                                  <ul className="text-xs text-amber-800 space-y-1 list-disc list-inside">
+                                    <li>Users will provide <strong>{(transField as any).locale}</strong> translations</li>
+                                    <li>Translations are stored as an object in <span className="font-mono bg-white px-1 rounded">{transField.name}</span></li>
+                                    <li>Each translatable field (left) gets a translation value</li>
+                                    <li>Example: <span className="font-mono bg-white px-1 rounded">{`{name: "Nom français", price: 4.99}`}</span></li>
+                                  </ul>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
+                          <p className="font-semibold mb-1">💡 Understanding Translation Fields:</p>
+                          <p>The translation field automatically shows all translatable fields from the template. Users enter translations for each field on the left in the language specified on the right.</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Original single-column view if no translations
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                        Template Details: {selectedTemplate.name}
+                      </h3>
+
+                      <div className="space-y-6">
                     <div>
                       <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
                         <Tag className="w-4 h-4" />
@@ -287,51 +335,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              {editingAttributeName === attr.name ? (
-                                <>
-                                  <input
-                                    type="text"
-                                    value={editedName}
-                                    onChange={(e) => setEditedName(e.target.value)}
-                                    className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                    placeholder="Field name"
-                                  />
-                                  <button
-                                    onClick={() => updateAttributeName(attr.name, editedName, true)}
-                                    disabled={loading}
-                                    className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
-                                    title="Save"
-                                  >
-                                    <Save className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setEditingAttributeName(null);
-                                      setEditedName('');
-                                    }}
-                                    className="p-1 text-slate-400 hover:bg-slate-100 rounded transition-colors"
-                                    title="Cancel"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="text-xs text-slate-500 flex-1">Field: {attr.name}</span>
-                                  <button
-                                    onClick={() => {
-                                      setEditingAttributeName(attr.name);
-                                      setEditedName(attr.name);
-                                    }}
-                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                    title="Edit field name"
-                                  >
-                                    <Edit2 className="w-3 h-3" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                            <div className="text-xs text-slate-500 mt-1">Field: {attr.name}</div>
                           </div>
                         ))}
                       </div>
@@ -455,51 +459,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {editingAttributeName === attr.name ? (
-                                  <>
-                                    <input
-                                      type="text"
-                                      value={editedName}
-                                      onChange={(e) => setEditedName(e.target.value)}
-                                      className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                      placeholder="Field name"
-                                    />
-                                    <button
-                                      onClick={() => updateAttributeName(attr.name, editedName, false)}
-                                      disabled={loading}
-                                      className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
-                                      title="Save"
-                                    >
-                                      <Save className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setEditingAttributeName(null);
-                                        setEditedName('');
-                                      }}
-                                      className="p-1 text-slate-400 hover:bg-slate-100 rounded transition-colors"
-                                      title="Cancel"
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="text-xs text-slate-500 flex-1">Field: {attr.name}</span>
-                                    <button
-                                      onClick={() => {
-                                        setEditingAttributeName(attr.name);
-                                        setEditedName(attr.name);
-                                      }}
-                                      className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                      title="Edit field name"
-                                    >
-                                      <Edit2 className="w-3 h-3" />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
+                              <div className="text-xs text-slate-500 mt-1">Field: {attr.name}</div>
                             </div>
                           ))
                         )}
@@ -507,6 +467,8 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                     </div>
                   </div>
                 </div>
+                    );
+                  })()
               ) : (
                 <div className="h-full flex items-center justify-center text-slate-400">
                   <div className="text-center">
