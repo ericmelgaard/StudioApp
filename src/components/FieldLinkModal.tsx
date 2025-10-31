@@ -85,29 +85,25 @@ export default function FieldLinkModal({
       setMappedField('');
       setHasMapping(false);
       setSelectedField('');
+      setSelectedProduct(null);
+      loadIntegrationProducts();
       loadAttributeMappings();
     }
   }, [linkType, isOpen]);
 
   useEffect(() => {
-    const typeFiltered = integrationProducts.filter(p =>
-      linkType === 'product' ? (p.item_type === '1' || p.item_type === 'product') :
-      linkType === 'modifier' ? p.item_type === 'modifier' :
-      p.item_type === 'discount'
-    );
-
     if (searchTerm.trim() === '') {
-      setFilteredProducts(typeFiltered);
+      setFilteredProducts(integrationProducts);
     } else {
       const term = searchTerm.toLowerCase();
       setFilteredProducts(
-        typeFiltered.filter(p =>
+        integrationProducts.filter(p =>
           p.name.toLowerCase().includes(term) ||
           p.external_id.toLowerCase().includes(term)
         )
       );
     }
-  }, [searchTerm, integrationProducts, linkType]);
+  }, [searchTerm, integrationProducts]);
 
   useEffect(() => {
     if (selectedProduct && selectedProduct.data) {
@@ -165,16 +161,27 @@ export default function FieldLinkModal({
   const loadIntegrationProducts = async () => {
     setLoading(true);
     try {
+      let tableName = 'integration_products';
+      if (linkType === 'modifier') {
+        tableName = 'integration_modifiers';
+      } else if (linkType === 'discount') {
+        tableName = 'integration_discounts';
+      }
+
       const { data, error } = await supabase
-        .from('integration_products')
-        .select('id, name, external_id, data, item_type')
+        .from(tableName)
+        .select('id, name, external_id, data')
         .order('name');
 
       if (error) throw error;
-      setIntegrationProducts(data || []);
-      setFilteredProducts(data || []);
+      const items = (data || []).map((item: any) => ({
+        ...item,
+        item_type: linkType
+      }));
+      setIntegrationProducts(items);
+      setFilteredProducts(items);
     } catch (error) {
-      console.error('Error loading integration products:', error);
+      console.error('Error loading integration items:', error);
     } finally {
       setLoading(false);
     }

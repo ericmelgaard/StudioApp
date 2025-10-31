@@ -80,25 +80,22 @@ export default function IntegrationCatalog() {
         .from('integration_products')
         .select('*')
         .eq('source_id', source!.id)
-        .in('item_type', ['1', 'product'])
         .order('name');
       setProducts(data || []);
     } else if (activeTab === 'modifiers') {
       const { data } = await supabase
-        .from('integration_products')
+        .from('integration_modifiers')
         .select('*')
         .eq('source_id', source!.id)
-        .eq('item_type', 'modifier')
         .order('name');
-      setModifiers(data as any || []);
+      setModifiers(data || []);
     } else if (activeTab === 'discounts') {
       const { data } = await supabase
-        .from('integration_products')
+        .from('integration_discounts')
         .select('*')
         .eq('source_id', source!.id)
-        .eq('item_type', 'discount')
         .order('name');
-      setDiscounts(data as any || []);
+      setDiscounts(data || []);
     }
 
     setLoading(false);
@@ -110,7 +107,7 @@ export default function IntegrationCatalog() {
 
   const filteredModifiers = modifiers.filter(m =>
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.data?.modifierGroup?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    m.modifier_group_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredDiscounts = discounts.filter(d =>
@@ -284,10 +281,10 @@ export default function IntegrationCatalog() {
                             {getPrice(modifier)}
                           </span>
                         </div>
-                        {modifier.data?.modifierGroup?.name && (
+                        {modifier.modifier_group_name && (
                           <div className="mb-2 inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">
                             <Tag className="w-3 h-3" />
-                            {modifier.data.modifierGroup.name}
+                            {modifier.modifier_group_name}
                           </div>
                         )}
                         <div className="flex items-center justify-between text-xs text-slate-400 mt-3">
@@ -317,10 +314,10 @@ export default function IntegrationCatalog() {
                           <h3 className="font-semibold text-slate-900 line-clamp-1">
                             {discount.name}
                           </h3>
-                          {discount.data?.discountAmount && (
+                          {discount.discount_amount && (
                             <span className="text-lg font-bold text-green-600 ml-2 flex items-center gap-0.5">
                               <DollarSign className="w-4 h-4" />
-                              {discount.data.discountAmount.toFixed(2)}
+                              {discount.discount_amount.toFixed(2)}
                             </span>
                           )}
                         </div>
