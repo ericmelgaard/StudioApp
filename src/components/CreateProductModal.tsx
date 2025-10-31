@@ -647,7 +647,8 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
           attribute_template_id: selectedAttributeTemplate || null,
           display_template_id: selectedDisplayTemplate || null,
           integration_product_id: selectedIntegrationProduct || null,
-          attributes: attributes
+          attributes: attributes,
+          attribute_mappings: fieldLinks
         });
 
       if (error) throw error;
