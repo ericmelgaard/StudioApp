@@ -476,7 +476,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     const value = attributes[field.name] || '';
     const isLinked = linkedAttributes.has(field.name);
     const isMapped = mappedFields.has(field.name) && !selectedIntegrationProduct;
-    const showSyncIcon = isMapped && !isLinked;
+    const showSyncIcon = (field.type === 'number' || isMapped) && !isLinked;
 
     switch (field.type) {
       case 'text':
