@@ -950,7 +950,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
                       return (
                         <div key={key}>
-                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{key}</label>
+                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{key === 'price' ? 'PRICE TEST' : key}</label>
                           <div className="relative">
                             <input
                               type="text"
