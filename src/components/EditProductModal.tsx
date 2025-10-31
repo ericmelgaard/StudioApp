@@ -243,12 +243,16 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
   useEffect(() => {
     if (product) {
+      console.log('🔍 EditProductModal - Loading product:', product.name);
+      console.log('🔍 product.attribute_mappings:', product.attribute_mappings);
       setName(product.name);
       loadTemplateAttributes();
       setAttributeOverrides(product.attribute_overrides || {});
       const prodAttrMappings = (product as any).attribute_mappings || {};
       setAttributeMappings(prodAttrMappings);
-      setFieldLinks(product.attribute_mappings || {});
+      const mappings = product.attribute_mappings || {};
+      setFieldLinks(mappings);
+      console.log('🔍 Setting fieldLinks to:', mappings);
       setTranslations(product.attributes?.translations || {});
       loadIntegrationData();
       checkPendingPublication();
@@ -948,9 +952,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       const hasCalculation = fieldLink?.type === 'calculation';
                       const actualValue = value ?? '';
 
+                      console.log(`🔍 Rendering ${key} field:`, { fieldLink, hasCalculation, fieldLinks });
+
                       return (
                         <div key={key}>
-                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{key === 'price' ? 'PRICE TEST' : key}</label>
+                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{key}</label>
                           <div className="relative">
                             <input
                               type="text"
