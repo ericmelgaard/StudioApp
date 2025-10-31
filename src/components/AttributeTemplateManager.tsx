@@ -344,9 +344,83 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
             <div>
               {selectedTemplate ? (
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                    Template Details: {selectedTemplate.name}
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      Template Details: {selectedTemplate.name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowAddTranslation(!showAddTranslation)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Translation
+                      </button>
+                    </div>
+                  </div>
+
+                  {showAddTranslation && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <select
+                        value={newTranslation.locale}
+                        onChange={(e) => {
+                          const selected = commonLocales.find(l => l.code === e.target.value);
+                          setNewTranslation({
+                            locale: e.target.value,
+                            locale_name: selected?.name || ''
+                          });
+                        }}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                      >
+                        <option value="">Select a language...</option>
+                        {commonLocales.map(locale => (
+                          <option key={locale.code} value={locale.code}>
+                            {locale.name} ({locale.code})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={addTranslation}
+                          disabled={loading || !newTranslation.locale}
+                          className="flex-1 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
+                          Add Translation
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowAddTranslation(false);
+                            setNewTranslation({ locale: '', locale_name: '' });
+                          }}
+                          className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTemplate.translations && selectedTemplate.translations.length > 0 && (
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {selectedTemplate.translations.map((translation) => (
+                        <div key={translation.locale} className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm">
+                          <Globe className="w-3.5 h-3.5" />
+                          <span className="font-medium">{translation.locale_name}</span>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Remove ${translation.locale_name} translation?`)) {
+                                removeTranslation(translation.locale);
+                              }
+                            }}
+                            className="text-blue-700 hover:text-red-600 transition-colors"
+                            title="Remove translation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="space-y-6">
                     <div>
@@ -537,126 +611,6 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                       </div>
                     </div>
 
-                    {/* Translations Section */}
-                    <div className="pt-6 border-t border-slate-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-slate-900 flex items-center gap-2">
-                          <Globe className="w-4 h-4" />
-                          Translations
-                        </h4>
-                        <button
-                          onClick={() => setShowAddTranslation(!showAddTranslation)}
-                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Add Translation
-                        </button>
-                      </div>
-
-                      {showAddTranslation && (
-                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <select
-                            value={newTranslation.locale}
-                            onChange={(e) => {
-                              const selected = commonLocales.find(l => l.code === e.target.value);
-                              setNewTranslation({
-                                locale: e.target.value,
-                                locale_name: selected?.name || ''
-                              });
-                            }}
-                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
-                          >
-                            <option value="">Select a language...</option>
-                            {commonLocales.map(locale => (
-                              <option key={locale.code} value={locale.code}>
-                                {locale.name} ({locale.code})
-                              </option>
-                            ))}
-                          </select>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={addTranslation}
-                              disabled={loading || !newTranslation.locale}
-                              className="flex-1 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
-                            >
-                              Add Translation
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowAddTranslation(false);
-                                setNewTranslation({ locale: '', locale_name: '' });
-                              }}
-                              className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="space-y-3">
-                        {(!selectedTemplate.translations || selectedTemplate.translations.length === 0) ? (
-                          <p className="text-sm text-slate-500 italic p-3 bg-slate-50 rounded-lg">
-                            No translations enabled. Add one above.
-                          </p>
-                        ) : (
-                          selectedTemplate.translations.map((translation) => {
-                            const translatableFields = [
-                              ...selectedTemplate.attribute_schema.core_attributes,
-                              ...selectedTemplate.attribute_schema.extended_attributes
-                            ].filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
-
-                            return (
-                              <div key={translation.locale} className="p-4 bg-white rounded-lg border-2 border-slate-300">
-                                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
-                                  <div>
-                                    <h5 className="font-semibold text-slate-900 flex items-center gap-2">
-                                      <Globe className="w-4 h-4 text-blue-600" />
-                                      {translation.locale_name}
-                                    </h5>
-                                    <p className="text-xs text-slate-500 font-mono mt-0.5">{translation.locale}</p>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      if (confirm(`Remove ${translation.locale_name} translation?`)) {
-                                        removeTranslation(translation.locale);
-                                      }
-                                    }}
-                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                    title="Remove translation"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                                    Customize Field Labels:
-                                  </p>
-                                  {translatableFields.map(field => (
-                                    <div key={field.name} className="space-y-1">
-                                      <label className="block text-xs font-medium text-slate-600">
-                                        {field.label} → {translation.locale_name} Translation
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={translation.field_labels[field.name] || field.label}
-                                        onChange={(e) => updateTranslationLabel(translation.locale, field.name, e.target.value)}
-                                        className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder={`Enter ${translation.locale_name} label for "${field.label}"`}
-                                      />
-                                      <p className="text-xs text-slate-500 italic">
-                                        Field: <span className="font-mono">{field.name}</span>
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
                   </div>
                 </div>
               ) : (
