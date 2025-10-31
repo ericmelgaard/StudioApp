@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Calendar } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface Product {
   id: string;
@@ -16,6 +18,24 @@ interface ProductTileProps {
 
 export default function ProductTile({ product, onClick }: ProductTileProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [pendingPublication, setPendingPublication] = useState<any>(null);
+
+  useEffect(() => {
+    checkPendingPublication();
+  }, [product.id]);
+
+  async function checkPendingPublication() {
+    const { data } = await supabase
+      .from('product_publications')
+      .select('publish_at, status')
+      .eq('product_id', product.id)
+      .in('status', ['draft', 'scheduled'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    setPendingPublication(data);
+  }
 
   // Use attributes.name if available, otherwise fall back to product.name
   const displayName = product.attributes?.name || product.name;
@@ -37,6 +57,12 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
     >
       {imageUrl && (
         <div className="relative h-48 overflow-hidden flex-shrink-0">
+          {pendingPublication && (
+            <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
+              <Calendar className="w-3.5 h-3.5" />
+              Scheduled
+            </div>
+          )}
           <img
             src={imageUrl}
             alt={displayName}

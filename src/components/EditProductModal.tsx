@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -212,6 +212,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [templateSchema, setTemplateSchema] = useState<any>(null);
   const [showMappingModal, setShowMappingModal] = useState(false);
   const [mappingAttributeKey, setMappingAttributeKey] = useState<string | null>(null);
+  const [pendingPublication, setPendingPublication] = useState<any>(null);
+  const [editMode, setEditMode] = useState<'immediate' | 'scheduled' | null>(null);
+  const [showPublishOptions, setShowPublishOptions] = useState(false);
+  const [publishDate, setPublishDate] = useState('');
+  const [publishTime, setPublishTime] = useState('');
+  const [showEditChoice, setShowEditChoice] = useState(false);
 
   const commonLocales = [
     { code: 'fr-FR', name: 'French (France)' },
@@ -241,8 +247,30 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       setAttributeMappings((product as any).attribute_mappings || {});
       setTranslations(product.attributes?.translations || {});
       loadIntegrationData();
+      checkPendingPublication();
     }
   }, [product]);
+
+  async function checkPendingPublication() {
+    if (!product) return;
+
+    const { data } = await supabase
+      .from('product_publications')
+      .select('*')
+      .eq('product_id', product.id)
+      .in('status', ['draft', 'scheduled'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      setPendingPublication(data);
+      setShowEditChoice(true);
+    } else {
+      setPendingPublication(null);
+      setEditMode('immediate');
+    }
+  }
 
   async function loadTemplateAttributes() {
     if (!product) return;
@@ -406,36 +434,95 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     }
   }
 
-  async function handleSave() {
+  async function handlePublish(publishAt?: string) {
     if (!product) return;
 
     setLoading(true);
     try {
-      // Merge translations into attributes
       const updatedAttributes = {
         ...attributes,
         translations: translations
       };
 
-      const { error } = await supabase
-        .from('products')
-        .update({
-          name: name,
-          attributes: updatedAttributes,
-          attribute_overrides: attributeOverrides,
-          attribute_mappings: attributeMappings,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', product.id);
+      const changes = {
+        name: name,
+        attributes: updatedAttributes,
+        attribute_overrides: attributeOverrides,
+        attribute_mappings: attributeMappings,
+      };
 
-      if (error) throw error;
+      if (editMode === 'scheduled' && pendingPublication) {
+        // Editing existing scheduled publication
+        const { error } = await supabase
+          .from('product_publications')
+          .update({
+            changes: changes,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', pendingPublication.id);
 
-      alert('Product updated successfully');
+        if (error) throw error;
+        alert('Scheduled publication updated successfully');
+      } else if (publishAt) {
+        // Creating new scheduled publication
+        // Cancel any existing pending publications
+        if (pendingPublication) {
+          await supabase
+            .from('product_publications')
+            .update({ status: 'cancelled' })
+            .eq('id', pendingPublication.id);
+        }
+
+        const { error } = await supabase
+          .from('product_publications')
+          .insert({
+            product_id: product.id,
+            status: 'scheduled',
+            publish_at: publishAt,
+            changes: changes,
+          });
+
+        if (error) throw error;
+        alert('Publication scheduled successfully');
+      } else {
+        // Immediate publish
+        // Cancel any existing pending publications
+        if (pendingPublication) {
+          await supabase
+            .from('product_publications')
+            .update({ status: 'cancelled' })
+            .eq('id', pendingPublication.id);
+        }
+
+        // Update product immediately
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({
+            ...changes,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', product.id);
+
+        if (updateError) throw updateError;
+
+        // Record as published
+        await supabase
+          .from('product_publications')
+          .insert({
+            product_id: product.id,
+            status: 'published',
+            published_at: new Date().toISOString(),
+            changes: changes,
+          });
+
+        alert('Product published successfully');
+      }
+
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Error updating product:', error);
-      alert('Failed to update product');
+      console.error('Error publishing product:', error);
+      alert('Failed to publish product');
     } finally {
       setLoading(false);
     }
@@ -650,6 +737,74 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   }
 
   if (!isOpen || !product) return null;
+
+  // Show edit choice modal if there's a pending publication
+  if (showEditChoice && pendingPublication) {
+    const publishDate = new Date(pendingPublication.publish_at);
+    const formattedDate = publishDate.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
+    return (
+      <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
+          <h2 className="text-xl font-bold text-slate-900 mb-4">Pending Publication</h2>
+          <p className="text-slate-700 mb-6">
+            This product has changes scheduled to publish on <strong>{formattedDate}</strong>.
+            How would you like to proceed?
+          </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setEditMode('scheduled');
+                setShowEditChoice(false);
+                // Load the scheduled changes
+                if (pendingPublication.changes) {
+                  setName(pendingPublication.changes.name || product.name);
+                  setAttributes(pendingPublication.changes.attributes || product.attributes);
+                  setAttributeOverrides(pendingPublication.changes.attribute_overrides || {});
+                  setAttributeMappings(pendingPublication.changes.attribute_mappings || {});
+                }
+              }}
+              className="w-full flex items-center gap-3 px-4 py-4 bg-purple-50 hover:bg-purple-100 border-2 border-purple-300 rounded-lg transition-colors text-left"
+            >
+              <Calendar className="w-6 h-6 text-purple-600 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="font-semibold text-purple-900">Edit Scheduled Changes</div>
+                <div className="text-sm text-purple-700">Modify what will publish on {formattedDate}</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setEditMode('immediate');
+                setShowEditChoice(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-4 bg-blue-50 hover:bg-blue-100 border-2 border-blue-300 rounded-lg transition-colors text-left"
+            >
+              <Clock className="w-6 h-6 text-blue-600 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="font-semibold text-blue-900">Make Immediate Changes</div>
+                <div className="text-sm text-blue-700">Publish now (cancels scheduled changes)</div>
+              </div>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1227,14 +1382,83 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             >
               Cancel
             </button>
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              Save Changes
-            </button>
+
+            {editMode === 'scheduled' && pendingPublication ? (
+              <button
+                onClick={() => handlePublish()}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                Save Scheduled Changes
+              </button>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setShowPublishOptions(!showPublishOptions)}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Publish
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+
+                {showPublishOptions && (
+                  <div className="absolute bottom-full right-0 mb-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 z-50">
+                    <div className="p-4 space-y-4">
+                      <button
+                        onClick={() => {
+                          setShowPublishOptions(false);
+                          handlePublish();
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors text-left"
+                      >
+                        <Clock className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium text-blue-900">Publish Immediately</div>
+                          <div className="text-xs text-blue-700">Changes go live now</div>
+                        </div>
+                      </button>
+
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-slate-700">Schedule for Later</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="date"
+                            value={publishDate}
+                            onChange={(e) => setPublishDate(e.target.value)}
+                            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            min={new Date().toISOString().split('T')[0]}
+                          />
+                          <input
+                            type="time"
+                            value={publishTime}
+                            onChange={(e) => setPublishTime(e.target.value)}
+                            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (!publishDate || !publishTime) {
+                              alert('Please select both date and time');
+                              return;
+                            }
+                            const publishAt = `${publishDate}T${publishTime}:00`;
+                            setShowPublishOptions(false);
+                            handlePublish(publishAt);
+                          }}
+                          disabled={!publishDate || !publishTime}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Schedule Publication
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
