@@ -1392,6 +1392,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 <Save className="w-4 h-4" />
                 Save Scheduled Changes
               </button>
+            ) : editMode === 'immediate' ? (
+              <button
+                onClick={() => handlePublish()}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <Clock className="w-4 h-4" />
+                Publish Now
+              </button>
             ) : (
               <div className="relative">
                 <button
