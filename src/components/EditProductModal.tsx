@@ -243,8 +243,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
   useEffect(() => {
     if (product) {
-      console.log('🔍 EditProductModal - Loading product:', product.name);
-      console.log('🔍 product.attribute_mappings:', product.attribute_mappings);
       setName(product.name);
       loadTemplateAttributes();
       setAttributeOverrides(product.attribute_overrides || {});
@@ -252,7 +250,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       setAttributeMappings(prodAttrMappings);
       const mappings = product.attribute_mappings || {};
       setFieldLinks(mappings);
-      console.log('🔍 Setting fieldLinks to:', mappings);
       setTranslations(product.attributes?.translations || {});
       loadIntegrationData();
       checkPendingPublication();
@@ -952,8 +949,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       const hasCalculation = fieldLink?.type === 'calculation';
                       const actualValue = value ?? '';
 
-                      console.log(`🔍 Rendering ${key} field:`, { fieldLink, hasCalculation, fieldLinks });
-
                       return (
                         <div key={key}>
                           <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{key}</label>
@@ -1136,8 +1131,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           const integrationValue = isOverridden?.integration;
                           const isDropdownOpen = openDropdown === key;
                           const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
-
-                          console.log(`🔍 Extended attr ${key}:`, { isMapped, attributeMappings: attributeMappings[key], syncStatus: syncStatus?.synced[key], isOverridden });
 
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
