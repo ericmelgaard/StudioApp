@@ -589,19 +589,25 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                   </button>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-3">
+                                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                                    Customize Field Labels:
+                                  </p>
                                   {translatableFields.map(field => (
-                                    <div key={field.name} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                      <label className="text-sm font-medium text-slate-700 w-40 flex-shrink-0">
-                                        {field.label}:
+                                    <div key={field.name} className="space-y-1">
+                                      <label className="block text-xs font-medium text-slate-600">
+                                        {field.label} → {translation.locale_name} Translation
                                       </label>
                                       <input
                                         type="text"
-                                        value={translation.field_labels[field.name] || ''}
+                                        value={translation.field_labels[field.name] || field.label}
                                         onChange={(e) => updateTranslationLabel(translation.locale, field.name, e.target.value)}
-                                        className="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder={`${translation.locale_name} label`}
+                                        className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder={`Enter ${translation.locale_name} label for "${field.label}"`}
                                       />
+                                      <p className="text-xs text-slate-500 italic">
+                                        Field: <span className="font-mono">{field.name}</span>
+                                      </p>
                                     </div>
                                   ))}
                                 </div>
