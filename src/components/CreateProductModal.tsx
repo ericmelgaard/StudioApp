@@ -397,8 +397,10 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
   }
 
   function openFieldLinkModal(fieldName: string, fieldLabel: string) {
+    console.log('openFieldLinkModal called with:', fieldName, fieldLabel);
     setLinkingField({ name: fieldName, label: fieldLabel });
     setShowFieldLinkModal(true);
+    console.log('Modal should now be open, showFieldLinkModal:', true);
   }
 
   async function evaluateFieldLink(linkData: FieldLinkData): Promise<any> {
