@@ -62,6 +62,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
   const [selectedSource, setSelectedSource] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('product');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [selectedSampleIndex, setSelectedSampleIndex] = useState<number>(0);
 
   const [mappings, setMappings] = useState<AttributeMapping[]>([]);
   const [integrationFields, setIntegrationFields] = useState<string[]>([]);
@@ -83,11 +84,13 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
     if (selectedSource && selectedType) {
       loadExistingMapping();
       loadSampleProducts();
+      setSelectedSampleIndex(0);
     } else {
       setMappings([]);
       setIntegrationFields([]);
       setSavedMapping(null);
       setSampleProducts([]);
+      setSelectedSampleIndex(0);
     }
   }, [selectedSource, selectedType]);
 
@@ -497,10 +500,28 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
               <div className="h-full grid grid-cols-2 gap-6">
                 <div className="flex flex-col">
                   <div className="mb-4">
-                    <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-                      <Package className="w-4 h-4" />
-                      {selectedSourceData?.name} {selectedTypeData?.label} Fields
-                    </h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        {selectedSourceData?.name} {selectedTypeData?.label} Fields
+                      </h3>
+                      {sampleProducts.length > 1 && (
+                        <select
+                          value={selectedSampleIndex}
+                          onChange={(e) => setSelectedSampleIndex(Number(e.target.value))}
+                          className="text-xs border border-slate-300 rounded px-2 py-1 bg-white"
+                        >
+                          {sampleProducts.map((sample, index) => {
+                            const displayName = sample.data?.name || sample.data?.id || `Item ${index + 1}`;
+                            return (
+                              <option key={index} value={index}>
+                                {displayName}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-600">
                       Fields extracted from sample {selectedTypeData?.label.toLowerCase()} in this integration
                     </p>
@@ -513,8 +534,8 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
                       </div>
                     ) : (
                       integrationFields.map(field => {
-                        const sampleValue = sampleProducts.length > 0
-                          ? getNestedValue(sampleProducts[0].data, field)
+                        const sampleValue = sampleProducts.length > 0 && sampleProducts[selectedSampleIndex]
+                          ? getNestedValue(sampleProducts[selectedSampleIndex].data, field)
                           : undefined;
                         return (
                           <div key={field} className="p-2 bg-white rounded border border-slate-200 hover:border-blue-400 transition-colors">
