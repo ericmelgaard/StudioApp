@@ -7,6 +7,8 @@ import SignageManagement from './SignageManagement';
 import ShelfLabelManagement from './ShelfLabelManagement';
 import ProductManagement from './ProductManagement';
 import IntegrationCatalog from './IntegrationCatalog';
+import IntegrationDashboard from './IntegrationDashboard';
+import IntegrationAccess from './IntegrationAccess';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -39,7 +41,7 @@ interface Store {
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'integration'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'integration' | 'integration-dashboard' | 'integration-access'>('dashboard');
 
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -280,6 +282,24 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Integration</div>
             </div>
             <button
+              onClick={() => setCurrentView('integration-dashboard')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'integration-dashboard' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span className="text-sm font-medium">Dashboard</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('integration-access')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'integration-access' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm font-medium">Access</span>
+            </button>
+            <button
               onClick={() => setCurrentView('integration')}
               className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
                 currentView === 'integration' ? 'bg-slate-100' : ''
@@ -312,6 +332,12 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'integration-dashboard' && (
+          <IntegrationDashboard
+            onNavigate={(page) => setCurrentView(page === 'access' ? 'integration-access' : 'integration')}
+          />
+        )}
+        {currentView === 'integration-access' && <IntegrationAccess />}
         {currentView === 'integration' && <IntegrationCatalog />}
 
         {currentView === 'dashboard' && (
