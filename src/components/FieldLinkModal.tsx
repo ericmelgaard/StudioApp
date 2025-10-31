@@ -90,17 +90,20 @@ export default function FieldLinkModal({
   }, [linkType, isOpen]);
 
   useEffect(() => {
+    const typeFiltered = integrationProducts.filter(p =>
+      linkType === 'product' ? p.item_type === '1' :
+      linkType === 'modifier' ? p.item_type === 'modifier' :
+      p.item_type === 'discount'
+    );
+
     if (searchTerm.trim() === '') {
-      setFilteredProducts(integrationProducts);
+      setFilteredProducts(typeFiltered);
     } else {
       const term = searchTerm.toLowerCase();
       setFilteredProducts(
-        integrationProducts.filter(p =>
-          (p.name.toLowerCase().includes(term) ||
-          p.external_id.toLowerCase().includes(term)) &&
-          (linkType === 'product' ? p.item_type === 'product' :
-           linkType === 'modifier' ? p.item_type === 'modifier' :
-           p.item_type === 'discount')
+        typeFiltered.filter(p =>
+          p.name.toLowerCase().includes(term) ||
+          p.external_id.toLowerCase().includes(term)
         )
       );
     }
@@ -411,7 +414,9 @@ export default function FieldLinkModal({
             <div className="text-center py-8 text-slate-500">Loading products...</div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
-              {searchTerm ? 'No items found matching your search.' : `No integration ${linkType}s available.`}
+              {searchTerm
+                ? 'No items found matching your search.'
+                : `No integration ${linkType}s available. ${linkType !== 'product' ? 'Import modifiers and discounts from your integration first.' : ''}`}
             </div>
           ) : (
             <div className="space-y-2">
