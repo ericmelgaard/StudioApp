@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Package, Layout, Database, Sparkles, Plus, Link, Unlink } from 'lucide-react';
+import { X, Package, Layout, Database, Sparkles, Plus, Link, Unlink, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
 import LinkProductModal, { LinkData } from './LinkProductModal';
+import FieldLinkModal from './FieldLinkModal';
 
 interface AttributeTemplate {
   id: string;
@@ -234,6 +235,10 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
   const [productName, setProductName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [linkedAttributes, setLinkedAttributes] = useState<Set<string>>(new Set());
+  const [mappedFields, setMappedFields] = useState<Set<string>>(new Set());
+  const [showFieldLinkModal, setShowFieldLinkModal] = useState(false);
+  const [linkingField, setLinkingField] = useState<{ name: string; label: string } | null>(null);
+  const [fieldLinks, setFieldLinks] = useState<Record<string, { productId: string; field: string }>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -263,6 +268,26 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     if (orgSettings.data?.default_product_attribute_template_id) {
       setSelectedAttributeTemplate(orgSettings.data.default_product_attribute_template_id);
     }
+
+    await loadAttributeMappings();
+  }
+
+  async function loadAttributeMappings() {
+    const { data } = await supabase
+      .from('integration_attribute_mappings')
+      .select('attribute_mappings')
+      .eq('is_template', true)
+      .maybeSingle();
+
+    if (data?.attribute_mappings?.mappings) {
+      const mapped = new Set<string>();
+      data.attribute_mappings.mappings.forEach((mapping: any) => {
+        if (mapping.wand_field) {
+          mapped.add(mapping.wand_field);
+        }
+      });
+      setMappedFields(mapped);
+    }
   }
 
   async function searchIntegrationProducts() {
@@ -282,6 +307,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     setProductName('');
     setAttributes({});
     setLinkedAttributes(new Set());
+    setFieldLinks({});
     setShowIntegrationSearch(false);
     setSearchIntegration('');
   }
@@ -323,9 +349,29 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     }));
   }
 
+  function openFieldLinkModal(fieldName: string, fieldLabel: string) {
+    setLinkingField({ name: fieldName, label: fieldLabel });
+    setShowFieldLinkModal(true);
+  }
+
+  function handleFieldLink(integrationProductId: string, integrationField: string) {
+    if (!linkingField) return;
+
+    setFieldLinks(prev => ({
+      ...prev,
+      [linkingField.name]: { productId: integrationProductId, field: integrationField }
+    }));
+
+    setLinkedAttributes(prev => new Set([...prev, linkingField.name]));
+    setShowFieldLinkModal(false);
+    setLinkingField(null);
+  }
+
   function renderAttributeField(field: AttributeField) {
     const value = attributes[field.name] || '';
     const isLinked = linkedAttributes.has(field.name);
+    const isMapped = mappedFields.has(field.name) && !selectedIntegrationProduct;
+    const showSyncIcon = isMapped && !isLinked;
 
     switch (field.type) {
       case 'text':
@@ -337,16 +383,25 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
               value={value}
               onChange={(e) => handleAttributeChange(field.name, e.target.value)}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                isLinked ? 'border-green-400 bg-green-50 pr-20' : 'border-slate-300'
+                isLinked ? 'border-green-400 bg-green-50 pr-20' : showSyncIcon ? 'pr-10 border-slate-300' : 'border-slate-300'
               }`}
               placeholder={field.label}
             />
-            {isLinked && (
+            {isLinked ? (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
                 <Link className="w-3 h-3" />
                 Synced
               </div>
-            )}
+            ) : showSyncIcon ? (
+              <button
+                type="button"
+                onClick={() => openFieldLinkModal(field.name, field.label)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title="Link to integration field"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            ) : null}
           </div>
         );
 
@@ -396,16 +451,25 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
               value={value}
               onChange={(e) => handleAttributeChange(field.name, parseFloat(e.target.value) || 0)}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                isLinked ? 'border-green-400 bg-green-50 pr-20' : 'border-slate-300'
+                isLinked ? 'border-green-400 bg-green-50 pr-20' : showSyncIcon ? 'pr-10 border-slate-300' : 'border-slate-300'
               }`}
               placeholder={field.label}
             />
-            {isLinked && (
+            {isLinked ? (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
                 <Link className="w-3 h-3" />
                 Synced
               </div>
-            )}
+            ) : showSyncIcon ? (
+              <button
+                type="button"
+                onClick={() => openFieldLinkModal(field.name, field.label)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title="Link to integration field"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            ) : null}
           </div>
         );
 
@@ -670,6 +734,18 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
           </div>
         </form>
       </div>
+
+      <FieldLinkModal
+        isOpen={showFieldLinkModal}
+        onClose={() => {
+          setShowFieldLinkModal(false);
+          setLinkingField(null);
+        }}
+        onLink={handleFieldLink}
+        fieldName={linkingField?.name || ''}
+        fieldLabel={linkingField?.label || ''}
+        currentValue={linkingField ? attributes[linkingField.name] : undefined}
+      />
     </div>
   );
 }
