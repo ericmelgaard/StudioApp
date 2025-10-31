@@ -765,22 +765,31 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                                 <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
                                 <div className="space-y-1">
-                                  {fieldLink.calculation.map((part, index) => (
-                                    <div key={part.id} className="flex items-center gap-2 text-sm">
-                                      {index > 0 && (
-                                        <span className="text-slate-600 font-bold w-4 text-center">
-                                          {part.operation === 'add' ? '+' : '−'}
-                                        </span>
-                                      )}
-                                      {index === 0 && <span className="w-4"></span>}
-                                      <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
-                                        <span className="font-medium text-slate-700">{part.productName}</span>
-                                        {part.value !== undefined && part.value !== null && (
-                                          <span className="font-bold text-blue-600">{part.value}</span>
+                                  {fieldLink.calculation.map((part, index) => {
+                                    const isSubtract = index > 0 && part.operation === 'subtract';
+                                    return (
+                                      <div key={part.id} className="flex items-center gap-2 text-sm">
+                                        {index > 0 && (
+                                          <span className={`font-bold w-4 text-center ${
+                                            part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
+                                          }`}>
+                                            {part.operation === 'add' ? '+' : '−'}
+                                          </span>
                                         )}
+                                        {index === 0 && <span className="w-4"></span>}
+                                        <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
+                                          <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
+                                            {part.productName}
+                                          </span>
+                                          {part.value !== undefined && part.value !== null && (
+                                            <span className={`font-bold ${isSubtract ? 'text-red-600' : 'text-blue-600'}`}>
+                                              {part.value}
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -814,22 +823,31 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                                 <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
                                 <div className="space-y-1">
-                                  {fieldLink.calculation.map((part, index) => (
-                                    <div key={part.id} className="flex items-center gap-2 text-sm">
-                                      {index > 0 && (
-                                        <span className="text-slate-600 font-bold w-4 text-center">
-                                          {part.operation === 'add' ? '+' : '−'}
-                                        </span>
-                                      )}
-                                      {index === 0 && <span className="w-4"></span>}
-                                      <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
-                                        <span className="font-medium text-slate-700">{part.productName}</span>
-                                        {part.value !== undefined && part.value !== null && (
-                                          <span className="font-bold text-blue-600">{part.value}</span>
+                                  {fieldLink.calculation.map((part, index) => {
+                                    const isSubtract = index > 0 && part.operation === 'subtract';
+                                    return (
+                                      <div key={part.id} className="flex items-center gap-2 text-sm">
+                                        {index > 0 && (
+                                          <span className={`font-bold w-4 text-center ${
+                                            part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
+                                          }`}>
+                                            {part.operation === 'add' ? '+' : '−'}
+                                          </span>
                                         )}
+                                        {index === 0 && <span className="w-4"></span>}
+                                        <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
+                                          <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
+                                            {part.productName}
+                                          </span>
+                                          {part.value !== undefined && part.value !== null && (
+                                            <span className={`font-bold ${isSubtract ? 'text-red-600' : 'text-blue-600'}`}>
+                                              {part.value}
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
