@@ -43,7 +43,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [showMapper, setShowMapper] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
-  const [bulkActionMode, setBulkActionMode] = useState(false);
   const [showBulkCategoryAssign, setShowBulkCategoryAssign] = useState(false);
 
   useEffect(() => {
@@ -229,26 +228,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {bulkActionMode && (
-                <span className="text-sm font-medium text-slate-600">
-                  {selectedProductIds.size} selected
-                </span>
-              )}
-              <button
-                onClick={() => {
-                  if (bulkActionMode) {
-                    setSelectedProductIds(new Set());
-                  }
-                  setBulkActionMode(!bulkActionMode);
-                }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  bulkActionMode
-                    ? 'bg-red-100 hover:bg-red-200 text-red-700'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-              >
-                {bulkActionMode ? 'Cancel Selection' : 'Select Multiple'}
-              </button>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
@@ -286,7 +265,10 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               <div className="flex gap-2">
                 <div className="flex bg-slate-100 rounded-lg p-1">
                   <button
-                    onClick={() => setViewMode('tile')}
+                    onClick={() => {
+                      setViewMode('tile');
+                      setSelectedProductIds(new Set());
+                    }}
                     className={`p-2 rounded transition-colors ${
                       viewMode === 'tile'
                         ? 'bg-white text-slate-900 shadow-sm'
@@ -345,10 +327,32 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </p>
               </div>
             ) : viewMode === 'list' ? (
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    {bulkActionMode && (
+              <div>
+                {selectedProductIds.size > 0 && (
+                  <div className="mb-3 p-4 bg-slate-900 text-white rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="font-medium">{selectedProductIds.size} product{selectedProductIds.size !== 1 ? 's' : ''} selected</span>
+                      <button
+                        onClick={() => setSelectedProductIds(new Set())}
+                        className="text-sm text-slate-300 hover:text-white transition-colors"
+                      >
+                        Clear selection
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowBulkCategoryAssign(true)}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                      >
+                        <FolderTree className="w-4 h-4" />
+                        Assign to Category
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
                       <th className="px-6 py-3 w-12">
                         <input
                           type="checkbox"
@@ -363,7 +367,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                           className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                         />
                       </th>
-                    )}
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Product
                     </th>
@@ -376,33 +379,24 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {filteredProducts.map((product) => (
-                    <tr
-                      key={product.id}
-                      className={`transition-colors ${
-                        selectedProductIds.has(product.id)
-                          ? 'bg-purple-50 hover:bg-purple-100'
-                          : 'hover:bg-slate-50'
-                      }`}
-                      onClick={(e) => {
-                        if (bulkActionMode && !(e.target as HTMLElement).closest('input[type="checkbox"]')) {
-                          const newSelected = new Set(selectedProductIds);
-                          if (newSelected.has(product.id)) {
-                            newSelected.delete(product.id);
-                          } else {
-                            newSelected.add(product.id);
-                          }
-                          setSelectedProductIds(newSelected);
-                        }
-                      }}
-                    >
-                      {bulkActionMode && (
-                        <td className="px-6 py-4">
+                    {filteredProducts.map((product) => (
+                      <tr
+                        key={product.id}
+                        className={`transition-colors ${
+                          selectedProductIds.has(product.id)
+                            ? 'bg-purple-50 hover:bg-purple-100'
+                            : 'hover:bg-slate-50'
+                        }`}
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setShowEditModal(true);
+                        }}
+                      >
+                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={selectedProductIds.has(product.id)}
                             onChange={(e) => {
-                              e.stopPropagation();
                               const newSelected = new Set(selectedProductIds);
                               if (e.target.checked) {
                                 newSelected.add(product.id);
@@ -414,7 +408,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                             className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                           />
                         </td>
-                      )}
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-slate-900">{product.name}</div>
@@ -447,52 +440,23 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProducts.map((product) => (
-                  <div
+                  <ProductTile
                     key={product.id}
-                    className="relative"
+                    product={product}
                     onClick={() => {
-                      if (bulkActionMode) {
-                        const newSelected = new Set(selectedProductIds);
-                        if (newSelected.has(product.id)) {
-                          newSelected.delete(product.id);
-                        } else {
-                          newSelected.add(product.id);
-                        }
-                        setSelectedProductIds(newSelected);
-                      } else {
-                        setSelectedProduct(product);
-                        setShowEditModal(true);
-                      }
+                      setSelectedProduct(product);
+                      setShowEditModal(true);
                     }}
-                  >
-                    {bulkActionMode && (
-                      <div className="absolute top-2 left-2 z-10">
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                          selectedProductIds.has(product.id)
-                            ? 'bg-purple-600 border-purple-600'
-                            : 'bg-white border-slate-300'
-                        }`}>
-                          {selectedProductIds.has(product.id) && (
-                            <Check className="w-4 h-4 text-white" />
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className={selectedProductIds.has(product.id) ? 'ring-2 ring-purple-600 rounded-lg' : ''}>
-                      <ProductTile
-                        product={product}
-                        onClick={() => {}}
-                      />
-                    </div>
-                  </div>
+                  />
                 ))}
               </div>
             )}
@@ -546,27 +510,9 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
         productIds={Array.from(selectedProductIds)}
         onSuccess={() => {
           setSelectedProductIds(new Set());
-          setBulkActionMode(false);
           loadProducts();
         }}
       />
-
-      {/* Bulk Action Bar */}
-      {bulkActionMode && selectedProductIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-slate-900 text-white rounded-xl shadow-2xl px-6 py-4 flex items-center gap-4">
-            <span className="font-medium">{selectedProductIds.size} products selected</span>
-            <div className="w-px h-6 bg-slate-700" />
-            <button
-              onClick={() => setShowBulkCategoryAssign(true)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <FolderTree className="w-4 h-4" />
-              Assign to Category
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
