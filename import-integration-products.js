@@ -56,8 +56,10 @@ async function importIntegrationData() {
     const modifiers = quApiData.modifiers.map(item => ({
       source_id: sourceId,
       external_id: item.id.toString(),
+      path_id: item.pathId || null,
       name: item.name,
-      item_type: 'modifier',
+      modifier_group_id: item.modifierGroupId?.toString() || null,
+      modifier_group_name: item.modifierGroupName || null,
       data: item,
       last_synced_at: new Date().toISOString()
     }));
@@ -67,21 +69,23 @@ async function importIntegrationData() {
       source_id: sourceId,
       external_id: item.id.toString(),
       name: item.name,
-      item_type: 'discount',
+      discount_amount: item.discountAmount || null,
       data: item,
       last_synced_at: new Date().toISOString()
     }));
 
-    const allItems = [...products, ...modifiers, ...discounts];
-    console.log(`\nTotal items to import: ${allItems.length}`);
+    console.log(`\nTotal items to import: ${products.length + modifiers.length + discounts.length}`);
     console.log(`- Products: ${products.length}`);
     console.log(`- Modifiers: ${modifiers.length}`);
     console.log(`- Discounts: ${discounts.length}`);
 
     let importedCount = 0;
     const batchSize = 100;
-    for (let i = 0; i < allItems.length; i += batchSize) {
-      const batch = allItems.slice(i, i + batchSize);
+
+    // Import products
+    console.log('\nImporting products to integration_products table...');
+    for (let i = 0; i < products.length; i += batchSize) {
+      const batch = products.slice(i, i + batchSize);
       const { error } = await supabase
         .from('integration_products')
         .upsert(batch, {
@@ -90,10 +94,48 @@ async function importIntegrationData() {
         });
 
       if (error) {
-        console.error(`Error importing batch ${i / batchSize + 1}:`, error);
+        console.error(`Error importing products batch ${i / batchSize + 1}:`, error);
       } else {
         importedCount += batch.length;
-        console.log(`Imported ${importedCount}/${allItems.length} items`);
+        console.log(`Imported ${importedCount}/${products.length} products`);
+      }
+    }
+
+    // Import modifiers
+    console.log('\nImporting modifiers to integration_modifiers table...');
+    for (let i = 0; i < modifiers.length; i += batchSize) {
+      const batch = modifiers.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from('integration_modifiers')
+        .upsert(batch, {
+          onConflict: 'source_id,external_id,path_id',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error(`Error importing modifiers batch ${i / batchSize + 1}:`, error);
+      } else {
+        importedCount += batch.length;
+        console.log(`Imported ${importedCount - products.length}/${modifiers.length} modifiers`);
+      }
+    }
+
+    // Import discounts
+    console.log('\nImporting discounts to integration_discounts table...');
+    for (let i = 0; i < discounts.length; i += batchSize) {
+      const batch = discounts.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from('integration_discounts')
+        .upsert(batch, {
+          onConflict: 'source_id,external_id',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error(`Error importing discounts batch ${i / batchSize + 1}:`, error);
+      } else {
+        importedCount += batch.length;
+        console.log(`Imported ${importedCount - products.length - modifiers.length}/${discounts.length} discounts`);
       }
     }
 
