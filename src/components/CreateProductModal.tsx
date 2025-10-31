@@ -367,6 +367,20 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     setLinkingField(null);
   }
 
+  function handleFieldUnlink(fieldName: string) {
+    setFieldLinks(prev => {
+      const newLinks = { ...prev };
+      delete newLinks[fieldName];
+      return newLinks;
+    });
+
+    setLinkedAttributes(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(fieldName);
+      return newSet;
+    });
+  }
+
   function renderAttributeField(field: AttributeField) {
     const value = attributes[field.name] || '';
     const isLinked = linkedAttributes.has(field.name);
@@ -388,9 +402,19 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
               placeholder={field.label}
             />
             {isLinked ? (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
-                <Link className="w-3 h-3" />
-                Synced
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <div className="flex items-center gap-1 text-xs font-medium text-green-700">
+                  <Link className="w-3 h-3" />
+                  Synced
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleFieldUnlink(field.name)}
+                  className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                  title="Unlink field"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             ) : showSyncIcon ? (
               <button
@@ -465,9 +489,19 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
                 placeholder={field.label}
               />
               {isLinked ? (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
-                  {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
-                  {hasCalculation ? 'Calculated' : 'Synced'}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-xs font-medium text-green-700">
+                    {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
+                    {hasCalculation ? 'Calculated' : 'Synced'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFieldUnlink(field.name)}
+                    className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Unlink field"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ) : showSyncIcon ? (
                 <button
