@@ -944,68 +944,35 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                     {['price', 'calories'].map(key => {
                       if (!(key in attributes)) return null;
                       const value = attributes[key];
-                      const isOverridden = syncStatus?.overridden[key];
-                      const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
-                      const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
-                      const integrationValue = isOverridden?.integration;
-                      const isDropdownOpen = openDropdown === key;
-                      const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+                      const fieldLink = fieldLinks[key];
+                      const hasCalculation = fieldLink?.type === 'calculation';
+                      const actualValue = value ?? '';
 
                       return (
                         <div key={key}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{key}</label>
-                            {syncStatus && !isLocalOnly && hasValue && (
-                              <div className="relative">
-                                {isOverridden ? (
-                                  <>
-                                    <button
-                                      onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                      className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-                                    >
-                                      <Unlink className="w-3 h-3" />
-                                      <span>Local</span>
-                                      <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {isDropdownOpen && (
-                                      <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            enableSync(key);
-                                            setOpenDropdown(null);
-                                          }}
-                                          className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
-                                        >
-                                          <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1">
-                                            <div className="font-medium text-slate-900">Revert to Sync</div>
-                                            <div className="text-xs text-slate-500 mt-0.5 truncate">
-                                              {typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}
-                                            </div>
-                                          </div>
-                                        </button>
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <button
-                                    onClick={() => lockOverride(key)}
-                                    className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
-                                  >
-                                    <Link className="w-3 h-3" />
-                                    <span>Syncing</span>
-                                  </button>
-                                )}
+                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{key}</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={actualValue}
+                              onChange={(e) => updateAttribute(key, e.target.value)}
+                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                fieldLink ? 'border-green-400 bg-green-50 pr-24' : 'border-slate-300'
+                              }`}
+                              placeholder={key}
+                            />
+                            {fieldLink && (
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
+                                {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
+                                {hasCalculation ? 'Calculated' : 'Synced'}
                               </div>
                             )}
                           </div>
-                          {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
-                          {key === 'price' && fieldLinks['price']?.type === 'calculation' && fieldLinks['price'].calculation && (
+                          {key === 'price' && hasCalculation && fieldLink.calculation && (
                             <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
                               <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
                               <div className="space-y-1">
-                                {fieldLinks['price'].calculation.map((part: any, index: number) => {
+                                {fieldLink.calculation.map((part: any, index: number) => {
                                   const isSubtract = index > 0 && part.operation === 'subtract';
                                   return (
                                     <div key={part.id} className="flex items-center gap-2 text-sm">
