@@ -639,6 +639,13 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     });
   }
 
+  function isAttributeInCoreSchema(key: string): boolean {
+    // Check if attribute is in the template's core_attributes
+    if (!templateSchema) return false;
+    const coreAttrs = templateSchema.core_attributes || [];
+    return coreAttrs.some((attr: any) => attr.name === key);
+  }
+
   function canMapAttribute(key: string): boolean {
     // Can only map if there's integration data available
     if (!integrationData || !product?.integration_product_id) return false;
@@ -1113,8 +1120,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 {(() => {
                   const extendedKeys = Object.keys(attributes).filter(k => {
                     const meta = getAttributeMeta(k);
-                    return !['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k) &&
-                           meta?.type !== 'image' && meta?.type !== 'sizes';
+                    // Exclude system fields and fields that should be rendered elsewhere
+                    if (['translations', 'attribute_overrides'].includes(k)) return false;
+                    if (meta?.type === 'image' || meta?.type === 'sizes') return false;
+                    // Check if it's in the core schema of the template
+                    return !isAttributeInCoreSchema(k);
                   });
                   if (extendedKeys.length === 0) return null;
 
