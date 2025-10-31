@@ -91,7 +91,7 @@ export default function FieldLinkModal({
 
   useEffect(() => {
     const typeFiltered = integrationProducts.filter(p =>
-      linkType === 'product' ? p.item_type === '1' :
+      linkType === 'product' ? (p.item_type === '1' || p.item_type === 'product') :
       linkType === 'modifier' ? p.item_type === 'modifier' :
       p.item_type === 'discount'
     );

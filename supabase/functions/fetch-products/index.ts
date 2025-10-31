@@ -24,10 +24,12 @@ Deno.serve(async (req: Request) => {
 
     const data = await response.json();
 
-    // Process and slim down the data
+    // Process and slim down the data for products
     const menuItems = data.menuItems || [];
+    const modifiers = data.modifiers || [];
+    const discounts = data.discounts || [];
 
-    // Group by MRN and extract only essential fields
+    // Group products by MRN and extract only essential fields
     const productsByMrn = new Map();
 
     menuItems.forEach((item: any) => {
@@ -69,11 +71,38 @@ Deno.serve(async (req: Request) => {
 
     const slimmedProducts = Array.from(productsByMrn.values());
 
+    // Slim down modifiers (keep full data structure as-is for now)
+    const slimmedModifiers = modifiers.map((mod: any) => ({
+      id: mod.id,
+      name: mod.name,
+      external_id: mod.externalId || String(mod.id),
+      modifier_group: mod.modifierGroup,
+      display_attribute: mod.displayAttribute,
+      price_attribute: mod.priceAttribute,
+      item_type: mod.itemType,
+    }));
+
+    // Slim down discounts (keep full data structure as-is for now)
+    const slimmedDiscounts = discounts.map((disc: any) => ({
+      id: disc.id,
+      name: disc.name,
+      external_id: disc.externalId || String(disc.id),
+      discount_type: disc.discountType,
+      discount_value: disc.discountValue,
+      item_type: disc.itemType,
+    }));
+
     return new Response(
       JSON.stringify({
         menuItems: slimmedProducts,
+        modifiers: slimmedModifiers,
+        discounts: slimmedDiscounts,
         hasError: false,
-        totalCount: slimmedProducts.length
+        totalCount: {
+          products: slimmedProducts.length,
+          modifiers: slimmedModifiers.length,
+          discounts: slimmedDiscounts.length,
+        }
       }),
       {
         status: 200,

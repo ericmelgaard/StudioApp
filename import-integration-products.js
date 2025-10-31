@@ -46,17 +46,42 @@ async function importIntegrationData() {
     const products = quApiData.menuItems.map(item => ({
       source_id: sourceId,
       external_id: item.id.toString(),
-      path_id: item.pathId,
       name: item.name,
-      item_type: item.itemType?.toString(),
+      item_type: 'product',
       data: item,
       last_synced_at: new Date().toISOString()
     }));
 
-    let productCount = 0;
+    console.log('\nImporting modifiers...');
+    const modifiers = quApiData.modifiers.map(item => ({
+      source_id: sourceId,
+      external_id: item.id.toString(),
+      name: item.name,
+      item_type: 'modifier',
+      data: item,
+      last_synced_at: new Date().toISOString()
+    }));
+
+    console.log('\nImporting discounts...');
+    const discounts = quApiData.discounts.map(item => ({
+      source_id: sourceId,
+      external_id: item.id.toString(),
+      name: item.name,
+      item_type: 'discount',
+      data: item,
+      last_synced_at: new Date().toISOString()
+    }));
+
+    const allItems = [...products, ...modifiers, ...discounts];
+    console.log(`\nTotal items to import: ${allItems.length}`);
+    console.log(`- Products: ${products.length}`);
+    console.log(`- Modifiers: ${modifiers.length}`);
+    console.log(`- Discounts: ${discounts.length}`);
+
+    let importedCount = 0;
     const batchSize = 100;
-    for (let i = 0; i < products.length; i += batchSize) {
-      const batch = products.slice(i, i + batchSize);
+    for (let i = 0; i < allItems.length; i += batchSize) {
+      const batch = allItems.slice(i, i + batchSize);
       const { error } = await supabase
         .from('integration_products')
         .upsert(batch, {
@@ -65,75 +90,15 @@ async function importIntegrationData() {
         });
 
       if (error) {
-        console.error(`Error importing product batch ${i / batchSize + 1}:`, error);
+        console.error(`Error importing batch ${i / batchSize + 1}:`, error);
       } else {
-        productCount += batch.length;
-        console.log(`Imported ${productCount}/${products.length} products`);
-      }
-    }
-
-    console.log('\nImporting modifiers...');
-    const modifiers = quApiData.modifiers.map(item => ({
-      source_id: sourceId,
-      external_id: item.id.toString(),
-      path_id: item.pathId,
-      name: item.name,
-      modifier_group_id: item.modifierGroup?.id?.toString(),
-      modifier_group_name: item.modifierGroup?.name,
-      data: item,
-      last_synced_at: new Date().toISOString()
-    }));
-
-    let modifierCount = 0;
-    for (let i = 0; i < modifiers.length; i += batchSize) {
-      const batch = modifiers.slice(i, i + batchSize);
-      const { error } = await supabase
-        .from('integration_modifiers')
-        .upsert(batch, {
-          onConflict: 'source_id,external_id,path_id',
-          ignoreDuplicates: false
-        });
-
-      if (error) {
-        console.error(`Error importing modifier batch ${i / batchSize + 1}:`, error);
-      } else {
-        modifierCount += batch.length;
-        console.log(`Imported ${modifierCount}/${modifiers.length} modifiers`);
-      }
-    }
-
-    console.log('\nImporting discounts...');
-    const discounts = quApiData.discounts.map(item => ({
-      source_id: sourceId,
-      external_id: item.id.toString(),
-      name: item.name,
-      discount_amount: item.discountAmount,
-      data: item,
-      last_synced_at: new Date().toISOString()
-    }));
-
-    let discountCount = 0;
-    for (let i = 0; i < discounts.length; i += batchSize) {
-      const batch = discounts.slice(i, i + batchSize);
-      const { error } = await supabase
-        .from('integration_discounts')
-        .upsert(batch, {
-          onConflict: 'source_id,external_id',
-          ignoreDuplicates: false
-        });
-
-      if (error) {
-        console.error(`Error importing discount batch ${i / batchSize + 1}:`, error);
-      } else {
-        discountCount += batch.length;
-        console.log(`Imported ${discountCount}/${discounts.length} discounts`);
+        importedCount += batch.length;
+        console.log(`Imported ${importedCount}/${allItems.length} items`);
       }
     }
 
     console.log('\n✅ Import completed successfully!');
-    console.log(`- Products: ${productCount}`);
-    console.log(`- Modifiers: ${modifierCount}`);
-    console.log(`- Discounts: ${discountCount}`);
+    console.log(`Total items imported: ${importedCount}`);
 
   } catch (error) {
     console.error('Error importing integration data:', error);
