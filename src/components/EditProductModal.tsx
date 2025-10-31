@@ -389,11 +389,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         // Then check for template-level mapping
         const templateMapping = mappings.find((m: any) => m.wand_field === key);
 
-        const mapping = productMapping || (templateMapping ? templateMapping.integration_field : null);
-
-        if (mapping) {
+        // Only track sync status for product-level mappings, not template mappings
+        // Template mappings are just defaults used during import
+        if (productMapping) {
           const integrationValue = getNestedValue(integrationProduct.data,
-            typeof mapping === 'string' ? mapping : mapping);
+            typeof productMapping === 'string' ? productMapping : productMapping);
           const currentValue = currentAttributes[key];
 
           // Check if this attribute is marked as overridden
