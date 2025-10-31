@@ -1137,6 +1137,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           const isDropdownOpen = openDropdown === key;
                           const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
 
+                          console.log(`🔍 Extended attr ${key}:`, { isMapped, attributeMappings: attributeMappings[key], syncStatus: syncStatus?.synced[key], isOverridden });
+
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
