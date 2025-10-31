@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2 } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 import EditProductModal from '../components/EditProductModal';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
 import IntegrationProductMapper from '../components/IntegrationProductMapper';
+import CategoryManagementModal from '../components/CategoryManagementModal';
+import BulkCategoryAssignModal from '../components/BulkCategoryAssignModal';
 import AdvancedFilter, { FilterSection, FilterState } from '../components/AdvancedFilter';
 
 interface Product {
@@ -39,6 +41,10 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showMapper, setShowMapper] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+  const [bulkActionMode, setBulkActionMode] = useState(false);
+  const [showBulkCategoryAssign, setShowBulkCategoryAssign] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -183,6 +189,20 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </div>
               </button>
 
+              <button
+                onClick={() => {
+                  setShowCategoryManager(true);
+                  setSidePanelOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+              >
+                <FolderTree className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-semibold">Manage Categories</div>
+                  <div className="text-xs text-green-100">Create and organize product categories</div>
+                </div>
+              </button>
+
             </div>
           </div>
         </div>
@@ -209,6 +229,26 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {bulkActionMode && (
+                <span className="text-sm font-medium text-slate-600">
+                  {selectedProductIds.size} selected
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  if (bulkActionMode) {
+                    setSelectedProductIds(new Set());
+                  }
+                  setBulkActionMode(!bulkActionMode);
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  bulkActionMode
+                    ? 'bg-red-100 hover:bg-red-200 text-red-700'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                {bulkActionMode ? 'Cancel Selection' : 'Select Multiple'}
+              </button>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
@@ -308,6 +348,22 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
+                    {bulkActionMode && (
+                      <th className="px-6 py-3 w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedProductIds.size === filteredProducts.length && filteredProducts.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedProductIds(new Set(filteredProducts.map(p => p.id)));
+                            } else {
+                              setSelectedProductIds(new Set());
+                            }
+                          }}
+                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                        />
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Product
                     </th>
@@ -321,7 +377,44 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+                    <tr
+                      key={product.id}
+                      className={`transition-colors ${
+                        selectedProductIds.has(product.id)
+                          ? 'bg-purple-50 hover:bg-purple-100'
+                          : 'hover:bg-slate-50'
+                      }`}
+                      onClick={(e) => {
+                        if (bulkActionMode && !(e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                          const newSelected = new Set(selectedProductIds);
+                          if (newSelected.has(product.id)) {
+                            newSelected.delete(product.id);
+                          } else {
+                            newSelected.add(product.id);
+                          }
+                          setSelectedProductIds(newSelected);
+                        }
+                      }}
+                    >
+                      {bulkActionMode && (
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedProductIds.has(product.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              const newSelected = new Set(selectedProductIds);
+                              if (e.target.checked) {
+                                newSelected.add(product.id);
+                              } else {
+                                newSelected.delete(product.id);
+                              }
+                              setSelectedProductIds(newSelected);
+                            }}
+                            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                          />
+                        </td>
+                      )}
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-slate-900">{product.name}</div>
@@ -362,14 +455,44 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProducts.map((product) => (
-                  <ProductTile
+                  <div
                     key={product.id}
-                    product={product}
+                    className="relative"
                     onClick={() => {
-                      setSelectedProduct(product);
-                      setShowEditModal(true);
+                      if (bulkActionMode) {
+                        const newSelected = new Set(selectedProductIds);
+                        if (newSelected.has(product.id)) {
+                          newSelected.delete(product.id);
+                        } else {
+                          newSelected.add(product.id);
+                        }
+                        setSelectedProductIds(newSelected);
+                      } else {
+                        setSelectedProduct(product);
+                        setShowEditModal(true);
+                      }
                     }}
-                  />
+                  >
+                    {bulkActionMode && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                          selectedProductIds.has(product.id)
+                            ? 'bg-purple-600 border-purple-600'
+                            : 'bg-white border-slate-300'
+                        }`}>
+                          {selectedProductIds.has(product.id) && (
+                            <Check className="w-4 h-4 text-white" />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div className={selectedProductIds.has(product.id) ? 'ring-2 ring-purple-600 rounded-lg' : ''}>
+                      <ProductTile
+                        product={product}
+                        onClick={() => {}}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -411,6 +534,39 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
         onClose={() => setShowMapper(false)}
         onSuccess={loadProducts}
       />
+
+      <CategoryManagementModal
+        isOpen={showCategoryManager}
+        onClose={() => setShowCategoryManager(false)}
+      />
+
+      <BulkCategoryAssignModal
+        isOpen={showBulkCategoryAssign}
+        onClose={() => setShowBulkCategoryAssign(false)}
+        productIds={Array.from(selectedProductIds)}
+        onSuccess={() => {
+          setSelectedProductIds(new Set());
+          setBulkActionMode(false);
+          loadProducts();
+        }}
+      />
+
+      {/* Bulk Action Bar */}
+      {bulkActionMode && selectedProductIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-slate-900 text-white rounded-xl shadow-2xl px-6 py-4 flex items-center gap-4">
+            <span className="font-medium">{selectedProductIds.size} products selected</span>
+            <div className="w-px h-6 bg-slate-700" />
+            <button
+              onClick={() => setShowBulkCategoryAssign(true)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              <FolderTree className="w-4 h-4" />
+              Assign to Category
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
