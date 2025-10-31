@@ -142,8 +142,12 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
 
   async function loadSampleProducts() {
     try {
+      const tableName = selectedType === 'product' ? 'integration_products'
+        : selectedType === 'modifier' ? 'integration_modifiers'
+        : 'integration_discounts';
+
       const { data } = await supabase
-        .from('integration_products')
+        .from(tableName)
         .select('*')
         .eq('source_id', selectedSource)
         .limit(5);
@@ -151,9 +155,14 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
       if (data && data.length > 0) {
         setSampleProducts(data);
         extractIntegrationFields(data[0].data);
+      } else {
+        setSampleProducts([]);
+        setIntegrationFields([]);
       }
     } catch (error) {
       console.error('Error loading sample products:', error);
+      setSampleProducts([]);
+      setIntegrationFields([]);
     }
   }
 
