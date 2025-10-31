@@ -924,26 +924,73 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
 
               {/* Translations Section */}
               {(() => {
-                const translationFields = [
-                  ...selectedTemplate.attribute_schema.core_attributes,
-                  ...selectedTemplate.attribute_schema.extended_attributes
-                ].filter(field => field.type === 'translation');
+                const translationConfigs = selectedTemplate.translations || [];
 
-                if (translationFields.length === 0) return null;
+                if (translationConfigs.length === 0) return null;
 
                 return (
                   <div className="space-y-4 pt-4 border-t-2 border-slate-200">
                     <h3 className="font-semibold text-slate-900 border-b pb-2">Translations</h3>
-                    <div className="space-y-4">
-                      {translationFields.map((field) => (
-                        <div key={field.name}>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            {field.label} {field.required && '*'}
-                          </label>
-                          {renderAttributeField(field)}
+                    {translationConfigs.map((translationConfig: any) => {
+                      const translationKey = `translations_${translationConfig.locale.replace('-', '_').toLowerCase()}`;
+                      const translatableFields = [
+                        ...selectedTemplate.attribute_schema.core_attributes,
+                        ...selectedTemplate.attribute_schema.extended_attributes
+                      ].filter((attr: any) => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
+
+                      return (
+                        <div key={translationKey} className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-slate-900">{translationConfig.locale_name}</h4>
+                            <span className="text-xs text-slate-500 font-mono">({translationConfig.locale})</span>
+                          </div>
+
+                          <div className="space-y-3">
+                            {translatableFields.map((field: any) => {
+                              const customLabel = translationConfig.field_labels?.[field.name] || field.label;
+
+                              return (
+                                <div key={field.name} className="space-y-1">
+                                  <label className="block text-sm font-medium text-slate-700">
+                                    {customLabel}
+                                    {field.required && <span className="text-red-600 ml-1">*</span>}
+                                  </label>
+                                  {field.type === 'number' ? (
+                                    <input
+                                      type="number"
+                                      value={attributes[translationKey]?.[field.name] ?? ''}
+                                      onChange={(e) => setAttributes({
+                                        ...attributes,
+                                        [translationKey]: {
+                                          ...(attributes[translationKey] || {}),
+                                          [field.name]: parseFloat(e.target.value) || 0
+                                        }
+                                      })}
+                                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                      placeholder={`Enter ${translationConfig.locale} translation`}
+                                    />
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      value={attributes[translationKey]?.[field.name] ?? ''}
+                                      onChange={(e) => setAttributes({
+                                        ...attributes,
+                                        [translationKey]: {
+                                          ...(attributes[translationKey] || {}),
+                                          [field.name]: e.target.value
+                                        }
+                                      })}
+                                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                      placeholder={`Enter ${translationConfig.locale} translation`}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 );
               })()}

@@ -1367,36 +1367,77 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
             <div className="space-y-6">
               {(() => {
-                // Get all translation-type attributes from the template
-                const translationKeys = Object.keys(attributes).filter(k => {
-                  const meta = getAttributeMeta(k);
-                  return meta?.type === 'translation';
-                });
+                // Check if template has translation configs
+                const translationConfigs = template?.translations || [];
 
-                if (translationKeys.length === 0) {
+                if (translationConfigs.length === 0) {
                   return (
                     <p className="text-sm text-slate-500 text-center py-8">
-                      No translation fields in template. Add translation fields in the Product Attribute Template Manager.
+                      No translations enabled. Add translations in the Product Attribute Template Manager.
                     </p>
                   );
                 }
 
-                return translationKeys.map(key => {
-                  const meta = getAttributeMeta(key);
-                  const value = attributes[key];
-                  const isOverridden = syncStatus?.overridden[key];
-                  const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
-                  const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
+                return translationConfigs.map((translationConfig: any) => {
+                  // Create or get the translation attribute key
+                  const translationKey = `translations_${translationConfig.locale.replace('-', '_').toLowerCase()}`;
+
+                  // Initialize if doesn't exist
+                  if (!attributes[translationKey]) {
+                    attributes[translationKey] = {};
+                  }
+
+                  const value = attributes[translationKey] || {};
+                  const translatableFields = [
+                    ...(template.attribute_schema.core_attributes || []),
+                    ...(template.attribute_schema.extended_attributes || [])
+                  ].filter((attr: any) => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
 
                   return (
-                    <div key={key} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-bold text-slate-900">{meta?.label || key}</h3>
-                        {meta?.required && (
-                          <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded">Required</span>
-                        )}
+                    <div key={translationKey} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                      <div className="flex items-center gap-2 mb-4">
+                        <h3 className="text-sm font-bold text-slate-900">{translationConfig.locale_name}</h3>
+                        <span className="text-xs text-slate-500 font-mono">({translationConfig.locale})</span>
                       </div>
-                      {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
+
+                      <div className="space-y-3">
+                        {translatableFields.map((field: any) => {
+                          const customLabel = translationConfig.field_labels?.[field.name] || field.label;
+                          const translatedValue = value[field.name];
+
+                          return (
+                            <div key={field.name} className="space-y-1">
+                              <label className="block text-sm font-medium text-slate-700">
+                                {customLabel}
+                                {field.required && <span className="text-red-600 ml-1">*</span>}
+                              </label>
+                              {field.type === 'number' ? (
+                                <input
+                                  type="number"
+                                  value={translatedValue ?? ''}
+                                  onChange={(e) => {
+                                    const updated = { ...attributes[translationKey], [field.name]: parseFloat(e.target.value) || 0 };
+                                    updateAttribute(translationKey, updated);
+                                  }}
+                                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder={`Enter ${translationConfig.locale} translation`}
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={translatedValue ?? ''}
+                                  onChange={(e) => {
+                                    const updated = { ...attributes[translationKey], [field.name]: e.target.value };
+                                    updateAttribute(translationKey, updated);
+                                  }}
+                                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder={`Enter ${translationConfig.locale} translation`}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 });

@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import { X, Sparkles, Check, Plus, Settings, Tag } from 'lucide-react';
+import { X, Sparkles, Check, Plus, Settings, Tag, Globe, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+
+interface TranslationConfig {
+  locale: string;
+  locale_name: string;
+  field_labels: Record<string, string>;
+}
 
 interface AttributeTemplate {
   id: string;
@@ -11,6 +17,7 @@ interface AttributeTemplate {
     core_attributes: AttributeField[];
     extended_attributes: AttributeField[];
   };
+  translations?: TranslationConfig[];
 }
 
 interface AttributeField {
@@ -36,6 +43,8 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<AttributeTemplate | null>(null);
   const [showAddAttribute, setShowAddAttribute] = useState(false);
+  const [showAddTranslation, setShowAddTranslation] = useState(false);
+  const [editingTranslation, setEditingTranslation] = useState<string | null>(null);
 
   const [newAttribute, setNewAttribute] = useState({
     name: '',
@@ -44,6 +53,22 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     required: false,
     attributeGroup: 'extended' as 'core' | 'extended'
   });
+
+  const [newTranslation, setNewTranslation] = useState({
+    locale: '',
+    locale_name: ''
+  });
+
+  const commonLocales = [
+    { code: 'fr-FR', name: 'French' },
+    { code: 'es-ES', name: 'Spanish' },
+    { code: 'de-DE', name: 'German' },
+    { code: 'it-IT', name: 'Italian' },
+    { code: 'pt-PT', name: 'Portuguese' },
+    { code: 'ja-JP', name: 'Japanese' },
+    { code: 'zh-CN', name: 'Chinese (Simplified)' },
+    { code: 'ko-KR', name: 'Korean' },
+  ];
 
   useEffect(() => {
     if (isOpen) {
@@ -131,6 +156,102 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     } catch (error) {
       console.error('Error adding attribute:', error);
       alert('Failed to add attribute');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function addTranslation() {
+    if (!selectedTemplate || !newTranslation.locale || !newTranslation.locale_name) {
+      alert('Please select a locale');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Get all translatable fields
+      const translatableFields = [
+        ...selectedTemplate.attribute_schema.core_attributes,
+        ...selectedTemplate.attribute_schema.extended_attributes
+      ].filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
+
+      // Initialize with default labels (same as original)
+      const fieldLabels: Record<string, string> = {};
+      translatableFields.forEach(field => {
+        fieldLabels[field.name] = field.label;
+      });
+
+      const translations = selectedTemplate.translations || [];
+      translations.push({
+        locale: newTranslation.locale,
+        locale_name: newTranslation.locale_name,
+        field_labels: fieldLabels
+      });
+
+      await supabase
+        .from('product_attribute_templates')
+        .update({ translations })
+        .eq('id', selectedTemplate.id);
+
+      setNewTranslation({ locale: '', locale_name: '' });
+      setShowAddTranslation(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding translation:', error);
+      alert('Failed to add translation');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removeTranslation(locale: string) {
+    if (!selectedTemplate) return;
+
+    setLoading(true);
+    try {
+      const translations = (selectedTemplate.translations || []).filter(t => t.locale !== locale);
+
+      await supabase
+        .from('product_attribute_templates')
+        .update({ translations })
+        .eq('id', selectedTemplate.id);
+
+      await loadData();
+    } catch (error) {
+      console.error('Error removing translation:', error);
+      alert('Failed to remove translation');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateTranslationLabel(locale: string, fieldName: string, newLabel: string) {
+    if (!selectedTemplate) return;
+
+    setLoading(true);
+    try {
+      const translations = (selectedTemplate.translations || []).map(t => {
+        if (t.locale === locale) {
+          return {
+            ...t,
+            field_labels: {
+              ...t.field_labels,
+              [fieldName]: newLabel
+            }
+          };
+        }
+        return t;
+      });
+
+      await supabase
+        .from('product_attribute_templates')
+        .update({ translations })
+        .eq('id', selectedTemplate.id);
+
+      await loadData();
+    } catch (error) {
+      console.error('Error updating translation label:', error);
+      alert('Failed to update translation label');
     } finally {
       setLoading(false);
     }
@@ -373,6 +494,135 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                               <div className="text-xs text-slate-500 mt-1">Field: {attr.name}</div>
                             </div>
                           ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Translations Section */}
+                    <div className="pt-6 border-t border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                          <Globe className="w-4 h-4" />
+                          Translations
+                        </h4>
+                        <button
+                          onClick={() => setShowAddTranslation(!showAddTranslation)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add Translation
+                        </button>
+                      </div>
+
+                      {showAddTranslation && (
+                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <select
+                            value={newTranslation.locale}
+                            onChange={(e) => {
+                              const selected = commonLocales.find(l => l.code === e.target.value);
+                              setNewTranslation({
+                                locale: e.target.value,
+                                locale_name: selected?.name || ''
+                              });
+                            }}
+                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                          >
+                            <option value="">Select a language...</option>
+                            {commonLocales.map(locale => (
+                              <option key={locale.code} value={locale.code}>
+                                {locale.name} ({locale.code})
+                              </option>
+                            ))}
+                          </select>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={addTranslation}
+                              disabled={loading || !newTranslation.locale}
+                              className="flex-1 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            >
+                              Add Translation
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowAddTranslation(false);
+                                setNewTranslation({ locale: '', locale_name: '' });
+                              }}
+                              className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        {(!selectedTemplate.translations || selectedTemplate.translations.length === 0) ? (
+                          <p className="text-sm text-slate-500 italic p-3 bg-slate-50 rounded-lg">
+                            No translations enabled. Add one above.
+                          </p>
+                        ) : (
+                          selectedTemplate.translations.map((translation) => {
+                            const translatableFields = [
+                              ...selectedTemplate.attribute_schema.core_attributes,
+                              ...selectedTemplate.attribute_schema.extended_attributes
+                            ].filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
+
+                            const isEditing = editingTranslation === translation.locale;
+
+                            return (
+                              <div key={translation.locale} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div>
+                                    <h5 className="font-semibold text-slate-900">{translation.locale_name}</h5>
+                                    <p className="text-xs text-slate-500 font-mono">{translation.locale}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => setEditingTranslation(isEditing ? null : translation.locale)}
+                                      className="px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                                    >
+                                      {isEditing ? 'Done' : 'Edit Labels'}
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (confirm(`Remove ${translation.locale_name} translation?`)) {
+                                          removeTranslation(translation.locale);
+                                        }
+                                      }}
+                                      className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                      title="Remove translation"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {isEditing && (
+                                  <div className="space-y-2 mt-3 pt-3 border-t border-slate-300">
+                                    <p className="text-xs text-slate-600 mb-2">Customize field labels for this language:</p>
+                                    {translatableFields.map(field => (
+                                      <div key={field.name} className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-600 w-32 flex-shrink-0">{field.label}:</span>
+                                        <input
+                                          type="text"
+                                          value={translation.field_labels[field.name] || field.label}
+                                          onChange={(e) => updateTranslationLabel(translation.locale, field.name, e.target.value)}
+                                          className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          placeholder={`${translation.locale_name} label`}
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {!isEditing && (
+                                  <div className="text-xs text-slate-600 mt-2">
+                                    {translatableFields.length} translatable fields configured
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
                         )}
                       </div>
                     </div>
