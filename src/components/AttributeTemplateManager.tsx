@@ -168,6 +168,15 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
 
     setLoading(true);
     try {
+      const translations = selectedTemplate.translations || [];
+
+      // Check for duplicates
+      if (translations.some(t => t.locale === newTranslation.locale)) {
+        alert(`Translation for ${newTranslation.locale_name} already exists`);
+        setLoading(false);
+        return;
+      }
+
       // Get all translatable fields
       const translatableFields = [
         ...selectedTemplate.attribute_schema.core_attributes,
@@ -180,7 +189,6 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
         fieldLabels[field.name] = field.label;
       });
 
-      const translations = selectedTemplate.translations || [];
       translations.push({
         locale: newTranslation.locale,
         locale_name: newTranslation.locale_name,
@@ -373,7 +381,10 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                         className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
                       >
                         <option value="">Select a language...</option>
-                        {commonLocales.map(locale => (
+                        {commonLocales.filter(locale => {
+                          const existingLocales = selectedTemplate.translations?.map(t => t.locale) || [];
+                          return !existingLocales.includes(locale.code);
+                        }).map(locale => (
                           <option key={locale.code} value={locale.code}>
                             {locale.name} ({locale.code})
                           </option>
