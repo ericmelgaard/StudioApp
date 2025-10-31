@@ -44,6 +44,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
   const [selectedTemplate, setSelectedTemplate] = useState<AttributeTemplate | null>(null);
   const [showAddAttribute, setShowAddAttribute] = useState(false);
   const [showAddTranslation, setShowAddTranslation] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const [newAttribute, setNewAttribute] = useState({
     name: '',
@@ -160,105 +161,98 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     }
   }
 
-  async function addTranslation() {
+  function addTranslation() {
     if (!selectedTemplate || !newTranslation.locale || !newTranslation.locale_name) {
       alert('Please select a locale');
       return;
     }
 
-    setLoading(true);
-    try {
-      const translations = selectedTemplate.translations || [];
+    const translations = selectedTemplate.translations || [];
 
-      // Check for duplicates
-      if (translations.some(t => t.locale === newTranslation.locale)) {
-        alert(`Translation for ${newTranslation.locale_name} already exists`);
-        setLoading(false);
-        return;
+    // Check for duplicates
+    if (translations.some(t => t.locale === newTranslation.locale)) {
+      alert(`Translation for ${newTranslation.locale_name} already exists`);
+      return;
+    }
+
+    // Get all translatable fields
+    const translatableFields = [
+      ...selectedTemplate.attribute_schema.core_attributes,
+      ...selectedTemplate.attribute_schema.extended_attributes
+    ].filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
+
+    // Initialize with default labels (same as original)
+    const fieldLabels: Record<string, string> = {};
+    translatableFields.forEach(field => {
+      fieldLabels[field.name] = field.label;
+    });
+
+    translations.push({
+      locale: newTranslation.locale,
+      locale_name: newTranslation.locale_name,
+      field_labels: fieldLabels
+    });
+
+    setSelectedTemplate({
+      ...selectedTemplate,
+      translations
+    });
+
+    setNewTranslation({ locale: '', locale_name: '' });
+    setShowAddTranslation(false);
+    setHasUnsavedChanges(true);
+  }
+
+  function removeTranslation(locale: string) {
+    if (!selectedTemplate) return;
+
+    const translations = (selectedTemplate.translations || []).filter(t => t.locale !== locale);
+
+    setSelectedTemplate({
+      ...selectedTemplate,
+      translations
+    });
+    setHasUnsavedChanges(true);
+  }
+
+  function updateTranslationLabel(locale: string, fieldName: string, newLabel: string) {
+    if (!selectedTemplate) return;
+
+    const translations = (selectedTemplate.translations || []).map(t => {
+      if (t.locale === locale) {
+        return {
+          ...t,
+          field_labels: {
+            ...t.field_labels,
+            [fieldName]: newLabel
+          }
+        };
       }
+      return t;
+    });
 
-      // Get all translatable fields
-      const translatableFields = [
-        ...selectedTemplate.attribute_schema.core_attributes,
-        ...selectedTemplate.attribute_schema.extended_attributes
-      ].filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
-
-      // Initialize with default labels (same as original)
-      const fieldLabels: Record<string, string> = {};
-      translatableFields.forEach(field => {
-        fieldLabels[field.name] = field.label;
-      });
-
-      translations.push({
-        locale: newTranslation.locale,
-        locale_name: newTranslation.locale_name,
-        field_labels: fieldLabels
-      });
-
-      await supabase
-        .from('product_attribute_templates')
-        .update({ translations })
-        .eq('id', selectedTemplate.id);
-
-      setNewTranslation({ locale: '', locale_name: '' });
-      setShowAddTranslation(false);
-      await loadData();
-    } catch (error) {
-      console.error('Error adding translation:', error);
-      alert('Failed to add translation');
-    } finally {
-      setLoading(false);
-    }
+    setSelectedTemplate({
+      ...selectedTemplate,
+      translations
+    });
+    setHasUnsavedChanges(true);
   }
 
-  async function removeTranslation(locale: string) {
+  async function saveTranslations() {
     if (!selectedTemplate) return;
 
     setLoading(true);
     try {
-      const translations = (selectedTemplate.translations || []).filter(t => t.locale !== locale);
-
       await supabase
         .from('product_attribute_templates')
-        .update({ translations })
+        .update({ translations: selectedTemplate.translations })
         .eq('id', selectedTemplate.id);
 
+      setHasUnsavedChanges(false);
       await loadData();
     } catch (error) {
-      console.error('Error removing translation:', error);
-      alert('Failed to remove translation');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateTranslationLabel(locale: string, fieldName: string, newLabel: string) {
-    if (!selectedTemplate) return;
-
-    setLoading(true);
-    try {
-      const translations = (selectedTemplate.translations || []).map(t => {
-        if (t.locale === locale) {
-          return {
-            ...t,
-            field_labels: {
-              ...t.field_labels,
-              [fieldName]: newLabel
-            }
-          };
-        }
-        return t;
-      });
-
-      await supabase
-        .from('product_attribute_templates')
-        .update({ translations })
-        .eq('id', selectedTemplate.id);
-
-      await loadData();
-    } catch (error) {
-      console.error('Error updating translation label:', error);
-      alert('Failed to update translation label');
+      console.error('Error saving translations:', error);
+      alert('Failed to save translations');
     } finally {
       setLoading(false);
     }
@@ -649,12 +643,24 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                 </>
               )}
             </p>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
-            >
-              Close
-            </button>
+            <div className="flex items-center gap-2">
+              {hasUnsavedChanges && (
+                <button
+                  onClick={saveTranslations}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Save Changes
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       </div>
