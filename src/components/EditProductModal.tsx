@@ -1004,10 +1004,21 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               placeholder={key}
                             />
                             {fieldLink && (
-                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-green-700">
+                              <button
+                                onClick={() => {
+                                  const confirmed = confirm('Remove this calculation/link? The field will become manually editable.');
+                                  if (confirmed) {
+                                    const newLinks = { ...fieldLinks };
+                                    delete newLinks[key];
+                                    setFieldLinks(newLinks);
+                                  }
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 hover:bg-green-100 transition-colors cursor-pointer"
+                                title="Click to remove calculation/link"
+                              >
                                 {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
                                 {hasCalculation ? 'Calculated' : 'Synced'}
-                              </div>
+                              </button>
                             )}
                           </div>
                           {key === 'price' && hasCalculation && fieldLink.calculation && (
