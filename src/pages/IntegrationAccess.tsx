@@ -1,10 +1,21 @@
 import { useState } from 'react';
-import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface IntegrationSource {
   id: string;
   name: string;
   type: 'api' | 'spreadsheet' | 'json' | 'ftp';
+  status: 'active' | 'inactive';
+  syncFrequency: string;
+  lastSync: string;
+  endpoint?: string;
+  schedule?: string;
+}
+
+interface IntegrationDestination {
+  id: string;
+  name: string;
+  type: 'api' | 'webhook' | 'ftp' | 'database';
   status: 'active' | 'inactive';
   syncFrequency: string;
   lastSync: string;
@@ -25,11 +36,31 @@ const mockSources: IntegrationSource[] = [
   }
 ];
 
+const mockDestinations: IntegrationDestination[] = [
+  {
+    id: '1',
+    name: 'Digital Menu Board System',
+    type: 'api',
+    status: 'active',
+    syncFrequency: 'Real-time',
+    lastSync: '30 seconds ago',
+    endpoint: 'https://menuboards.example.com/api',
+    schedule: 'On product update'
+  }
+];
+
 const SOURCE_TYPES = [
   { value: 'api', label: 'REST API', icon: Database, color: 'blue' },
   { value: 'spreadsheet', label: 'Spreadsheet', icon: FileSpreadsheet, color: 'green' },
   { value: 'json', label: 'JSON File', icon: FileJson, color: 'purple' },
   { value: 'ftp', label: 'FTP Server', icon: Server, color: 'orange' }
+];
+
+const DESTINATION_TYPES = [
+  { value: 'api', label: 'REST API', icon: Database, color: 'blue' },
+  { value: 'webhook', label: 'Webhook', icon: Zap, color: 'purple' },
+  { value: 'ftp', label: 'FTP Server', icon: Server, color: 'orange' },
+  { value: 'database', label: 'Database', icon: Database, color: 'green' }
 ];
 
 const SYNC_FREQUENCIES = [
@@ -45,8 +76,12 @@ const SYNC_FREQUENCIES = [
 
 export default function IntegrationAccess() {
   const [sources] = useState<IntegrationSource[]>(mockSources);
+  const [destinations] = useState<IntegrationDestination[]>(mockDestinations);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
   const [selectedType, setSelectedType] = useState<string>('api');
+  const [selectedDestType, setSelectedDestType] = useState<string>('api');
+  const [expandedDestinations, setExpandedDestinations] = useState<Record<string, boolean>>({});
 
   function getSourceIcon(type: string) {
     const sourceType = SOURCE_TYPES.find(t => t.value === type);
@@ -56,6 +91,23 @@ export default function IntegrationAccess() {
   function getSourceColor(type: string) {
     const sourceType = SOURCE_TYPES.find(t => t.value === type);
     return sourceType?.color || 'blue';
+  }
+
+  function getDestinationIcon(type: string) {
+    const destType = DESTINATION_TYPES.find(t => t.value === type);
+    return destType?.icon || Database;
+  }
+
+  function getDestinationColor(type: string) {
+    const destType = DESTINATION_TYPES.find(t => t.value === type);
+    return destType?.color || 'blue';
+  }
+
+  function toggleDestinationExpand(id: string) {
+    setExpandedDestinations(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
   }
 
   return (
@@ -189,6 +241,162 @@ export default function IntegrationAccess() {
                 <li>Manual sync on-demand</li>
                 <li>Business hours scheduling</li>
               </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Integration Forwarding Section */}
+        <div className="mt-12">
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-2xl font-bold text-slate-900">Integration Forwarding</h2>
+              <button
+                onClick={() => setShowAddDestinationModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Add Destination
+              </button>
+            </div>
+            <p className="text-slate-600">Send product data to external systems and applications</p>
+          </div>
+
+          {/* Active Destinations */}
+          <div className="space-y-4">
+            {destinations.map(destination => {
+              const Icon = getDestinationIcon(destination.type);
+              const color = getDestinationColor(destination.type);
+              const isExpanded = expandedDestinations[destination.id];
+
+              return (
+                <div key={destination.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className={`p-3 bg-${color}-100 rounded-lg`}>
+                          <Send className={`w-6 h-6 text-${color}-600`} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-slate-900 mb-1">{destination.name}</h3>
+                          <div className="flex items-center gap-4 text-sm text-slate-500">
+                            <span className="flex items-center gap-1">
+                              <Link className="w-4 h-4" />
+                              {DESTINATION_TYPES.find(t => t.value === destination.type)?.label}
+                            </span>
+                            {destination.endpoint && (
+                              <span className="flex items-center gap-1">
+                                <Server className="w-4 h-4" />
+                                {destination.endpoint}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {destination.status === 'active' ? (
+                          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors">
+                            <ToggleRight className="w-4 h-4" />
+                            Active
+                          </button>
+                        ) : (
+                          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
+                            <ToggleLeft className="w-4 h-4" />
+                            Inactive
+                          </button>
+                        )}
+                        <button
+                          onClick={() => toggleDestinationExpand(destination.id)}
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4 text-slate-600" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-slate-600" />
+                          )}
+                        </button>
+                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                          <Edit2 className="w-4 h-4 text-slate-600" />
+                        </button>
+                        <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <Zap className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500">Sync Frequency</div>
+                          <div className="text-sm font-medium text-slate-900">{destination.syncFrequency}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-50 rounded-lg">
+                          <Clock className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500">Last Sync</div>
+                          <div className="text-sm font-medium text-slate-900">{destination.lastSync}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <Calendar className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500">Schedule</div>
+                          <div className="text-sm font-medium text-slate-900">{destination.schedule}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expandable Mapping Section */}
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <h4 className="text-sm font-semibold text-slate-900 mb-3">Field Mapping</h4>
+                        <div className="bg-slate-50 rounded-lg p-4 text-center text-slate-500">
+                          <p className="text-sm">Field mapping configuration will be available here</p>
+                          <p className="text-xs mt-1">TBD - Coming soon</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Info Box for Forwarding */}
+          <div className="mt-8 p-6 bg-green-50 border border-green-200 rounded-xl">
+            <h3 className="font-semibold text-green-900 mb-2">About Integration Forwarding</h3>
+            <p className="text-sm text-green-800 mb-3">
+              Automatically send product data to external systems when changes occur. Configure destinations to keep your digital menu boards, mobile apps, and other systems up-to-date.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm text-green-800">
+              <div>
+                <strong>Supported Destinations:</strong>
+                <ul className="list-disc list-inside ml-2 mt-1">
+                  <li>REST APIs with webhooks</li>
+                  <li>Real-time event streaming</li>
+                  <li>FTP/SFTP file exports</li>
+                  <li>Direct database connections</li>
+                </ul>
+              </div>
+              <div>
+                <strong>Forwarding Options:</strong>
+                <ul className="list-disc list-inside ml-2 mt-1">
+                  <li>Real-time on product updates</li>
+                  <li>Scheduled batch exports</li>
+                  <li>Custom field mapping</li>
+                  <li>Conditional forwarding rules</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -351,6 +559,190 @@ export default function IntegrationAccess() {
               </button>
               <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
                 Create Source
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Destination Modal */}
+      {showAddDestinationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h2 className="text-xl font-bold text-slate-900">Add Integration Destination</h2>
+              <button
+                onClick={() => setShowAddDestinationModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Destination Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">Destination Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {DESTINATION_TYPES.map(type => {
+                    const Icon = type.icon;
+                    const isSelected = selectedDestType === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        onClick={() => setSelectedDestType(type.value)}
+                        className={`p-4 border-2 rounded-lg transition-all ${
+                          isSelected
+                            ? `border-${type.color}-500 bg-${type.color}-50`
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <Icon className={`w-6 h-6 mb-2 ${isSelected ? `text-${type.color}-600` : 'text-slate-400'}`} />
+                        <div className={`font-medium ${isSelected ? `text-${type.color}-900` : 'text-slate-700'}`}>
+                          {type.label}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Configuration based on type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Destination Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Digital Menu Board System"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+
+              {(selectedDestType === 'api' || selectedDestType === 'webhook') && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {selectedDestType === 'webhook' ? 'Webhook URL' : 'API Endpoint'}
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://api.example.com/v1/products"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Authentication</label>
+                    <select className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2">
+                      <option>API Key</option>
+                      <option>Bearer Token</option>
+                      <option>Basic Auth</option>
+                      <option>OAuth 2.0</option>
+                    </select>
+                    <input
+                      type="password"
+                      placeholder="API Key or Token"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                </>
+              )}
+
+              {selectedDestType === 'ftp' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Server Address</label>
+                      <input
+                        type="text"
+                        placeholder="ftp.example.com"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Port</label>
+                      <input
+                        type="number"
+                        placeholder="21"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Username</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                      <input
+                        type="password"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Export Path</label>
+                    <input
+                      type="text"
+                      placeholder="/exports/products.json"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                </>
+              )}
+
+              {selectedDestType === 'database' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Database Type</label>
+                    <select className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                      <option>PostgreSQL</option>
+                      <option>MySQL</option>
+                      <option>SQL Server</option>
+                      <option>MongoDB</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Connection String</label>
+                    <input
+                      type="password"
+                      placeholder="postgresql://user:password@host:port/database"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Sync Trigger</label>
+                <select className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                  <option value="realtime">Real-time (on product update)</option>
+                  <option value="5min">Every 5 minutes</option>
+                  <option value="15min">Every 15 minutes</option>
+                  <option value="30min">Every 30 minutes</option>
+                  <option value="1hour">Every hour</option>
+                  <option value="daily">Daily</option>
+                  <option value="manual">Manual only</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="activeDest" className="w-4 h-4 text-green-600 rounded" defaultChecked />
+                <label htmlFor="activeDest" className="text-sm text-slate-700">Activate immediately after creation</label>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setShowAddDestinationModal(false)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                Create Destination
               </button>
             </div>
           </div>
