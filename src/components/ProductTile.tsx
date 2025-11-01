@@ -89,7 +89,10 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
               </h3>
               <p className="text-xs text-slate-500">ID: {product.id.slice(0, 8)}</p>
               {description && (
-                <p className="text-xs text-slate-600 line-clamp-3">{description}</p>
+                <div
+                  className="text-xs text-slate-600 line-clamp-3 prose prose-xs max-w-none"
+                  dangerouslySetInnerHTML={{ __html: description }}
+                />
               )}
             </div>
             <div className="space-y-2">
@@ -118,7 +121,10 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
 
         <div className="space-y-3 flex-1 flex flex-col justify-between">
           {!imageUrl && description && (
-            <p className="text-sm text-slate-600 line-clamp-2">{description}</p>
+            <div
+              className="text-sm text-slate-600 line-clamp-2 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
           )}
 
           <div className="flex items-center justify-between">
