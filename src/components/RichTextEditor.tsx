@@ -17,6 +17,15 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const quillRef = useRef<ReactQuill>(null);
 
+  const handleChange = (content: string) => {
+    const strippedContent = content.replace(/<p><br><\/p>/g, '').trim();
+    if (strippedContent === '<p></p>' || strippedContent === '') {
+      onChange('');
+    } else {
+      onChange(content);
+    }
+  };
+
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -113,7 +122,7 @@ export default function RichTextEditor({
         ref={quillRef}
         theme="snow"
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
         modules={modules}
         formats={formats}
         placeholder={placeholder}
