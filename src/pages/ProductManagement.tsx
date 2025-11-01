@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { resolveProductAttributes } from '../lib/attributeResolver';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 import EditProductModal from '../components/EditProductModal';
@@ -58,10 +59,45 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
 
     if (error) {
       console.error('Error loading products:', error);
-    } else {
-      setProducts(data || []);
-      extractFilters(data || []);
+      setLoading(false);
+      return;
     }
+
+    const productsData = data || [];
+    const integrationProductIds = productsData
+      .filter(p => p.integration_product_id)
+      .map(p => p.integration_product_id);
+
+    let integrationDataMap = new Map();
+
+    if (integrationProductIds.length > 0) {
+      const { data: integrationData, error: intError } = await supabase
+        .from('integration_products')
+        .select('id, data')
+        .in('id', integrationProductIds);
+
+      if (!intError && integrationData) {
+        integrationData.forEach(ip => {
+          integrationDataMap.set(ip.id, ip.data);
+        });
+      }
+    }
+
+    const resolvedProducts = productsData.map(product => {
+      if (product.integration_product_id && product.attribute_mappings) {
+        const integrationData = integrationDataMap.get(product.integration_product_id);
+        if (integrationData) {
+          return {
+            ...product,
+            attributes: resolveProductAttributes(product, integrationData)
+          };
+        }
+      }
+      return product;
+    });
+
+    setProducts(resolvedProducts);
+    extractFilters(resolvedProducts);
     setLoading(false);
   };
 
