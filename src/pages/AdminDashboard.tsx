@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers, ImageIcon } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers, ImageIcon, Wand2, MapPin } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -10,6 +10,8 @@ import IntegrationCatalog from './IntegrationCatalog';
 import IntegrationDashboard from './IntegrationDashboard';
 import IntegrationAccess from './IntegrationAccess';
 import ResourceManagement from './ResourceManagement';
+import WandTemplateManager from './WandTemplateManager';
+import WandIntegrationMapper from './WandIntegrationMapper';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -42,7 +44,7 @@ interface Store {
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper'>('dashboard');
 
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -286,6 +288,31 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             </button>
           </div>
 
+          {/* Wand Section */}
+          <div className="mb-6">
+            <div className="px-4 mb-2">
+              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Wand</div>
+            </div>
+            <button
+              onClick={() => setCurrentView('wand-templates')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'wand-templates' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <Layers className="w-5 h-5" />
+              <span className="text-sm font-medium">Manage Templates</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('wand-mapper')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'wand-mapper' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <MapPin className="w-5 h-5" />
+              <span className="text-sm font-medium">Map Integration Templates</span>
+            </button>
+          </div>
+
           {/* Integration Section */}
           <div className="mb-6">
             <div className="px-4 mb-2">
@@ -343,6 +370,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'integration-dashboard' && (
           <IntegrationDashboard
             onNavigate={(page) => setCurrentView(page === 'access' ? 'integration-access' : 'integration')}
