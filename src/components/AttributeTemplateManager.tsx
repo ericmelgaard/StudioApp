@@ -37,6 +37,17 @@ interface AttributeTemplateManagerProps {
   onClose: () => void;
 }
 
+interface AvailableAttribute {
+  id: string;
+  name: string;
+  label: string;
+  type: string;
+  default_required: boolean;
+  description: string | null;
+  category: string | null;
+  is_system: boolean;
+}
+
 export default function AttributeTemplateManager({ isOpen, onClose }: AttributeTemplateManagerProps) {
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<AttributeTemplate[]>([]);
@@ -45,6 +56,9 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
   const [showAddAttribute, setShowAddAttribute] = useState(false);
   const [showAddTranslation, setShowAddTranslation] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [availableAttributes, setAvailableAttributes] = useState<AvailableAttribute[]>([]);
+  const [showAddFromAvailable, setShowAddFromAvailable] = useState(false);
+  const [selectedAvailableAttr, setSelectedAvailableAttr] = useState<string>('');
 
   const [newAttribute, setNewAttribute] = useState({
     name: '',
@@ -79,13 +93,15 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
   async function loadData() {
     setLoading(true);
     try {
-      const [templatesRes, settingsRes] = await Promise.all([
+      const [templatesRes, settingsRes, availableRes] = await Promise.all([
         supabase.from('product_attribute_templates').select('*').order('name'),
-        supabase.from('organization_settings').select('*').limit(1).maybeSingle()
+        supabase.from('organization_settings').select('*').limit(1).maybeSingle(),
+        supabase.from('available_attributes').select('*').order('category, name')
       ]);
 
       if (templatesRes.data) setTemplates(templatesRes.data);
       if (settingsRes.data) setSettings(settingsRes.data);
+      if (availableRes.data) setAvailableAttributes(availableRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -114,6 +130,46 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     } catch (error) {
       console.error('Error setting default template:', error);
       alert('Failed to set default template');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function addAttributeFromAvailable() {
+    if (!selectedTemplate || !selectedAvailableAttr) {
+      alert('Please select an attribute');
+      return;
+    }
+
+    const availableAttr = availableAttributes.find(a => a.id === selectedAvailableAttr);
+    if (!availableAttr) return;
+
+    setLoading(true);
+    try {
+      const attributeToAdd = {
+        name: availableAttr.name,
+        label: availableAttr.label,
+        type: availableAttr.type,
+        required: availableAttr.default_required
+      };
+
+      const updatedSchema = {
+        ...selectedTemplate.attribute_schema,
+        core_attributes: [...selectedTemplate.attribute_schema.core_attributes, attributeToAdd]
+      };
+
+      await supabase
+        .from('product_attribute_templates')
+        .update({ attribute_schema: updatedSchema })
+        .eq('id', selectedTemplate.id);
+
+      setSelectedAvailableAttr('');
+      setShowAddFromAvailable(false);
+      await loadData();
+      alert('Attribute added successfully');
+    } catch (error) {
+      console.error('Error adding attribute:', error);
+      alert('Failed to add attribute');
     } finally {
       setLoading(false);
     }
@@ -156,6 +212,40 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     } catch (error) {
       console.error('Error adding attribute:', error);
       alert('Failed to add attribute');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removeAttribute(attributeName: string, attributeGroup: 'core' | 'extended') {
+    if (!selectedTemplate) return;
+
+    if (!confirm(`Remove attribute "${attributeName}"? This will affect all products using this template.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const updatedSchema = {
+        ...selectedTemplate.attribute_schema,
+        core_attributes: attributeGroup === 'core'
+          ? selectedTemplate.attribute_schema.core_attributes.filter(a => a.name !== attributeName)
+          : selectedTemplate.attribute_schema.core_attributes,
+        extended_attributes: attributeGroup === 'extended'
+          ? selectedTemplate.attribute_schema.extended_attributes.filter(a => a.name !== attributeName)
+          : selectedTemplate.attribute_schema.extended_attributes
+      };
+
+      await supabase
+        .from('product_attribute_templates')
+        .update({ attribute_schema: updatedSchema })
+        .eq('id', selectedTemplate.id);
+
+      await loadData();
+      alert('Attribute removed successfully');
+    } catch (error) {
+      console.error('Error removing attribute:', error);
+      alert('Failed to remove attribute');
     } finally {
       setLoading(false);
     }
@@ -429,10 +519,74 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
 
                   <div className="space-y-6">
                     <div>
-                      <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
-                        <Tag className="w-4 h-4" />
-                        Core Attributes
-                      </h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                          <Tag className="w-4 h-4" />
+                          Core Attributes
+                        </h4>
+                        <button
+                          onClick={() => setShowAddFromAvailable(!showAddFromAvailable)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add from Library
+                        </button>
+                      </div>
+
+                      {showAddFromAvailable && (
+                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                          <select
+                            value={selectedAvailableAttr}
+                            onChange={(e) => setSelectedAvailableAttr(e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="">Select an attribute...</option>
+                            {(() => {
+                              const existingNames = [
+                                ...selectedTemplate.attribute_schema.core_attributes.map(a => a.name),
+                                ...selectedTemplate.attribute_schema.extended_attributes.map(a => a.name)
+                              ];
+
+                              const filteredAttrs = availableAttributes.filter(attr => !existingNames.includes(attr.name));
+
+                              const groups = filteredAttrs.reduce((acc: Record<string, AvailableAttribute[]>, attr) => {
+                                const category = attr.category || 'other';
+                                if (!acc[category]) acc[category] = [];
+                                acc[category].push(attr);
+                                return acc;
+                              }, {});
+
+                              return Object.entries(groups).map(([category, attrs]) => (
+                                <optgroup key={category} label={category.charAt(0).toUpperCase() + category.slice(1)}>
+                                  {attrs.map(attr => (
+                                    <option key={attr.id} value={attr.id}>
+                                      {attr.label} ({attr.type})
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              ));
+                            })()}
+                          </select>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={addAttributeFromAvailable}
+                              disabled={loading || !selectedAvailableAttr}
+                              className="flex-1 px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            >
+                              Add Attribute
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowAddFromAvailable(false);
+                                setSelectedAvailableAttr('');
+                              }}
+                              className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <div className="space-y-2">
                         {selectedTemplate.attribute_schema.core_attributes.map((attr) => {
                           const translatableFields = selectedTemplate.translations || [];
@@ -447,6 +601,13 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                   {attr.required && (
                                     <span className="text-xs font-medium text-red-600">Required</span>
                                   )}
+                                  <button
+                                    onClick={() => removeAttribute(attr.name, 'core')}
+                                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    title="Remove attribute"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
                                 </div>
                               </div>
                               {isTranslatable && translatableFields.length > 0 && (
@@ -591,6 +752,13 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                     {attr.required && (
                                       <span className="text-xs font-medium text-red-600">Required</span>
                                     )}
+                                    <button
+                                      onClick={() => removeAttribute(attr.name, 'extended')}
+                                      className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                      title="Remove attribute"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                   </div>
                                 </div>
                                 {isTranslatable && translatableFields.length > 0 && (
