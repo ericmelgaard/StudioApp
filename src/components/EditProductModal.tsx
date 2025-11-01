@@ -257,8 +257,38 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       setTranslations(product.attributes?.translations || {});
       loadIntegrationData();
       checkPendingPublication();
+
+      // Calculate any computed fields
+      calculateComputedFields(mappings, product.attributes);
     }
   }, [product]);
+
+  function calculateComputedFields(mappings: Record<string, FieldLinkData>, attrs: Record<string, any>) {
+    const updatedAttrs = { ...attrs };
+    let hasChanges = false;
+
+    for (const [key, linkData] of Object.entries(mappings)) {
+      if (linkData.type === 'calculation' && linkData.calculation) {
+        let total = 0;
+        for (const part of linkData.calculation) {
+          const value = typeof part.value === 'number' ? part.value : parseFloat(part.value) || 0;
+          if (part.operation === 'subtract') {
+            total -= value;
+          } else {
+            total += value;
+          }
+        }
+        if (updatedAttrs[key] !== total.toFixed(2)) {
+          updatedAttrs[key] = total.toFixed(2);
+          hasChanges = true;
+        }
+      }
+    }
+
+    if (hasChanges) {
+      setAttributes(updatedAttrs);
+    }
+  }
 
   async function checkPendingPublication() {
     if (!product) return;
@@ -1599,10 +1629,25 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           }}
           onLink={(linkData) => {
             if (linkingFieldKey) {
-              setFieldLinks(prev => ({
-                ...prev,
+              const newFieldLinks = {
+                ...fieldLinks,
                 [linkingFieldKey]: linkData
-              }));
+              };
+              setFieldLinks(newFieldLinks);
+
+              // Recalculate the field if it's a calculation
+              if (linkData.type === 'calculation' && linkData.calculation) {
+                let total = 0;
+                for (const part of linkData.calculation) {
+                  const value = typeof part.value === 'number' ? part.value : parseFloat(part.value) || 0;
+                  if (part.operation === 'subtract') {
+                    total -= value;
+                  } else {
+                    total += value;
+                  }
+                }
+                updateAttribute(linkingFieldKey, total.toFixed(2));
+              }
             }
             setShowPriceCaloriesLinkModal(false);
             setLinkingFieldKey(null);
