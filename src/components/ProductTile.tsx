@@ -55,7 +55,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
       onClick={onClick}
     >
       {imageUrl && (
-        <div className="relative overflow-hidden flex-shrink-0" style={{ height: '109px' }}>
+        <div className="relative overflow-hidden flex-shrink-0" style={{ height: '140px' }}>
           {pendingPublication && (
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
               <Calendar className="w-3.5 h-3.5" />
@@ -65,7 +65,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
           <img
             src={imageUrl}
             alt={displayName}
-            className={`w-full h-full object-cover transition-opacity duration-300 ${
+            className={`w-full h-full object-scale-down transition-opacity duration-300 ${
               isHovered ? 'opacity-0' : 'opacity-100'
             }`}
           />
