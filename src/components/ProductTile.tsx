@@ -37,7 +37,14 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
     setPendingPublication(data);
   }
 
-  const displayName = product.attributes?.name || product.name;
+  function stripHtmlTags(html: string): string {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+
+  const rawName = product.attributes?.name || product.name;
+  const displayName = stripHtmlTags(rawName);
   const imageUrl = product.attributes?.thumbnail || product.attributes?.image_url;
   const description = product.attributes?.description;
   const price = product.attributes?.price;
