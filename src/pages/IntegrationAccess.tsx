@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye } from 'lucide-react';
 
 interface IntegrationSource {
   id: string;
@@ -10,6 +10,7 @@ interface IntegrationSource {
   lastSync: string;
   endpoint?: string;
   schedule?: string;
+  sourceLocation?: string;
 }
 
 interface IntegrationDestination {
@@ -32,7 +33,8 @@ const mockSources: IntegrationSource[] = [
     syncFrequency: 'Every 15 minutes',
     lastSync: '2 minutes ago',
     endpoint: 'https://api.qu.com/v1',
-    schedule: 'Every 15 min during business hours'
+    schedule: 'Every 15 min during business hours',
+    sourceLocation: '100020'
   }
 ];
 
@@ -156,6 +158,21 @@ export default function IntegrationAccess() {
                             </span>
                           )}
                         </div>
+                        {source.sourceLocation && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="flex items-center gap-1.5 text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span className="font-medium">Source Location:</span>
+                              <span className="font-mono">{source.sourceLocation}</span>
+                            </span>
+                            <button
+                              className="p-1.5 hover:bg-slate-100 rounded transition-colors group"
+                              title="View locations"
+                            >
+                              <Eye className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
