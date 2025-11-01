@@ -32,14 +32,19 @@ export default function BulkCategoryAssignModal({
   }, [isOpen]);
 
   async function loadCategories() {
-    const { data, error } = await supabase
-      .from('product_categories')
-      .select('*')
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('id, name, description, sort_order')
+        .order('sort_order', { ascending: true });
 
-    if (!error && data) {
-      setCategories(data);
+      if (error) {
+        console.error('Error loading categories:', error);
+      } else if (data) {
+        setCategories(data);
+      }
+    } catch (err) {
+      console.error('Caught error loading categories:', err);
     }
   }
 
