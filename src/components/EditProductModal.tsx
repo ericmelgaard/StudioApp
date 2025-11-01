@@ -308,6 +308,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
           // Merge template attributes with existing product attributes
           const mergedAttributes = { ...productAttrs };
+
+          // Special handling for 'name' - use top-level product.name if attributes.name doesn't exist
+          if (!mergedAttributes.name && product.name) {
+            mergedAttributes.name = product.name;
+          }
+
           allTemplateAttrs.forEach((attr: any) => {
             if (!(attr.name in mergedAttributes)) {
               // Initialize with appropriate default based on type
@@ -332,7 +338,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     }
 
     // No template or error - just use product attributes
-    setAttributes(productAttrs);
+    // Make sure name is populated from top-level if not in attributes
+    const finalAttrs = { ...productAttrs };
+    if (!finalAttrs.name && product.name) {
+      finalAttrs.name = product.name;
+    }
+    setAttributes(finalAttrs);
   }
 
   useEffect(() => {
@@ -452,8 +463,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         translations: translations
       };
 
+      // Use attributes.name if it exists, otherwise fall back to the name state
+      const productName = updatedAttributes.name || name;
+
       const changes = {
-        name: name,
+        name: productName,
         attributes: updatedAttributes,
         attribute_overrides: attributeOverrides,
         attribute_mappings: fieldLinks,

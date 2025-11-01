@@ -652,6 +652,12 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
     setLoading(true);
 
     try {
+      // Make sure name is in both places for consistency
+      const finalAttributes = {
+        ...attributes,
+        name: productName
+      };
+
       const { error } = await supabase
         .from('products')
         .insert({
@@ -659,7 +665,7 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
           attribute_template_id: selectedAttributeTemplate || null,
           display_template_id: selectedDisplayTemplate || null,
           integration_product_id: selectedIntegrationProduct || null,
-          attributes: attributes,
+          attributes: finalAttributes,
           attribute_mappings: fieldLinks
         });
 
