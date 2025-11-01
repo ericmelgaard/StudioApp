@@ -222,6 +222,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [publishDate, setPublishDate] = useState('');
   const [publishTime, setPublishTime] = useState('');
   const [showEditChoice, setShowEditChoice] = useState(false);
+  const [showPriceCaloriesLinkModal, setShowPriceCaloriesLinkModal] = useState(false);
+  const [linkingFieldKey, setLinkingFieldKey] = useState<string | null>(null);
 
   const commonLocales = [
     { code: 'fr-FR', name: 'French (France)' },
@@ -1006,18 +1008,26 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             {fieldLink && (
                               <button
                                 onClick={() => {
-                                  const confirmed = confirm('Remove this calculation/link? The field will become manually editable.');
-                                  if (confirmed) {
-                                    const newLinks = { ...fieldLinks };
-                                    delete newLinks[key];
-                                    setFieldLinks(newLinks);
-                                  }
+                                  setLinkingFieldKey(key);
+                                  setShowPriceCaloriesLinkModal(true);
                                 }}
                                 className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 hover:bg-green-100 transition-colors cursor-pointer"
-                                title="Click to remove calculation/link"
+                                title="Click to edit calculation/link"
                               >
                                 {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
                                 {hasCalculation ? 'Calculated' : 'Synced'}
+                              </button>
+                            )}
+                            {!fieldLink && key === 'price' && (
+                              <button
+                                onClick={() => {
+                                  setLinkingFieldKey(key);
+                                  setShowPriceCaloriesLinkModal(true);
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                                title="Add calculation or link"
+                              >
+                                <Link className="w-3 h-3" />
                               </button>
                             )}
                           </div>
@@ -1578,6 +1588,30 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           </div>
         </div>
       </div>
+
+      {/* Price/Calories Field Link Modal */}
+      {showPriceCaloriesLinkModal && linkingFieldKey && (
+        <FieldLinkModal
+          isOpen={showPriceCaloriesLinkModal}
+          onClose={() => {
+            setShowPriceCaloriesLinkModal(false);
+            setLinkingFieldKey(null);
+          }}
+          onLink={(linkData) => {
+            if (linkingFieldKey) {
+              setFieldLinks(prev => ({
+                ...prev,
+                [linkingFieldKey]: linkData
+              }));
+            }
+            setShowPriceCaloriesLinkModal(false);
+            setLinkingFieldKey(null);
+          }}
+          fieldName={linkingFieldKey}
+          fieldLabel={linkingFieldKey === 'price' ? 'Price' : 'Calories'}
+          currentLink={linkingFieldKey ? fieldLinks[linkingFieldKey] : null}
+        />
+      )}
 
       {/* Integration Field Mapping Modal */}
       {showMappingModal && mappingAttributeKey && integrationData && (
