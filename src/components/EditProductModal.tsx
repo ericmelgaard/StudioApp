@@ -30,7 +30,7 @@ interface SyncStatus {
   localOnly: Record<string, any>;
 }
 
-interface Size {
+interface Option {
   id: string;
   label: string;
   price: number;
@@ -39,76 +39,76 @@ interface Size {
   link?: FieldLinkData;
 }
 
-interface SizesEditorProps {
-  sizes: Size[];
-  onChange: (sizes: Size[]) => void;
+interface OptionsEditorProps {
+  options: Option[];
+  onChange: (options: Option[]) => void;
 }
 
-function SizesEditor({ sizes, onChange }: SizesEditorProps) {
+function OptionsEditor({ options, onChange }: OptionsEditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [linkingSizeId, setLinkingSizeId] = useState<string | null>(null);
+  const [linkingOptionId, setLinkingOptionId] = useState<string | null>(null);
   const [currentLink, setCurrentLink] = useState<FieldLinkData | null>(null);
-  const addSize = () => {
-    const newSize: Size = {
+  const addOption = () => {
+    const newOption: Option = {
       id: crypto.randomUUID(),
       label: '',
       price: 0,
       is_active: true,
       is_out_of_stock: false,
     };
-    onChange([...sizes, newSize]);
+    onChange([...options, newOption]);
   };
 
-  const updateSize = (id: string, updates: Partial<Size>) => {
-    onChange(sizes.map(size => size.id === id ? { ...size, ...updates } : size));
+  const updateOption = (id: string, updates: Partial<Option>) => {
+    onChange(options.map(option => option.id === id ? { ...option, ...updates } : option));
   };
 
-  const openLinkModal = (sizeId: string) => {
-    const size = sizes.find(s => s.id === sizeId);
-    setLinkingSizeId(sizeId);
-    setCurrentLink(size?.link || null);
+  const openLinkModal = (optionId: string) => {
+    const option = options.find(o => o.id === optionId);
+    setLinkingOptionId(optionId);
+    setCurrentLink(option?.link || null);
     setShowLinkModal(true);
   };
 
   const handleLink = (linkData: FieldLinkData) => {
-    if (linkingSizeId) {
-      updateSize(linkingSizeId, { link: linkData });
+    if (linkingOptionId) {
+      updateOption(linkingOptionId, { link: linkData });
     }
   };
 
-  const handleUnlink = (sizeId: string) => {
-    updateSize(sizeId, { link: undefined });
+  const handleUnlink = (optionId: string) => {
+    updateOption(optionId, { link: undefined });
   };
 
-  const removeSize = (id: string) => {
-    onChange(sizes.filter(size => size.id !== id));
+  const removeOption = (id: string) => {
+    onChange(options.filter(option => option.id !== id));
   };
 
   return (
     <div className="space-y-3">
-      {sizes.map((size) => (
-        <div key={size.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+      {options.map((option) => (
+        <div key={option.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
           <div className="flex-1 grid grid-cols-2 gap-3">
             <input
               type="text"
-              value={size.label}
-              onChange={(e) => updateSize(size.id, { label: e.target.value })}
-              placeholder="Size label (e.g., Small)"
+              value={option.label}
+              onChange={(e) => updateOption(option.id, { label: e.target.value })}
+              placeholder="Option label (e.g., Small)"
               className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              disabled={!!size.link}
+              disabled={!!option.link}
             />
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
               <input
                 type="number"
                 step="0.01"
-                value={size.price}
-                onChange={(e) => updateSize(size.id, { price: parseFloat(e.target.value) || 0 })}
-                disabled={!!size.link}
+                value={option.price}
+                onChange={(e) => updateOption(option.id, { price: parseFloat(e.target.value) || 0 })}
+                disabled={!!option.link}
                 placeholder="0.00"
                 className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
               />
-              {size.link && (
+              {option.link && (
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">Linked</span>
               )}
             </div>
@@ -118,14 +118,14 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
             <div className="flex flex-col items-center gap-1">
               <span className="text-xs text-slate-500">Active</span>
               <button
-                onClick={() => updateSize(size.id, { is_active: !size.is_active })}
+                onClick={() => updateOption(option.id, { is_active: !option.is_active })}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  size.is_active ? 'bg-blue-600' : 'bg-slate-300'
+                  option.is_active ? 'bg-blue-600' : 'bg-slate-300'
                 }`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
-                    size.is_active ? 'translate-x-6' : 'translate-x-1'
+                    option.is_active ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -134,22 +134,22 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
             <div className="flex flex-col items-center gap-1">
               <span className="text-xs text-slate-500">Out of Stock</span>
               <button
-                onClick={() => updateSize(size.id, { is_out_of_stock: !size.is_out_of_stock })}
+                onClick={() => updateOption(option.id, { is_out_of_stock: !option.is_out_of_stock })}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  size.is_out_of_stock ? 'bg-amber-500' : 'bg-slate-300'
+                  option.is_out_of_stock ? 'bg-amber-500' : 'bg-slate-300'
                 }`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
-                    size.is_out_of_stock ? 'translate-x-6' : 'translate-x-1'
+                    option.is_out_of_stock ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
             </div>
 
-            {size.link ? (
+            {option.link ? (
               <button
-                onClick={() => handleUnlink(size.id)}
+                onClick={() => handleUnlink(option.id)}
                 className="p-2 rounded-lg transition-colors bg-green-100 text-green-700 hover:bg-green-200"
                 title="Linked to integration product"
               >
@@ -157,7 +157,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
               </button>
             ) : (
               <button
-                onClick={() => openLinkModal(size.id)}
+                onClick={() => openLinkModal(option.id)}
                 className="p-2 rounded-lg transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
                 title="Link to integration product"
               >
@@ -166,7 +166,7 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
             )}
 
             <button
-              onClick={() => removeSize(size.id)}
+              onClick={() => removeOption(option.id)}
               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <X className="w-4 h-4" />
@@ -176,23 +176,23 @@ function SizesEditor({ sizes, onChange }: SizesEditorProps) {
       ))}
 
       <button
-        onClick={addSize}
+        onClick={addOption}
         className="w-full py-2.5 px-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
       >
         <Plus className="w-4 h-4" />
-        Add Size
+        Add Option
       </button>
 
       <FieldLinkModal
         isOpen={showLinkModal}
         onClose={() => {
           setShowLinkModal(false);
-          setLinkingSizeId(null);
+          setLinkingOptionId(null);
           setCurrentLink(null);
         }}
         onLink={handleLink}
         fieldName="price"
-        fieldLabel="Size Price"
+        fieldLabel="Option Price"
         currentLink={currentLink}
       />
     </div>
@@ -669,7 +669,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
     // Check if attribute type is mappable (not complex objects or arrays except for specific types)
     const meta = getAttributeMeta(key);
-    if (meta?.type === 'sizes') return false; // Sizes have their own linking mechanism
+    if (meta?.type === 'sizes') return false; // Options have their own linking mechanism
 
     return true;
   }
@@ -712,10 +712,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
     if (meta?.type === 'sizes') {
       return (
-        <SizesEditor
-          sizes={Array.isArray(actualValue) ? actualValue : []}
-          onChange={(newSizes) => {
-            updateAttribute(key, newSizes);
+        <OptionsEditor
+          options={Array.isArray(actualValue) ? actualValue : []}
+          onChange={(newOptions) => {
+            updateAttribute(key, newOptions);
             if (syncStatus && !isLocalOnly && !isOverridden) {
               lockOverride(key);
             }
@@ -1218,17 +1218,17 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   );
                 })()}
 
-                {/* Sizes Section */}
+                {/* Options Section */}
                 {(() => {
-                  const sizesKeys = Object.keys(attributes).filter(k => {
+                  const optionsKeys = Object.keys(attributes).filter(k => {
                     const meta = getAttributeMeta(k);
                     return meta?.type === 'sizes';
                   });
-                  if (sizesKeys.length === 0) return null;
+                  if (optionsKeys.length === 0) return null;
 
                   return (
                     <div className="pt-4 border-t border-slate-200">
-                      {sizesKeys.map(key => {
+                      {optionsKeys.map(key => {
                         const value = attributes[key];
                         const isOverridden = syncStatus?.overridden[key];
                         const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
