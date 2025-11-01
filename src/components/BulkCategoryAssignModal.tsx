@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, FolderTree, Check } from 'lucide-react';
+import { X, FolderTree, Check, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Category {
@@ -24,6 +24,9 @@ export default function BulkCategoryAssignModal({
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDescription, setNewCategoryDescription] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -91,6 +94,37 @@ export default function BulkCategoryAssignModal({
     setSelectedCategoryIds(newSelected);
   }
 
+  async function handleCreateCategory() {
+    if (!newCategoryName.trim()) {
+      alert('Please enter a category name');
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('product_categories')
+      .insert([{
+        name: newCategoryName.trim(),
+        description: newCategoryDescription.trim() || null,
+        sort_order: categories.length,
+        translations: [],
+      }])
+      .select()
+      .single();
+
+    setLoading(false);
+
+    if (error) {
+      alert('Error creating category: ' + error.message);
+    } else if (data) {
+      setCategories([...categories, data]);
+      setNewCategoryName('');
+      setNewCategoryDescription('');
+      setShowCreateForm(false);
+      toggleCategory(data.id);
+    }
+  }
+
   if (!isOpen) return null;
 
   return (
@@ -112,11 +146,71 @@ export default function BulkCategoryAssignModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
+          <div className="mb-4">
+            {showCreateForm ? (
+              <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Category Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Enter category name"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Description (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newCategoryDescription}
+                    onChange={(e) => setNewCategoryDescription(e.target.value)}
+                    placeholder="Enter description"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCreateCategory}
+                    disabled={loading || !newCategoryName.trim()}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setNewCategoryName('');
+                      setNewCategoryDescription('');
+                    }}
+                    className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                Create New Category
+              </button>
+            )}
+          </div>
+
           {categories.length === 0 ? (
             <div className="text-center py-12 text-slate-500">
               <FolderTree className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <p className="font-medium mb-2">No categories available</p>
-              <p className="text-sm">Create categories first in the Category Manager</p>
+              <p className="font-medium mb-2">No categories yet</p>
+              <p className="text-sm">Create your first category above</p>
             </div>
           ) : (
             <div className="space-y-2">
