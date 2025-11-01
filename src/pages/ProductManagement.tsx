@@ -250,7 +250,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
@@ -297,16 +297,35 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                   onChange={setFilterState}
                 />
               </div>
-
-              {products.length > 0 && products[0].updated_at && (
-                <div className="flex items-center gap-2 text-xs text-slate-500 whitespace-nowrap">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>
-                    {new Date(products[0].updated_at).toLocaleString()}
-                  </span>
-                </div>
-              )}
             </div>
+
+            {viewMode === 'list' && selectedProductIds.size > 0 ? (
+              <div className="mt-4 flex items-center gap-4 text-sm text-slate-600">
+                <button
+                  onClick={() => setSelectedProductIds(new Set())}
+                  className="text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <span className="text-slate-700">
+                  Selected {selectedProductIds.size} of {filteredProducts.length}
+                </span>
+                <div className="w-px h-4 bg-slate-300" />
+                <button
+                  onClick={() => setShowBulkCategoryAssign(true)}
+                  className="text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  Add to category
+                </button>
+              </div>
+            ) : products.length > 0 && products[0].updated_at ? (
+              <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+                <Calendar className="w-4 h-4" />
+                <span>
+                  Last updated: {new Date(products[0].updated_at).toLocaleString()}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <div className={viewMode === 'tile' ? 'p-6' : 'overflow-x-auto'}>
@@ -328,36 +347,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
             ) : viewMode === 'list' ? (
               <table className="w-full">
-                {selectedProductIds.size > 0 && (
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <td colSpan={4} className="px-6 py-2.5 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setSelectedProductIds(new Set())}
-                                className="text-slate-500 hover:text-slate-700 transition-colors"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                              <span className="text-sm text-slate-700">
-                                Selected {selectedProductIds.size} of {filteredProducts.length}
-                              </span>
-                            </div>
-                            <div className="w-px h-4 bg-slate-300" />
-                            <button
-                              onClick={() => setShowBulkCategoryAssign(true)}
-                              className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-                            >
-                              Add to category
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </thead>
-                )}
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-6 py-3 w-12">
