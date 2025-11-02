@@ -22,6 +22,7 @@ interface Product {
   attribute_mappings?: Record<string, any>;
   created_at: string;
   updated_at: string;
+  integration_source_name?: string;
 }
 
 interface ProductManagementProps {
@@ -69,31 +70,43 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
       .map(p => p.integration_product_id);
 
     let integrationDataMap = new Map();
+    let integrationSourceMap = new Map();
 
     if (integrationProductIds.length > 0) {
       const { data: integrationData, error: intError } = await supabase
         .from('integration_products')
-        .select('id, data')
+        .select('id, data, source_id, integration_sources(name)')
         .in('id', integrationProductIds);
 
       if (!intError && integrationData) {
         integrationData.forEach(ip => {
           integrationDataMap.set(ip.id, ip.data);
+          if (ip.integration_sources) {
+            integrationSourceMap.set(ip.id, (ip.integration_sources as any).name);
+          }
         });
       }
     }
 
     const resolvedProducts = productsData.map(product => {
+      const sourceName = product.integration_product_id
+        ? integrationSourceMap.get(product.integration_product_id)
+        : undefined;
+
       if (product.integration_product_id && product.attribute_mappings) {
         const integrationData = integrationDataMap.get(product.integration_product_id);
         if (integrationData) {
           return {
             ...product,
-            attributes: resolveProductAttributes(product, integrationData)
+            attributes: resolveProductAttributes(product, integrationData),
+            integration_source_name: sourceName
           };
         }
       }
-      return product;
+      return {
+        ...product,
+        integration_source_name: sourceName
+      };
     });
 
     setProducts(resolvedProducts);

@@ -9,6 +9,7 @@ interface Product {
   attribute_template_id: string | null;
   display_template_id: string | null;
   integration_product_id: string | null;
+  integration_source_name?: string;
 }
 
 interface ProductTileProps {
@@ -63,6 +64,15 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
     >
       {imageUrl && (
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: '140px' }}>
+          {product.integration_source_name && (
+            <div
+              className={`absolute top-2 left-2 z-[5] flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg shadow-md text-xs font-medium transition-opacity duration-300 ${
+                isHovered ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {product.integration_source_name}
+            </div>
+          )}
           {pendingPublication && (
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
               <Calendar className="w-3.5 h-3.5" />
@@ -116,7 +126,16 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
         </div>
       )}
 
-      <div className="p-4 flex-1 flex flex-col">
+      <div className="p-4 flex-1 flex flex-col relative">
+        {!imageUrl && product.integration_source_name && (
+          <div
+            className={`absolute top-2 right-2 z-[5] flex items-center gap-1.5 px-2 py-1 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg shadow-md text-xs font-medium transition-opacity duration-300 ${
+              isHovered ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {product.integration_source_name}
+          </div>
+        )}
         {!imageUrl && (
           <>
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">

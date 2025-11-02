@@ -15,6 +15,7 @@ interface Product {
   integration_product_id: string | null;
   attribute_overrides?: Record<string, boolean>;
   attribute_mappings?: Record<string, FieldLinkData>;
+  integration_source_name?: string;
 }
 
 interface EditProductModalProps {
@@ -895,7 +896,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       >
         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Edit Product</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-slate-900">Edit Product</h2>
+              {product.integration_source_name && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/90 text-white rounded-lg shadow-sm text-xs font-medium">
+                  <Link className="w-3.5 h-3.5" />
+                  {product.integration_source_name}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-slate-500 mt-1">ID: {product.id}</p>
           </div>
           <button
