@@ -241,15 +241,20 @@ export default function IntegrationCatalog() {
                       >
                         {source && (
                           <div
-                            className={`absolute top-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg shadow-md text-xs font-medium transition-opacity duration-300 ${
+                            className={`absolute top-2 right-2 z-10 transition-opacity duration-300 ${
                               hoveredCard === product.id ? 'opacity-100' : 'opacity-0'
                             }`}
                           >
-                            {source.name}
+                            <img
+                              src="/logo_32 copy.png"
+                              alt={source.name}
+                              className="w-8 h-8 rounded shadow-md"
+                              title={source.name}
+                            />
                           </div>
                         )}
                         <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-slate-900 line-clamp-1 pr-2">
+                          <h3 className="font-semibold text-slate-900 line-clamp-1 pr-10">
                             {product.data?.displayAttribute?.itemTitle || product.name}
                           </h3>
                           <span className="text-lg font-bold text-blue-600 ml-2">
@@ -286,15 +291,20 @@ export default function IntegrationCatalog() {
                       >
                         {source && (
                           <div
-                            className={`absolute top-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg shadow-md text-xs font-medium transition-opacity duration-300 ${
+                            className={`absolute top-2 right-2 z-10 transition-opacity duration-300 ${
                               hoveredCard === modifier.id ? 'opacity-100' : 'opacity-0'
                             }`}
                           >
-                            {source.name}
+                            <img
+                              src="/logo_32 copy.png"
+                              alt={source.name}
+                              className="w-8 h-8 rounded shadow-md"
+                              title={source.name}
+                            />
                           </div>
                         )}
                         <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-slate-900 line-clamp-1 pr-2">
+                          <h3 className="font-semibold text-slate-900 line-clamp-1 pr-10">
                             {modifier.data?.displayAttribute?.itemTitle || modifier.name}
                           </h3>
                           <span className="text-lg font-bold text-blue-600 ml-2">
@@ -334,15 +344,20 @@ export default function IntegrationCatalog() {
                       >
                         {source && (
                           <div
-                            className={`absolute top-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/90 backdrop-blur-sm text-white rounded-lg shadow-md text-xs font-medium transition-opacity duration-300 ${
+                            className={`absolute top-2 right-2 z-10 transition-opacity duration-300 ${
                               hoveredCard === discount.id ? 'opacity-100' : 'opacity-0'
                             }`}
                           >
-                            {source.name}
+                            <img
+                              src="/logo_32 copy.png"
+                              alt={source.name}
+                              className="w-8 h-8 rounded shadow-md"
+                              title={source.name}
+                            />
                           </div>
                         )}
                         <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-slate-900 line-clamp-1 pr-2">
+                          <h3 className="font-semibold text-slate-900 line-clamp-1 pr-10">
                             {discount.name}
                           </h3>
                           {discount.discount_amount && (

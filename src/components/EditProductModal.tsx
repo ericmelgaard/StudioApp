@@ -899,8 +899,13 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-slate-900">Edit Product</h2>
               {product.integration_source_name && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/90 text-white rounded-lg shadow-sm text-xs font-medium">
-                  <Link className="w-3.5 h-3.5" />
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg shadow-sm text-xs font-medium text-slate-700">
+                  <img
+                    src="/logo_32 copy.png"
+                    alt={product.integration_source_name}
+                    className="w-4 h-4"
+                    title={product.integration_source_name}
+                  />
                   {product.integration_source_name}
                 </span>
               )}
