@@ -72,19 +72,19 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
           Scheduled
         </div>
       )}
-      {hasIntegrationSource && (
-        <div className="absolute top-2 right-2 z-10">
-          <img
-            src="/logo_32 copy.png"
-            alt={product.integration_source_name || 'QU Beyond'}
-            className="w-5 h-5 rounded"
-            title={product.integration_source_name || 'QU Beyond (Calculated)'}
-          />
-        </div>
-      )}
       {imageUrl && (
-        <div className="relative overflow-hidden flex-shrink-0 z-20" style={{ height: '140px' }}>
-          <div className={`absolute inset-0 bg-white transition-opacity duration-300 ${
+        <div className="relative overflow-hidden flex-shrink-0" style={{ height: '140px' }}>
+          {hasIntegrationSource && (
+            <div className="absolute top-2 right-2 z-30">
+              <img
+                src="/logo_32 copy.png"
+                alt={product.integration_source_name || 'QU Beyond'}
+                className="w-5 h-5 rounded"
+                title={product.integration_source_name || 'QU Beyond (Calculated)'}
+              />
+            </div>
+          )}
+          <div className={`absolute inset-0 bg-white transition-opacity duration-300 z-10 ${
             isHovered ? 'opacity-0' : 'opacity-100'
           }`}>
             <img
@@ -99,7 +99,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
             </div>
           </div>
           <div
-            className={`absolute inset-0 bg-white p-4 flex flex-col justify-between transition-opacity duration-300 ${
+            className={`absolute inset-0 bg-white p-4 flex flex-col justify-between transition-opacity duration-300 z-20 ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}
           >
@@ -130,6 +130,16 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
       )}
 
       <div className="p-4 flex-1 flex flex-col relative">
+        {!imageUrl && hasIntegrationSource && (
+          <div className="absolute top-2 right-2 z-10">
+            <img
+              src="/logo_32 copy.png"
+              alt={product.integration_source_name || 'QU Beyond'}
+              className="w-5 h-5 rounded"
+              title={product.integration_source_name || 'QU Beyond (Calculated)'}
+            />
+          </div>
+        )}
         {!imageUrl && (
           <>
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
