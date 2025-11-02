@@ -72,18 +72,18 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
           Scheduled
         </div>
       )}
-      {hasIntegrationSource && (
-        <div className="absolute top-2 right-2 z-20">
-          <img
-            src="/logo_32 copy.png"
-            alt={product.integration_source_name || 'QU Beyond'}
-            className="w-5 h-5 rounded"
-            title={product.integration_source_name || 'QU Beyond (Calculated)'}
-          />
-        </div>
-      )}
       {imageUrl && (
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: '140px' }}>
+          {hasIntegrationSource && (
+            <div className="absolute top-2 right-2 z-10">
+              <img
+                src="/logo_32 copy.png"
+                alt={product.integration_source_name || 'QU Beyond'}
+                className="w-5 h-5 rounded"
+                title={product.integration_source_name || 'QU Beyond (Calculated)'}
+              />
+            </div>
+          )}
           <img
             src={imageUrl}
             alt={displayName}
@@ -132,6 +132,16 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
       )}
 
       <div className="p-4 flex-1 flex flex-col relative">
+        {!imageUrl && hasIntegrationSource && (
+          <div className="absolute top-2 right-2 z-10">
+            <img
+              src="/logo_32 copy.png"
+              alt={product.integration_source_name || 'QU Beyond'}
+              className="w-5 h-5 rounded"
+              title={product.integration_source_name || 'QU Beyond (Calculated)'}
+            />
+          </div>
+        )}
         {!imageUrl && (
           <>
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
