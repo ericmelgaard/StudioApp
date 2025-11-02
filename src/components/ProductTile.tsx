@@ -82,17 +82,17 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
               alt={displayName}
               className="w-full h-full object-scale-down"
             />
-            {hasIntegrationSource && (
-              <div className="absolute top-2 right-2">
-                <img
-                  src="/logo_32 copy.png"
-                  alt={product.integration_source_name || 'QU Beyond'}
-                  className="w-5 h-5 rounded"
-                  title={product.integration_source_name || 'QU Beyond (Calculated)'}
-                />
-              </div>
-            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end">
+              {hasIntegrationSource && (
+                <div className="absolute top-2 right-2">
+                  <img
+                    src="/logo_32 copy.png"
+                    alt={product.integration_source_name || 'QU Beyond'}
+                    className="w-5 h-5 rounded"
+                    title={product.integration_source_name || 'QU Beyond (Calculated)'}
+                  />
+                </div>
+              )}
               <h3 className="font-semibold text-white text-sm p-4 line-clamp-2 w-full">
                 {displayName}
               </h3>
