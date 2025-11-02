@@ -82,7 +82,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
               alt={displayName}
               className="w-full h-full object-scale-down"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
               {hasIntegrationSource && (
                 <div className="absolute top-2 right-2">
                   <img
@@ -93,9 +93,11 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
                   />
                 </div>
               )}
-              <h3 className="font-semibold text-white text-sm p-4 line-clamp-2 w-full">
-                {displayName}
-              </h3>
+              <div className="absolute bottom-0 left-0 right-0">
+                <h3 className="font-semibold text-white text-sm p-4 line-clamp-2 w-full">
+                  {displayName}
+                </h3>
+              </div>
             </div>
           </div>
           <div
