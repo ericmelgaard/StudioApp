@@ -418,8 +418,8 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Attributes
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Template
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      API Source
                     </th>
                   </tr>
                 </thead>
@@ -477,15 +477,20 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {product.attribute_template_id ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Has Template
-                          </span>
+                      <td className="px-6 py-4 text-center">
+                        {(product.integration_source_name || product.attribute_mappings?.price?.type === 'calculation') ? (
+                          <div className="flex justify-center">
+                            <img
+                              src="/logo_32 copy.png"
+                              alt={product.integration_source_name || 'QU Beyond'}
+                              className="w-6 h-6 rounded"
+                              title={product.integration_source_name || 'QU Beyond (Calculated)'}
+                            />
+                          </div>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
-                        </td>
+                      </td>
                       </tr>
                     ))}
                   </tbody>
