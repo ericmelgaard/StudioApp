@@ -49,7 +49,6 @@ export default function IntegrationCatalog() {
   const [discounts, setDiscounts] = useState<IntegrationDiscount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAutoImport, setShowAutoImport] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   useEffect(() => {
     loadSource();
@@ -236,19 +235,13 @@ export default function IntegrationCatalog() {
                       <div
                         key={product.id}
                         className="relative p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
-                        onMouseEnter={() => setHoveredCard(product.id)}
-                        onMouseLeave={() => setHoveredCard(null)}
                       >
                         {source && (
-                          <div
-                            className={`absolute top-2 right-2 z-10 transition-opacity duration-300 ${
-                              hoveredCard === product.id ? 'opacity-100' : 'opacity-0'
-                            }`}
-                          >
+                          <div className="absolute top-2 right-2 z-10">
                             <img
                               src="/logo_32 copy.png"
                               alt={source.name}
-                              className="w-8 h-8 rounded shadow-md"
+                              className="w-8 h-8 rounded shadow-md bg-white"
                               title={source.name}
                             />
                           </div>
@@ -286,19 +279,13 @@ export default function IntegrationCatalog() {
                       <div
                         key={modifier.id}
                         className="relative p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
-                        onMouseEnter={() => setHoveredCard(modifier.id)}
-                        onMouseLeave={() => setHoveredCard(null)}
                       >
                         {source && (
-                          <div
-                            className={`absolute top-2 right-2 z-10 transition-opacity duration-300 ${
-                              hoveredCard === modifier.id ? 'opacity-100' : 'opacity-0'
-                            }`}
-                          >
+                          <div className="absolute top-2 right-2 z-10">
                             <img
                               src="/logo_32 copy.png"
                               alt={source.name}
-                              className="w-8 h-8 rounded shadow-md"
+                              className="w-8 h-8 rounded shadow-md bg-white"
                               title={source.name}
                             />
                           </div>
@@ -339,19 +326,13 @@ export default function IntegrationCatalog() {
                       <div
                         key={discount.id}
                         className="relative p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
-                        onMouseEnter={() => setHoveredCard(discount.id)}
-                        onMouseLeave={() => setHoveredCard(null)}
                       >
                         {source && (
-                          <div
-                            className={`absolute top-2 right-2 z-10 transition-opacity duration-300 ${
-                              hoveredCard === discount.id ? 'opacity-100' : 'opacity-0'
-                            }`}
-                          >
+                          <div className="absolute top-2 right-2 z-10">
                             <img
                               src="/logo_32 copy.png"
                               alt={source.name}
-                              className="w-8 h-8 rounded shadow-md"
+                              className="w-8 h-8 rounded shadow-md bg-white"
                               title={source.name}
                             />
                           </div>

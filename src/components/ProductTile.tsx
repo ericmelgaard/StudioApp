@@ -10,6 +10,7 @@ interface Product {
   display_template_id: string | null;
   integration_product_id: string | null;
   integration_source_name?: string;
+  attribute_mappings?: Record<string, any>;
 }
 
 interface ProductTileProps {
@@ -55,35 +56,34 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
   const mealStations = product.attributes?.meal_stations;
   const sizes = product.attributes?.sizes;
 
+  const hasCalculatedPrice = product.attribute_mappings?.price?.type === 'calculation';
+  const hasIntegrationSource = product.integration_source_name || hasCalculatedPrice;
+
   return (
     <div
-      className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col"
+      className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
+      {pendingPublication && (
+        <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
+          <Calendar className="w-3.5 h-3.5" />
+          Scheduled
+        </div>
+      )}
+      {hasIntegrationSource && (
+        <div className="absolute top-2 right-2 z-20">
+          <img
+            src="/logo_32 copy.png"
+            alt={product.integration_source_name || 'QU Beyond'}
+            className="w-8 h-8 rounded shadow-md bg-white"
+            title={product.integration_source_name || 'QU Beyond (Calculated)'}
+          />
+        </div>
+      )}
       {imageUrl && (
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: '140px' }}>
-          {pendingPublication && (
-            <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
-              <Calendar className="w-3.5 h-3.5" />
-              Scheduled
-            </div>
-          )}
-          {product.integration_source_name && (
-            <div
-              className={`absolute bottom-2 right-2 z-[5] transition-opacity duration-300 ${
-                isHovered ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              <img
-                src="/logo_32 copy.png"
-                alt={product.integration_source_name}
-                className="w-8 h-8 rounded shadow-md"
-                title={product.integration_source_name}
-              />
-            </div>
-          )}
           <img
             src={imageUrl}
             alt={displayName}
@@ -132,20 +132,6 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
       )}
 
       <div className="p-4 flex-1 flex flex-col relative">
-        {!imageUrl && product.integration_source_name && (
-          <div
-            className={`absolute top-2 right-2 z-[5] transition-opacity duration-300 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <img
-              src="/logo_32 copy.png"
-              alt={product.integration_source_name}
-              className="w-8 h-8 rounded shadow-md"
-              title={product.integration_source_name}
-            />
-          </div>
-        )}
         {!imageUrl && (
           <>
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
