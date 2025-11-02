@@ -74,16 +74,18 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
       )}
       {imageUrl && (
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: '140px' }}>
-          {hasIntegrationSource && (
-            <div className="absolute top-2 right-2 z-30">
-              <img
-                src="/logo_32 copy.png"
-                alt={product.integration_source_name || 'QU Beyond'}
-                className="w-5 h-5 rounded"
-                title={product.integration_source_name || 'QU Beyond (Calculated)'}
-              />
-            </div>
-          )}
+          <div className="absolute inset-0 bg-white z-0">
+            {hasIntegrationSource && (
+              <div className="absolute top-2 right-2">
+                <img
+                  src="/logo_32 copy.png"
+                  alt={product.integration_source_name || 'QU Beyond'}
+                  className="w-5 h-5 rounded"
+                  title={product.integration_source_name || 'QU Beyond (Calculated)'}
+                />
+              </div>
+            )}
+          </div>
           <div className={`absolute inset-0 bg-white transition-opacity duration-300 z-10 ${
             isHovered ? 'opacity-0' : 'opacity-100'
           }`}>
