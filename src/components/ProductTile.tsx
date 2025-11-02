@@ -77,7 +77,7 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
           <img
             src="/logo_32 copy.png"
             alt={product.integration_source_name || 'QU Beyond'}
-            className="w-8 h-8 rounded shadow-md bg-white"
+            className="w-5 h-5 rounded"
             title={product.integration_source_name || 'QU Beyond (Calculated)'}
           />
         </div>

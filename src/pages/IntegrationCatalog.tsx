@@ -241,7 +241,7 @@ export default function IntegrationCatalog() {
                             <img
                               src="/logo_32 copy.png"
                               alt={source.name}
-                              className="w-8 h-8 rounded shadow-md bg-white"
+                              className="w-5 h-5 rounded"
                               title={source.name}
                             />
                           </div>
@@ -285,7 +285,7 @@ export default function IntegrationCatalog() {
                             <img
                               src="/logo_32 copy.png"
                               alt={source.name}
-                              className="w-8 h-8 rounded shadow-md bg-white"
+                              className="w-5 h-5 rounded"
                               title={source.name}
                             />
                           </div>
@@ -332,7 +332,7 @@ export default function IntegrationCatalog() {
                             <img
                               src="/logo_32 copy.png"
                               alt={source.name}
-                              className="w-8 h-8 rounded shadow-md bg-white"
+                              className="w-5 h-5 rounded"
                               title={source.name}
                             />
                           </div>
