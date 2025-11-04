@@ -43,6 +43,7 @@ interface IntegrationDiscount {
 export default function IntegrationCatalog() {
   const [activeTab, setActiveTab] = useState<IntegrationType>('products');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sources, setSources] = useState<IntegrationSource[]>([]);
   const [source, setSource] = useState<IntegrationSource | null>(null);
   const [products, setProducts] = useState<IntegrationProduct[]>([]);
   const [modifiers, setModifiers] = useState<IntegrationModifier[]>([]);
@@ -51,7 +52,7 @@ export default function IntegrationCatalog() {
   const [showAutoImport, setShowAutoImport] = useState(false);
 
   useEffect(() => {
-    loadSource();
+    loadSources();
   }, []);
 
   useEffect(() => {
@@ -60,14 +61,15 @@ export default function IntegrationCatalog() {
     }
   }, [activeTab, source]);
 
-  async function loadSource() {
+  async function loadSources() {
     const { data } = await supabase
       .from('integration_sources')
       .select('*')
-      .maybeSingle();
+      .order('created_at');
 
-    if (data) {
-      setSource(data);
+    if (data && data.length > 0) {
+      setSources(data);
+      setSource(data[0]);
     }
   }
 
@@ -127,7 +129,28 @@ export default function IntegrationCatalog() {
           <p className="text-slate-600">
             Browse products, modifiers, and discounts from external integrations
           </p>
-          {source && (
+          {sources.length > 1 && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Select Integration Source
+              </label>
+              <select
+                value={source?.id || ''}
+                onChange={(e) => {
+                  const selectedSource = sources.find(s => s.id === e.target.value);
+                  if (selectedSource) setSource(selectedSource);
+                }}
+                className="px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {sources.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {sources.length === 1 && source && (
             <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
               <Package className="w-4 h-4" />
               {source.name}
