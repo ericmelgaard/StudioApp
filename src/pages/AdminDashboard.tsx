@@ -48,7 +48,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -286,7 +285,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className={`flex-1 overflow-y-auto p-6 transition-opacity duration-300 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
+      <main className="flex-1 overflow-y-auto p-6">
         {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
@@ -371,10 +370,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             }
 
             setToastMessage(`Taking you to ${locationName} now`);
-            setIsTransitioning(true);
-            setTimeout(() => {
-              setIsTransitioning(false);
-            }, 300);
             setShowLocationSelector(false);
           }}
           selectedLocation={{
