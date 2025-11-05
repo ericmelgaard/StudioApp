@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, ChevronRight, ChevronDown, Edit2, Trash2, FolderTree } from 'lucide-react';
+import { ArrowLeft, ChevronRight, ChevronDown, Building2, Store } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import PlacementGroupModal from '../components/PlacementGroupModal';
 
-interface PlacementGroup {
-  id: string;
+interface Concept {
+  id: number;
   name: string;
-  description: string | null;
-  parent_id: string | null;
-  daypart_hours: Record<string, any>;
-  meal_stations: string[];
-  templates: Record<string, any>;
-  nfc_url: string | null;
   created_at: string;
-  updated_at: string;
+}
+
+interface Company {
+  id: number;
+  name: string;
+  concept_id: number;
+  created_at: string;
+}
+
+interface StoreRecord {
+  id: number;
+  name: string;
+  company_id: number;
+  created_at: string;
 }
 
 interface StoreManagementProps {
@@ -21,53 +27,45 @@ interface StoreManagementProps {
 }
 
 export default function StoreManagement({ onBack }: StoreManagementProps) {
-  const [groups, setGroups] = useState<PlacementGroup[]>([]);
+  const [concepts, setConcepts] = useState<Concept[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [stores, setStores] = useState<StoreRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [showModal, setShowModal] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<PlacementGroup | null>(null);
 
   useEffect(() => {
-    loadGroups();
+    loadLocationData();
   }, []);
 
 
-  const loadGroups = async () => {
+  const loadLocationData = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('placement_groups')
-      .select('*')
-      .order('name');
 
-    if (error) {
-      console.error('Error loading placement groups:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      alert(`Failed to load placement groups: ${error.message}`);
-      setLoading(false);
-      return;
+    const [conceptsResult, companiesResult, storesResult] = await Promise.all([
+      supabase.from('concepts').select('*').order('name'),
+      supabase.from('companies').select('*').order('name'),
+      supabase.from('stores').select('*').order('name')
+    ]);
+
+    if (conceptsResult.error) {
+      console.error('Error loading concepts:', conceptsResult.error);
+      alert(`Failed to load concepts: ${conceptsResult.error.message}`);
     }
 
-    const groups = data || [];
-    setGroups(groups);
+    if (companiesResult.error) {
+      console.error('Error loading companies:', companiesResult.error);
+      alert(`Failed to load companies: ${companiesResult.error.message}`);
+    }
+
+    if (storesResult.error) {
+      console.error('Error loading stores:', storesResult.error);
+      alert(`Failed to load stores: ${storesResult.error.message}`);
+    }
+
+    setConcepts(conceptsResult.data || []);
+    setCompanies(companiesResult.data || []);
+    setStores(storesResult.data || []);
     setLoading(false);
-
-    // Check if default placement group exists and needs configuration
-    const defaultGroup = groups.find(g => g.name === '36355 - WAND Digital Demo');
-
-    if (defaultGroup) {
-      // Check if required fields are configured
-      const hasConfiguration =
-        Object.keys(defaultGroup.daypart_hours || {}).length > 0 ||
-        (defaultGroup.meal_stations && defaultGroup.meal_stations.length > 0) ||
-        Object.keys(defaultGroup.templates || {}).length > 0 ||
-        defaultGroup.nfc_url;
-
-      if (!hasConfiguration) {
-        // Open modal to configure
-        setEditingGroup(defaultGroup);
-        setShowModal(true);
-      }
-    }
   };
 
 
@@ -81,112 +79,83 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     setExpandedNodes(newExpanded);
   };
 
-  const handleDelete = async (id: string) => {
-    const groupToDelete = groups.find(g => g.id === id);
-    if (groupToDelete?.name === '36355 - WAND Digital Demo') {
-      alert('Cannot delete the default store placement group');
-      return;
-    }
-
-    if (!confirm('Are you sure you want to delete this placement group?')) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from('placement_groups')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting group:', error);
-      alert('Failed to delete placement group');
-    } else {
-      loadGroups();
-    }
-  };
-
-  const handleEdit = (group: PlacementGroup) => {
-    setEditingGroup(group);
-    setShowModal(true);
-  };
-
-  const handleAddRoot = () => {
-    setEditingGroup(null);
-    setShowModal(true);
-  };
-
-  const handleAddChild = (parentId: string) => {
-    setEditingGroup({ parent_id: parentId } as PlacementGroup);
-    setShowModal(true);
-  };
-
-  const buildTree = (parentId: string | null = null, level: number = 0): JSX.Element[] => {
-    const children = groups.filter(g => g.parent_id === parentId);
-
-    return children.map(group => {
-      const hasChildren = groups.some(g => g.parent_id === group.id);
-      const isExpanded = expandedNodes.has(group.id);
-      const isDefaultLocation = group.name === '36355 - WAND Digital Demo';
+  const buildTree = (): JSX.Element[] => {
+    return concepts.map(concept => {
+      const conceptCompanies = companies.filter(c => c.concept_id === concept.id);
+      const hasCompanies = conceptCompanies.length > 0;
+      const conceptKey = `concept-${concept.id}`;
+      const isConceptExpanded = expandedNodes.has(conceptKey);
 
       return (
-        <div key={group.id}>
-          <div
-            className="flex items-center gap-2 p-3 hover:bg-slate-50 rounded-lg group transition-colors"
-            style={{ marginLeft: `${level * 24}px` }}
-          >
+        <div key={conceptKey} className="mb-4">
+          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <button
-              onClick={() => toggleNode(group.id)}
-              className="p-1 hover:bg-slate-200 rounded transition-colors"
-              disabled={!hasChildren}
+              onClick={() => toggleNode(conceptKey)}
+              className="p-1 hover:bg-blue-200 rounded transition-colors"
+              disabled={!hasCompanies}
             >
-              {hasChildren ? (
-                isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-slate-600" />
+              {hasCompanies ? (
+                isConceptExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-blue-600" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-slate-600" />
+                  <ChevronRight className="w-4 h-4 text-blue-600" />
                 )
               ) : (
                 <div className="w-4 h-4" />
               )}
             </button>
-
-            <FolderTree className="w-5 h-5 text-amber-600" />
-
+            <Building2 className="w-5 h-5 text-blue-600" />
             <div className="flex-1">
-              <h4 className="font-medium text-slate-900">{group.name}</h4>
-              {group.description && (
-                <p className="text-sm text-slate-500">{group.description}</p>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => handleAddChild(group.id)}
-                className="p-2 hover:bg-green-100 rounded-lg transition-colors"
-                title="Add child group"
-              >
-                <Plus className="w-4 h-4 text-green-600" />
-              </button>
-              <button
-                onClick={() => handleEdit(group)}
-                className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                title="Edit group"
-              >
-                <Edit2 className="w-4 h-4 text-blue-600" />
-              </button>
-              {!isDefaultLocation && (
-                <button
-                  onClick={() => handleDelete(group.id)}
-                  className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                  title="Delete group"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
-              )}
+              <h4 className="font-bold text-blue-900">{concept.name}</h4>
+              <p className="text-xs text-blue-600">{conceptCompanies.length} companies</p>
             </div>
           </div>
 
-          {isExpanded && buildTree(group.id, level + 1)}
+          {isConceptExpanded && conceptCompanies.map(company => {
+            const companyStores = stores.filter(s => s.company_id === company.id);
+            const hasStores = companyStores.length > 0;
+            const companyKey = `company-${company.id}`;
+            const isCompanyExpanded = expandedNodes.has(companyKey);
+
+            return (
+              <div key={companyKey} className="ml-8 mt-2">
+                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                  <button
+                    onClick={() => toggleNode(companyKey)}
+                    className="p-1 hover:bg-green-200 rounded transition-colors"
+                    disabled={!hasStores}
+                  >
+                    {hasStores ? (
+                      isCompanyExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-green-600" />
+                      )
+                    ) : (
+                      <div className="w-4 h-4" />
+                    )}
+                  </button>
+                  <Building2 className="w-4 h-4 text-green-600" />
+                  <div className="flex-1">
+                    <h5 className="font-semibold text-green-900">{company.name}</h5>
+                    <p className="text-xs text-green-600">{companyStores.length} stores</p>
+                  </div>
+                </div>
+
+                {isCompanyExpanded && companyStores.map(store => (
+                  <div key={`store-${store.id}`} className="ml-8 mt-2">
+                    <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                      <div className="w-4 h-4" />
+                      <Store className="w-4 h-4 text-amber-600" />
+                      <div className="flex-1">
+                        <h6 className="font-medium text-slate-900">{store.name}</h6>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
       );
     });
@@ -205,27 +174,13 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </button>
               <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
-                <FolderTree className="w-6 h-6 text-white" />
+                <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-900">Store Management</h1>
-                <p className="text-xs text-slate-500">Configure placement groups and settings</p>
+                <p className="text-xs text-slate-500">View location hierarchy</p>
               </div>
             </div>
-            <button
-              onClick={() => {
-                const defaultLocation = groups.find(g => g.name === '36355 - WAND Digital Demo');
-                if (defaultLocation) {
-                  handleAddChild(defaultLocation.id);
-                } else {
-                  handleAddRoot();
-                }
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Add Placement Group
-            </button>
           </div>
         </div>
       </nav>
@@ -233,10 +188,24 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Placement Groups</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Location Hierarchy</h2>
             <p className="text-slate-600">
-              Organize your store with hierarchical placement groups. Each group can inherit settings from its parent and define attributes like dayparts, meal stations, templates, and NFC URLs.
+              View your organization structure: Concepts contain Companies, and Companies contain Stores.
             </p>
+            <div className="mt-4 flex gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-600" />
+                <span className="text-slate-700">{concepts.length} Concepts</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-green-600" />
+                <span className="text-slate-700">{companies.length} Companies</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-amber-600" />
+                <span className="text-slate-700">{stores.length} Stores</span>
+              </div>
+            </div>
           </div>
 
           <div className="p-4">
@@ -244,23 +213,16 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               <div className="flex items-center justify-center py-12">
                 <div className="w-8 h-8 border-4 border-slate-200 border-t-amber-600 rounded-full animate-spin" />
               </div>
-            ) : groups.length === 0 ? (
+            ) : concepts.length === 0 ? (
               <div className="text-center py-12">
-                <FolderTree className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No placement groups yet</h3>
-                <p className="text-slate-600 mb-6">
-                  Get started by creating your first placement group
+                <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No location data</h3>
+                <p className="text-slate-600">
+                  Import location data to view the hierarchy
                 </p>
-                <button
-                  onClick={handleAddRoot}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Placement Group
-                </button>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {buildTree()}
               </div>
             )}
@@ -268,21 +230,6 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
         </div>
       </main>
 
-      {showModal && (
-        <PlacementGroupModal
-          group={editingGroup}
-          availableParents={groups.filter(g => !editingGroup || g.id !== editingGroup.id)}
-          onClose={() => {
-            setShowModal(false);
-            setEditingGroup(null);
-          }}
-          onSuccess={() => {
-            setShowModal(false);
-            setEditingGroup(null);
-            loadGroups();
-          }}
-        />
-      )}
     </div>
   );
 }

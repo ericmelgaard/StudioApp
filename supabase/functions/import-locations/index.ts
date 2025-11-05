@@ -89,7 +89,7 @@ Deno.serve(async (req: Request) => {
     const storesData = data.stores.map(s => ({
       id: s.key,
       name: s.name,
-      company_id: s.parentKey,
+      company_id: s.grandParentKey,
       privilege_level: s.privilegeLevel,
       parent_level: s.parentLevel,
       domain_level: s.domainLevel,
