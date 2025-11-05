@@ -62,9 +62,32 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
       alert(`Failed to load stores: ${storesResult.error.message}`);
     }
 
-    setConcepts(conceptsResult.data || []);
-    setCompanies(companiesResult.data || []);
-    setStores(storesResult.data || []);
+    const conceptsData = conceptsResult.data || [];
+    const companiesData = companiesResult.data || [];
+    const storesData = storesResult.data || [];
+
+    console.log('Loaded data:', {
+      concepts: conceptsData.length,
+      companies: companiesData.length,
+      stores: storesData.length
+    });
+
+    setConcepts(conceptsData);
+    setCompanies(companiesData);
+    setStores(storesData);
+
+    if (conceptsData.length > 0 && companiesData.length > 0) {
+      const firstConcept = conceptsData[0];
+      const firstCompany = companiesData.find(c => c.concept_id === firstConcept.id);
+
+      const newExpanded = new Set<string>();
+      newExpanded.add(`concept-${firstConcept.id}`);
+      if (firstCompany) {
+        newExpanded.add(`company-${firstCompany.id}`);
+      }
+      setExpandedNodes(newExpanded);
+    }
+
     setLoading(false);
   };
 
