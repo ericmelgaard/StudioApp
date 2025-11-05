@@ -32,6 +32,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   const [stores, setStores] = useState<StoreRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadLocationData();
