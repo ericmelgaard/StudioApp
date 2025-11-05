@@ -42,10 +42,17 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
   const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
   const [expandedCompany, setExpandedCompany] = useState<number | null>(null);
 
+  const [viewContext, setViewContext] = useState<{
+    concept?: Concept;
+    company?: Company;
+    store?: Store;
+  }>({});
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
+    setViewContext(selectedLocation || {});
     if (selectedLocation?.concept) {
       setExpandedConcept(selectedLocation.concept.id);
     }
@@ -69,7 +76,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
   };
 
   const filteredConcepts = concepts.filter(c => {
-    if (selectedLocation?.concept && c.id !== selectedLocation.concept.id) {
+    if (viewContext?.concept && c.id !== viewContext.concept.id) {
       return false;
     }
     return c.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -78,7 +85,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
   const getCompaniesForConcept = (conceptId: number) => {
     return companies.filter(c => {
       if (c.concept_id !== conceptId) return false;
-      if (selectedLocation?.company && c.id !== selectedLocation.company.id) {
+      if (viewContext?.company && c.id !== viewContext.company.id) {
         return false;
       }
       return true;
@@ -128,63 +135,60 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
         </div>
 
         <div className="p-4 border-b border-slate-200 space-y-3">
-          {(selectedLocation?.concept || selectedLocation?.company || selectedLocation?.store) && (
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => onSelect({})}
+              className="text-xs text-slate-500 hover:text-blue-600 hover:underline transition-colors"
+            >
+              ← Return to WAND Digital
+            </button>
+          </div>
+
+          {(viewContext?.concept || viewContext?.company || viewContext?.store) && (
             <div className="flex items-center gap-2 text-sm">
               <button
-                onClick={() => onSelect({})}
+                onClick={() => setViewContext({})}
                 className="text-blue-600 hover:text-blue-700 hover:underline"
               >
                 WAND Digital
               </button>
-              {selectedLocation?.concept && (
+              {viewContext?.concept && (
                 <>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
-                  {selectedLocation.company || selectedLocation.store ? (
+                  {viewContext.company || viewContext.store ? (
                     <button
-                      onClick={() => onSelect({ concept: selectedLocation.concept })}
+                      onClick={() => setViewContext({ concept: viewContext.concept })}
                       className="text-blue-600 hover:text-blue-700 hover:underline"
                     >
-                      {selectedLocation.concept.name}
+                      {viewContext.concept.name}
                     </button>
                   ) : (
-                    <span className="text-slate-700 font-medium">{selectedLocation.concept.name}</span>
+                    <span className="text-slate-700 font-medium">{viewContext.concept.name}</span>
                   )}
                 </>
               )}
-              {selectedLocation?.company && (
+              {viewContext?.company && (
                 <>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
-                  {selectedLocation.store ? (
+                  {viewContext.store ? (
                     <button
-                      onClick={() => onSelect({ concept: selectedLocation.concept, company: selectedLocation.company })}
+                      onClick={() => setViewContext({ concept: viewContext.concept, company: viewContext.company })}
                       className="text-blue-600 hover:text-blue-700 hover:underline"
                     >
-                      {selectedLocation.company.name}
+                      {viewContext.company.name}
                     </button>
                   ) : (
-                    <span className="text-slate-700 font-medium">{selectedLocation.company.name}</span>
+                    <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
                   )}
                 </>
               )}
-              {selectedLocation?.store && (
+              {viewContext?.store && (
                 <>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-700 font-medium">{selectedLocation.store.name}</span>
+                  <span className="text-slate-700 font-medium">{viewContext.store.name}</span>
                 </>
               )}
             </div>
-          )}
-
-          {!selectedLocation?.concept && !selectedLocation?.company && !selectedLocation?.store && (
-            <button
-              onClick={() => {
-                onSelect({});
-              }}
-              className="w-full flex items-center justify-center gap-2 p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors text-blue-700 font-medium"
-            >
-              <Layers className="w-5 h-5" />
-              <span>WAND Digital (All Locations)</span>
-            </button>
           )}
 
           <div className="relative">
@@ -199,7 +203,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 min-h-[400px]">
           {filteredConcepts.length === 0 ? (
             <div className="text-center py-8 text-slate-500">No locations found</div>
           ) : (
