@@ -93,7 +93,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           />
 
         {/* Navigation Menu */}
-        <nav className="border-t border-slate-200 overflow-y-auto py-4">
+        <nav className="flex-1 overflow-y-auto py-4">
           {/* Organization Section */}
           <div className="mb-6">
             <div className="px-4 mb-2">

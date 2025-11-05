@@ -112,7 +112,7 @@ export default function LocationBrowser({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-shrink-0 max-h-[45vh] overflow-y-auto border-b border-slate-200">
       <div className="p-4 border-b border-slate-200">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Location Browser</h3>
