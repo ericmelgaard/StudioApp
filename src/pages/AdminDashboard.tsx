@@ -16,6 +16,7 @@ import IntegrationSources from './IntegrationSources';
 import CoreAttributes from './CoreAttributes';
 import WandProducts from './WandProducts';
 import LocationSelector from '../components/LocationSelector';
+import Toast from '../components/Toast';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -45,6 +46,9 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -282,7 +286,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className={`flex-1 overflow-y-auto p-6 transition-opacity duration-300 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
         {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
@@ -343,15 +347,34 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <LocationSelector
           onClose={() => setShowLocationSelector(false)}
           onSelect={(location) => {
+            let locationName = '';
+
             if (Object.keys(location).length === 0) {
+              locationName = 'WAND Digital';
               setSelectedConcept(null);
               setSelectedCompany(null);
               setSelectedStore(null);
             } else {
-              if (location.concept) setSelectedConcept(location.concept);
-              if (location.company) setSelectedCompany(location.company);
-              if (location.store) setSelectedStore(location.store);
+              if (location.store) {
+                locationName = location.store.name;
+                setSelectedStore(location.store);
+              } else if (location.company) {
+                locationName = location.company.name;
+                setSelectedCompany(location.company);
+              } else if (location.concept) {
+                locationName = location.concept.name;
+                setSelectedConcept(location.concept);
+              }
+
+              if (location.concept && !selectedConcept) setSelectedConcept(location.concept);
+              if (location.company && !selectedCompany) setSelectedCompany(location.company);
             }
+
+            setToastMessage(`Taking you to ${locationName} now`);
+            setIsTransitioning(true);
+            setTimeout(() => {
+              setIsTransitioning(false);
+            }, 300);
             setShowLocationSelector(false);
           }}
           selectedLocation={{
@@ -359,6 +382,15 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             company: selectedCompany || undefined,
             store: selectedStore || undefined,
           }}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          onClose={() => setToastMessage(null)}
+          duration={2000}
         />
       )}
     </div>
