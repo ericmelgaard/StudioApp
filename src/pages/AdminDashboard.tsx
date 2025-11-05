@@ -84,16 +84,25 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {/* Left Sidebar Navigation */}
         <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col">
           {/* Location Selector Button */}
-          <div className="p-4 border-b border-slate-200 space-y-2">
+          <div className="p-4 border-b border-slate-200">
             <button
               onClick={() => setShowLocationSelector(true)}
-              className="w-full flex items-center gap-3 text-sm hover:bg-slate-100 p-3 rounded-lg transition-all border border-slate-200 bg-white"
+              className="w-full flex items-center gap-3 text-sm hover:bg-slate-100 p-3 rounded-lg transition-all border border-slate-200 bg-white group relative"
+              title={
+                selectedStore && selectedCompany && selectedConcept
+                  ? `${selectedConcept.name} > ${selectedCompany.name} > ${selectedStore.name}`
+                  : selectedCompany && selectedConcept
+                  ? `${selectedConcept.name} > ${selectedCompany.name}`
+                  : selectedConcept
+                  ? selectedConcept.name
+                  : 'WAND Digital - All Locations'
+              }
             >
               <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
               <div className="flex-1 text-left min-w-0">
                 <div className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">Location Context</div>
                 <div className="font-medium text-slate-900 truncate">
-                  {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : selectedConcept ? selectedConcept.name : 'WAND Library'}
+                  {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : selectedConcept ? selectedConcept.name : 'WAND Digital'}
                 </div>
                 {selectedStore && selectedCompany && (
                   <div className="text-xs text-slate-600 truncate">
@@ -103,20 +112,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               </div>
               <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
             </button>
-
-            {(selectedConcept || selectedCompany || selectedStore) && (
-              <button
-                onClick={() => {
-                  setSelectedConcept(null);
-                  setSelectedCompany(null);
-                  setSelectedStore(null);
-                }}
-                className="w-full flex items-center justify-center gap-2 text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 p-2 rounded transition-all"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Return to WAND Library</span>
-              </button>
-            )}
           </div>
 
         {/* Navigation Menu */}
@@ -348,9 +343,15 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <LocationSelector
           onClose={() => setShowLocationSelector(false)}
           onSelect={(location) => {
-            if (location.concept) setSelectedConcept(location.concept);
-            if (location.company) setSelectedCompany(location.company);
-            if (location.store) setSelectedStore(location.store);
+            if (Object.keys(location).length === 0) {
+              setSelectedConcept(null);
+              setSelectedCompany(null);
+              setSelectedStore(null);
+            } else {
+              if (location.concept) setSelectedConcept(location.concept);
+              if (location.company) setSelectedCompany(location.company);
+              if (location.store) setSelectedStore(location.store);
+            }
             setShowLocationSelector(false);
           }}
           selectedLocation={{
