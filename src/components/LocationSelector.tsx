@@ -46,6 +46,12 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
 
   useEffect(() => {
     loadData();
+    if (selectedLocation?.concept) {
+      setExpandedConcept(selectedLocation.concept.id);
+    }
+    if (selectedLocation?.company) {
+      setExpandedCompany(selectedLocation.company.id);
+    }
   }, []);
 
   const loadData = async () => {
@@ -62,12 +68,21 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
     setLoading(false);
   };
 
-  const filteredConcepts = concepts.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConcepts = concepts.filter(c => {
+    if (selectedLocation?.concept && c.id !== selectedLocation.concept.id) {
+      return false;
+    }
+    return c.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const getCompaniesForConcept = (conceptId: number) => {
-    return companies.filter(c => c.concept_id === conceptId);
+    return companies.filter(c => {
+      if (c.concept_id !== conceptId) return false;
+      if (selectedLocation?.company && c.id !== selectedLocation.company.id) {
+        return false;
+      }
+      return true;
+    });
   };
 
   const getStoresForCompany = (companyId: number) => {
@@ -113,15 +128,64 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
         </div>
 
         <div className="p-4 border-b border-slate-200 space-y-3">
-          <button
-            onClick={() => {
-              onSelect({});
-            }}
-            className="w-full flex items-center justify-center gap-2 p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors text-blue-700 font-medium"
-          >
-            <Layers className="w-5 h-5" />
-            <span>WAND Digital (All Locations)</span>
-          </button>
+          {(selectedLocation?.concept || selectedLocation?.company || selectedLocation?.store) && (
+            <div className="flex items-center gap-2 text-sm">
+              <button
+                onClick={() => onSelect({})}
+                className="text-blue-600 hover:text-blue-700 hover:underline"
+              >
+                WAND Digital
+              </button>
+              {selectedLocation?.concept && (
+                <>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  {selectedLocation.company || selectedLocation.store ? (
+                    <button
+                      onClick={() => onSelect({ concept: selectedLocation.concept })}
+                      className="text-blue-600 hover:text-blue-700 hover:underline"
+                    >
+                      {selectedLocation.concept.name}
+                    </button>
+                  ) : (
+                    <span className="text-slate-700 font-medium">{selectedLocation.concept.name}</span>
+                  )}
+                </>
+              )}
+              {selectedLocation?.company && (
+                <>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  {selectedLocation.store ? (
+                    <button
+                      onClick={() => onSelect({ concept: selectedLocation.concept, company: selectedLocation.company })}
+                      className="text-blue-600 hover:text-blue-700 hover:underline"
+                    >
+                      {selectedLocation.company.name}
+                    </button>
+                  ) : (
+                    <span className="text-slate-700 font-medium">{selectedLocation.company.name}</span>
+                  )}
+                </>
+              )}
+              {selectedLocation?.store && (
+                <>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-700 font-medium">{selectedLocation.store.name}</span>
+                </>
+              )}
+            </div>
+          )}
+
+          {!selectedLocation?.concept && !selectedLocation?.company && !selectedLocation?.store && (
+            <button
+              onClick={() => {
+                onSelect({});
+              }}
+              className="w-full flex items-center justify-center gap-2 p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors text-blue-700 font-medium"
+            >
+              <Layers className="w-5 h-5" />
+              <span>WAND Digital (All Locations)</span>
+            </button>
+          )}
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
