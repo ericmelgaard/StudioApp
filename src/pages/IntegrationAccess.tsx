@@ -1,16 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface IntegrationSource {
   id: string;
   name: string;
-  type: 'api' | 'spreadsheet' | 'json' | 'ftp';
-  status: 'active' | 'inactive';
-  syncFrequency: string;
-  lastSync: string;
-  endpoint?: string;
-  schedule?: string;
-  sourceLocation?: string;
+  type: string;
+  status: string;
+  config: {
+    endpoint?: string;
+    source_location?: string;
+    sync_frequency?: string;
+    schedule?: string;
+  };
+  last_sync_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface IntegrationDestination {
@@ -24,19 +29,6 @@ interface IntegrationDestination {
   schedule?: string;
 }
 
-const mockSources: IntegrationSource[] = [
-  {
-    id: '1',
-    name: 'Qu POS API',
-    type: 'api',
-    status: 'active',
-    syncFrequency: 'Every 15 minutes',
-    lastSync: '2 minutes ago',
-    endpoint: 'https://api.qu.com/v1',
-    schedule: 'Every 15 min during business hours',
-    sourceLocation: '100020'
-  }
-];
 
 const mockDestinations: IntegrationDestination[] = [
   {
@@ -77,13 +69,39 @@ const SYNC_FREQUENCIES = [
 ];
 
 export default function IntegrationAccess() {
-  const [sources] = useState<IntegrationSource[]>(mockSources);
+  const [sources, setSources] = useState<IntegrationSource[]>([]);
+  const [loading, setLoading] = useState(true);
   const [destinations] = useState<IntegrationDestination[]>(mockDestinations);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
   const [selectedType, setSelectedType] = useState<string>('api');
   const [selectedDestType, setSelectedDestType] = useState<string>('api');
   const [expandedDestinations, setExpandedDestinations] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    loadSources();
+  }, []);
+
+  const loadSources = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('integration_sources')
+      .select('*')
+      .order('name');
+    if (data) setSources(data);
+    setLoading(false);
+  };
+
+  const formatLastSync = (timestamp: string | null) => {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60);
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return `${diff} minutes ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)} hours ago`;
+    return date.toLocaleDateString();
+  };
 
   function getSourceIcon(type: string) {
     const sourceType = SOURCE_TYPES.find(t => t.value === type);
@@ -131,6 +149,11 @@ export default function IntegrationAccess() {
         </div>
 
         {/* Active Sources */}
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
         <div className="space-y-4">
           {sources.map(source => {
             const Icon = getSourceIcon(source.type);
@@ -151,19 +174,19 @@ export default function IntegrationAccess() {
                             <Link className="w-4 h-4" />
                             {SOURCE_TYPES.find(t => t.value === source.type)?.label}
                           </span>
-                          {source.endpoint && (
+                          {source.config?.endpoint && (
                             <span className="flex items-center gap-1">
                               <Server className="w-4 h-4" />
-                              {source.endpoint}
+                              {source.config.endpoint}
                             </span>
                           )}
                         </div>
-                        {source.sourceLocation && (
+                        {source.config?.source_location && (
                           <div className="flex items-center gap-2 mt-2">
                             <span className="flex items-center gap-1.5 text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                               <MapPin className="w-3.5 h-3.5" />
                               <span className="font-medium">Source Location:</span>
-                              <span className="font-mono">{source.sourceLocation}</span>
+                              <span className="font-mono">{source.config.source_location}</span>
                             </span>
                             <button
                               className="p-1.5 hover:bg-slate-100 rounded transition-colors group"
@@ -204,7 +227,7 @@ export default function IntegrationAccess() {
                       </div>
                       <div>
                         <div className="text-xs text-slate-500">Sync Frequency</div>
-                        <div className="text-sm font-medium text-slate-900">{source.syncFrequency}</div>
+                        <div className="text-sm font-medium text-slate-900">{source.config?.sync_frequency || 'Not configured'}</div>
                       </div>
                     </div>
 
@@ -214,7 +237,7 @@ export default function IntegrationAccess() {
                       </div>
                       <div>
                         <div className="text-xs text-slate-500">Last Sync</div>
-                        <div className="text-sm font-medium text-slate-900">{source.lastSync}</div>
+                        <div className="text-sm font-medium text-slate-900">{formatLastSync(source.last_sync_at)}</div>
                       </div>
                     </div>
 
@@ -224,7 +247,7 @@ export default function IntegrationAccess() {
                       </div>
                       <div>
                         <div className="text-xs text-slate-500">Schedule</div>
-                        <div className="text-sm font-medium text-slate-900">{source.schedule}</div>
+                        <div className="text-sm font-medium text-slate-900">{source.config?.schedule || 'Manual'}</div>
                       </div>
                     </div>
                   </div>
@@ -233,6 +256,7 @@ export default function IntegrationAccess() {
             );
           })}
         </div>
+        )}
 
         {/* Info Box */}
         <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-xl">

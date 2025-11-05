@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers, ImageIcon, Wand2, MapPin } from 'lucide-react';
+import { ChevronDown, Search, HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, ChevronLeft, ChevronRight, X, Layers, ImageIcon, Wand2, MapPin, Database, Sliders } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -12,6 +12,8 @@ import IntegrationAccess from './IntegrationAccess';
 import ResourceManagement from './ResourceManagement';
 import WandTemplateManager from './WandTemplateManager';
 import WandIntegrationMapper from './WandIntegrationMapper';
+import IntegrationSources from './IntegrationSources';
+import CoreAttributes from './CoreAttributes';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -44,7 +46,7 @@ interface Store {
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes'>('dashboard');
 
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -294,6 +296,24 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Wand</div>
             </div>
             <button
+              onClick={() => setCurrentView('integration-sources')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'integration-sources' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <Database className="w-5 h-5" />
+              <span className="text-sm font-medium">Integration Sources</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('core-attributes')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'core-attributes' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <Sliders className="w-5 h-5" />
+              <span className="text-sm font-medium">Core Attributes</span>
+            </button>
+            <button
               onClick={() => setCurrentView('wand-templates')}
               className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
                 currentView === 'wand-templates' ? 'bg-slate-100' : ''
@@ -370,6 +390,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'integration-sources' && <IntegrationSources onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'integration-dashboard' && (
