@@ -14,6 +14,7 @@ import WandTemplateManager from './WandTemplateManager';
 import WandIntegrationMapper from './WandIntegrationMapper';
 import IntegrationSources from './IntegrationSources';
 import CoreAttributes from './CoreAttributes';
+import WandProducts from './WandProducts';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -30,27 +31,19 @@ interface Company {
   concept_id: number;
 }
 
-interface LocationGroup {
-  id: number;
-  name: string;
-  company_id: number;
-}
-
 interface Store {
   id: number;
   name: string;
-  location_group_id: number | null;
   company_id: number;
 }
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products'>('dashboard');
 
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [groups, setGroups] = useState<LocationGroup[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
 
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
@@ -71,11 +64,9 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const loadData = async () => {
     const { data: conceptsData } = await supabase.from('concepts').select('*').order('name');
     const { data: companiesData } = await supabase.from('companies').select('*').order('name');
-    const { data: groupsData } = await supabase.from('location_groups').select('*').order('name');
 
     if (conceptsData) setConcepts(conceptsData);
     if (companiesData) setCompanies(companiesData);
-    if (groupsData) setGroups(groupsData);
   };
 
   const loadStoresForCompany = async (companyId: number) => {
@@ -296,6 +287,15 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Wand</div>
             </div>
             <button
+              onClick={() => setCurrentView('wand-products')}
+              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                currentView === 'wand-products' ? 'bg-slate-100' : ''
+              }`}
+            >
+              <Package className="w-5 h-5" />
+              <span className="text-sm font-medium">Product Library</span>
+            </button>
+            <button
               onClick={() => setCurrentView('integration-sources')}
               className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
                 currentView === 'integration-sources' ? 'bg-slate-100' : ''
@@ -390,6 +390,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'wand-products' && <WandProducts />}
         {currentView === 'integration-sources' && <IntegrationSources onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}

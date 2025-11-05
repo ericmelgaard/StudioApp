@@ -13,16 +13,10 @@ interface Company {
   concept_id: number;
 }
 
-interface LocationGroup {
-  id: number;
-  name: string;
-  company_id: number;
-}
-
 interface Store {
   id: number;
   name: string;
-  location_group_id: number;
+  company_id: number;
 }
 
 interface LocationSelectorProps {
@@ -30,13 +24,11 @@ interface LocationSelectorProps {
   onSelect: (location: {
     concept?: Concept;
     company?: Company;
-    group?: LocationGroup;
     store?: Store;
   }) => void;
   selectedLocation?: {
     concept?: Concept;
     company?: Company;
-    group?: LocationGroup;
     store?: Store;
   };
 }
@@ -45,12 +37,10 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
   const [searchQuery, setSearchQuery] = useState('');
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [groups, setGroups] = useState<LocationGroup[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
 
   const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
   const [expandedCompany, setExpandedCompany] = useState<number | null>(null);
-  const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -60,16 +50,14 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
 
   const loadData = async () => {
     setLoading(true);
-    const [conceptsData, companiesData, groupsData, storesData] = await Promise.all([
+    const [conceptsData, companiesData, storesData] = await Promise.all([
       supabase.from('concepts').select('*').order('name'),
       supabase.from('companies').select('*').order('name'),
-      supabase.from('location_groups').select('*').order('name'),
       supabase.from('stores').select('*').order('name'),
     ]);
 
     if (conceptsData.data) setConcepts(conceptsData.data);
     if (companiesData.data) setCompanies(companiesData.data);
-    if (groupsData.data) setGroups(groupsData.data);
     if (storesData.data) setStores(storesData.data);
     setLoading(false);
   };
@@ -82,12 +70,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
     return companies.filter(c => c.concept_id === conceptId);
   };
 
-  const getGroupsForCompany = (companyId: number) => {
-    return groups.filter(g => g.company_id === companyId);
-  };
-
-  const getStoresForGroup = (groupId: number) => {
-    return stores.filter(s => s.location_group_id === groupId);
+  const getStoresForCompany = (companyId: number) => {
+    return stores.filter(s => s.company_id === companyId);
   };
 
   const handleSelectConcept = (concept: Concept) => {
@@ -98,12 +82,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
     onSelect({ concept, company });
   };
 
-  const handleSelectGroup = (group: LocationGroup, company: Company, concept: Concept) => {
-    onSelect({ concept, company, group });
-  };
-
-  const handleSelectStore = (store: Store, group: LocationGroup, company: Company, concept: Concept) => {
-    onSelect({ concept, company, group, store });
+  const handleSelectStore = (store: Store, company: Company, concept: Concept) => {
+    onSelect({ concept, company, store });
   };
 
   if (loading) {
@@ -178,7 +158,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
                     {isExpanded && conceptCompanies.length > 0 && (
                       <div className="pl-8 pr-3 pb-2 space-y-1">
                         {conceptCompanies.map((company) => {
-                          const companyGroups = getGroupsForCompany(company.id);
+                          const companyStores = getStoresForCompany(company.id);
                           const isCompanyExpanded = expandedCompany === company.id;
 
                           return (
@@ -188,7 +168,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
                                   onClick={() => setExpandedCompany(isCompanyExpanded ? null : company.id)}
                                   className="p-1 hover:bg-slate-200 rounded transition-colors"
                                 >
-                                  {companyGroups.length > 0 && (
+                                  {companyStores.length > 0 && (
                                     isCompanyExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
                                   )}
                                 </button>
@@ -199,53 +179,21 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
                                 >
                                   {company.name}
                                 </button>
-                                <span className="text-xs text-slate-500">{companyGroups.length} groups</span>
+                                <span className="text-xs text-slate-500">{companyStores.length} stores</span>
                               </div>
 
-                              {isCompanyExpanded && companyGroups.length > 0 && (
+                              {isCompanyExpanded && companyStores.length > 0 && (
                                 <div className="pl-6 space-y-1">
-                                  {companyGroups.map((group) => {
-                                    const groupStores = getStoresForGroup(group.id);
-                                    const isGroupExpanded = expandedGroup === group.id;
-
-                                    return (
-                                      <div key={group.id} className="border-l-2 border-slate-200 pl-2">
-                                        <div className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded">
-                                          <button
-                                            onClick={() => setExpandedGroup(isGroupExpanded ? null : group.id)}
-                                            className="p-1 hover:bg-slate-200 rounded transition-colors"
-                                          >
-                                            {groupStores.length > 0 && (
-                                              isGroupExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
-                                            )}
-                                          </button>
-                                          <Layers className="w-4 h-4 text-amber-600" />
-                                          <button
-                                            onClick={() => handleSelectGroup(group, company, concept)}
-                                            className="flex-1 text-left text-slate-600 hover:text-blue-600 text-sm"
-                                          >
-                                            {group.name}
-                                          </button>
-                                          <span className="text-xs text-slate-500">{groupStores.length} stores</span>
-                                        </div>
-
-                                        {isGroupExpanded && groupStores.length > 0 && (
-                                          <div className="pl-6 space-y-1">
-                                            {groupStores.map((store) => (
-                                              <button
-                                                key={store.id}
-                                                onClick={() => handleSelectStore(store, group, company, concept)}
-                                                className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded w-full text-left"
-                                              >
-                                                <MapPin className="w-4 h-4 text-red-600" />
-                                                <span className="text-slate-600 hover:text-blue-600 text-sm">{store.name}</span>
-                                              </button>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
+                                  {companyStores.map((store) => (
+                                    <button
+                                      key={store.id}
+                                      onClick={() => handleSelectStore(store, company, concept)}
+                                      className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded w-full text-left"
+                                    >
+                                      <MapPin className="w-4 h-4 text-red-600" />
+                                      <span className="text-slate-600 hover:text-blue-600 text-sm">{store.name}</span>
+                                    </button>
+                                  ))}
                                 </div>
                               )}
                             </div>

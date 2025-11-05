@@ -40,21 +40,17 @@ async function importLocations() {
 
     data.concepts = deduplicateByKey(data.concepts);
     data.companies = deduplicateByKey(data.companies);
-    data.groups = deduplicateByKey(data.groups);
     data.stores = deduplicateByKey(data.stores);
 
     const conceptKeys = new Set(data.concepts.map(c => c.key));
     const companyKeys = new Set(data.companies.map(c => c.key));
-    const groupKeys = new Set(data.groups.map(g => g.key));
 
     data.companies = data.companies.filter(c => conceptKeys.has(c.parentKey));
-    data.groups = data.groups.filter(g => companyKeys.has(g.parentKey));
-    data.stores = data.stores.filter(s => groupKeys.has(s.parentKey) || companyKeys.has(s.parentKey));
+    data.stores = data.stores.filter(s => companyKeys.has(s.parentKey));
 
     console.log(`Found ${data.concepts.length} concepts`);
     console.log(`Found ${data.companies.length} companies`);
-    console.log(`Found ${data.groups.length} groups`);
-    console.log(`Found ${data.stores.length} stores`);
+    console.log(`Found ${data.stores.length} stores (groups ignored)`);
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
     const apiUrl = `${supabaseUrl}/functions/v1/import-locations`;

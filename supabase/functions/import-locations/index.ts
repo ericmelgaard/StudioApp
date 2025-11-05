@@ -25,16 +25,6 @@ interface LocationData {
     key: number;
     parentKey: number;
   }>;
-  groups: Array<{
-    name: string;
-    privilegeLevel: number;
-    parentLevel: number;
-    domainLevel: number;
-    groupTypeString: string;
-    key: number;
-    parentKey: number;
-    grandParentKey: number;
-  }>;
   stores: Array<{
     name: string;
     privilegeLevel: number;
@@ -96,41 +86,17 @@ Deno.serve(async (req: Request) => {
 
     if (companiesError) throw companiesError;
 
-    const groupsData = data.groups.map(g => ({
-      id: g.key,
-      name: g.name,
-      company_id: g.parentKey,
-      privilege_level: g.privilegeLevel,
-      parent_level: g.parentLevel,
-      domain_level: g.domainLevel,
-      group_type_string: g.groupTypeString,
-      parent_key: g.parentKey,
-      grand_parent_key: g.grandParentKey,
+    const storesData = data.stores.map(s => ({
+      id: s.key,
+      name: s.name,
+      company_id: s.parentKey,
+      privilege_level: s.privilegeLevel,
+      parent_level: s.parentLevel,
+      domain_level: s.domainLevel,
+      group_type_string: s.groupTypeString,
+      parent_key: s.parentKey,
+      grand_parent_key: s.grandParentKey,
     }));
-
-    const { error: groupsError } = await supabase
-      .from('location_groups')
-      .upsert(groupsData, { onConflict: 'id' });
-
-    if (groupsError) throw groupsError;
-
-    const companyIds = new Set(data.companies.map(c => c.key));
-    const storesData = data.stores.map(s => {
-      const parentIsCompany = companyIds.has(s.parentKey);
-      const companyId = parentIsCompany ? s.parentKey : (s.grandParentKey && companyIds.has(s.grandParentKey) ? s.grandParentKey : null);
-      return {
-        id: s.key,
-        name: s.name,
-        location_group_id: parentIsCompany ? null : s.parentKey,
-        company_id: companyId,
-        privilege_level: s.privilegeLevel,
-        parent_level: s.parentLevel,
-        domain_level: s.domainLevel,
-        group_type_string: s.groupTypeString,
-        parent_key: s.parentKey,
-        grand_parent_key: s.grandParentKey,
-      };
-    });
 
     const { error: storesError } = await supabase
       .from('stores')
@@ -144,7 +110,6 @@ Deno.serve(async (req: Request) => {
         imported: {
           concepts: conceptsData.length,
           companies: companiesData.length,
-          groups: groupsData.length,
           stores: storesData.length,
         },
       }),
