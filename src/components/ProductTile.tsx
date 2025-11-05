@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -18,7 +18,7 @@ interface ProductTileProps {
   onClick?: () => void;
 }
 
-export default function ProductTile({ product, onClick }: ProductTileProps) {
+export default memo(function ProductTile({ product, onClick }: ProductTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [pendingPublication, setPendingPublication] = useState<any>(null);
 
@@ -221,4 +221,4 @@ export default function ProductTile({ product, onClick }: ProductTileProps) {
       </div>
     </div>
   );
-}
+});

@@ -1,22 +1,23 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
-import SignageManagement from './SignageManagement';
-import ShelfLabelManagement from './ShelfLabelManagement';
-import ProductManagement from './ProductManagement';
-import IntegrationCatalog from './IntegrationCatalog';
-import IntegrationDashboard from './IntegrationDashboard';
-import IntegrationAccess from './IntegrationAccess';
-import ResourceManagement from './ResourceManagement';
-import WandTemplateManager from './WandTemplateManager';
-import WandIntegrationMapper from './WandIntegrationMapper';
-import IntegrationSources from './IntegrationSources';
-import CoreAttributes from './CoreAttributes';
-import WandProducts from './WandProducts';
-import LocationSelector from '../components/LocationSelector';
 import Toast from '../components/Toast';
+
+const SignageManagement = lazy(() => import('./SignageManagement'));
+const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
+const ProductManagement = lazy(() => import('./ProductManagement'));
+const IntegrationCatalog = lazy(() => import('./IntegrationCatalog'));
+const IntegrationDashboard = lazy(() => import('./IntegrationDashboard'));
+const IntegrationAccess = lazy(() => import('./IntegrationAccess'));
+const ResourceManagement = lazy(() => import('./ResourceManagement'));
+const WandTemplateManager = lazy(() => import('./WandTemplateManager'));
+const WandIntegrationMapper = lazy(() => import('./WandIntegrationMapper'));
+const IntegrationSources = lazy(() => import('./IntegrationSources'));
+const CoreAttributes = lazy(() => import('./CoreAttributes'));
+const WandProducts = lazy(() => import('./WandProducts'));
+const LocationSelector = lazy(() => import('../components/LocationSelector'));
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -286,22 +287,24 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-6">
-        {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'wand-products' && <WandProducts />}
-        {currentView === 'integration-sources' && <IntegrationSources onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
-        {currentView === 'integration-dashboard' && (
-          <IntegrationDashboard
-            onNavigate={(page) => setCurrentView(page === 'access' ? 'integration-access' : 'integration')}
-          />
-        )}
-        {currentView === 'integration-access' && <IntegrationAccess />}
-        {currentView === 'integration' && <IntegrationCatalog />}
+        <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+          {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'wand-products' && <WandProducts />}
+          {currentView === 'integration-sources' && <IntegrationSources onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'integration-dashboard' && (
+            <IntegrationDashboard
+              onNavigate={(page) => setCurrentView(page === 'access' ? 'integration-access' : 'integration')}
+            />
+          )}
+          {currentView === 'integration-access' && <IntegrationAccess />}
+          {currentView === 'integration' && <IntegrationCatalog />}
+        </Suspense>
 
         {currentView === 'dashboard' && (
           <div className="max-w-7xl mx-auto">
@@ -343,41 +346,43 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
       {/* Location Selector Modal */}
       {showLocationSelector && (
-        <LocationSelector
-          onClose={() => setShowLocationSelector(false)}
-          onSelect={(location) => {
-            let locationName = '';
+        <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div></div>}>
+          <LocationSelector
+            onClose={() => setShowLocationSelector(false)}
+            onSelect={(location) => {
+              let locationName = '';
 
-            if (Object.keys(location).length === 0) {
-              locationName = 'WAND Digital';
-              setSelectedConcept(null);
-              setSelectedCompany(null);
-              setSelectedStore(null);
-            } else {
-              if (location.store) {
-                locationName = location.store.name;
-                setSelectedStore(location.store);
-              } else if (location.company) {
-                locationName = location.company.name;
-                setSelectedCompany(location.company);
-              } else if (location.concept) {
-                locationName = location.concept.name;
-                setSelectedConcept(location.concept);
+              if (Object.keys(location).length === 0) {
+                locationName = 'WAND Digital';
+                setSelectedConcept(null);
+                setSelectedCompany(null);
+                setSelectedStore(null);
+              } else {
+                if (location.store) {
+                  locationName = location.store.name;
+                  setSelectedStore(location.store);
+                } else if (location.company) {
+                  locationName = location.company.name;
+                  setSelectedCompany(location.company);
+                } else if (location.concept) {
+                  locationName = location.concept.name;
+                  setSelectedConcept(location.concept);
+                }
+
+                if (location.concept && !selectedConcept) setSelectedConcept(location.concept);
+                if (location.company && !selectedCompany) setSelectedCompany(location.company);
               }
 
-              if (location.concept && !selectedConcept) setSelectedConcept(location.concept);
-              if (location.company && !selectedCompany) setSelectedCompany(location.company);
-            }
-
-            setToastMessage(`Taking you to ${locationName} now`);
-            setShowLocationSelector(false);
-          }}
-          selectedLocation={{
-            concept: selectedConcept || undefined,
-            company: selectedCompany || undefined,
-            store: selectedStore || undefined,
-          }}
-        />
+              setToastMessage(`Taking you to ${locationName} now`);
+              setShowLocationSelector(false);
+            }}
+            selectedLocation={{
+              concept: selectedConcept || undefined,
+              company: selectedCompany || undefined,
+              store: selectedStore || undefined,
+            }}
+          />
+        </Suspense>
       )}
 
       {/* Toast Notification */}

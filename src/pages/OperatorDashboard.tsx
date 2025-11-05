@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, ChevronDown, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
-import SignageManagement from './SignageManagement';
-import ShelfLabelManagement from './ShelfLabelManagement';
-import StoreManagement from './StoreManagement';
-import ProductManagement from './ProductManagement';
 import { supabase } from '../lib/supabase';
+
+const SignageManagement = lazy(() => import('./SignageManagement'));
+const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
+const StoreManagement = lazy(() => import('./StoreManagement'));
+const ProductManagement = lazy(() => import('./ProductManagement'));
 
 type DashboardView = 'home' | 'signage' | 'labels' | 'store' | 'products';
 
@@ -369,19 +370,35 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   };
 
   if (currentView === 'signage') {
-    return <SignageManagement onBack={() => setCurrentView('home')} />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+        <SignageManagement onBack={() => setCurrentView('home')} />
+      </Suspense>
+    );
   }
 
   if (currentView === 'labels') {
-    return <ShelfLabelManagement onBack={() => setCurrentView('home')} />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+        <ShelfLabelManagement onBack={() => setCurrentView('home')} />
+      </Suspense>
+    );
   }
 
   if (currentView === 'store') {
-    return <StoreManagement onBack={() => setCurrentView('home')} />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+        <StoreManagement onBack={() => setCurrentView('home')} />
+      </Suspense>
+    );
   }
 
   if (currentView === 'products') {
-    return <ProductManagement onBack={() => setCurrentView('home')} />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+        <ProductManagement onBack={() => setCurrentView('home')} />
+      </Suspense>
+    );
   }
 
   return (

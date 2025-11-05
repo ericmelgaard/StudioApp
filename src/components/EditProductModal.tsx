@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
@@ -45,7 +45,7 @@ interface OptionsEditorProps {
   onChange: (options: Option[]) => void;
 }
 
-function OptionsEditor({ options, onChange }: OptionsEditorProps) {
+const OptionsEditor = memo(function OptionsEditor({ options, onChange }: OptionsEditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkingOptionId, setLinkingOptionId] = useState<string | null>(null);
   const [currentLink, setCurrentLink] = useState<FieldLinkData | null>(null);
@@ -198,7 +198,7 @@ function OptionsEditor({ options, onChange }: OptionsEditorProps) {
       />
     </div>
   );
-}
+});
 
 export default function EditProductModal({ isOpen, onClose, product, onSuccess }: EditProductModalProps) {
   const [name, setName] = useState('');
