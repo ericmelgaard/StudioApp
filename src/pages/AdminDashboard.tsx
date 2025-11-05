@@ -15,7 +15,7 @@ import WandIntegrationMapper from './WandIntegrationMapper';
 import IntegrationSources from './IntegrationSources';
 import CoreAttributes from './CoreAttributes';
 import WandProducts from './WandProducts';
-import LocationBrowser from '../components/LocationBrowser';
+import LocationSelector from '../components/LocationSelector';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -39,6 +39,7 @@ interface Store {
 }
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products'>('dashboard');
 
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
@@ -82,15 +83,27 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Left Sidebar Navigation */}
         <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col">
-          {/* Location Browser */}
-          <LocationBrowser
-            selectedConcept={selectedConcept}
-            selectedCompany={selectedCompany}
-            selectedStore={selectedStore}
-            onSelectConcept={setSelectedConcept}
-            onSelectCompany={setSelectedCompany}
-            onSelectStore={setSelectedStore}
-          />
+          {/* Location Selector Button */}
+          <div className="p-4 border-b border-slate-200">
+            <button
+              onClick={() => setShowLocationSelector(true)}
+              className="w-full flex items-center gap-3 text-sm hover:bg-slate-100 p-3 rounded-lg transition-all border border-slate-200 bg-white"
+            >
+              <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
+              <div className="flex-1 text-left min-w-0">
+                <div className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">Location Context</div>
+                <div className="font-medium text-slate-900 truncate">
+                  {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : selectedConcept ? selectedConcept.name : 'All Locations'}
+                </div>
+                {selectedStore && selectedCompany && (
+                  <div className="text-xs text-slate-600 truncate">
+                    {selectedCompany.name}
+                  </div>
+                )}
+              </div>
+              <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            </button>
+          </div>
 
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4">
@@ -315,6 +328,24 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         )}
       </main>
       </div>
+
+      {/* Location Selector Modal */}
+      {showLocationSelector && (
+        <LocationSelector
+          onClose={() => setShowLocationSelector(false)}
+          onSelect={(location) => {
+            if (location.concept) setSelectedConcept(location.concept);
+            if (location.company) setSelectedCompany(location.company);
+            if (location.store) setSelectedStore(location.store);
+            setShowLocationSelector(false);
+          }}
+          selectedLocation={{
+            concept: selectedConcept || undefined,
+            company: selectedCompany || undefined,
+            store: selectedStore || undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
