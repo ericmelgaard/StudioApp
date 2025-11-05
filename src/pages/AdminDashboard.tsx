@@ -430,7 +430,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
               <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-blue-800">
-                  <strong>Data loaded:</strong> {concepts.length} concepts, {companies.length} companies, {groups.length} groups
+                  <strong>Data loaded:</strong> {concepts.length} concepts, {companies.length} companies
                   {selectedCompany && stores.length > 0 && <span>, {stores.length} stores in {selectedCompany.name}</span>}
                 </p>
               </div>
