@@ -25,6 +25,16 @@ interface LocationData {
     key: number;
     parentKey: number;
   }>;
+  groups: Array<{
+    name: string;
+    privilegeLevel: number;
+    parentLevel: number;
+    domainLevel: number;
+    groupTypeString: string;
+    key: number;
+    parentKey: number;
+    grandParentKey: number;
+  }>;
   stores: Array<{
     name: string;
     privilegeLevel: number;
@@ -87,18 +97,33 @@ Deno.serve(async (req: Request) => {
     if (companiesError) throw companiesError;
 
     const validCompanyIds = new Set(companiesData.map(c => c.id));
+    const groupToCompany = new Map();
+    data.groups.forEach(g => {
+      groupToCompany.set(g.key, g.parentKey);
+    });
 
-    const storesData = data.stores.map(s => ({
-      id: s.key,
-      name: s.name,
-      company_id: validCompanyIds.has(s.grandParentKey) ? s.grandParentKey : null,
-      privilege_level: s.privilegeLevel,
-      parent_level: s.parentLevel,
-      domain_level: s.domainLevel,
-      group_type_string: s.groupTypeString,
-      parent_key: s.parentKey,
-      grand_parent_key: s.grandParentKey,
-    }));
+    const storesData = data.stores.map(s => {
+      let companyId = null;
+
+      const companyViaGroup = groupToCompany.get(s.parentKey);
+      if (companyViaGroup && validCompanyIds.has(companyViaGroup)) {
+        companyId = companyViaGroup;
+      } else if (validCompanyIds.has(s.parentKey)) {
+        companyId = s.parentKey;
+      }
+
+      return {
+        id: s.key,
+        name: s.name,
+        company_id: companyId,
+        privilege_level: s.privilegeLevel,
+        parent_level: s.parentLevel,
+        domain_level: s.domainLevel,
+        group_type_string: s.groupTypeString,
+        parent_key: s.parentKey,
+        grand_parent_key: s.grandParentKey,
+      };
+    });
 
     const { error: storesError } = await supabase
       .from('stores')
