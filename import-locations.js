@@ -43,14 +43,12 @@ async function importLocations() {
     data.stores = deduplicateByKey(data.stores);
 
     const conceptKeys = new Set(data.concepts.map(c => c.key));
-    const companyKeys = new Set(data.companies.map(c => c.key));
 
     data.companies = data.companies.filter(c => conceptKeys.has(c.parentKey));
-    data.stores = data.stores.filter(s => companyKeys.has(s.parentKey));
 
     console.log(`Found ${data.concepts.length} concepts`);
     console.log(`Found ${data.companies.length} companies`);
-    console.log(`Found ${data.stores.length} stores (groups ignored)`);
+    console.log(`Found ${data.stores.length} stores`);
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
     const apiUrl = `${supabaseUrl}/functions/v1/import-locations`;
