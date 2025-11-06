@@ -104,7 +104,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             >
               <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
               <div className="flex-1 text-left min-w-0">
-                <div className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">Location Context</div>
                 <div className="font-medium text-slate-900 truncate">
                   {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : selectedConcept ? selectedConcept.name : 'WAND Digital'}
                 </div>
@@ -358,19 +357,17 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 setSelectedCompany(null);
                 setSelectedStore(null);
               } else {
+                setSelectedConcept(location.concept || null);
+                setSelectedCompany(location.company || null);
+                setSelectedStore(location.store || null);
+
                 if (location.store) {
                   locationName = location.store.name;
-                  setSelectedStore(location.store);
                 } else if (location.company) {
                   locationName = location.company.name;
-                  setSelectedCompany(location.company);
                 } else if (location.concept) {
                   locationName = location.concept.name;
-                  setSelectedConcept(location.concept);
                 }
-
-                if (location.concept && !selectedConcept) setSelectedConcept(location.concept);
-                if (location.company && !selectedCompany) setSelectedCompany(location.company);
               }
 
               setToastMessage(`Taking you to ${locationName} now`);
