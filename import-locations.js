@@ -68,6 +68,8 @@ async function importLocations() {
     const result = await response.json();
 
     if (!response.ok) {
+      console.error('Response status:', response.status);
+      console.error('Response data:', JSON.stringify(result, null, 2));
       throw new Error(result.error || 'Import failed');
     }
 
