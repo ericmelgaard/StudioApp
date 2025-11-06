@@ -105,11 +105,13 @@ Deno.serve(async (req: Request) => {
     const storesData = data.stores.map(s => {
       let companyId = null;
 
-      const companyViaGroup = groupToCompany.get(s.parentKey);
-      if (companyViaGroup && validCompanyIds.has(companyViaGroup)) {
-        companyId = companyViaGroup;
-      } else if (validCompanyIds.has(s.parentKey)) {
+      if (validCompanyIds.has(s.parentKey)) {
         companyId = s.parentKey;
+      } else if (groupToCompany.has(s.parentKey)) {
+        const companyViaGroup = groupToCompany.get(s.parentKey);
+        if (companyViaGroup && validCompanyIds.has(companyViaGroup)) {
+          companyId = companyViaGroup;
+        }
       }
 
       return {
