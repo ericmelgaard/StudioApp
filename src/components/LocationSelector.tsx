@@ -63,17 +63,41 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
 
   const loadData = async () => {
     setLoading(true);
-    console.log('LocationSelector: Loading with LIMIT 5000 - Version 2');
-    const [conceptsData, companiesData, storesData] = await Promise.all([
-      supabase.from('concepts').select('*').order('name'),
-      supabase.from('companies').select('*').order('name'),
-      supabase.from('stores').select('*').order('name').limit(5000),
-    ]);
+    console.log('LocationSelector: Loading all stores with pagination');
 
-    console.log('LocationSelector: Loaded stores count:', storesData.data?.length);
+    const conceptsPromise = supabase.from('concepts').select('*').order('name');
+    const companiesPromise = supabase.from('companies').select('*').order('name');
+
+    let allStores: Store[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .order('name')
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        console.error('Error loading stores:', error);
+        hasMore = false;
+      } else if (data) {
+        allStores = [...allStores, ...data];
+        hasMore = data.length === pageSize;
+        from += pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    const [conceptsData, companiesData] = await Promise.all([conceptsPromise, companiesPromise]);
+
+    console.log('LocationSelector: Loaded stores count:', allStores.length);
     if (conceptsData.data) setConcepts(conceptsData.data);
     if (companiesData.data) setCompanies(companiesData.data);
-    if (storesData.data) setStores(storesData.data);
+    setStores(allStores);
     setLoading(false);
   };
 
