@@ -101,12 +101,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
     setLoading(false);
   };
 
-  const filteredConcepts = concepts.filter(c => {
-    if (viewContext?.concept && c.id !== viewContext.concept.id) {
-      return false;
-    }
-    return c.name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const searchLower = searchQuery.toLowerCase();
 
   const getCompaniesForConcept = (conceptId: number) => {
     return companies.filter(c => {
@@ -114,22 +109,47 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
       if (viewContext?.company && c.id !== viewContext.company.id) {
         return false;
       }
+      if (searchQuery && !c.name.toLowerCase().includes(searchLower)) {
+        const companyStores = stores.filter(s => s.company_id === c.id);
+        const hasMatchingStore = companyStores.some(s => s.name.toLowerCase().includes(searchLower));
+        if (!hasMatchingStore) return false;
+      }
       return true;
     });
   };
 
   const getStoresForCompany = (companyId: number) => {
-    const filtered = stores.filter(s => s.company_id === companyId);
-    if (companyId === 2437) {
-      console.log('Debugging company 2437:', {
-        companyId,
-        totalStores: stores.length,
-        filtered: filtered,
-        sampleStores: stores.slice(0, 5).map(s => ({ id: s.id, name: s.name, company_id: s.company_id }))
-      });
-    }
+    const filtered = stores.filter(s => {
+      if (s.company_id !== companyId) return false;
+      if (searchQuery && !s.name.toLowerCase().includes(searchLower)) {
+        return false;
+      }
+      return true;
+    });
     return filtered;
   };
+
+  const filteredConcepts = concepts.filter(c => {
+    if (viewContext?.concept && c.id !== viewContext.concept.id) {
+      return false;
+    }
+    if (searchQuery) {
+      const conceptMatches = c.name.toLowerCase().includes(searchLower);
+      if (conceptMatches) return true;
+
+      const conceptCompanies = companies.filter(comp => comp.concept_id === c.id);
+      const hasMatchingCompany = conceptCompanies.some(comp => {
+        const companyMatches = comp.name.toLowerCase().includes(searchLower);
+        if (companyMatches) return true;
+
+        const companyStores = stores.filter(s => s.company_id === comp.id);
+        return companyStores.some(s => s.name.toLowerCase().includes(searchLower));
+      });
+
+      if (!hasMatchingCompany) return false;
+    }
+    return true;
+  });
 
   const handleSelectConcept = (concept: Concept) => {
     onSelect({ concept });
@@ -230,7 +250,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search concepts..."
+              placeholder="Search concepts, companies, or stores..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
