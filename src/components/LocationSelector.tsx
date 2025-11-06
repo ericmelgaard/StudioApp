@@ -66,7 +66,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
     const [conceptsData, companiesData, storesData] = await Promise.all([
       supabase.from('concepts').select('*').order('name'),
       supabase.from('companies').select('*').order('name'),
-      supabase.from('stores').select('*').order('name'),
+      supabase.from('stores').select('*').order('name').limit(5000),
     ]);
 
     if (conceptsData.data) setConcepts(conceptsData.data);
