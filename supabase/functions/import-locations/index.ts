@@ -86,10 +86,12 @@ Deno.serve(async (req: Request) => {
 
     if (companiesError) throw companiesError;
 
+    const validCompanyIds = new Set(companiesData.map(c => c.id));
+
     const storesData = data.stores.map(s => ({
       id: s.key,
       name: s.name,
-      company_id: s.grandParentKey,
+      company_id: validCompanyIds.has(s.grandParentKey) ? s.grandParentKey : null,
       privilege_level: s.privilegeLevel,
       parent_level: s.parentLevel,
       domain_level: s.domainLevel,
