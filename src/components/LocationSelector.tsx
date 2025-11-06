@@ -93,7 +93,16 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
   };
 
   const getStoresForCompany = (companyId: number) => {
-    return stores.filter(s => s.company_id === companyId);
+    const filtered = stores.filter(s => s.company_id === companyId);
+    if (companyId === 2437) {
+      console.log('Debugging company 2437:', {
+        companyId,
+        totalStores: stores.length,
+        filtered: filtered,
+        sampleStores: stores.slice(0, 5).map(s => ({ id: s.id, name: s.name, company_id: s.company_id }))
+      });
+    }
+    return filtered;
   };
 
   const handleSelectConcept = (concept: Concept) => {
