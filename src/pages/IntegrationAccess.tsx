@@ -77,7 +77,7 @@ const SYNC_FREQUENCIES = [
 ];
 
 export default function IntegrationAccess() {
-  const { selectedConcept, selectedCompany, selectedStore } = useLocation();
+  const { location } = useLocation();
   const [sourceConfigs, setSourceConfigs] = useState<IntegrationSourceConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [destinations] = useState<IntegrationDestination[]>(mockDestinations);
@@ -85,7 +85,7 @@ export default function IntegrationAccess() {
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
   const [expandedDestinations, setExpandedDestinations] = useState<Record<string, boolean>>({});
 
-  const hasLocation = selectedConcept || selectedCompany || selectedStore;
+  const hasLocation = location.concept || location.company || location.store;
 
   useEffect(() => {
     loadSourceConfigs();
@@ -469,9 +469,9 @@ export default function IntegrationAccess() {
             setShowAddModal(false);
             loadSourceConfigs();
           }}
-          conceptId={selectedConcept?.id}
-          companyId={selectedCompany?.id}
-          storeId={selectedStore?.id}
+          conceptId={location.concept?.id}
+          companyId={location.company?.id}
+          storeId={location.store?.id}
         />
       )}
 
