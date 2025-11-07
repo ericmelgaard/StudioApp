@@ -22,6 +22,7 @@ interface PlacementGroup {
 interface PlacementGroupModalProps {
   group: PlacementGroup | null;
   availableParents: PlacementGroup[];
+  storeId?: number | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -29,7 +30,7 @@ interface PlacementGroupModalProps {
 const DAYPART_TYPES = ['breakfast', 'lunch', 'dinner', 'late_night', 'dark_hours'];
 const DEVICE_SIZES = ['4.2"', '5"', '7"'];
 
-export default function PlacementGroupModal({ group, availableParents, onClose, onSuccess }: PlacementGroupModalProps) {
+export default function PlacementGroupModal({ group, availableParents, storeId, onClose, onSuccess }: PlacementGroupModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -76,6 +77,7 @@ export default function PlacementGroupModal({ group, availableParents, onClose, 
         meal_stations: mealStations,
         templates: templates,
         nfc_url: formData.nfc_url || null,
+        ...(!group?.id && storeId && { store_id: storeId }), // Set store_id for new placements
         ...(isStoreRoot && {
           address: formData.address || null,
           timezone: formData.timezone || 'America/New_York',

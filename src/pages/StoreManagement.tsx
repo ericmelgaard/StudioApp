@@ -468,6 +468,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
         <PlacementGroupModal
           group={selectedGroup}
           availableParents={availableParents}
+          storeId={selectedStore?.id}
           onClose={() => {
             setShowModal(false);
             setSelectedGroup(null);
