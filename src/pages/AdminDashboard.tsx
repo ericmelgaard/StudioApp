@@ -50,25 +50,21 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('adminCollapsedSections');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
+  const [expandedSection, setExpandedSection] = useState<string | null>(() => {
+    const saved = localStorage.getItem('adminExpandedSection');
+    return saved || null;
   });
 
   useEffect(() => {
-    localStorage.setItem('adminCollapsedSections', JSON.stringify(Array.from(collapsedSections)));
-  }, [collapsedSections]);
+    if (expandedSection) {
+      localStorage.setItem('adminExpandedSection', expandedSection);
+    } else {
+      localStorage.removeItem('adminExpandedSection');
+    }
+  }, [expandedSection]);
 
   const toggleSection = (sectionId: string) => {
-    setCollapsedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
-      } else {
-        newSet.add(sectionId);
-      }
-      return newSet;
-    });
+    setExpandedSection(prev => prev === sectionId ? null : sectionId);
   };
 
   return (
@@ -149,13 +145,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Organization</div>
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  collapsedSections.has('organization') ? '-rotate-90' : ''
+                  expandedSection !== 'organization' ? '-rotate-90' : ''
                 }`}
               />
             </button>
             <div
               className={`overflow-hidden transition-all duration-200 ${
-                collapsedSections.has('organization') ? 'max-h-0' : 'max-h-96'
+                expandedSection !== 'organization' ? 'max-h-0' : 'max-h-96'
               }`}
             >
               <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
@@ -182,13 +178,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Content</div>
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  collapsedSections.has('content') ? '-rotate-90' : ''
+                  expandedSection !== 'content' ? '-rotate-90' : ''
                 }`}
               />
             </button>
             <div
               className={`overflow-hidden transition-all duration-200 ${
-                collapsedSections.has('content') ? 'max-h-0' : 'max-h-96'
+                expandedSection !== 'content' ? 'max-h-0' : 'max-h-96'
               }`}
             >
               <button
@@ -239,13 +235,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Wand</div>
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  collapsedSections.has('wand') ? '-rotate-90' : ''
+                  expandedSection !== 'wand' ? '-rotate-90' : ''
                 }`}
               />
             </button>
             <div
               className={`overflow-hidden transition-all duration-200 ${
-                collapsedSections.has('wand') ? 'max-h-0' : 'max-h-96'
+                expandedSection !== 'wand' ? 'max-h-0' : 'max-h-96'
               }`}
             >
               <button
@@ -305,13 +301,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Integration</div>
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  collapsedSections.has('integration') ? '-rotate-90' : ''
+                  expandedSection !== 'integration' ? '-rotate-90' : ''
                 }`}
               />
             </button>
             <div
               className={`overflow-hidden transition-all duration-200 ${
-                collapsedSections.has('integration') ? 'max-h-0' : 'max-h-96'
+                expandedSection !== 'integration' ? 'max-h-0' : 'max-h-96'
               }`}
             >
               <button
@@ -353,13 +349,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">System</div>
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  collapsedSections.has('system') ? '-rotate-90' : ''
+                  expandedSection !== 'system' ? '-rotate-90' : ''
                 }`}
               />
             </button>
             <div
               className={`overflow-hidden transition-all duration-200 ${
-                collapsedSections.has('system') ? 'max-h-0' : 'max-h-96'
+                expandedSection !== 'system' ? 'max-h-0' : 'max-h-96'
               }`}
             >
               <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
