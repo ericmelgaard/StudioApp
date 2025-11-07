@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, ChevronDown, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
@@ -23,18 +23,16 @@ interface DashboardCard {
   order: number;
 }
 
-const STORE_LOCATIONS = [
-  'Admiral Food Market - Portland, OR',
-  'Admiral Food Market - Seattle, WA',
-  'Admiral Food Market - San Francisco, CA',
-  'Admiral Food Market - Los Angeles, CA',
-  'Admiral Food Market - San Diego, CA',
-  'Admiral Food Market - Denver, CO',
-];
+// Hardcoded for demo/operator view
+const OPERATOR_COMPANY = {
+  id: 2156,
+  name: 'American Airlines Lounges',
+  concept_id: 316,
+  concept_name: 'Compass USA: Eurest',
+};
 
 export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
-  const [selectedStore, setSelectedStore] = useState(STORE_LOCATIONS[0]);
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -421,27 +419,19 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
                   </div>
                 </div>
               </div>
-              <div className="relative group">
-                <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
-                  <Store className="w-4 h-4 text-slate-600" />
-                  <span className="text-sm font-medium text-slate-900 max-w-xs truncate">
-                    {selectedStore}
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg border border-slate-200">
+                <Store className="w-4 h-4 text-slate-600" />
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-slate-900">
+                    {OPERATOR_COMPANY.name}
                   </span>
-                  <ChevronDown className="w-4 h-4 text-slate-500" />
-                </button>
-                <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                  {STORE_LOCATIONS.map((location) => (
-                    <button
-                      key={location}
-                      onClick={() => setSelectedStore(location)}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
-                        selectedStore === location ? 'bg-green-50 text-green-700 font-medium' : 'text-slate-700'
-                      }`}
-                    >
-                      {location}
-                    </button>
-                  ))}
+                  <span className="text-xs text-slate-500">
+                    {OPERATOR_COMPANY.concept_name}
+                  </span>
                 </div>
+                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                  Demo
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-1">

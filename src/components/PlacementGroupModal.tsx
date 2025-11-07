@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { X, AlertCircle, Clock, Utensils, Palette, Nfc } from 'lucide-react';
+import { X, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface PlacementGroup {
@@ -7,10 +7,16 @@ interface PlacementGroup {
   name?: string;
   description?: string | null;
   parent_id?: string | null;
+  store_id?: number | null;
+  is_store_root?: boolean;
   daypart_hours?: Record<string, any>;
   meal_stations?: string[];
   templates?: Record<string, any>;
   nfc_url?: string | null;
+  address?: string | null;
+  timezone?: string;
+  phone?: string | null;
+  operating_hours?: Record<string, any>;
 }
 
 interface PlacementGroupModalProps {
@@ -31,6 +37,9 @@ export default function PlacementGroupModal({ group, availableParents, onClose, 
     description: group?.description || '',
     parent_id: group?.parent_id || '',
     nfc_url: group?.nfc_url || '',
+    address: group?.address || '',
+    timezone: group?.timezone || 'America/New_York',
+    phone: group?.phone || '',
   });
 
   const [daypartHours, setDaypartHours] = useState<Record<string, { start: string; end: string }>>(
@@ -45,7 +54,13 @@ export default function PlacementGroupModal({ group, availableParents, onClose, 
     group?.templates || {}
   );
 
+  const [operatingHours, setOperatingHours] = useState<Record<string, { open: string; close: string }>>(
+    group?.operating_hours || {}
+  );
+
   const [newMealStation, setNewMealStation] = useState('');
+
+  const isStoreRoot = group?.is_store_root || false;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -61,6 +76,12 @@ export default function PlacementGroupModal({ group, availableParents, onClose, 
         meal_stations: mealStations,
         templates: templates,
         nfc_url: formData.nfc_url || null,
+        ...(isStoreRoot && {
+          address: formData.address || null,
+          timezone: formData.timezone || 'America/New_York',
+          phone: formData.phone || null,
+          operating_hours: operatingHours,
+        }),
       };
 
       if (group?.id) {
@@ -178,23 +199,118 @@ export default function PlacementGroupModal({ group, availableParents, onClose, 
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Parent Group
-            </label>
-            <select
-              value={formData.parent_id}
-              onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-            >
-              <option value="">None (Root Level)</option>
-              {availableParents.map((parent) => (
-                <option key={parent.id} value={parent.id}>
-                  {parent.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!isStoreRoot && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Parent Group
+              </label>
+              <select
+                value={formData.parent_id}
+                onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              >
+                <option value="">None (Root Level)</option>
+                {availableParents.map((parent) => (
+                  <option key={parent.id} value={parent.id}>
+                    {parent.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {isStoreRoot && (
+            <>
+              <div className="border-t border-slate-200 pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <MapPin className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-lg font-semibold text-slate-900">Store Location</h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      placeholder="123 Main St, City, State 12345"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <Phone className="w-4 h-4 inline mr-1" />
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        placeholder="(555) 123-4567"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <Globe className="w-4 h-4 inline mr-1" />
+                        Timezone
+                      </label>
+                      <select
+                        value={formData.timezone}
+                        onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      >
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="America/Chicago">Central Time</option>
+                        <option value="America/Denver">Mountain Time</option>
+                        <option value="America/Los_Angeles">Pacific Time</option>
+                        <option value="America/Phoenix">Arizona Time</option>
+                        <option value="America/Anchorage">Alaska Time</option>
+                        <option value="Pacific/Honolulu">Hawaii Time</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-lg font-semibold text-slate-900">Operating Hours</h3>
+                </div>
+                <div className="space-y-2">
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                    <div key={day} className="grid grid-cols-3 gap-3 items-center">
+                      <label className="text-sm font-medium text-slate-700">{day}</label>
+                      <input
+                        type="time"
+                        value={operatingHours[day]?.open || ''}
+                        onChange={(e) => setOperatingHours({
+                          ...operatingHours,
+                          [day]: { ...operatingHours[day], open: e.target.value, close: operatingHours[day]?.close || '' }
+                        })}
+                        className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        placeholder="Open"
+                      />
+                      <input
+                        type="time"
+                        value={operatingHours[day]?.close || ''}
+                        onChange={(e) => setOperatingHours({
+                          ...operatingHours,
+                          [day]: { ...operatingHours[day], open: operatingHours[day]?.open || '', close: e.target.value }
+                        })}
+                        className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        placeholder="Close"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="border-t border-slate-200 pt-6">
             <div className="flex items-center gap-2 mb-4">
