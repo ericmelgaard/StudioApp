@@ -1,21 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import AddWandIntegrationModal from '../components/AddWandIntegrationModal';
 
-interface IntegrationSource {
+interface IntegrationSourceConfig {
   id: string;
-  name: string;
-  type: string;
-  status: string;
-  config: {
-    endpoint?: string;
-    source_location?: string;
-    sync_frequency?: string;
-    schedule?: string;
-  };
+  config_name: string;
+  wand_source_id: string;
+  application_level: 'concept' | 'company' | 'site';
+  concept_id: number | null;
+  company_id: number | null;
+  site_id: number | null;
+  config_params: Record<string, any>;
+  sync_frequency_minutes: number | null;
+  is_active: boolean;
   last_sync_at: string | null;
   created_at: string;
   updated_at: string;
+  wand_integration_sources?: {
+    name: string;
+    integration_type: string;
+    description: string;
+  };
 }
 
 interface IntegrationDestination {
@@ -69,26 +75,31 @@ const SYNC_FREQUENCIES = [
 ];
 
 export default function IntegrationAccess() {
-  const [sources, setSources] = useState<IntegrationSource[]>([]);
+  const [sourceConfigs, setSourceConfigs] = useState<IntegrationSourceConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [destinations] = useState<IntegrationDestination[]>(mockDestinations);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
-  const [selectedType, setSelectedType] = useState<string>('api');
-  const [selectedDestType, setSelectedDestType] = useState<string>('api');
   const [expandedDestinations, setExpandedDestinations] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    loadSources();
+    loadSourceConfigs();
   }, []);
 
-  const loadSources = async () => {
+  const loadSourceConfigs = async () => {
     setLoading(true);
     const { data } = await supabase
-      .from('integration_sources')
-      .select('*')
-      .order('name');
-    if (data) setSources(data);
+      .from('integration_source_configs')
+      .select(`
+        *,
+        wand_integration_sources (
+          name,
+          integration_type,
+          description
+        )
+      `)
+      .order('config_name');
+    if (data) setSourceConfigs(data);
     setLoading(false);
   };
 
@@ -148,19 +159,25 @@ export default function IntegrationAccess() {
           <p className="text-slate-600">Configure data sources and sync schedules</p>
         </div>
 
-        {/* Active Sources */}
+        {/* Active Source Configurations */}
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
+        ) : sourceConfigs.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
+            <Database className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-600 mb-2">No integration source configurations</p>
+            <p className="text-sm text-slate-500">Click "Add Source" to configure a WAND integration source</p>
+          </div>
         ) : (
         <div className="space-y-4">
-          {sources.map(source => {
-            const Icon = getSourceIcon(source.type);
-            const color = getSourceColor(source.type);
+          {sourceConfigs.map(config => {
+            const Icon = Database;
+            const color = 'blue';
 
             return (
-              <div key={source.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div key={config.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-4">
@@ -168,39 +185,26 @@ export default function IntegrationAccess() {
                         <Icon className={`w-6 h-6 text-${color}-600`} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900 mb-1">{source.name}</h3>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-1">{config.config_name}</h3>
                         <div className="flex items-center gap-4 text-sm text-slate-500">
                           <span className="flex items-center gap-1">
-                            <Link className="w-4 h-4" />
-                            {SOURCE_TYPES.find(t => t.value === source.type)?.label}
+                            <Database className="w-4 h-4" />
+                            {config.wand_integration_sources?.name || 'Unknown'}
                           </span>
-                          {source.config?.endpoint && (
-                            <span className="flex items-center gap-1">
-                              <Server className="w-4 h-4" />
-                              {source.config.endpoint}
-                            </span>
-                          )}
+                          <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">
+                            {config.wand_integration_sources?.integration_type}
+                          </span>
                         </div>
-                        {source.config?.source_location && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="flex items-center gap-1.5 text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                              <MapPin className="w-3.5 h-3.5" />
-                              <span className="font-medium">Source Location:</span>
-                              <span className="font-mono">{source.config.source_location}</span>
-                            </span>
-                            <button
-                              className="p-1.5 hover:bg-slate-100 rounded transition-colors group"
-                              title="View locations"
-                            >
-                              <Eye className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded font-medium">
+                            {config.application_level.toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {source.status === 'active' ? (
+                      {config.is_active ? (
                         <button className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors">
                           <ToggleRight className="w-4 h-4" />
                           Active
@@ -227,7 +231,9 @@ export default function IntegrationAccess() {
                       </div>
                       <div>
                         <div className="text-xs text-slate-500">Sync Frequency</div>
-                        <div className="text-sm font-medium text-slate-900">{source.config?.sync_frequency || 'Not configured'}</div>
+                        <div className="text-sm font-medium text-slate-900">
+                          {config.sync_frequency_minutes ? `Every ${config.sync_frequency_minutes} min` : 'Not configured'}
+                        </div>
                       </div>
                     </div>
 
@@ -237,7 +243,7 @@ export default function IntegrationAccess() {
                       </div>
                       <div>
                         <div className="text-xs text-slate-500">Last Sync</div>
-                        <div className="text-sm font-medium text-slate-900">{formatLastSync(source.last_sync_at)}</div>
+                        <div className="text-sm font-medium text-slate-900">{formatLastSync(config.last_sync_at)}</div>
                       </div>
                     </div>
 
@@ -445,10 +451,21 @@ export default function IntegrationAccess() {
 
       {/* Add Source Modal */}
       {showAddModal && (
+        <AddWandIntegrationModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false);
+            loadSourceConfigs();
+          }}
+        />
+      )}
+
+      {/* OLD MODAL PLACEHOLDER - Delete everything from here to Add Destination Modal */}
+      {false && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-900">Add Integration Source</h2>
+              <h2 className="text-xl font-bold text-slate-900">OLD MODAL</h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"

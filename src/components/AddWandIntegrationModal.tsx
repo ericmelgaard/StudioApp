@@ -1,0 +1,334 @@
+import { useState, useEffect } from 'react';
+import { X, Database, AlertCircle, ChevronRight } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+interface WandIntegrationSource {
+  id: string;
+  name: string;
+  integration_type: string;
+  description: string;
+  base_url_template: string;
+  auth_method: string;
+  required_config_fields: string[];
+  optional_config_fields: string[];
+  default_sync_frequency_minutes: number;
+  formatter_name: string;
+  supports_products: boolean;
+  supports_modifiers: boolean;
+  supports_discounts: boolean;
+  status: string;
+}
+
+interface AddWandIntegrationModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  conceptId?: number;
+  companyId?: number;
+  storeId?: number;
+}
+
+export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId, companyId, storeId }: AddWandIntegrationModalProps) {
+  const [step, setStep] = useState<'select' | 'configure'>('select');
+  const [wandSources, setWandSources] = useState<WandIntegrationSource[]>([]);
+  const [selectedSource, setSelectedSource] = useState<WandIntegrationSource | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [configForm, setConfigForm] = useState<{
+    configName: string;
+    configParams: Record<string, string>;
+    credentials: Record<string, string>;
+    syncFrequency: number;
+  }>({
+    configName: '',
+    configParams: {},
+    credentials: {},
+    syncFrequency: 15
+  });
+
+  useEffect(() => {
+    loadWandSources();
+  }, []);
+
+  const loadWandSources = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('wand_integration_sources')
+      .select('*')
+      .eq('status', 'active')
+      .order('name');
+
+    if (error) {
+      setError('Failed to load integration sources');
+      console.error(error);
+    } else if (data) {
+      setWandSources(data);
+    }
+    setLoading(false);
+  };
+
+  const handleSelectSource = (source: WandIntegrationSource) => {
+    setSelectedSource(source);
+    setConfigForm({
+      configName: `${source.name} Configuration`,
+      configParams: {},
+      credentials: {},
+      syncFrequency: source.default_sync_frequency_minutes
+    });
+    setStep('configure');
+  };
+
+  const handleConfigChange = (field: string, value: string) => {
+    setConfigForm(prev => ({
+      ...prev,
+      configParams: {
+        ...prev.configParams,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleCredentialChange = (field: string, value: string) => {
+    setConfigForm(prev => ({
+      ...prev,
+      credentials: {
+        ...prev.credentials,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSource) return;
+
+    setError('');
+    setSaving(true);
+
+    // Determine application level
+    let applicationLevel: 'concept' | 'company' | 'site' = 'site';
+    if (conceptId && !companyId && !storeId) applicationLevel = 'concept';
+    else if (companyId && !storeId) applicationLevel = 'company';
+
+    const { error: saveError } = await supabase
+      .from('integration_source_configs')
+      .insert({
+        wand_source_id: selectedSource.id,
+        config_name: configForm.configName,
+        application_level: applicationLevel,
+        concept_id: conceptId || null,
+        company_id: companyId || null,
+        site_id: storeId || null,
+        config_params: configForm.configParams,
+        credentials: configForm.credentials,
+        sync_frequency_minutes: configForm.syncFrequency,
+        is_active: true
+      });
+
+    setSaving(false);
+
+    if (saveError) {
+      setError(saveError.message);
+    } else {
+      onSuccess();
+    }
+  };
+
+  const filteredSources = wandSources.filter(source =>
+    source.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    source.integration_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    source.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">
+              {step === 'select' ? 'Select Integration Source' : `Configure ${selectedSource?.name}`}
+            </h2>
+            {step === 'configure' && (
+              <button
+                onClick={() => setStep('select')}
+                className="text-sm text-blue-600 hover:text-blue-700 mt-1"
+              >
+                ← Back to selection
+              </button>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-red-800">{error}</div>
+            </div>
+          )}
+
+          {step === 'select' && (
+            <>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search integration sources..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : filteredSources.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 rounded-lg">
+                  <Database className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-600">No integration sources found</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto">
+                  {filteredSources.map(source => (
+                    <button
+                      key={source.id}
+                      onClick={() => handleSelectSource(source)}
+                      className="text-left p-4 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Database className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-slate-900">{source.name}</h3>
+                            <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                              {source.integration_type}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600" />
+                      </div>
+                      <p className="text-sm text-slate-600 line-clamp-2">{source.description}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {step === 'configure' && selectedSource && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Configuration Name</label>
+                <input
+                  type="text"
+                  required
+                  value={configForm.configName}
+                  onChange={(e) => setConfigForm({ ...configForm, configName: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., Toast POS - Main Location"
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Required Configuration Fields</h3>
+                <div className="space-y-3">
+                  {selectedSource.required_config_fields.map(field => (
+                    <div key={field}>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">{field}</label>
+                      <input
+                        type="text"
+                        required
+                        value={configForm.configParams[field] || ''}
+                        onChange={(e) => handleConfigChange(field, e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder={`Enter ${field}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedSource.optional_config_fields.length > 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-slate-900 mb-2">Optional Configuration Fields</h3>
+                  <div className="space-y-3">
+                    {selectedSource.optional_config_fields.map(field => (
+                      <div key={field}>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{field}</label>
+                        <input
+                          type="text"
+                          value={configForm.configParams[field] || ''}
+                          onChange={(e) => handleConfigChange(field, e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder={`Enter ${field} (optional)`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedSource.auth_method !== 'none' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-amber-900 mb-2">Authentication</h3>
+                  <p className="text-sm text-amber-800 mb-3">This integration requires: {selectedSource.auth_method}</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">API Key / Token</label>
+                      <input
+                        type="password"
+                        value={configForm.credentials.api_key || ''}
+                        onChange={(e) => handleCredentialChange('api_key', e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter API key or authentication token"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Sync Frequency (minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={configForm.syncFrequency}
+                  onChange={(e) => setConfigForm({ ...configForm, syncFrequency: parseInt(e.target.value) })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="border-t border-slate-200 pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Creating Configuration...' : 'Create Configuration'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
