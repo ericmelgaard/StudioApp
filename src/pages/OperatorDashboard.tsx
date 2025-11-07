@@ -109,35 +109,20 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   };
 
   const loadStats = async () => {
-    const [signageResult, labelsResult, productsResult] = await Promise.all([
-      supabase.from('digital_signage').select('status', { count: 'exact' }),
-      supabase.from('hardware_devices').select('status, health_status', { count: 'exact' }),
-      supabase.from('products').select('id', { count: 'exact' }),
-    ]);
-
-    const signageCount = signageResult.count || 0;
-    const signageOnline = signageResult.data?.filter(s => s.status === 'online').length || 0;
-    const signageOffline = signageResult.data?.filter(s => s.status === 'offline').length || 0;
-    const signageHealthy = signageResult.data?.filter(s => s.status === 'online').length || 0;
-
-    const labelsCount = labelsResult.count || 0;
-    const labelsSynced = labelsResult.data?.filter(l => l.status === 'synced').length || 0;
-    const labelsOnline = labelsResult.data?.filter(l => l.status === 'online').length || 0;
-    const labelsOffline = labelsResult.data?.filter(l => l.status === 'offline').length || 0;
-    const labelsHealthy = labelsResult.data?.filter(l => l.health_status === 'healthy').length || 0;
+    const productsResult = await supabase.from('products').select('mrn', { count: 'exact' });
 
     const productsCount = productsResult.count || 0;
 
     setStats({
-      signageCount,
-      signageOnline,
-      signageOffline,
-      signageHealthy,
-      labelsCount,
-      labelsSynced,
-      labelsOnline,
-      labelsOffline,
-      labelsHealthy,
+      signageCount: 0,
+      signageOnline: 0,
+      signageOffline: 0,
+      signageHealthy: 0,
+      labelsCount: 0,
+      labelsSynced: 0,
+      labelsOnline: 0,
+      labelsOffline: 0,
+      labelsHealthy: 0,
       productsCount,
     });
   };
