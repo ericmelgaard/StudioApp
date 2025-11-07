@@ -23,6 +23,7 @@ interface PlacementGroupModalProps {
   group: PlacementGroup | null;
   availableParents: PlacementGroup[];
   storeId?: number | null;
+  defaultParentId?: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -30,13 +31,13 @@ interface PlacementGroupModalProps {
 const DAYPART_TYPES = ['breakfast', 'lunch', 'dinner', 'late_night', 'dark_hours'];
 const DEVICE_SIZES = ['4.2"', '5"', '7"'];
 
-export default function PlacementGroupModal({ group, availableParents, storeId, onClose, onSuccess }: PlacementGroupModalProps) {
+export default function PlacementGroupModal({ group, availableParents, storeId, defaultParentId, onClose, onSuccess }: PlacementGroupModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: group?.name || '',
     description: group?.description || '',
-    parent_id: group?.parent_id || '',
+    parent_id: group?.parent_id || defaultParentId || '',
     nfc_url: group?.nfc_url || '',
     address: group?.address || '',
     timezone: group?.timezone || 'America/New_York',
@@ -155,9 +156,16 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-slate-200 sticky top-0 bg-white">
-          <h2 className="text-xl font-bold text-slate-900">
-            {group?.id ? 'Edit Placement Group' : 'Create Placement Group'}
-          </h2>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">
+              {group?.id ? 'Edit Placement Group' : 'Create Placement Group'}
+            </h2>
+            {!group?.id && defaultParentId && (
+              <p className="text-sm text-slate-600 mt-1">
+                Adding as a child placement
+              </p>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
