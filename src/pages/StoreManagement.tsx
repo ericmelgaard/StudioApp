@@ -40,12 +40,13 @@ interface Concept {
 
 interface StoreManagementProps {
   onBack: () => void;
+  initialStore?: StoreType;
 }
 
 // American Airlines Lounges company ID
 const AA_LOUNGES_COMPANY_ID = 2156;
 
-export default function StoreManagement({ onBack }: StoreManagementProps) {
+export default function StoreManagement({ onBack, initialStore }: StoreManagementProps) {
   const [placements, setPlacements] = useState<PlacementGroup[]>([]);
   const [stores, setStores] = useState<StoreType[]>([]);
   const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
@@ -64,7 +65,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   useEffect(() => {
     loadLocationContext();
     loadStores();
-  }, []);
+  }, [initialStore]);
 
   useEffect(() => {
     if (selectedStore) {
@@ -74,6 +75,13 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
   const loadLocationContext = () => {
     try {
+      // Prioritize initialStore from props over localStorage
+      if (initialStore) {
+        setSelectedStore(initialStore);
+        setStoreContext({ store: initialStore });
+        return;
+      }
+
       const saved = localStorage.getItem('selectedLocation');
       if (saved) {
         const location = JSON.parse(saved);
