@@ -24,6 +24,7 @@ interface PlacementGroupModalProps {
   availableParents: PlacementGroup[];
   storeId?: number | null;
   defaultParentId?: string | null;
+  isParentStoreRoot?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -31,7 +32,7 @@ interface PlacementGroupModalProps {
 const DAYPART_TYPES = ['breakfast', 'lunch', 'dinner', 'late_night', 'dark_hours'];
 const DEVICE_SIZES = ['4.2"', '5"', '7"'];
 
-export default function PlacementGroupModal({ group, availableParents, storeId, defaultParentId, onClose, onSuccess }: PlacementGroupModalProps) {
+export default function PlacementGroupModal({ group, availableParents, storeId, defaultParentId, isParentStoreRoot = false, onClose, onSuccess }: PlacementGroupModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -159,12 +160,17 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
           <div>
             <h2 className="text-xl font-bold text-slate-900">
               {group?.id
-                ? (group.parent_id ? 'Edit Placement' : 'Edit Placement Group')
-                : (defaultParentId ? 'Create Placement' : 'Create Placement Group')}
+                ? (group.parent_id && !group.is_store_root ? 'Edit Placement' : 'Edit Placement Group')
+                : (defaultParentId && !isParentStoreRoot ? 'Create Placement' : 'Create Placement Group')}
             </h2>
-            {!group?.id && defaultParentId && (
+            {!group?.id && defaultParentId && !isParentStoreRoot && (
               <p className="text-sm text-slate-600 mt-1">
                 Adding a placement to the placement group
+              </p>
+            )}
+            {!group?.id && isParentStoreRoot && (
+              <p className="text-sm text-slate-600 mt-1">
+                Adding a tier 1 placement group
               </p>
             )}
           </div>
@@ -473,8 +479,8 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                 </div>
               ) : (
                 group?.id
-                  ? (group.parent_id ? 'Update Placement' : 'Update Placement Group')
-                  : (defaultParentId ? 'Create Placement' : 'Create Placement Group')
+                  ? (group.parent_id && !group.is_store_root ? 'Update Placement' : 'Update Placement Group')
+                  : (defaultParentId && !isParentStoreRoot ? 'Create Placement' : 'Create Placement Group')
               )}
             </button>
           </div>

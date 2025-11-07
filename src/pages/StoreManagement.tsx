@@ -506,6 +506,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
           availableParents={availableParents}
           storeId={selectedStore?.id}
           defaultParentId={parentForNewPlacement}
+          isParentStoreRoot={parentForNewPlacement === storeRoot?.id}
           onClose={() => {
             setShowModal(false);
             setSelectedGroup(null);
