@@ -38,7 +38,24 @@ export function useLocation() {
 
   useEffect(() => {
     localStorage.setItem('selectedLocation', JSON.stringify(location));
+
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('locationChange', { detail: location }));
   }, [location]);
+
+  useEffect(() => {
+    // Listen for location changes from other components
+    const handleLocationChange = (e: Event) => {
+      const customEvent = e as CustomEvent<LocationState>;
+      setLocation(customEvent.detail);
+    };
+
+    window.addEventListener('locationChange', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('locationChange', handleLocationChange);
+    };
+  }, []);
 
   const getLocationDisplay = (): string => {
     if (location.store) {
