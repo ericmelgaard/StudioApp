@@ -555,6 +555,8 @@ export default function SiteConfiguration() {
                         const depth = calculateDepth(placement.id);
                         const childCount = placements.filter(p => p.parent_id === placement.id).length;
 
+                        console.log(`Placement: ${placement.name}, Parent: ${parentName}, Depth: ${depth}, ParentId: ${placement.parent_id}`);
+
                         return (
                           <div key={placement.id} style={{ marginLeft: `${depth * 2.5}rem` }}>
                           <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group">
