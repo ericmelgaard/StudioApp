@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import { UserRole } from './lib/supabase';
 import RoleSelection from './components/RoleSelection';
+import { useUser } from './hooks/useUser';
 
 const CreatorDashboard = lazy(() => import('./pages/CreatorDashboard'));
 const OperatorDashboard = lazy(() => import('./pages/OperatorDashboard'));
@@ -19,6 +20,7 @@ function LoadingFallback() {
 
 function App() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const { user, loading } = useUser(selectedRole);
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
@@ -28,26 +30,30 @@ function App() {
     setSelectedRole(null);
   };
 
-  if (selectedRole === 'creator') {
+  if (loading) {
+    return <LoadingFallback />;
+  }
+
+  if (selectedRole === 'creator' && user) {
     return (
       <Suspense fallback={<LoadingFallback />}>
-        <CreatorDashboard onBack={handleBack} />
+        <CreatorDashboard onBack={handleBack} user={user} />
       </Suspense>
     );
   }
 
-  if (selectedRole === 'operator') {
+  if (selectedRole === 'operator' && user) {
     return (
       <Suspense fallback={<LoadingFallback />}>
-        <OperatorDashboard onBack={handleBack} />
+        <OperatorDashboard onBack={handleBack} user={user} />
       </Suspense>
     );
   }
 
-  if (selectedRole === 'admin') {
+  if (selectedRole === 'admin' && user) {
     return (
       <Suspense fallback={<LoadingFallback />}>
-        <AdminDashboard onBack={handleBack} />
+        <AdminDashboard onBack={handleBack} user={user} />
       </Suspense>
     );
   }

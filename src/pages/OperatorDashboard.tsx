@@ -12,8 +12,19 @@ const ProductManagement = lazy(() => import('./ProductManagement'));
 
 type DashboardView = 'home' | 'signage' | 'labels' | 'store' | 'products';
 
+interface UserProfile {
+  id: string;
+  email: string;
+  role: string;
+  display_name: string;
+  concept_id: number | null;
+  company_id: number | null;
+  store_id: number | null;
+}
+
 interface OperatorDashboardProps {
   onBack: () => void;
+  user: UserProfile;
 }
 
 type CardType = 'signage' | 'labels' | 'products' | 'store' | 'status' | 'activity';
@@ -35,7 +46,7 @@ interface StoreLocation {
   company_id: number;
 }
 
-export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
+export default function OperatorDashboard({ onBack, user }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [stores, setStores] = useState<StoreLocation[]>([]);
@@ -75,14 +86,21 @@ export default function OperatorDashboard({ onBack }: OperatorDashboardProps) {
   }, [selectedCompany, selectedStore]);
 
   const loadCompaniesAndStores = async () => {
+    let companiesQuery = supabase.from('companies').select('id, name, concept_id').order('name');
+    let storesQuery = supabase.from('stores').select('id, name, company_id').order('name');
+
+    if (user.company_id) {
+      companiesQuery = companiesQuery.eq('id', user.company_id);
+      storesQuery = storesQuery.eq('company_id', user.company_id);
+    }
+
     const [companiesResult, storesResult] = await Promise.all([
-      supabase.from('companies').select('id, name, concept_id').order('name'),
-      supabase.from('stores').select('id, name, company_id').order('name'),
+      companiesQuery,
+      storesQuery,
     ]);
 
     if (companiesResult.data) {
       setCompanies(companiesResult.data);
-      // Set first company as default
       if (companiesResult.data.length > 0) {
         setSelectedCompany(companiesResult.data[0]);
       }

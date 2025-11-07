@@ -19,8 +19,19 @@ const CoreAttributes = lazy(() => import('./CoreAttributes'));
 const WandProducts = lazy(() => import('./WandProducts'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 
+interface UserProfile {
+  id: string;
+  email: string;
+  role: string;
+  display_name: string;
+  concept_id: number | null;
+  company_id: number | null;
+  store_id: number | null;
+}
+
 interface AdminDashboardProps {
   onBack: () => void;
+  user: UserProfile;
 }
 
 interface Concept {
@@ -40,7 +51,7 @@ interface Store {
   company_id: number;
 }
 
-export default function AdminDashboard({ onBack }: AdminDashboardProps) {
+export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products'>('dashboard');
 

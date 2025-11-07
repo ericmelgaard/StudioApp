@@ -10,6 +10,7 @@ const roles = [
     id: 'creator' as UserRole,
     title: 'Creator',
     description: 'Create and manage content',
+    scope: 'Auntie Anne\'s (341 stores)',
     icon: Users,
     color: 'from-blue-500 to-blue-600',
   },
@@ -17,6 +18,7 @@ const roles = [
     id: 'operator' as UserRole,
     title: 'Operator',
     description: 'Operate and monitor systems',
+    scope: 'American Airlines Lounges (29 stores)',
     icon: Settings,
     color: 'from-green-500 to-green-600',
   },
@@ -24,6 +26,7 @@ const roles = [
     id: 'admin' as UserRole,
     title: 'Admin',
     description: 'Full system administration',
+    scope: 'All locations (unrestricted)',
     icon: Shield,
     color: 'from-red-500 to-red-600',
   },
@@ -58,8 +61,11 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">
                   {role.title}
                 </h2>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed mb-3">
                   {role.description}
+                </p>
+                <p className="text-sm text-slate-500 font-medium">
+                  {role.scope}
                 </p>
 
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-transparent to-slate-50 opacity-0 group-hover:opacity-100 transition-opacity -z-10" />

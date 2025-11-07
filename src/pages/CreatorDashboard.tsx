@@ -1,10 +1,22 @@
 import { Users, HelpCircle, FileText, ChevronDown, Store, Layers, Image, BarChart3, Video, FileText as Document, Palette, GripVertical } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
+import { supabase } from '../lib/supabase';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  role: string;
+  display_name: string;
+  concept_id: number | null;
+  company_id: number | null;
+  store_id: number | null;
+}
 
 interface CreatorDashboardProps {
   onBack: () => void;
+  user: UserProfile;
 }
 
 type CardType = 'projects' | 'media' | 'analytics' | 'video' | 'templates' | 'brand';
@@ -14,17 +26,17 @@ interface DashboardCard {
   order: number;
 }
 
-const STORE_LOCATIONS = [
-  'Admiral Food Market - Portland, OR',
-  'Admiral Food Market - Seattle, WA',
-  'Admiral Food Market - San Francisco, CA',
-  'Admiral Food Market - Los Angeles, CA',
-  'Admiral Food Market - San Diego, CA',
-  'Admiral Food Market - Denver, CO',
-];
+interface StoreLocation {
+  id: number;
+  name: string;
+  company_id: number;
+  company_name?: string;
+}
 
-export default function CreatorDashboard({ onBack }: CreatorDashboardProps) {
-  const [selectedStore, setSelectedStore] = useState(STORE_LOCATIONS[0]);
+export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps) {
+  const [stores, setStores] = useState<StoreLocation[]>([]);
+  const [selectedStore, setSelectedStore] = useState<StoreLocation | null>(null);
+  const [loading, setLoading] = useState(true);
   const [cards, setCards] = useState<DashboardCard[]>([
     { id: 'projects', order: 0 },
     { id: 'media', order: 1 },
@@ -34,6 +46,91 @@ export default function CreatorDashboard({ onBack }: CreatorDashboardProps) {
     { id: 'brand', order: 5 },
   ]);
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
+
+  useEffect(() => {
+    loadStores();
+  }, []);
+
+  const loadStores = async () => {
+    setLoading(true);
+
+    if (user.concept_id) {
+      const { data: companies, error: compError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('concept_id', user.concept_id);
+
+      if (compError) {
+        console.error('Error loading companies:', compError);
+        setStores([]);
+        setLoading(false);
+        return;
+      }
+
+      const companyIds = companies?.map(c => c.id) || [];
+
+      if (companyIds.length === 0) {
+        setStores([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: stores, error: storesError } = await supabase
+        .from('stores')
+        .select(`
+          id,
+          name,
+          company_id,
+          companies(name)
+        `)
+        .in('company_id', companyIds)
+        .order('name');
+
+      if (storesError) {
+        console.error('Error loading stores:', storesError);
+        setStores([]);
+      } else if (stores) {
+        const formattedStores = stores.map((store: any) => ({
+          id: store.id,
+          name: store.name,
+          company_id: store.company_id,
+          company_name: store.companies?.name,
+        }));
+        setStores(formattedStores);
+        if (formattedStores.length > 0) {
+          setSelectedStore(formattedStores[0]);
+        }
+      }
+    } else {
+      const { data: stores, error } = await supabase
+        .from('stores')
+        .select(`
+          id,
+          name,
+          company_id,
+          companies(name)
+        `)
+        .order('name');
+
+      if (error) {
+        console.error('Error loading stores:', error);
+        setStores([]);
+      } else if (stores) {
+        const formattedStores = stores.map((store: any) => ({
+          id: store.id,
+          name: store.name,
+          company_id: store.company_id,
+          company_name: store.companies?.name,
+        }));
+        setStores(formattedStores);
+        if (formattedStores.length > 0) {
+          setSelectedStore(formattedStores[0]);
+        }
+      }
+    }
+
+    setLoading(false);
+  };
 
   const handleDragStart = (cardId: CardType) => {
     setDraggedCard(cardId);
@@ -284,22 +381,30 @@ export default function CreatorDashboard({ onBack }: CreatorDashboardProps) {
                 <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
                   <Store className="w-4 h-4 text-slate-600" />
                   <span className="text-sm font-medium text-slate-900 max-w-xs truncate">
-                    {selectedStore}
+                    {selectedStore ? `${selectedStore.name} - ${selectedStore.company_name}` : 'Loading...'}
                   </span>
+                  {user.concept_id && (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                      Scoped
+                    </span>
+                  )}
                   <ChevronDown className="w-4 h-4 text-slate-500" />
                 </button>
-                <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                  {STORE_LOCATIONS.map((location) => (
+                <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto">
+                  {stores.map((store) => (
                     <button
-                      key={location}
-                      onClick={() => setSelectedStore(location)}
+                      key={store.id}
+                      onClick={() => setSelectedStore(store)}
                       className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
-                        selectedStore === location ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                        selectedStore?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                       }`}
                     >
-                      {location}
+                      {store.name} - {store.company_name}
                     </button>
                   ))}
+                  {stores.length === 0 && !loading && (
+                    <div className="px-4 py-2 text-sm text-slate-500">No stores available</div>
+                  )}
                 </div>
               </div>
             </div>
