@@ -1,0 +1,112 @@
+[
+  {
+    "id": 54,
+    "name": "Auntie Anne's",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 17,
+    "name": "Church's Chicken",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 50,
+    "name": "Cinnabon",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 199,
+    "name": "Compass Group USA",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 266,
+    "name": "Compass USA: Bon Appetit",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 268,
+    "name": "Compass USA: Canteen",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 232,
+    "name": "Compass USA: Chartwells",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 316,
+    "name": "Compass USA: Eurest",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 209,
+    "name": "WAND Demos",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 214,
+    "name": "WAND Development",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  },
+  {
+    "id": 73,
+    "name": "Wand Sales (Internal)",
+    "privilege_level": 1,
+    "parent_level": 1,
+    "domain_level": 2,
+    "group_type_string": "",
+    "parent_key": 3,
+    "created_at": "2025-11-06T22:28:16.829033+00:00"
+  }
+]
