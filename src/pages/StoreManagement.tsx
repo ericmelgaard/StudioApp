@@ -1,24 +1,17 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ChevronRight, ChevronDown, Building2, Store } from 'lucide-react';
+import { ArrowLeft, Plus, Store, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import PlacementGroupModal from '../components/PlacementGroupModal';
 
-interface Concept {
-  id: number;
+interface PlacementGroup {
+  id: string;
   name: string;
-  created_at: string;
-}
-
-interface Company {
-  id: number;
-  name: string;
-  concept_id: number;
-  created_at: string;
-}
-
-interface StoreRecord {
-  id: number;
-  name: string;
-  company_id: number;
+  description: string | null;
+  parent_id: string | null;
+  daypart_hours: Record<string, any>;
+  meal_stations: string[];
+  templates: Record<string, any>;
+  nfc_url: string | null;
   created_at: string;
 }
 
@@ -27,163 +20,73 @@ interface StoreManagementProps {
 }
 
 export default function StoreManagement({ onBack }: StoreManagementProps) {
-  const [concepts, setConcepts] = useState<Concept[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [stores, setStores] = useState<StoreRecord[]>([]);
+  const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<PlacementGroup | null>(null);
 
   useEffect(() => {
-    loadLocationData();
+    loadPlacementGroups();
   }, []);
 
-
-  const loadLocationData = async () => {
+  const loadPlacementGroups = async () => {
     setLoading(true);
+    const { data, error } = await supabase
+      .from('placement_groups')
+      .select('*')
+      .order('name');
 
-    const [conceptsResult, companiesResult, storesResult] = await Promise.all([
-      supabase.from('concepts').select('*').order('name'),
-      supabase.from('companies').select('*').order('name'),
-      supabase.from('stores').select('*').order('name')
-    ]);
-
-    if (conceptsResult.error) {
-      console.error('Error loading concepts:', conceptsResult.error);
-      alert(`Failed to load concepts: ${conceptsResult.error.message}`);
+    if (error) {
+      console.error('Error loading placement groups:', error);
+      alert(`Failed to load placement groups: ${error.message}`);
+    } else {
+      setPlacementGroups(data || []);
     }
-
-    if (companiesResult.error) {
-      console.error('Error loading companies:', companiesResult.error);
-      alert(`Failed to load companies: ${companiesResult.error.message}`);
-    }
-
-    if (storesResult.error) {
-      console.error('Error loading stores:', storesResult.error);
-      alert(`Failed to load stores: ${storesResult.error.message}`);
-    }
-
-    const conceptsData = conceptsResult.data || [];
-    const companiesData = companiesResult.data || [];
-    const storesData = storesResult.data || [];
-
-    console.log('Loaded data:', {
-      concepts: conceptsData.length,
-      companies: companiesData.length,
-      stores: storesData.length
-    });
-
-    setConcepts(conceptsData);
-    setCompanies(companiesData);
-    setStores(storesData);
-
-    if (conceptsData.length > 0 && companiesData.length > 0) {
-      const firstConcept = conceptsData[0];
-      const firstCompany = companiesData.find(c => c.concept_id === firstConcept.id);
-
-      const newExpanded = new Set<string>();
-      newExpanded.add(`concept-${firstConcept.id}`);
-      if (firstCompany) {
-        newExpanded.add(`company-${firstCompany.id}`);
-      }
-      setExpandedNodes(newExpanded);
-    }
-
     setLoading(false);
   };
 
+  const handleAddGroup = () => {
+    setSelectedGroup(null);
+    setShowModal(true);
+  };
 
-  const toggleNode = (id: string) => {
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
+  const handleEditGroup = (group: PlacementGroup) => {
+    setSelectedGroup(group);
+    setShowModal(true);
+  };
+
+  const handleDeleteGroup = async (group: PlacementGroup) => {
+    if (group.name === '36355 - WAND Digital Demo') {
+      alert('Cannot delete the default store placement group');
+      return;
     }
-    setExpandedNodes(newExpanded);
+
+    if (!confirm(`Are you sure you want to delete "${group.name}"?`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('placement_groups')
+      .delete()
+      .eq('id', group.id);
+
+    if (error) {
+      console.error('Error deleting placement group:', error);
+      alert(`Failed to delete placement group: ${error.message}`);
+    } else {
+      loadPlacementGroups();
+    }
   };
 
-  const buildTree = (): JSX.Element[] => {
-    return concepts.map(concept => {
-      const conceptCompanies = companies.filter(c => c.concept_id === concept.id);
-      const hasCompanies = conceptCompanies.length > 0;
-      const conceptKey = `concept-${concept.id}`;
-      const isConceptExpanded = expandedNodes.has(conceptKey);
-
-      return (
-        <div key={conceptKey} className="mb-4">
-          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <button
-              onClick={() => toggleNode(conceptKey)}
-              className="p-1 hover:bg-blue-200 rounded transition-colors"
-              disabled={!hasCompanies}
-            >
-              {hasCompanies ? (
-                isConceptExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-blue-600" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-blue-600" />
-                )
-              ) : (
-                <div className="w-4 h-4" />
-              )}
-            </button>
-            <Building2 className="w-5 h-5 text-blue-600" />
-            <div className="flex-1">
-              <h4 className="font-bold text-blue-900">{concept.name}</h4>
-              <p className="text-xs text-blue-600">{conceptCompanies.length} companies</p>
-            </div>
-          </div>
-
-          {isConceptExpanded && conceptCompanies.map(company => {
-            const companyStores = stores.filter(s => s.company_id === company.id);
-            const hasStores = companyStores.length > 0;
-            const companyKey = `company-${company.id}`;
-            const isCompanyExpanded = expandedNodes.has(companyKey);
-
-            return (
-              <div key={companyKey} className="ml-8 mt-2">
-                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
-                  <button
-                    onClick={() => toggleNode(companyKey)}
-                    className="p-1 hover:bg-green-200 rounded transition-colors"
-                    disabled={!hasStores}
-                  >
-                    {hasStores ? (
-                      isCompanyExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-green-600" />
-                      )
-                    ) : (
-                      <div className="w-4 h-4" />
-                    )}
-                  </button>
-                  <Building2 className="w-4 h-4 text-green-600" />
-                  <div className="flex-1">
-                    <h5 className="font-semibold text-green-900">{company.name}</h5>
-                    <p className="text-xs text-green-600">{companyStores.length} stores</p>
-                  </div>
-                </div>
-
-                {isCompanyExpanded && companyStores.map(store => (
-                  <div key={`store-${store.id}`} className="ml-8 mt-2">
-                    <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                      <div className="w-4 h-4" />
-                      <Store className="w-4 h-4 text-amber-600" />
-                      <div className="flex-1">
-                        <h6 className="font-medium text-slate-900">{store.name}</h6>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      );
-    });
+  const handleModalSuccess = () => {
+    setShowModal(false);
+    setSelectedGroup(null);
+    loadPlacementGroups();
   };
+
+  const availableParents = placementGroups.filter(
+    (g) => g.id !== selectedGroup?.id
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -198,13 +101,20 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </button>
               <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
-                <Building2 className="w-6 h-6 text-white" />
+                <Store className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-900">Store Management</h1>
-                <p className="text-xs text-slate-500">View location hierarchy</p>
+                <p className="text-xs text-slate-500">Configure placement groups and settings</p>
               </div>
             </div>
+            <button
+              onClick={handleAddGroup}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Add Placement Group
+            </button>
           </div>
         </div>
       </nav>
@@ -212,48 +122,80 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Location Hierarchy</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Placement Groups</h2>
             <p className="text-slate-600">
-              View your organization structure: Concepts contain Companies, and Companies contain Stores.
+              Organize your store with hierarchical placement groups. Each group can inherit settings from its parent and define attributes like dayparts, meal stations, templates, and NFC URLs.
             </p>
-            <div className="mt-4 flex gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-blue-600" />
-                <span className="text-slate-700">{concepts.length} Concepts</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-green-600" />
-                <span className="text-slate-700">{companies.length} Companies</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Store className="w-4 h-4 text-amber-600" />
-                <span className="text-slate-700">{stores.length} Stores</span>
-              </div>
-            </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="w-8 h-8 border-4 border-slate-200 border-t-amber-600 rounded-full animate-spin" />
               </div>
-            ) : concepts.length === 0 ? (
+            ) : placementGroups.length === 0 ? (
               <div className="text-center py-12">
-                <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No location data</h3>
-                <p className="text-slate-600">
-                  Import location data to view the hierarchy
+                <Store className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No placement groups</h3>
+                <p className="text-slate-600 mb-4">
+                  Create your first placement group to organize your store
                 </p>
+                <button
+                  onClick={handleAddGroup}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Placement Group
+                </button>
               </div>
             ) : (
-              <div className="space-y-2">
-                {buildTree()}
+              <div className="space-y-3">
+                {placementGroups.map((group) => (
+                  <div
+                    key={group.id}
+                    className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group"
+                  >
+                    <Store className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-slate-900">{group.name}</h3>
+                      {group.description && (
+                        <p className="text-sm text-slate-600">{group.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleEditGroup(group)}
+                        className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="Edit placement group"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      {group.name !== '36355 - WAND Digital Demo' && (
+                        <button
+                          onClick={() => handleDeleteGroup(group)}
+                          className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete placement group"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         </div>
       </main>
 
+      {showModal && (
+        <PlacementGroupModal
+          group={selectedGroup}
+          availableParents={availableParents}
+          onClose={() => setShowModal(false)}
+          onSuccess={handleModalSuccess}
+        />
+      )}
     </div>
   );
 }
