@@ -171,14 +171,51 @@ export default function StoreManagement({ onBack, initialStore }: StoreManagemen
       .from('placement_groups')
       .select('*')
       .eq('store_id', selectedStore.id)
-      .eq('is_store_root', false)
-      .order('name');
+      .eq('is_store_root', false);
 
     if (placementsError) {
       console.error('Error loading placements:', placementsError);
     } else {
-      setPlacements(placementsData || []);
+      // Sort placements hierarchically: parents first, then their children
+      const sortedPlacements = sortPlacementsHierarchically(placementsData || []);
+      setPlacements(sortedPlacements);
     }
+  };
+
+  // Helper function to sort placements hierarchically
+  const sortPlacementsHierarchically = (placements: PlacementGroup[]): PlacementGroup[] => {
+    const result: PlacementGroup[] = [];
+    const processedIds = new Set<string>();
+
+    // Function to add a placement and its children recursively
+    const addPlacementWithChildren = (placement: PlacementGroup) => {
+      if (processedIds.has(placement.id)) return;
+
+      result.push(placement);
+      processedIds.add(placement.id);
+
+      // Find and add all direct children
+      const children = placements
+        .filter(p => p.parent_id === placement.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      children.forEach(child => addPlacementWithChildren(child));
+    };
+
+    // First, add all top-level placements (those with no parent or parent is store root)
+    const topLevel = placements
+      .filter(p => !p.parent_id || p.parent_id === storeRoot?.id)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    topLevel.forEach(placement => addPlacementWithChildren(placement));
+
+    // Add any remaining placements that weren't processed (orphans)
+    placements
+      .filter(p => !processedIds.has(p.id))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .forEach(placement => addPlacementWithChildren(placement));
+
+    return result;
   };
 
   const handleAddPlacement = (parentId: string | null = null) => {
