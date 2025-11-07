@@ -160,7 +160,7 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
           <div>
             <h2 className="text-xl font-bold text-slate-900">
               {group?.id
-                ? (group.parent_id && !group.is_store_root ? 'Edit Placement' : 'Edit Placement Group')
+                ? (group.is_store_root ? 'Edit Store Configuration' : group.parent_id ? 'Edit Placement' : 'Edit Placement Group')
                 : (defaultParentId && !isParentStoreRoot ? 'Create Placement' : 'Create Placement Group')}
             </h2>
             {!group?.id && defaultParentId && !isParentStoreRoot && (
@@ -171,6 +171,11 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
             {!group?.id && isParentStoreRoot && (
               <p className="text-sm text-slate-600 mt-1">
                 Adding a tier 1 placement group
+              </p>
+            )}
+            {group?.is_store_root && (
+              <p className="text-sm text-slate-600 mt-1">
+                Update store details, operating hours, and configuration
               </p>
             )}
           </div>
