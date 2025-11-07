@@ -420,42 +420,55 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {placements.map((placement) => (
-                      <div
-                        key={placement.id}
-                        className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group"
-                      >
-                        <div className="w-1 h-10 bg-amber-400 rounded-full" />
-                        <Store className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-slate-900">{placement.name}</h3>
-                          {placement.description && (
-                            <p className="text-sm text-slate-600">{placement.description}</p>
-                          )}
-                          {placement.parent_id && (
-                            <div className="text-xs text-slate-500 mt-1">
-                              Parent: {placements.find(p => p.id === placement.parent_id)?.name || storeRoot?.name || 'Store Root'}
+                    {placements.map((placement) => {
+                      const parentName = placement.parent_id
+                        ? (placements.find(p => p.id === placement.parent_id)?.name || storeRoot?.name || 'Unknown')
+                        : storeRoot?.name || 'Store Root';
+
+                      const depth = placement.parent_id && placement.parent_id !== storeRoot?.id ? 1 : 0;
+
+                      return (
+                        <div
+                          key={placement.id}
+                          className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group"
+                          style={{ marginLeft: `${depth * 2}rem` }}
+                        >
+                          <div className="w-1 h-10 bg-amber-400 rounded-full" />
+                          <Store className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-slate-900">{placement.name}</h3>
+                            {placement.description && (
+                              <p className="text-sm text-slate-600">{placement.description}</p>
+                            )}
+                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                              <span>Parent: {parentName}</span>
+                              {placement.meal_stations && placement.meal_stations.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span>{placement.meal_stations.length} meal station{placement.meal_stations.length !== 1 ? 's' : ''}</span>
+                                </>
+                              )}
                             </div>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleEditPlacement(placement)}
+                              className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                              title="Edit placement"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePlacement(placement)}
+                              className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete placement"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEditPlacement(placement)}
-                            className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title="Edit placement"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePlacement(placement)}
-                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete placement"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
