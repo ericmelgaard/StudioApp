@@ -425,7 +425,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all text-sm"
                     >
                       <Plus className="w-4 h-4" />
-                      Create First Placement
+                      Add Placement Group
                     </button>
                   </div>
                 ) : (
