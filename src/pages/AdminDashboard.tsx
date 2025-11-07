@@ -17,6 +17,7 @@ const WandIntegrationLibrary = lazy(() => import('./WandIntegrationLibrary'));
 const CoreAttributes = lazy(() => import('./CoreAttributes'));
 const WandProducts = lazy(() => import('./WandProducts'));
 const UserManagement = lazy(() => import('./UserManagement'));
+const SiteConfiguration = lazy(() => import('./SiteConfiguration'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const AddUserModal = lazy(() => import('../components/AddUserModal'));
 const EditUserModal = lazy(() => import('../components/EditUserModal'));
@@ -58,7 +59,7 @@ interface Store {
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites'>('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -177,7 +178,12 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 <Building2 className="w-5 h-5" />
                 <span className="text-sm font-medium">Companies</span>
               </button>
-              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <button
+                onClick={() => setCurrentView('sites')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'sites' ? 'bg-slate-100' : ''
+                }`}
+              >
                 <Store className="w-5 h-5" />
                 <span className="text-sm font-medium">Sites</span>
               </button>
@@ -423,6 +429,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               }}
             />
           )}
+          {currentView === 'sites' && <SiteConfiguration />}
         </Suspense>
 
         {currentView === 'dashboard' && (
