@@ -159,12 +159,12 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
           <div>
             <h2 className="text-xl font-bold text-slate-900">
               {group?.id
-                ? 'Edit Placement Group'
+                ? (group.parent_id ? 'Edit Placement' : 'Edit Placement Group')
                 : (defaultParentId ? 'Create Placement' : 'Create Placement Group')}
             </h2>
             {!group?.id && defaultParentId && (
               <p className="text-sm text-slate-600 mt-1">
-                Adding as a child placement
+                Adding a placement to the placement group
               </p>
             )}
           </div>
@@ -472,7 +472,9 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                   Saving...
                 </div>
               ) : (
-                group?.id ? 'Update Group' : (defaultParentId ? 'Create Placement' : 'Create Placement Group')
+                group?.id
+                  ? (group.parent_id ? 'Update Placement' : 'Update Placement Group')
+                  : (defaultParentId ? 'Create Placement' : 'Create Placement Group')
               )}
             </button>
           </div>

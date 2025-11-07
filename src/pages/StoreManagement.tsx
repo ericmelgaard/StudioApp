@@ -405,7 +405,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                     className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
                   >
                     <Plus className="w-4 h-4" />
-                    Add Root Placement
+                    Add Placement Group
                   </button>
                 </div>
               </div>
