@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Clock, Phone, Globe } from 'lucide-react';
+import { ArrowLeft, Plus, Store, CreditCard as Edit2, Trash2, MapPin, Building2, Clock, Phone, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 
