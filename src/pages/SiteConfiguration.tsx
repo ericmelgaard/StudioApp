@@ -522,16 +522,35 @@ export default function SiteConfiguration() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {placements.map((placement) => {
-                      const parentName = placement.parent_id
-                        ? (placements.find(p => p.id === placement.parent_id)?.name || storeRoot?.name || 'Unknown')
-                        : storeRoot?.name || 'Store Root';
+                    {(() => {
+                      const calculateDepth = (placementId: string, visited = new Set<string>()): number => {
+                        if (visited.has(placementId)) return 0;
+                        visited.add(placementId);
 
-                      const depth = placement.parent_id && placement.parent_id !== storeRoot?.id ? 1 : 0;
-                      const childCount = placements.filter(p => p.parent_id === placement.id).length;
+                        const placement = placements.find(p => p.id === placementId);
+                        if (!placement || !placement.parent_id || placement.parent_id === storeRoot?.id) {
+                          return 0;
+                        }
+                        return 1 + calculateDepth(placement.parent_id, visited);
+                      };
 
-                      return (
-                        <div key={placement.id} style={{ marginLeft: `${depth * 2}rem` }}>
+                      const buildHierarchy = (parentId: string | null = storeRoot?.id): PlacementGroup[] => {
+                        return placements
+                          .filter(p => p.parent_id === parentId)
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .flatMap(placement => [placement, ...buildHierarchy(placement.id)]);
+                      };
+
+                      return buildHierarchy().map((placement) => {
+                        const parentName = placement.parent_id
+                          ? (placements.find(p => p.id === placement.parent_id)?.name || storeRoot?.name || 'Unknown')
+                          : storeRoot?.name || 'Store Root';
+
+                        const depth = calculateDepth(placement.id);
+                        const childCount = placements.filter(p => p.parent_id === placement.id).length;
+
+                        return (
+                          <div key={placement.id} style={{ marginLeft: `${depth * 2.5}rem` }}>
                           <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group">
                             <div className="w-1 h-10 bg-amber-400 rounded-full" />
                             <Layers className="w-5 h-5 text-amber-600 flex-shrink-0" />
@@ -582,8 +601,9 @@ export default function SiteConfiguration() {
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>
