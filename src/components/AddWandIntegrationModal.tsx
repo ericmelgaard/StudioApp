@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Database, AlertCircle, ChevronRight, Sparkles, Wrench } from 'lucide-react';
+import { X, Database, AlertCircle, ChevronRight, Sparkles, Wrench, FileSpreadsheet, FileJson, Server } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface WandIntegrationSource {
@@ -35,6 +35,7 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [customType, setCustomType] = useState<'api' | 'spreadsheet' | 'json' | 'ftp'>('api');
 
   const [configForm, setConfigForm] = useState<{
     configName: string;
@@ -390,19 +391,192 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
           )}
 
           {step === 'custom' && (
-            <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
-              <Wrench className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">Custom Integration Form</h3>
-              <p className="text-slate-600 mb-4 max-w-md mx-auto">
-                The custom integration builder with support for REST API, FTP, spreadsheets, and JSON files
-                will be available here. For now, please use WAND Integration sources.
-              </p>
-              <button
-                onClick={() => setStep('choice')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                Back to Options
-              </button>
+            <div className="space-y-6">
+              {/* Source Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">Source Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setCustomType('api')}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      customType === 'api'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <Database className={`w-6 h-6 mb-2 mx-auto ${customType === 'api' ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <div className={`font-medium ${customType === 'api' ? 'text-blue-900' : 'text-slate-700'}`}>
+                      REST API
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setCustomType('spreadsheet')}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      customType === 'spreadsheet'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <FileSpreadsheet className={`w-6 h-6 mb-2 mx-auto ${customType === 'spreadsheet' ? 'text-green-600' : 'text-slate-400'}`} />
+                    <div className={`font-medium ${customType === 'spreadsheet' ? 'text-green-900' : 'text-slate-700'}`}>
+                      Spreadsheet
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setCustomType('json')}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      customType === 'json'
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <FileJson className={`w-6 h-6 mb-2 mx-auto ${customType === 'json' ? 'text-purple-600' : 'text-slate-400'}`} />
+                    <div className={`font-medium ${customType === 'json' ? 'text-purple-900' : 'text-slate-700'}`}>
+                      JSON File
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setCustomType('ftp')}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      customType === 'ftp'
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <Server className={`w-6 h-6 mb-2 mx-auto ${customType === 'ftp' ? 'text-orange-600' : 'text-slate-400'}`} />
+                    <div className={`font-medium ${customType === 'ftp' ? 'text-orange-900' : 'text-slate-700'}`}>
+                      FTP Server
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Configuration based on type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Source Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Production POS System"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {customType === 'api' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">API Endpoint</label>
+                    <input
+                      type="url"
+                      placeholder="https://api.example.com/v1"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">API Key</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••••••••••"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </>
+              )}
+
+              {customType === 'ftp' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Server Address</label>
+                      <input
+                        type="text"
+                        placeholder="ftp.example.com"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Port</label>
+                      <input
+                        type="number"
+                        placeholder="21"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Username</label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                      <input
+                        type="password"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">File Path</label>
+                    <input
+                      type="text"
+                      placeholder="/data/products.csv"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </>
+              )}
+
+              {(customType === 'spreadsheet' || customType === 'json') && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">File Upload</label>
+                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors cursor-pointer">
+                    <FileSpreadsheet className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                    <p className="text-sm text-slate-600">Click to upload or drag and drop</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {customType === 'spreadsheet' ? 'CSV, XLSX, XLS files' : 'JSON files'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Sync Frequency</label>
+                <select className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option value="realtime">Real-time (Webhooks)</option>
+                  <option value="5min">Every 5 minutes</option>
+                  <option value="15min">Every 15 minutes</option>
+                  <option value="30min">Every 30 minutes</option>
+                  <option value="1hour">Every hour</option>
+                  <option value="6hours">Every 6 hours</option>
+                  <option value="daily">Daily</option>
+                  <option value="manual">Manual only</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="active" className="w-4 h-4 text-blue-600 rounded" defaultChecked />
+                <label htmlFor="active" className="text-sm text-slate-700">Activate immediately after creation</label>
+              </div>
+
+              <div className="border-t border-slate-200 pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep('choice')}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  Create Source
+                </button>
+              </div>
             </div>
           )}
         </div>
