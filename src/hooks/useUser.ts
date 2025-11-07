@@ -36,13 +36,16 @@ export function useUser(role: UserRole | null) {
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);
         setUser(null);
-      } else {
+      } else if (data) {
         setUser(data);
+      } else {
+        console.error('User profile not found for role:', role);
+        setUser(null);
       }
       setLoading(false);
     };
