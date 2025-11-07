@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, Eye } from 'lucide-react';
+import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 import LocationRequired from '../components/LocationRequired';
@@ -364,85 +364,33 @@ export default function SiteConfiguration() {
           </div>
         )}
 
-        {location.company && !location.store && !selectedStore && (
-          <div>
-            {/* Site Cards */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Sites at {location.company.name}</h2>
-                <button
-                  onClick={() => {/* TODO: Add new site modal */}}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Site
-                </button>
-              </div>
-
-              {stores.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-                  <Store className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500 mb-4">No sites found at this company</p>
-                  <button
-                    onClick={() => {/* TODO: Add new site modal */}}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add First Site
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {stores.map(store => (
-                    <div
-                      key={store.id}
-                      className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <Store className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-slate-900 mb-1 truncate">{store.name}</h3>
-                          <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                            <MapPin className="w-3.5 h-3.5" />
-                            <span>Site ID: {store.id}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setSelectedStore(store)}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View Configuration
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {location.company && !location.store && selectedStore && (
+        {location.company && !location.store && (
           <div className="mb-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Select Site</h2>
-            <div className="max-w-md">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Site
-              </label>
-              <select
-                value={selectedStore?.id || ''}
-                onChange={(e) => handleStoreChange(parseInt(e.target.value))}
-                disabled={stores.length === 0}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Site
+                </label>
+                <select
+                  value={selectedStore?.id || ''}
+                  onChange={(e) => handleStoreChange(parseInt(e.target.value))}
+                  disabled={stores.length === 0}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select a site...</option>
+                  {stores.map(store => (
+                    <option key={store.id} value={store.id}>{store.name}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => {/* TODO: Add new site modal */}}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
               >
-                <option value="">Select a site...</option>
-                {stores.map(store => (
-                  <option key={store.id} value={store.id}>{store.name}</option>
-                ))}
-              </select>
+                <Plus className="w-4 h-4" />
+                Add Site
+              </button>
             </div>
           </div>
         )}
