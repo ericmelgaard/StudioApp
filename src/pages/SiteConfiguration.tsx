@@ -535,16 +535,19 @@ export default function SiteConfiguration() {
                       };
 
                       const buildHierarchy = (parentId: string | null | undefined): PlacementGroup[] => {
-                        return placements
+                        // Get direct children of this parent
+                        const children = placements
                           .filter(p => {
-                            // Match exact parent_id, or if we're looking for top-level (store root or null)
-                            if (parentId === storeRoot?.id || parentId === null || parentId === undefined) {
-                              return p.parent_id === storeRoot?.id || p.parent_id === null;
+                            // For store root, include both direct children and null parent_id placements
+                            if (parentId === storeRoot?.id) {
+                              return p.parent_id === parentId || p.parent_id === null;
                             }
                             return p.parent_id === parentId;
                           })
-                          .sort((a, b) => a.name.localeCompare(b.name))
-                          .flatMap(placement => [placement, ...buildHierarchy(placement.id)]);
+                          .sort((a, b) => a.name.localeCompare(b.name));
+
+                        // For each child, return the child followed by its descendants
+                        return children.flatMap(child => [child, ...buildHierarchy(child.id)]);
                       };
 
                       return buildHierarchy(storeRoot?.id).map((placement) => {
@@ -554,8 +557,6 @@ export default function SiteConfiguration() {
 
                         const depth = calculateDepth(placement.id);
                         const childCount = placements.filter(p => p.parent_id === placement.id).length;
-
-                        console.log(`Placement: ${placement.name}, Parent: ${parentName}, Depth: ${depth}, ParentId: ${placement.parent_id}`);
 
                         return (
                           <div key={placement.id} style={{ marginLeft: `${depth * 2.5}rem` }}>
