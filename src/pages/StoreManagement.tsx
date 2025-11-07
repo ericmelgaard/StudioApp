@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2 } from 'lucide-react';
+import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Clock, Phone, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 
@@ -21,7 +21,7 @@ interface PlacementGroup {
   created_at: string;
 }
 
-interface Store {
+interface StoreType {
   id: number;
   name: string;
   company_id: number;
@@ -42,28 +42,32 @@ interface StoreManagementProps {
   onBack: () => void;
 }
 
+// American Airlines Lounges company ID
+const AA_LOUNGES_COMPANY_ID = 2156;
+
 export default function StoreManagement({ onBack }: StoreManagementProps) {
-  const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
-  const [storeRoots, setStoreRoots] = useState<PlacementGroup[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [placements, setPlacements] = useState<PlacementGroup[]>([]);
+  const [stores, setStores] = useState<StoreType[]>([]);
+  const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
+  const [storeRoot, setStoreRoot] = useState<PlacementGroup | null>(null);
   const [storeContext, setStoreContext] = useState<{
-    store?: Store;
+    store?: StoreType;
     company?: Company;
     concept?: Concept;
   }>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<PlacementGroup | null>(null);
+  const [editingStore, setEditingStore] = useState(false);
 
   useEffect(() => {
     loadLocationContext();
-    loadStoresAndPlacements();
+    loadStores();
   }, []);
 
   useEffect(() => {
     if (selectedStore) {
-      loadPlacementGroups();
+      loadStoreData();
     }
   }, [selectedStore]);
 
@@ -82,11 +86,14 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     }
   };
 
-  const loadStoresAndPlacements = async () => {
+  const loadStores = async () => {
     setLoading(true);
+
+    // Filter stores by American Airlines Lounges company
     const { data: storesData, error: storesError } = await supabase
       .from('stores')
       .select('*')
+      .eq('company_id', AA_LOUNGES_COMPANY_ID)
       .order('name');
 
     if (storesError) {
@@ -99,88 +106,98 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
       }
     }
 
-    const { data: rootsData, error: rootsError } = await supabase
-      .from('placement_groups')
-      .select('*')
-      .eq('is_store_root', true)
-      .order('name');
-
-    if (rootsError) {
-      console.error('Error loading store roots:', rootsError);
-    } else {
-      setStoreRoots(rootsData || []);
-    }
-
     setLoading(false);
   };
 
-  const loadPlacementGroups = async () => {
+  const loadStoreData = async () => {
     if (!selectedStore) return;
 
-    const { data, error } = await supabase
+    // Load store root placement
+    const { data: rootData, error: rootError } = await supabase
       .from('placement_groups')
       .select('*')
       .eq('store_id', selectedStore.id)
+      .eq('is_store_root', true)
+      .maybeSingle();
+
+    if (rootError) {
+      console.error('Error loading store root:', rootError);
+    } else {
+      setStoreRoot(rootData);
+    }
+
+    // Load child placements
+    const { data: placementsData, error: placementsError } = await supabase
+      .from('placement_groups')
+      .select('*')
+      .eq('store_id', selectedStore.id)
+      .eq('is_store_root', false)
       .order('name');
 
-    if (error) {
-      console.error('Error loading placement groups:', error);
-      alert(`Failed to load placement groups: ${error.message}`);
+    if (placementsError) {
+      console.error('Error loading placements:', placementsError);
     } else {
-      setPlacementGroups(data || []);
+      setPlacements(placementsData || []);
     }
   };
 
-  const handleAddGroup = () => {
+  const handleAddPlacement = () => {
     setSelectedGroup(null);
+    setEditingStore(false);
     setShowModal(true);
   };
 
-  const handleEditGroup = (group: PlacementGroup) => {
-    setSelectedGroup(group);
+  const handleEditStore = () => {
+    if (storeRoot) {
+      setSelectedGroup(storeRoot);
+      setEditingStore(true);
+      setShowModal(true);
+    }
+  };
+
+  const handleEditPlacement = (placement: PlacementGroup) => {
+    setSelectedGroup(placement);
+    setEditingStore(false);
     setShowModal(true);
   };
 
-  const handleDeleteGroup = async (group: PlacementGroup) => {
-    if (group.is_store_root) {
+  const handleDeletePlacement = async (placement: PlacementGroup) => {
+    if (placement.is_store_root) {
       alert('Cannot delete store root placement');
       return;
     }
 
-    if (group.name === '36355 - WAND Digital Demo') {
-      alert('Cannot delete the default store placement group');
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete "${group.name}"?`)) {
+    if (!confirm(`Are you sure you want to delete "${placement.name}"?`)) {
       return;
     }
 
     const { error } = await supabase
       .from('placement_groups')
       .delete()
-      .eq('id', group.id);
+      .eq('id', placement.id);
 
     if (error) {
-      console.error('Error deleting placement group:', error);
-      alert(`Failed to delete placement group: ${error.message}`);
+      console.error('Error deleting placement:', error);
+      alert(`Failed to delete placement: ${error.message}`);
     } else {
-      loadPlacementGroups();
+      loadStoreData();
     }
   };
 
   const handleModalSuccess = () => {
     setShowModal(false);
     setSelectedGroup(null);
-    loadPlacementGroups();
+    setEditingStore(false);
+    loadStoreData();
   };
 
-  const availableParents = placementGroups.filter(
-    (g) => g.id !== selectedGroup?.id
+  const availableParents = placements.filter(
+    (p) => p.id !== selectedGroup?.id
   );
-
-  const storeRoot = placementGroups.find(g => g.is_store_root);
-  const childPlacements = placementGroups.filter(g => !g.is_store_root);
+  // Add store root as a potential parent
+  if (storeRoot && !editingStore) {
+    availableParents.unshift(storeRoot);
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -227,154 +244,235 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                 </div>
               </div>
             </div>
-            <button
-              onClick={handleAddGroup}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Add Placement Group
-            </button>
           </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-6 border-b border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-bold text-slate-900">Store Placements</h2>
-              {stores.length > 1 && (
-                <select
-                  value={selectedStore?.id || ''}
-                  onChange={(e) => {
-                    const store = stores.find(s => s.id === parseInt(e.target.value));
-                    setSelectedStore(store || null);
-                  }}
-                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500"
-                >
-                  {stores.map(store => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
-                </select>
-              )}
-            </div>
+        {/* Store Selector */}
+        {stores.length > 1 && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Select Store
+            </label>
+            <select
+              value={selectedStore?.id || ''}
+              onChange={(e) => {
+                const store = stores.find(s => s.id === parseInt(e.target.value));
+                setSelectedStore(store || null);
+              }}
+              className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            >
+              {stores.map(store => (
+                <option key={store.id} value={store.id}>{store.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-amber-600 rounded-full animate-spin" />
+          </div>
+        ) : !selectedStore ? (
+          <div className="text-center py-12">
+            <Store className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No store selected</h3>
             <p className="text-slate-600">
-              Each store has a root placement with location details. Add child placements to organize areas within the store. All placements share the same configuration options: dayparts, meal stations, templates, and NFC URLs.
+              Select a store to manage its configuration
             </p>
           </div>
-
-          <div className="p-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-8 h-8 border-4 border-slate-200 border-t-amber-600 rounded-full animate-spin" />
-              </div>
-            ) : !selectedStore ? (
-              <div className="text-center py-12">
-                <Store className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No store selected</h3>
-                <p className="text-slate-600">
-                  Select a store to manage its placements
-                </p>
-              </div>
-            ) : placementGroups.length === 0 ? (
-              <div className="text-center py-12">
-                <Store className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No placements found</h3>
-                <p className="text-slate-600 mb-4">
-                  This store doesn't have a root placement yet
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Store Root Placement */}
-                {storeRoot && (
-                  <div className="border-2 border-amber-300 bg-amber-50 rounded-lg p-5">
-                    <div className="flex items-start gap-4">
-                      <div className="p-2 bg-amber-500 rounded-lg">
-                        <Store className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-slate-900">{storeRoot.name}</h3>
-                          <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-                            Store Root
-                          </span>
-                        </div>
-                        {storeRoot.description && (
-                          <p className="text-sm text-slate-700 mb-2">{storeRoot.description}</p>
-                        )}
-                        {storeRoot.address && (
-                          <div className="flex items-center gap-2 text-sm text-slate-600 mb-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{storeRoot.address}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4 text-xs text-slate-500 mt-2">
-                          {storeRoot.phone && <span>📞 {storeRoot.phone}</span>}
-                          {storeRoot.timezone && <span>🌍 {storeRoot.timezone}</span>}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleEditGroup(storeRoot)}
-                        className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-100 rounded-lg transition-colors"
-                        title="Edit store root placement"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Child Placements */}
-                {childPlacements.length > 0 && (
+        ) : (
+          <div className="space-y-6">
+            {/* Store Configuration Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
+                <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-2 px-2">Child Placements</h3>
-                    <div className="space-y-2">
-                      {childPlacements.map((group) => (
-                        <div
-                          key={group.id}
-                          className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group"
-                        >
-                          <div className="w-1 h-8 bg-amber-300 rounded-full" />
-                          <Store className="w-5 h-5 text-slate-500 flex-shrink-0" />
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-slate-900">{group.name}</h3>
-                            {group.description && (
-                              <p className="text-sm text-slate-600">{group.description}</p>
-                            )}
+                    <h2 className="text-xl font-bold text-slate-900 mb-1">Store Configuration</h2>
+                    <p className="text-sm text-slate-600">
+                      Manage location details, hours, and store-level settings
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleEditStore}
+                    disabled={!storeRoot}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit Store
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {storeRoot ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Location Information</h3>
+                      <div className="space-y-3">
+                        {storeRoot.address ? (
+                          <div className="flex items-start gap-3">
+                            <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
+                            <div>
+                              <div className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">Address</div>
+                              <div className="text-sm text-slate-900">{storeRoot.address}</div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleEditGroup(group)}
-                              className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                              title="Edit placement"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteGroup(group)}
-                              className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Delete placement"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                        ) : (
+                          <div className="text-sm text-slate-400 italic">No address configured</div>
+                        )}
+                        {storeRoot.phone ? (
+                          <div className="flex items-start gap-3">
+                            <Phone className="w-5 h-5 text-slate-400 mt-0.5" />
+                            <div>
+                              <div className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">Phone</div>
+                              <div className="text-sm text-slate-900">{storeRoot.phone}</div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ) : null}
+                        {storeRoot.timezone && (
+                          <div className="flex items-start gap-3">
+                            <Globe className="w-5 h-5 text-slate-400 mt-0.5" />
+                            <div>
+                              <div className="text-xs text-slate-500 uppercase tracking-wide mb-0.5">Timezone</div>
+                              <div className="text-sm text-slate-900">{storeRoot.timezone}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Operating Hours</h3>
+                      {storeRoot.operating_hours && Object.keys(storeRoot.operating_hours).length > 0 ? (
+                        <div className="space-y-2">
+                          {Object.entries(storeRoot.operating_hours).map(([day, hours]: [string, any]) => (
+                            <div key={day} className="flex items-center justify-between text-sm">
+                              <span className="text-slate-600 font-medium w-24">{day}</span>
+                              {hours.open && hours.close ? (
+                                <span className="text-slate-900">
+                                  {hours.open} - {hours.close}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic">Closed</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-400 italic">No operating hours configured</div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Store className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-600 mb-4">Store configuration not initialized</p>
+                    <button
+                      onClick={handleEditStore}
+                      className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                    >
+                      Initialize Store Configuration
+                    </button>
                   </div>
                 )}
               </div>
-            )}
+            </div>
+
+            {/* Placements Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-amber-50 to-slate-50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900 mb-1">Placements</h2>
+                    <p className="text-sm text-slate-600">
+                      Organize areas within the store with hierarchical placements
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleAddPlacement}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Placement
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {placements.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Store className="w-8 h-8 text-amber-600" />
+                    </div>
+                    <h3 className="text-base font-semibold text-slate-900 mb-2">No placements yet</h3>
+                    <p className="text-slate-600 mb-4 text-sm">
+                      Create placements to organize different areas within the store
+                    </p>
+                    <button
+                      onClick={handleAddPlacement}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create First Placement
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {placements.map((placement) => (
+                      <div
+                        key={placement.id}
+                        className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group"
+                      >
+                        <div className="w-1 h-10 bg-amber-400 rounded-full" />
+                        <Store className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-slate-900">{placement.name}</h3>
+                          {placement.description && (
+                            <p className="text-sm text-slate-600">{placement.description}</p>
+                          )}
+                          {placement.parent_id && (
+                            <div className="text-xs text-slate-500 mt-1">
+                              Parent: {placements.find(p => p.id === placement.parent_id)?.name || storeRoot?.name || 'Store Root'}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleEditPlacement(placement)}
+                            className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                            title="Edit placement"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePlacement(placement)}
+                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete placement"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {showModal && (
         <PlacementGroupModal
           group={selectedGroup}
           availableParents={availableParents}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedGroup(null);
+            setEditingStore(false);
+          }}
           onSuccess={handleModalSuccess}
         />
       )}
