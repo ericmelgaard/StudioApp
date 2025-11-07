@@ -78,14 +78,14 @@ export default function StoreManagement({ onBack, initialStore }: StoreManagemen
       // Prioritize initialStore from props over localStorage
       if (initialStore) {
         setSelectedStore(initialStore);
-        setStoreContext({ store: initialStore });
+        // Don't set storeContext here - it will be loaded from database in loadStoreData
         return;
       }
 
       const saved = localStorage.getItem('selectedLocation');
       if (saved) {
         const location = JSON.parse(saved);
-        setStoreContext(location);
+        // Only load the store selection, not the context (which may be stale)
         if (location.store) {
           setSelectedStore(location.store);
         }
@@ -120,6 +120,37 @@ export default function StoreManagement({ onBack, initialStore }: StoreManagemen
 
   const loadStoreData = async () => {
     if (!selectedStore) return;
+
+    // Load store's company and concept for breadcrumb
+    const { data: storeData, error: storeError } = await supabase
+      .from('stores')
+      .select(`
+        id,
+        name,
+        company_id,
+        companies (
+          id,
+          name,
+          concept_id,
+          concepts (
+            id,
+            name
+          )
+        )
+      `)
+      .eq('id', selectedStore.id)
+      .maybeSingle();
+
+    if (storeData && !storeError) {
+      const company = storeData.companies as any;
+      const concept = company?.concepts as any;
+
+      setStoreContext({
+        store: selectedStore,
+        company: company ? { id: company.id, name: company.name, concept_id: company.concept_id } : undefined,
+        concept: concept ? { id: concept.id, name: concept.name } : undefined
+      });
+    }
 
     // Load store root placement
     const { data: rootData, error: rootError } = await supabase
