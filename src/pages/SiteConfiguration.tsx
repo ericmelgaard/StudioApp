@@ -534,14 +534,20 @@ export default function SiteConfiguration() {
                         return 1 + calculateDepth(placement.parent_id, visited);
                       };
 
-                      const buildHierarchy = (parentId: string | null = storeRoot?.id): PlacementGroup[] => {
+                      const buildHierarchy = (parentId: string | null | undefined): PlacementGroup[] => {
                         return placements
-                          .filter(p => p.parent_id === parentId)
+                          .filter(p => {
+                            // Match exact parent_id, or if we're looking for top-level (store root or null)
+                            if (parentId === storeRoot?.id || parentId === null || parentId === undefined) {
+                              return p.parent_id === storeRoot?.id || p.parent_id === null;
+                            }
+                            return p.parent_id === parentId;
+                          })
                           .sort((a, b) => a.name.localeCompare(b.name))
                           .flatMap(placement => [placement, ...buildHierarchy(placement.id)]);
                       };
 
-                      return buildHierarchy().map((placement) => {
+                      return buildHierarchy(storeRoot?.id).map((placement) => {
                         const parentName = placement.parent_id
                           ? (placements.find(p => p.id === placement.parent_id)?.name || storeRoot?.name || 'Unknown')
                           : storeRoot?.name || 'Store Root';
