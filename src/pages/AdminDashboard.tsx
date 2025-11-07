@@ -14,7 +14,7 @@ const IntegrationAccess = lazy(() => import('./IntegrationAccess'));
 const ResourceManagement = lazy(() => import('./ResourceManagement'));
 const WandTemplateManager = lazy(() => import('./WandTemplateManager'));
 const WandIntegrationMapper = lazy(() => import('./WandIntegrationMapper'));
-const IntegrationSources = lazy(() => import('./IntegrationSources'));
+const WandIntegrationLibrary = lazy(() => import('./WandIntegrationLibrary'));
 const CoreAttributes = lazy(() => import('./CoreAttributes'));
 const WandProducts = lazy(() => import('./WandProducts'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
@@ -292,7 +292,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-products' && <WandProducts />}
-          {currentView === 'integration-sources' && <IntegrationSources onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
