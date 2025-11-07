@@ -523,6 +523,11 @@ export default function SiteConfiguration() {
                 ) : (
                   <div className="space-y-3">
                     {(() => {
+                      console.log('=== RENDERING PLACEMENTS ===');
+                      console.log('Total placements:', placements.length);
+                      console.log('Store root:', storeRoot?.name, storeRoot?.id);
+                      console.log('All placements:', placements.map(p => ({ name: p.name, id: p.id, parent_id: p.parent_id })));
+
                       const calculateDepth = (placementId: string, visited = new Set<string>()): number => {
                         if (visited.has(placementId)) return 0;
                         visited.add(placementId);
