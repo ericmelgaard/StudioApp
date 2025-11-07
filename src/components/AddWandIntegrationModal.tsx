@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Database, AlertCircle, ChevronRight } from 'lucide-react';
+import { X, Database, AlertCircle, ChevronRight, Sparkles, Wrench } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface WandIntegrationSource {
@@ -28,7 +28,7 @@ interface AddWandIntegrationModalProps {
 }
 
 export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId, companyId, storeId }: AddWandIntegrationModalProps) {
-  const [step, setStep] = useState<'select' | 'configure'>('select');
+  const [step, setStep] = useState<'choice' | 'wand-select' | 'wand-configure' | 'custom'>('choice');
   const [wandSources, setWandSources] = useState<WandIntegrationSource[]>([]);
   const [selectedSource, setSelectedSource] = useState<WandIntegrationSource | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
       credentials: {},
       syncFrequency: source.default_sync_frequency_minutes
     });
-    setStep('configure');
+    setStep('wand-configure');
   };
 
   const handleConfigChange = (field: string, value: string) => {
@@ -142,20 +142,31 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
     source.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getTitle = () => {
+    switch (step) {
+      case 'choice': return 'Add Integration Source';
+      case 'wand-select': return 'Select WAND Integration';
+      case 'wand-configure': return `Configure ${selectedSource?.name}`;
+      case 'custom': return 'Create Custom Integration';
+      default: return 'Add Integration Source';
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
-              {step === 'select' ? 'Select Integration Source' : `Configure ${selectedSource?.name}`}
-            </h2>
-            {step === 'configure' && (
+            <h2 className="text-xl font-bold text-slate-900">{getTitle()}</h2>
+            {step !== 'choice' && (
               <button
-                onClick={() => setStep('select')}
+                onClick={() => {
+                  if (step === 'wand-configure') setStep('wand-select');
+                  else setStep('choice');
+                }}
                 className="text-sm text-blue-600 hover:text-blue-700 mt-1"
               >
-                ← Back to selection
+                ← Back
               </button>
             )}
           </div>
@@ -175,7 +186,57 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
             </div>
           )}
 
-          {step === 'select' && (
+          {step === 'choice' && (
+            <div className="grid grid-cols-2 gap-6">
+              <button
+                onClick={() => setStep('wand-select')}
+                className="p-8 border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group text-left"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                    <Sparkles className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">WAND Integration</h3>
+                    <p className="text-sm text-slate-500">Pre-configured sources</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                  Choose from 12 pre-built integrations like Toast POS, Qu, Revel, and more.
+                  Ready to use with minimal configuration.
+                </p>
+                <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+                  Browse integrations
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </button>
+
+              <button
+                onClick={() => setStep('custom')}
+                className="p-8 border-2 border-slate-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all group text-left"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                    <Wrench className="w-8 h-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Custom Integration</h3>
+                    <p className="text-sm text-slate-500">Build your own</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                  Create a custom integration from scratch. Supports REST API, FTP, spreadsheets,
+                  and JSON files.
+                </p>
+                <div className="flex items-center gap-2 text-sm font-medium text-green-600">
+                  Create custom
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </button>
+            </div>
+          )}
+
+          {step === 'wand-select' && (
             <>
               <div className="mb-4">
                 <input
@@ -226,7 +287,7 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
             </>
           )}
 
-          {step === 'configure' && selectedSource && (
+          {step === 'wand-configure' && selectedSource && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Configuration Name</label>
@@ -326,6 +387,23 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
                 </button>
               </div>
             </form>
+          )}
+
+          {step === 'custom' && (
+            <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+              <Wrench className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Custom Integration Form</h3>
+              <p className="text-slate-600 mb-4 max-w-md mx-auto">
+                The custom integration builder with support for REST API, FTP, spreadsheets, and JSON files
+                will be available here. For now, please use WAND Integration sources.
+              </p>
+              <button
+                onClick={() => setStep('choice')}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Back to Options
+              </button>
+            </div>
           )}
         </div>
       </div>
