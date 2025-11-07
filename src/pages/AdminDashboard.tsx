@@ -2,7 +2,6 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
-import { supabase } from '../lib/supabase';
 import Toast from '../components/Toast';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
@@ -17,7 +16,10 @@ const WandIntegrationMapper = lazy(() => import('./WandIntegrationMapper'));
 const WandIntegrationLibrary = lazy(() => import('./WandIntegrationLibrary'));
 const CoreAttributes = lazy(() => import('./CoreAttributes'));
 const WandProducts = lazy(() => import('./WandProducts'));
+const UserManagement = lazy(() => import('./UserManagement'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
+const AddUserModal = lazy(() => import('../components/AddUserModal'));
+const EditUserModal = lazy(() => import('../components/EditUserModal'));
 
 interface UserProfile {
   id: string;
@@ -27,6 +29,9 @@ interface UserProfile {
   concept_id: number | null;
   company_id: number | null;
   store_id: number | null;
+  status: string;
+  last_login_at?: string | null;
+  created_at: string;
 }
 
 interface AdminDashboardProps {
@@ -51,9 +56,12 @@ interface Store {
   company_id: number;
 }
 
-export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
+export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users'>('dashboard');
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -173,7 +181,12 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
                 <Store className="w-5 h-5" />
                 <span className="text-sm font-medium">Sites</span>
               </button>
-              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+              <button
+                onClick={() => setCurrentView('users')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'users' ? 'bg-slate-100' : ''
+                }`}
+              >
                 <Users className="w-5 h-5" />
                 <span className="text-sm font-medium">Users</span>
               </button>
@@ -401,6 +414,15 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
           )}
           {currentView === 'integration-access' && <IntegrationAccess />}
           {currentView === 'integration' && <IntegrationCatalog />}
+          {currentView === 'users' && (
+            <UserManagement
+              onAddUser={() => setShowAddUserModal(true)}
+              onEditUser={(user) => {
+                setSelectedUser(user);
+                setShowEditUserModal(true);
+              }}
+            />
+          )}
         </Suspense>
 
         {currentView === 'dashboard' && (
@@ -479,6 +501,37 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
               concept: selectedConcept || undefined,
               company: selectedCompany || undefined,
               store: selectedStore || undefined,
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <Suspense fallback={null}>
+          <AddUserModal
+            onClose={() => setShowAddUserModal(false)}
+            onSuccess={() => {
+              setShowAddUserModal(false);
+              setToastMessage('User created successfully');
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditUserModal && selectedUser && (
+        <Suspense fallback={null}>
+          <EditUserModal
+            user={selectedUser}
+            onClose={() => {
+              setShowEditUserModal(false);
+              setSelectedUser(null);
+            }}
+            onSuccess={() => {
+              setShowEditUserModal(false);
+              setSelectedUser(null);
+              setToastMessage('User updated successfully');
             }}
           />
         </Suspense>

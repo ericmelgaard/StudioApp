@@ -1,0 +1,428 @@
+import { useState, useEffect } from 'react';
+import { X, Loader2, AlertTriangle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  role: string;
+  display_name: string;
+  concept_id: number | null;
+  company_id: number | null;
+  store_id: number | null;
+  status: string;
+}
+
+interface Concept {
+  id: number;
+  name: string;
+}
+
+interface Company {
+  id: number;
+  name: string;
+  concept_id: number;
+}
+
+interface Store {
+  id: number;
+  name: string;
+  company_id: number;
+}
+
+interface EditUserModalProps {
+  user: UserProfile;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export default function EditUserModal({ user, onClose, onSuccess }: EditUserModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [concepts, setConcepts] = useState<Concept[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
+  const [filteredStores, setFilteredStores] = useState<Store[]>([]);
+  const [showRoleWarning, setShowRoleWarning] = useState(false);
+  const [showScopeWarning, setShowScopeWarning] = useState(false);
+
+  const [formData, setFormData] = useState({
+    displayName: user.display_name,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    scopeLevel: user.store_id ? 'store' : user.company_id ? 'company' : user.concept_id ? 'concept' : 'unrestricted',
+    conceptId: user.concept_id?.toString() || '',
+    companyId: user.company_id?.toString() || '',
+    storeId: user.store_id?.toString() || '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    loadLocationData();
+  }, []);
+
+  useEffect(() => {
+    if (formData.conceptId) {
+      const filtered = companies.filter(c => c.concept_id === parseInt(formData.conceptId));
+      setFilteredCompanies(filtered);
+      if (formData.scopeLevel === 'company' && !filtered.find(c => c.id === parseInt(formData.companyId))) {
+        setFormData(prev => ({ ...prev, companyId: '', storeId: '' }));
+      }
+    } else {
+      setFilteredCompanies([]);
+      setFormData(prev => ({ ...prev, companyId: '', storeId: '' }));
+    }
+  }, [formData.conceptId, companies]);
+
+  useEffect(() => {
+    if (formData.companyId) {
+      const filtered = stores.filter(s => s.company_id === parseInt(formData.companyId));
+      setFilteredStores(filtered);
+      if (formData.scopeLevel === 'store' && !filtered.find(s => s.id === parseInt(formData.storeId))) {
+        setFormData(prev => ({ ...prev, storeId: '' }));
+      }
+    } else {
+      setFilteredStores([]);
+      setFormData(prev => ({ ...prev, storeId: '' }));
+    }
+  }, [formData.companyId, stores]);
+
+  useEffect(() => {
+    setShowRoleWarning(formData.role !== user.role);
+  }, [formData.role, user.role]);
+
+  useEffect(() => {
+    const scopeChanged =
+      formData.conceptId !== (user.concept_id?.toString() || '') ||
+      formData.companyId !== (user.company_id?.toString() || '') ||
+      formData.storeId !== (user.store_id?.toString() || '');
+    setShowScopeWarning(scopeChanged);
+  }, [formData.conceptId, formData.companyId, formData.storeId, user]);
+
+  const loadLocationData = async () => {
+    try {
+      const [conceptsRes, companiesRes, storesRes] = await Promise.all([
+        supabase.from('concepts').select('id, name').order('name'),
+        supabase.from('companies').select('id, name, concept_id').order('name'),
+        supabase.from('stores').select('id, name, company_id').order('name'),
+      ]);
+
+      if (conceptsRes.data) setConcepts(conceptsRes.data);
+      if (companiesRes.data) setCompanies(companiesRes.data);
+      if (storesRes.data) setStores(storesRes.data);
+    } catch (error) {
+      console.error('Error loading location data:', error);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.displayName.trim()) {
+      newErrors.displayName = 'Display name is required';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Invalid email format';
+    }
+
+    if (formData.role !== 'admin' && formData.scopeLevel !== 'unrestricted') {
+      if (formData.scopeLevel === 'concept' && !formData.conceptId) {
+        newErrors.scopeLevel = 'Please select a concept';
+      } else if (formData.scopeLevel === 'company' && !formData.companyId) {
+        newErrors.scopeLevel = 'Please select a company';
+      } else if (formData.scopeLevel === 'store' && !formData.storeId) {
+        newErrors.scopeLevel = 'Please select a store';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const updateData: any = {
+        display_name: formData.displayName,
+        email: formData.email,
+        role: formData.role,
+        status: formData.status,
+        concept_id: null,
+        company_id: null,
+        store_id: null,
+      };
+
+      if (formData.role !== 'admin') {
+        if (formData.scopeLevel === 'concept') {
+          updateData.concept_id = parseInt(formData.conceptId);
+        } else if (formData.scopeLevel === 'company') {
+          const company = companies.find(c => c.id === parseInt(formData.companyId));
+          updateData.concept_id = company?.concept_id;
+          updateData.company_id = parseInt(formData.companyId);
+        } else if (formData.scopeLevel === 'store') {
+          const store = stores.find(s => s.id === parseInt(formData.storeId));
+          const company = companies.find(c => c.id === store?.company_id);
+          updateData.concept_id = company?.concept_id;
+          updateData.company_id = store?.company_id;
+          updateData.store_id = parseInt(formData.storeId);
+        }
+      }
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(updateData)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      setErrors({ submit: error.message || 'Failed to update user' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900">Edit User</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {errors.submit && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{errors.submit}</p>
+            </div>
+          )}
+
+          {(showRoleWarning || showScopeWarning) && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-yellow-900 mb-1">Warning: Permission Changes</p>
+                <ul className="text-sm text-yellow-800 space-y-1">
+                  {showRoleWarning && (
+                    <li>• Changing the user's role will modify their system permissions</li>
+                  )}
+                  {showScopeWarning && (
+                    <li>• Changing the location scope will affect which data they can access</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Display Name *
+            </label>
+            <input
+              type="text"
+              value={formData.displayName}
+              onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.displayName ? 'border-red-300' : 'border-slate-300'
+              }`}
+              placeholder="John Doe"
+            />
+            {errors.displayName && (
+              <p className="text-red-600 text-sm mt-1">{errors.displayName}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.email ? 'border-red-300' : 'border-slate-300'
+              }`}
+              placeholder="john@example.com"
+            />
+            {errors.email && (
+              <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Role *
+            </label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="creator">Creator</option>
+              <option value="operator">Operator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Status *
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+
+          {formData.role !== 'admin' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Access Scope Level *
+                </label>
+                <select
+                  value={formData.scopeLevel}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    scopeLevel: e.target.value,
+                    conceptId: '',
+                    companyId: '',
+                    storeId: '',
+                  }))}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="concept">Concept (all locations in concept)</option>
+                  <option value="company">Company (all stores in company)</option>
+                  <option value="store">Store (single location)</option>
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Concept *
+                  </label>
+                  <select
+                    value={formData.conceptId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, conceptId: e.target.value }))}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
+                    }`}
+                  >
+                    <option value="">Select a concept...</option>
+                    {concepts.map(concept => (
+                      <option key={concept.id} value={concept.id}>
+                        {concept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {(formData.scopeLevel === 'company' || formData.scopeLevel === 'store') && formData.conceptId && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Company *
+                    </label>
+                    <select
+                      value={formData.companyId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, companyId: e.target.value }))}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
+                      }`}
+                      disabled={!formData.conceptId}
+                    >
+                      <option value="">Select a company...</option>
+                      {filteredCompanies.map(company => (
+                        <option key={company.id} value={company.id}>
+                          {company.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {formData.scopeLevel === 'store' && formData.companyId && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Store *
+                    </label>
+                    <select
+                      value={formData.storeId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, storeId: e.target.value }))}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
+                      }`}
+                      disabled={!formData.companyId}
+                    >
+                      <option value="">Select a store...</option>
+                      {filteredStores.map(store => (
+                        <option key={store.id} value={store.id}>
+                          {store.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {errors.scopeLevel && (
+                  <p className="text-red-600 text-sm">{errors.scopeLevel}</p>
+                )}
+              </div>
+            </>
+          )}
+
+          <div className="flex gap-3 pt-4 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
