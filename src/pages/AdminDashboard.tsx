@@ -1,5 +1,5 @@
-import { useState, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders } from 'lucide-react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
@@ -49,6 +49,27 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('adminCollapsedSections');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  useEffect(() => {
+    localStorage.setItem('adminCollapsedSections', JSON.stringify(Array.from(collapsedSections)));
+  }, [collapsedSections]);
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -121,165 +142,235 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <nav className="flex-1 overflow-y-auto py-4">
           {/* Organization Section */}
           <div className="mb-6">
-            <div className="px-4 mb-2">
+            <button
+              onClick={() => toggleSection('organization')}
+              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
+            >
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Organization</div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  collapsedSections.has('organization') ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-200 ${
+                collapsedSections.has('organization') ? 'max-h-0' : 'max-h-96'
+              }`}
+            >
+              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+                <Building2 className="w-5 h-5" />
+                <span className="text-sm font-medium">Companies</span>
+              </button>
+              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+                <Store className="w-5 h-5" />
+                <span className="text-sm font-medium">Sites</span>
+              </button>
+              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+                <Users className="w-5 h-5" />
+                <span className="text-sm font-medium">Users</span>
+              </button>
             </div>
-            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-              <Building2 className="w-5 h-5" />
-              <span className="text-sm font-medium">Companies</span>
-            </button>
-            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-              <Store className="w-5 h-5" />
-              <span className="text-sm font-medium">Sites</span>
-            </button>
-            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-              <Users className="w-5 h-5" />
-              <span className="text-sm font-medium">Users</span>
-            </button>
           </div>
 
           {/* Content Section */}
           <div className="mb-6">
-            <div className="px-4 mb-2">
+            <button
+              onClick={() => toggleSection('content')}
+              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
+            >
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Content</div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  collapsedSections.has('content') ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-200 ${
+                collapsedSections.has('content') ? 'max-h-0' : 'max-h-96'
+              }`}
+            >
+              <button
+                onClick={() => setCurrentView('signage')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'signage' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Monitor className="w-5 h-5" />
+                <span className="text-sm font-medium">Signage</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('labels')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'labels' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Tag className="w-5 h-5" />
+                <span className="text-sm font-medium">Labels</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('products')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'products' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Package className="w-5 h-5" />
+                <span className="text-sm font-medium">Products</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('resources')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'resources' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <ImageIcon className="w-5 h-5" />
+                <span className="text-sm font-medium">Resources</span>
+              </button>
             </div>
-            <button
-              onClick={() => setCurrentView('signage')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'signage' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Monitor className="w-5 h-5" />
-              <span className="text-sm font-medium">Signage</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('labels')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'labels' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Tag className="w-5 h-5" />
-              <span className="text-sm font-medium">Labels</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('products')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'products' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Package className="w-5 h-5" />
-              <span className="text-sm font-medium">Products</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('resources')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'resources' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <ImageIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Resources</span>
-            </button>
           </div>
 
           {/* Wand Section */}
           <div className="mb-6">
-            <div className="px-4 mb-2">
+            <button
+              onClick={() => toggleSection('wand')}
+              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
+            >
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Wand</div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  collapsedSections.has('wand') ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-200 ${
+                collapsedSections.has('wand') ? 'max-h-0' : 'max-h-96'
+              }`}
+            >
+              <button
+                onClick={() => setCurrentView('wand-products')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'wand-products' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Package className="w-5 h-5" />
+                <span className="text-sm font-medium">Product Library</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('integration-sources')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'integration-sources' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Database className="w-5 h-5" />
+                <span className="text-sm font-medium">Integration Sources</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('core-attributes')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'core-attributes' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Sliders className="w-5 h-5" />
+                <span className="text-sm font-medium">Core Attributes</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('wand-templates')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'wand-templates' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Layers className="w-5 h-5" />
+                <span className="text-sm font-medium">Manage Templates</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('wand-mapper')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'wand-mapper' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <MapPin className="w-5 h-5" />
+                <span className="text-sm font-medium">Map Integration Templates</span>
+              </button>
             </div>
-            <button
-              onClick={() => setCurrentView('wand-products')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'wand-products' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Package className="w-5 h-5" />
-              <span className="text-sm font-medium">Product Library</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('integration-sources')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'integration-sources' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Database className="w-5 h-5" />
-              <span className="text-sm font-medium">Integration Sources</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('core-attributes')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'core-attributes' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Sliders className="w-5 h-5" />
-              <span className="text-sm font-medium">Core Attributes</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('wand-templates')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'wand-templates' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Layers className="w-5 h-5" />
-              <span className="text-sm font-medium">Manage Templates</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('wand-mapper')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'wand-mapper' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <MapPin className="w-5 h-5" />
-              <span className="text-sm font-medium">Map Integration Templates</span>
-            </button>
           </div>
 
           {/* Integration Section */}
           <div className="mb-6">
-            <div className="px-4 mb-2">
+            <button
+              onClick={() => toggleSection('integration')}
+              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
+            >
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Integration</div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  collapsedSections.has('integration') ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-200 ${
+                collapsedSections.has('integration') ? 'max-h-0' : 'max-h-96'
+              }`}
+            >
+              <button
+                onClick={() => setCurrentView('integration-dashboard')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'integration-dashboard' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <BarChart3 className="w-5 h-5" />
+                <span className="text-sm font-medium">Dashboard</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('integration-access')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'integration-access' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-sm font-medium">Access</span>
+              </button>
+              <button
+                onClick={() => setCurrentView('integration')}
+                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                  currentView === 'integration' ? 'bg-slate-100' : ''
+                }`}
+              >
+                <Layers className="w-5 h-5" />
+                <span className="text-sm font-medium">Catalog</span>
+              </button>
             </div>
-            <button
-              onClick={() => setCurrentView('integration-dashboard')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'integration-dashboard' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <BarChart3 className="w-5 h-5" />
-              <span className="text-sm font-medium">Dashboard</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('integration-access')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'integration-access' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-              <span className="text-sm font-medium">Access</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('integration')}
-              className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                currentView === 'integration' ? 'bg-slate-100' : ''
-              }`}
-            >
-              <Layers className="w-5 h-5" />
-              <span className="text-sm font-medium">Catalog</span>
-            </button>
           </div>
 
           {/* System Section */}
           <div className="mb-6">
-            <div className="px-4 mb-2">
+            <button
+              onClick={() => toggleSection('system')}
+              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
+            >
               <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">System</div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  collapsedSections.has('system') ? '-rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-200 ${
+                collapsedSections.has('system') ? 'max-h-0' : 'max-h-96'
+              }`}
+            >
+              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+                <Settings className="w-5 h-5" />
+                <span className="text-sm font-medium">Settings</span>
+              </button>
+              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
+                <BarChart3 className="w-5 h-5" />
+                <span className="text-sm font-medium">Analytics</span>
+              </button>
             </div>
-            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-              <Settings className="w-5 h-5" />
-              <span className="text-sm font-medium">Settings</span>
-            </button>
-            <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-              <BarChart3 className="w-5 h-5" />
-              <span className="text-sm font-medium">Analytics</span>
-            </button>
           </div>
         </nav>
       </aside>
