@@ -370,6 +370,10 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 }
               }
 
+              // Update localStorage and dispatch event for other components
+              localStorage.setItem('selectedLocation', JSON.stringify(location));
+              window.dispatchEvent(new CustomEvent('locationChange', { detail: location }));
+
               setToastMessage(`Taking you to ${locationName} now`);
               setShowLocationSelector(false);
             }}
