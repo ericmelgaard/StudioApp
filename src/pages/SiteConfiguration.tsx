@@ -546,8 +546,17 @@ export default function SiteConfiguration() {
                           })
                           .sort((a, b) => a.name.localeCompare(b.name));
 
+                        console.log('buildHierarchy parentId:', parentId, 'children:', children.map(c => c.name));
+
                         // For each child, return the child followed by its descendants
-                        return children.flatMap(child => [child, ...buildHierarchy(child.id)]);
+                        const result: PlacementGroup[] = [];
+                        for (const child of children) {
+                          result.push(child);
+                          const descendants = buildHierarchy(child.id);
+                          result.push(...descendants);
+                        }
+                        console.log('buildHierarchy result:', result.map(r => r.name));
+                        return result;
                       };
 
                       return buildHierarchy(storeRoot?.id).map((placement) => {
