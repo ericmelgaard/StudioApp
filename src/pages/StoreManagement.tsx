@@ -471,7 +471,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                                 title="Add child placement"
                               >
                                 <Plus className="w-4 h-4" />
-                                Add Child
+                                Add
                               </button>
                               <button
                                 onClick={() => handleEditPlacement(placement)}
