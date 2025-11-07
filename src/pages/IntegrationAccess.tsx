@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddWandIntegrationModal from '../components/AddWandIntegrationModal';
+import LocationRequired from '../components/LocationRequired';
+import { useLocation } from '../hooks/useLocation';
 
 interface IntegrationSourceConfig {
   id: string;
@@ -75,12 +77,15 @@ const SYNC_FREQUENCIES = [
 ];
 
 export default function IntegrationAccess() {
+  const { selectedConcept, selectedCompany, selectedStore } = useLocation();
   const [sourceConfigs, setSourceConfigs] = useState<IntegrationSourceConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [destinations] = useState<IntegrationDestination[]>(mockDestinations);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
   const [expandedDestinations, setExpandedDestinations] = useState<Record<string, boolean>>({});
+
+  const hasLocation = selectedConcept || selectedCompany || selectedStore;
 
   useEffect(() => {
     loadSourceConfigs();
@@ -150,7 +155,9 @@ export default function IntegrationAccess() {
             <h1 className="text-3xl font-bold text-slate-900">Integration Access</h1>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              disabled={!hasLocation}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!hasLocation ? 'Select a location first' : ''}
             >
               <Plus className="w-5 h-5" />
               Add Source
@@ -158,6 +165,11 @@ export default function IntegrationAccess() {
           </div>
           <p className="text-slate-600">Configure data sources and sync schedules</p>
         </div>
+
+        {/* Location Required Message */}
+        {!hasLocation && (
+          <LocationRequired action="adding integration sources" className="mb-6" />
+        )}
 
         {/* Active Source Configurations */}
         {loading ? (
@@ -450,13 +462,16 @@ export default function IntegrationAccess() {
       </div>
 
       {/* Add Source Modal */}
-      {showAddModal && (
+      {showAddModal && hasLocation && (
         <AddWandIntegrationModal
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             setShowAddModal(false);
             loadSourceConfigs();
           }}
+          conceptId={selectedConcept?.id}
+          companyId={selectedCompany?.id}
+          storeId={selectedStore?.id}
         />
       )}
 
