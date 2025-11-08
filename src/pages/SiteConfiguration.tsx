@@ -67,7 +67,7 @@ interface StoreData {
 }
 
 export default function SiteConfiguration() {
-  const { location } = useLocation();
+  const { location, setLocation } = useLocation();
 
   // Navigation state
   const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store'>('wand');
@@ -93,42 +93,46 @@ export default function SiteConfiguration() {
   // Loading state
   const [loading, setLoading] = useState(true);
 
-  // Determine view level based on location context
+  // Determine view level and load data based on location context
   useEffect(() => {
+    let level: 'wand' | 'concept' | 'company' | 'store' = 'wand';
+
     if (location.store) {
-      setViewLevel('store');
+      level = 'store';
       setSelectedStore(location.store);
-      setSelectedCompany(location.company);
-      setSelectedConcept(location.concept);
+      setSelectedCompany(location.company || null);
+      setSelectedConcept(location.concept || null);
     } else if (location.company) {
-      setViewLevel('company');
+      level = 'company';
       setSelectedCompany(location.company);
-      setSelectedConcept(location.concept);
+      setSelectedConcept(location.concept || null);
       setSelectedStore(null);
     } else if (location.concept) {
-      setViewLevel('concept');
+      level = 'concept';
       setSelectedConcept(location.concept);
       setSelectedCompany(null);
       setSelectedStore(null);
     } else {
-      setViewLevel('wand');
+      level = 'wand';
       setSelectedConcept(null);
       setSelectedCompany(null);
       setSelectedStore(null);
     }
-    loadData();
+
+    setViewLevel(level);
+    loadDataForLevel(level);
   }, [location]);
 
-  const loadData = async () => {
+  const loadDataForLevel = async (level: 'wand' | 'concept' | 'company' | 'store') => {
     setLoading(true);
 
-    if (viewLevel === 'wand' || (!location.concept && !location.company && !location.store)) {
+    if (level === 'wand') {
       await loadWandLevelData();
-    } else if (viewLevel === 'concept' || (location.concept && !location.company && !location.store)) {
+    } else if (level === 'concept') {
       await loadConceptLevelData();
-    } else if (viewLevel === 'company' || (location.company && !location.store)) {
+    } else if (level === 'company') {
       await loadCompanyLevelData();
-    } else if (viewLevel === 'store' || location.store) {
+    } else if (level === 'store') {
       await loadStoreLevelData();
     }
 
@@ -458,8 +462,7 @@ export default function SiteConfiguration() {
                 setShowConceptModal(true);
               }}
               onSelect={(concept) => {
-                setSelectedConcept(concept);
-                setViewLevel('concept');
+                setLocation({ concept });
               }}
             />
           </div>
@@ -494,8 +497,7 @@ export default function SiteConfiguration() {
           <div className="mb-6">
             <button
               onClick={() => {
-                setViewLevel('wand');
-                setSelectedConcept(null);
+                setLocation({});
               }}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
             >
@@ -553,8 +555,10 @@ export default function SiteConfiguration() {
                   setShowCompanyModal(true);
                 }}
                 onSelect={(company) => {
-                  setSelectedCompany(company);
-                  setViewLevel('company');
+                  setLocation({
+                    concept: selectedConcept || location.concept,
+                    company
+                  });
                 }}
               />
             </div>
@@ -595,8 +599,9 @@ export default function SiteConfiguration() {
           <div className="mb-6">
             <button
               onClick={() => {
-                setViewLevel('concept');
-                setSelectedCompany(null);
+                setLocation({
+                  concept: selectedConcept || location.concept
+                });
               }}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
             >
@@ -640,8 +645,11 @@ export default function SiteConfiguration() {
                   setShowStoreModal(true);
                 }}
                 onSelect={(store) => {
-                  setSelectedStore(store);
-                  setViewLevel('store');
+                  setLocation({
+                    concept: selectedConcept || location.concept,
+                    company: selectedCompany || location.company,
+                    store
+                  });
                 }}
               />
             </div>
@@ -683,8 +691,10 @@ export default function SiteConfiguration() {
           {selectedCompany && (
             <button
               onClick={() => {
-                setViewLevel('company');
-                setSelectedStore(null);
+                setLocation({
+                  concept: selectedConcept || location.concept,
+                  company: selectedCompany || location.company
+                });
               }}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
             >
