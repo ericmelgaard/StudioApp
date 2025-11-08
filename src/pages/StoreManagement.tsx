@@ -260,53 +260,38 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
     return (
       <div className="min-h-screen bg-slate-50">
-        <nav className="bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/WandLogoNoText.png"
-                    alt="WAND"
-                    className="h-8 w-8"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-                      <span className="text-slate-400">|</span>
-                      <span className="text-base font-semibold text-slate-700">Studio</span>
-                    </div>
-                    {location.company && (
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        {location.store ? (
-                          <span>{location.company.name} › {location.store.name}</span>
-                        ) : (
-                          <span>{location.company.name}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                  title="Help"
-                >
-                  <HelpCircle className="w-5 h-5" />
-                </button>
-                <button
-                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                  title="Documentation"
-                >
-                  <FileText className="w-5 h-5" />
-                </button>
-                <NotificationPanel />
-                <UserMenu role="operator" onBackToRoles={onBack} />
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/WandLogoNoText.png"
+                alt="WAND"
+                className="h-8 w-8"
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+                <span className="text-slate-400">|</span>
+                <span className="text-base font-semibold text-slate-700">Studio</span>
               </div>
             </div>
           </div>
-        </nav>
+          <div className="flex items-center gap-1">
+            <button
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Help"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Documentation"
+            >
+              <FileText className="w-5 h-5" />
+            </button>
+            <NotificationPanel />
+            <UserMenu role="operator" onBackToRoles={onBack} />
+          </div>
+        </header>
 
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
@@ -405,53 +390,38 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/WandLogoNoText.png"
-                  alt="WAND"
-                  className="h-8 w-8"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-                    <span className="text-slate-400">|</span>
-                    <span className="text-base font-semibold text-slate-700">Studio</span>
-                  </div>
-                  {location.company && (
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      {location.store ? (
-                        <span>{location.company.name} › {location.store.name}</span>
-                      ) : (
-                        <span>{location.company.name}</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Help"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Documentation"
-              >
-                <FileText className="w-5 h-5" />
-              </button>
-              <NotificationPanel />
-              <UserMenu role="operator" onBackToRoles={handleBackToCompany} />
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <img
+              src="/WandLogoNoText.png"
+              alt="WAND"
+              className="h-8 w-8"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-base font-semibold text-slate-700">Studio</span>
             </div>
           </div>
         </div>
-      </nav>
+        <div className="flex items-center gap-1">
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Help"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Documentation"
+          >
+            <FileText className="w-5 h-5" />
+          </button>
+          <NotificationPanel />
+          <UserMenu role="operator" onBackToRoles={handleBackToCompany} />
+        </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
