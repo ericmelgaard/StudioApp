@@ -536,41 +536,41 @@ export default function SiteConfiguration() {
             ]}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-slate-900">Companies</h2>
-                <button
-                  onClick={() => {
-                    setEditingItem(null);
-                    setShowCompanyModal(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Plus size={18} />
-                  Add Company
-                </button>
-              </div>
-
-              <CompaniesGrid
-                companies={companies}
-                onEdit={(company) => {
-                  setEditingItem(company);
-                  setShowCompanyModal(true);
-                }}
-                onSelect={(company) => {
-                  setLocation({
-                    concept: selectedConcept || location.concept,
-                    company
-                  });
-                }}
-              />
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
+            <div className="h-52">
               <StoreMap stores={stores.filter(s => s.latitude && s.longitude)} />
             </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Companies</h2>
+              <button
+                onClick={() => {
+                  setEditingItem(null);
+                  setShowCompanyModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={18} />
+                Add Company
+              </button>
+            </div>
+
+            <CompaniesGrid
+              companies={companies}
+              onEdit={(company) => {
+                setEditingItem(company);
+                setShowCompanyModal(true);
+              }}
+              onSelect={(company) => {
+                setLocation({
+                  concept: selectedConcept || location.concept,
+                  company
+                });
+              }}
+            />
           </div>
         </div>
 
@@ -628,42 +628,42 @@ export default function SiteConfiguration() {
             ]}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-slate-900">Stores</h2>
-                <button
-                  onClick={() => {
-                    setEditingItem(null);
-                    setShowStoreModal(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Plus size={18} />
-                  Add Store
-                </button>
-              </div>
-
-              <StoresGrid
-                stores={stores}
-                onEdit={(store) => {
-                  setEditingItem(store);
-                  setShowStoreModal(true);
-                }}
-                onSelect={(store) => {
-                  setLocation({
-                    concept: selectedConcept || location.concept,
-                    company: selectedCompany || location.company,
-                    store
-                  });
-                }}
-              />
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
+            <div className="h-52">
               <StoreMap stores={stores.filter(s => s.latitude && s.longitude)} />
             </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Stores</h2>
+              <button
+                onClick={() => {
+                  setEditingItem(null);
+                  setShowStoreModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={18} />
+                Add Store
+              </button>
+            </div>
+
+            <StoresGrid
+              stores={stores}
+              onEdit={(store) => {
+                setEditingItem(store);
+                setShowStoreModal(true);
+              }}
+              onSelect={(store) => {
+                setLocation({
+                  concept: selectedConcept || location.concept,
+                  company: selectedCompany || location.company,
+                  store
+                });
+              }}
+            />
           </div>
         </div>
 

@@ -61,7 +61,7 @@ export default function StoreMap({ stores, onStoreClick }: StoreMapProps) {
 
   const mapClass = isFullscreen
     ? 'h-screen'
-    : 'h-[300px]';
+    : 'h-full';
 
   return (
     <div className="space-y-4">
