@@ -359,9 +359,7 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
                 <img
@@ -424,9 +422,7 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
               <NotificationPanel />
               <UserMenu role="creator" onBackToRoles={onBack} />
             </div>
-          </div>
-        </div>
-      </nav>
+      </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2 } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2, ChevronDown } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
@@ -28,6 +28,18 @@ interface OperatorDashboardProps {
   user: UserProfile;
 }
 
+interface Company {
+  id: number;
+  name: string;
+  concept_id: number;
+}
+
+interface Store {
+  id: number;
+  name: string;
+  company_id: number;
+}
+
 type CardType = 'signage' | 'labels' | 'products' | 'store' | 'status' | 'activity';
 
 interface DashboardCard {
@@ -38,6 +50,11 @@ interface DashboardCard {
 export default function OperatorDashboard({ onBack, user }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
   const { location, setLocation } = useLocation();
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [storesByCompany, setStoresByCompany] = useState<Record<number, Store[]>>({});
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -61,8 +78,92 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
 
   useEffect(() => {
+    loadCompaniesAndStores();
     loadStats();
   }, [location]);
+
+  const loadCompaniesAndStores = async () => {
+    setLoading(true);
+
+    // Load companies based on user access
+    let companiesQuery = supabase.from('companies').select('id, name, concept_id');
+
+    if (user.concept_id) {
+      companiesQuery = companiesQuery.eq('concept_id', user.concept_id);
+    }
+
+    if (user.company_id) {
+      companiesQuery = companiesQuery.eq('id', user.company_id);
+    }
+
+    const { data: companiesData, error: companiesError } = await companiesQuery.order('name');
+
+    if (companiesError) {
+      console.error('Error loading companies:', companiesError);
+      setLoading(false);
+      return;
+    }
+
+    setCompanies(companiesData || []);
+
+    // Load stores for each company
+    if (companiesData && companiesData.length > 0) {
+      const companyIds = companiesData.map(c => c.id);
+
+      let storesQuery = supabase
+        .from('stores')
+        .select('id, name, company_id')
+        .in('company_id', companyIds);
+
+      if (user.store_id) {
+        storesQuery = storesQuery.eq('id', user.store_id);
+      }
+
+      const { data: storesData, error: storesError } = await storesQuery.order('name');
+
+      if (storesError) {
+        console.error('Error loading stores:', storesError);
+      } else if (storesData) {
+        // Group stores by company
+        const grouped: Record<number, Store[]> = {};
+        storesData.forEach(store => {
+          if (!grouped[store.company_id]) {
+            grouped[store.company_id] = [];
+          }
+          grouped[store.company_id].push(store);
+        });
+        setStoresByCompany(grouped);
+
+        // Set initial selection
+        if (location.store) {
+          setSelectedStore(location.store);
+          const company = companiesData.find(c => c.id === location.store?.company_id);
+          if (company) setSelectedCompany(company);
+        } else if (location.company) {
+          setSelectedCompany(location.company);
+        } else if (companiesData.length > 0) {
+          setSelectedCompany(companiesData[0]);
+        }
+      }
+    }
+
+    setLoading(false);
+  };
+
+  const handleCompanySelect = (company: Company) => {
+    setSelectedCompany(company);
+    setSelectedStore(null);
+    setLocation({ company, store: undefined, concept: location.concept });
+  };
+
+  const handleStoreSelect = (store: Store) => {
+    const company = companies.find(c => c.id === store.company_id);
+    if (company) {
+      setSelectedCompany(company);
+      setSelectedStore(store);
+      setLocation({ company, store, concept: location.concept });
+    }
+  };
 
   const loadStats = async () => {
     const productsResult = await supabase.from('products').select('mrn', { count: 'exact' });
@@ -391,35 +492,65 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/WandLogoNoText.png"
-                  alt="WAND"
-                  className="h-8 w-8"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-                    <span className="text-slate-400">|</span>
-                    <span className="text-base font-semibold text-slate-700">Studio</span>
-                  </div>
-                  {location.company && (
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      {location.store ? (
-                        <span>{location.company.name} › {location.store.name}</span>
-                      ) : (
-                        <span>{location.company.name}</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <img
+              src="/WandLogoNoText.png"
+              alt="WAND"
+              className="h-8 w-8"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-base font-semibold text-slate-700">Studio</span>
             </div>
-            <div className="flex items-center gap-1">
+          </div>
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+              {selectedStore ? (
+                <Store className="w-4 h-4 text-slate-600" />
+              ) : (
+                <Building2 className="w-4 h-4 text-slate-600" />
+              )}
+              <span className="text-sm font-medium text-slate-900 max-w-[140px] truncate">
+                {loading ? 'Loading...' : selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : 'Select Location'}
+              </span>
+              <ChevronDown className="w-4 h-4 text-slate-500" />
+            </button>
+            <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto z-50">
+              {companies.map((company) => (
+                <div key={company.id}>
+                  <button
+                    onClick={() => handleCompanySelect(company)}
+                    className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                      selectedCompany?.id === company.id && !selectedStore ? 'bg-blue-50 text-blue-700' : 'text-slate-900'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    {company.name}
+                  </button>
+                  {storesByCompany[company.id]?.map((store) => (
+                    <button
+                      key={store.id}
+                      onClick={() => handleStoreSelect(store)}
+                      className={`w-full text-left px-4 py-2 pl-10 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                        selectedStore?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600'
+                      }`}
+                    >
+                      <Store className="w-4 h-4" />
+                      {store.name}
+                    </button>
+                  ))}
+                </div>
+              ))}
+              {companies.length === 0 && !loading && (
+                <div className="px-4 py-2 text-sm text-slate-500">No locations available</div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
               <button
                 className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
                 title="Help"
@@ -433,11 +564,9 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                 <FileText className="w-5 h-5" />
               </button>
               <NotificationPanel />
-              <UserMenu role="operator" onBackToRoles={onBack} />
-            </div>
-          </div>
+          <UserMenu role="operator" onBackToRoles={onBack} />
         </div>
-      </nav>
+      </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
