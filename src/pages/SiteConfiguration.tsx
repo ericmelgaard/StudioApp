@@ -490,20 +490,24 @@ export default function SiteConfiguration() {
   if (viewLevel === 'concept' && selectedConcept) {
     const totalCompanies = companies.length;
     const totalStores = companies.reduce((sum, c) => sum + (c.store_count || 0), 0);
+    // Only show back button if we have loaded multiple concepts (meaning we came from the list view)
+    const canNavigateBack = concepts.length > 1;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
-            <button
-              onClick={() => {
-                setLocation({});
-              }}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
-            >
-              <ArrowLeft size={18} />
-              Back to Concepts
-            </button>
+            {canNavigateBack && (
+              <button
+                onClick={() => {
+                  setLocation({});
+                }}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+              >
+                <ArrowLeft size={18} />
+                Back to Concepts
+              </button>
+            )}
 
             <div className="flex items-center gap-3 mb-2">
               <div
@@ -597,17 +601,19 @@ export default function SiteConfiguration() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
-            <button
-              onClick={() => {
-                setLocation({
-                  concept: selectedConcept || location.concept
-                });
-              }}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
-            >
-              <ArrowLeft size={18} />
-              Back to {selectedConcept?.name || 'Concept'}
-            </button>
+            {selectedConcept && (
+              <button
+                onClick={() => {
+                  setLocation({
+                    concept: selectedConcept || location.concept
+                  });
+                }}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+              >
+                <ArrowLeft size={18} />
+                Back to {selectedConcept?.name || 'Concept'}
+              </button>
+            )}
 
             <h1 className="text-3xl font-bold text-slate-900 mb-2">{selectedCompany.name}</h1>
             {selectedCompany.description && (
