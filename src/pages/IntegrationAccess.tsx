@@ -265,7 +265,7 @@ export default function IntegrationAccess() {
                       </div>
                       <div>
                         <div className="text-xs text-slate-500">Schedule</div>
-                        <div className="text-sm font-medium text-slate-900">{source.config?.schedule || 'Manual'}</div>
+                        <div className="text-sm font-medium text-slate-900">{config.config?.schedule || 'Manual'}</div>
                       </div>
                     </div>
                   </div>
