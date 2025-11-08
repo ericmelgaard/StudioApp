@@ -136,26 +136,54 @@ export default function SiteConfiguration() {
   };
 
   const loadWandLevelData = async () => {
+    // Load all concepts
     const { data: conceptsData, error } = await supabase
       .from('concepts')
-      .select(`
-        *,
-        companies:companies(count),
-        stores:companies(stores(count))
-      `)
+      .select('*')
       .order('name');
 
     if (error) {
       console.error('Error loading concepts:', error);
-    } else {
-      const conceptsWithCounts = (conceptsData || []).map(concept => ({
-        ...concept,
-        company_count: concept.companies?.[0]?.count || 0,
-        store_count: concept.stores?.reduce((sum: number, company: any) =>
-          sum + (company.stores?.[0]?.count || 0), 0) || 0
-      }));
-      setConcepts(conceptsWithCounts);
+      return;
     }
+
+    // Load all companies to count by concept
+    const { data: companiesData } = await supabase
+      .from('companies')
+      .select('id, concept_id');
+
+    // Load all stores to count by concept
+    const { data: storesData } = await supabase
+      .from('stores')
+      .select('id, company_id');
+
+    // Build lookup maps
+    const companiesByConceptId: Record<string, number> = {};
+    const storesByCompanyId: Record<string, number> = {};
+
+    (companiesData || []).forEach(company => {
+      companiesByConceptId[company.concept_id] = (companiesByConceptId[company.concept_id] || 0) + 1;
+    });
+
+    (storesData || []).forEach(store => {
+      storesByCompanyId[store.company_id] = (storesByCompanyId[store.company_id] || 0) + 1;
+    });
+
+    // Calculate store counts per concept
+    const storesByConceptId: Record<string, number> = {};
+    (companiesData || []).forEach(company => {
+      const storeCount = storesByCompanyId[company.id] || 0;
+      storesByConceptId[company.concept_id] = (storesByConceptId[company.concept_id] || 0) + storeCount;
+    });
+
+    // Attach counts to concepts
+    const conceptsWithCounts = (conceptsData || []).map(concept => ({
+      ...concept,
+      company_count: companiesByConceptId[concept.id] || 0,
+      store_count: storesByConceptId[concept.id] || 0
+    }));
+
+    setConcepts(conceptsWithCounts);
   };
 
   const loadConceptLevelData = async () => {
@@ -163,35 +191,49 @@ export default function SiteConfiguration() {
 
     const conceptId = location.concept?.id || selectedConcept?.id;
 
+    // Load companies for this concept
     const { data: companiesData, error: companiesError } = await supabase
       .from('companies')
-      .select(`
-        *,
-        stores:stores(count)
-      `)
+      .select('*')
       .eq('concept_id', conceptId)
       .order('name');
 
     if (companiesError) {
       console.error('Error loading companies:', companiesError);
-    } else {
-      const companiesWithCounts = (companiesData || []).map(company => ({
-        ...company,
-        store_count: company.stores?.[0]?.count || 0
-      }));
-      setCompanies(companiesWithCounts);
+      return;
     }
 
-    const { data: storesData, error: storesError } = await supabase
-      .from('stores')
-      .select('*, company:companies!inner(concept_id)')
-      .eq('company.concept_id', conceptId);
+    // Load all stores for companies in this concept
+    const companyIds = (companiesData || []).map(c => c.id);
 
-    if (storesError) {
-      console.error('Error loading stores for map:', storesError);
-    } else {
-      setStores(storesData || []);
+    let allStoresData = [];
+    if (companyIds.length > 0) {
+      const { data: storesData, error: storesError } = await supabase
+        .from('stores')
+        .select('*')
+        .in('company_id', companyIds);
+
+      if (storesError) {
+        console.error('Error loading stores:', storesError);
+      } else {
+        allStoresData = storesData || [];
+      }
     }
+
+    // Count stores by company
+    const storesByCompanyId: Record<string, number> = {};
+    allStoresData.forEach(store => {
+      storesByCompanyId[store.company_id] = (storesByCompanyId[store.company_id] || 0) + 1;
+    });
+
+    // Attach store counts to companies
+    const companiesWithCounts = (companiesData || []).map(company => ({
+      ...company,
+      store_count: storesByCompanyId[company.id] || 0
+    }));
+
+    setCompanies(companiesWithCounts);
+    setStores(allStoresData);
   };
 
   const loadCompanyLevelData = async () => {
