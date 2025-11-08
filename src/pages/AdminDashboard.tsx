@@ -191,7 +191,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 }`}
               >
                 <MapPin className="w-5 h-5" />
-                <span className="text-sm font-medium">Locations</span>
+                <span className="text-sm font-medium">Location Manager</span>
               </button>
               <button
                 onClick={() => setCurrentView('users')}

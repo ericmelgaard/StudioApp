@@ -394,7 +394,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                 </div>
                 <div>
                   <div className="text-sm text-slate-900 font-medium">
-                    {selectedStore ? 'Store Configuration' : 'Manage Stores'}
+                    {selectedStore ? 'Store Configuration' : 'Location Manager'}
                   </div>
                   <div className="text-sm text-slate-600">
                     {selectedStore ? 'Configure settings and placements' : `${storesByCompany[selectedCompany?.id || 0]?.length || 0} locations`}
