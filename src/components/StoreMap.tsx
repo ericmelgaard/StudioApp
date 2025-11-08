@@ -61,7 +61,7 @@ export default function StoreMap({ stores, onStoreClick }: StoreMapProps) {
 
   const mapClass = isFullscreen
     ? 'h-screen'
-    : 'h-[500px]';
+    : 'h-[300px]';
 
   return (
     <div className="space-y-4">
@@ -166,40 +166,12 @@ export default function StoreMap({ stores, onStoreClick }: StoreMapProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-600 mt-2">
-          <span>
-            {storesWithCoordinates.length} {storesWithCoordinates.length === 1 ? 'store' : 'stores'} on map
-          </span>
-          {storesWithoutCoordinates.length > 0 && (
-            <span className="text-orange-600">
-              {storesWithoutCoordinates.length} {storesWithoutCoordinates.length === 1 ? 'store' : 'stores'} without coordinates
-            </span>
-          )}
-        </div>
-      </div>
-
-      {storesWithoutCoordinates.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <h4 className="font-medium text-orange-900 mb-2">Stores Without Coordinates</h4>
-          <div className="space-y-2">
-            {storesWithoutCoordinates.map(store => (
-              <button
-                key={store.id}
-                onClick={() => handleStoreClick(store)}
-                className="w-full text-left px-3 py-2 bg-white rounded border border-orange-200 hover:border-orange-300 hover:bg-orange-50 transition-colors"
-              >
-                <div className="font-medium text-gray-900">{store.name}</div>
-                {store.address && (
-                  <div className="text-sm text-gray-600">
-                    {store.address}
-                    {store.city && store.state && `, ${store.city}, ${store.state}`}
-                  </div>
-                )}
-              </button>
-            ))}
+        {storesWithCoordinates.length > 0 && (
+          <div className="absolute bottom-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded text-xs text-gray-600 shadow-sm">
+            {storesWithCoordinates.length} {storesWithCoordinates.length === 1 ? 'location' : 'locations'}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

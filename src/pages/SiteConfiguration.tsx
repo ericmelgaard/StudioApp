@@ -569,7 +569,7 @@ export default function SiteConfiguration() {
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
-              <StoreMap stores={stores} />
+              <StoreMap stores={stores.filter(s => s.latitude && s.longitude)} />
             </div>
           </div>
         </div>
@@ -662,7 +662,7 @@ export default function SiteConfiguration() {
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
-              <StoreMap stores={stores} />
+              <StoreMap stores={stores.filter(s => s.latitude && s.longitude)} />
             </div>
           </div>
         </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, ChevronDown, Building2 } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2 } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
 import { supabase } from '../lib/supabase';
+import { useLocation } from '../hooks/useLocation';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
@@ -34,25 +35,9 @@ interface DashboardCard {
   order: number;
 }
 
-interface Company {
-  id: number;
-  name: string;
-  concept_id: number | null;
-}
-
-interface StoreLocation {
-  id: number;
-  name: string;
-  company_id: number;
-}
-
 export default function OperatorDashboard({ onBack, user }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [stores, setStores] = useState<StoreLocation[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [selectedStore, setSelectedStore] = useState<StoreLocation | null>(null);
-  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const { location, setLocation } = useLocation();
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -76,55 +61,8 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
 
   useEffect(() => {
-    loadCompaniesAndStores();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCompany || selectedStore) {
-      loadStats();
-    }
-  }, [selectedCompany, selectedStore]);
-
-  const loadCompaniesAndStores = async () => {
-    let companiesQuery = supabase.from('companies').select('id, name, concept_id').order('name');
-    let storesQuery = supabase.from('stores').select('id, name, company_id').order('name');
-
-    if (user.company_id) {
-      companiesQuery = companiesQuery.eq('id', user.company_id);
-      storesQuery = storesQuery.eq('company_id', user.company_id);
-    }
-
-    const [companiesResult, storesResult] = await Promise.all([
-      companiesQuery,
-      storesQuery,
-    ]);
-
-    if (companiesResult.data) {
-      setCompanies(companiesResult.data);
-      if (companiesResult.data.length > 0) {
-        setSelectedCompany(companiesResult.data[0]);
-      }
-    }
-
-    if (storesResult.data) {
-      setStores(storesResult.data);
-    }
-  };
-
-  const filteredStores = stores.filter(store =>
-    selectedCompany ? store.company_id === selectedCompany.id : true
-  );
-
-  const handleSelectCompany = (company: Company) => {
-    setSelectedCompany(company);
-    setSelectedStore(null);
-    setShowCompanyDropdown(false);
-  };
-
-  const handleSelectStore = (store: StoreLocation) => {
-    setSelectedStore(store);
-    setShowCompanyDropdown(false);
-  };
+    loadStats();
+  }, [location]);
 
   const loadStats = async () => {
     const productsResult = await supabase.from('products').select('mrn', { count: 'exact' });
@@ -438,10 +376,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   if (currentView === 'store') {
     return (
       <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
-        <StoreManagement
-          onBack={() => setCurrentView('home')}
-          initialStore={selectedStore || undefined}
-        />
+        <StoreManagement onBack={() => setCurrentView('home')} />
       </Suspense>
     );
   }
@@ -455,7 +390,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   }
 
   return (
-    <div className="min-h-screen bg-slate-50" onClick={() => setShowCompanyDropdown(false)}>
+    <div className="min-h-screen bg-slate-50">
       <nav className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -472,76 +407,16 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                     <span className="text-slate-400">|</span>
                     <span className="text-base font-semibold text-slate-700">Studio</span>
                   </div>
-                </div>
-              </div>
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowCompanyDropdown(!showCompanyDropdown);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors"
-                >
-                  {selectedStore ? (
-                    <Store className="w-4 h-4 text-slate-600" />
-                  ) : (
-                    <Building2 className="w-4 h-4 text-slate-600" />
-                  )}
-                  <span className="text-sm font-medium text-slate-900">
-                    {selectedStore ? selectedStore.name : selectedCompany?.name || 'Select Location'}
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-slate-400" />
-                </button>
-
-                {showCompanyDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 z-50 max-h-96 overflow-y-auto">
-                    <div className="p-2">
-                      <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase">
-                        Companies
-                      </div>
-                      {companies.map(company => (
-                        <button
-                          key={company.id}
-                          onClick={() => handleSelectCompany(company)}
-                          className={`w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors ${
-                            selectedCompany?.id === company.id && !selectedStore
-                              ? 'bg-blue-50 text-blue-700'
-                              : 'text-slate-700'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4" />
-                            <span className="text-sm font-medium">{company.name}</span>
-                          </div>
-                        </button>
-                      ))}
-
-                      {selectedCompany && filteredStores.length > 0 && (
-                        <>
-                          <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase mt-2 border-t border-slate-100">
-                            Stores in {selectedCompany.name}
-                          </div>
-                          {filteredStores.map(store => (
-                            <button
-                              key={store.id}
-                              onClick={() => handleSelectStore(store)}
-                              className={`w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors ${
-                                selectedStore?.id === store.id
-                                  ? 'bg-blue-50 text-blue-700'
-                                  : 'text-slate-700'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 pl-4">
-                                <Store className="w-4 h-4" />
-                                <span className="text-sm">{store.name}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </>
+                  {location.company && (
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {location.store ? (
+                        <span>{location.company.name} › {location.store.name}</span>
+                      ) : (
+                        <span>{location.company.name}</span>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1">
