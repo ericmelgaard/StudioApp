@@ -6,7 +6,7 @@ import IconPicker from './IconPicker';
 import ColorPicker from './ColorPicker';
 
 interface Concept {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   icon?: string;

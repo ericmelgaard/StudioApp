@@ -32,7 +32,7 @@ interface PlacementGroup {
 }
 
 interface ConceptData {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   icon?: string;
@@ -41,8 +41,8 @@ interface ConceptData {
 }
 
 interface CompanyData {
-  id: string;
-  concept_id: string;
+  id: number;
+  concept_id: number;
   name: string;
   description?: string;
   address?: string;
@@ -54,8 +54,8 @@ interface CompanyData {
 }
 
 interface StoreData {
-  id: string;
-  company_id: string;
+  id: number;
+  company_id: number;
   name: string;
   address?: string;
   city?: string;

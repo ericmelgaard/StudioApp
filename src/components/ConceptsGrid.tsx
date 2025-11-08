@@ -3,7 +3,7 @@ import * as Icons from 'lucide-react';
 import { Search, Edit, ArrowRight } from 'lucide-react';
 
 interface Concept {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   icon?: string;

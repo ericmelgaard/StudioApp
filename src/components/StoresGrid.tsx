@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Search, Edit, ArrowRight, Store, MapPin, Phone, Navigation } from 'lucide-react';
 
 interface StoreData {
-  id: string;
-  company_id: string;
+  id: number;
+  company_id: number;
   name: string;
   address?: string;
   city?: string;

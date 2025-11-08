@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MapPin, Store, Maximize2, X } from 'lucide-react';
 
 interface StoreLocation {
-  id: string;
+  id: number;
   name: string;
   address?: string;
   city?: string;

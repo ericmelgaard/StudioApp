@@ -3,8 +3,8 @@ import { X, Save, Trash2, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Store {
-  id: string;
-  company_id: string;
+  id: number;
+  company_id: number;
   name: string;
   address?: string;
   city?: string;
@@ -17,7 +17,7 @@ interface Store {
 
 interface StoreModalProps {
   store?: Store | null;
-  companyId: string;
+  companyId: number;
   onClose: () => void;
   onSave: () => void;
 }

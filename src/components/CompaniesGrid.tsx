@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Search, Edit, ArrowRight, Building2, MapPin, Phone, Mail } from 'lucide-react';
 
 interface Company {
-  id: string;
-  concept_id: string;
+  id: number;
+  concept_id: number;
   name: string;
   description?: string;
   address?: string;

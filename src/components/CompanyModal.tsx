@@ -3,8 +3,8 @@ import { X, Save, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Company {
-  id: string;
-  concept_id: string;
+  id: number;
+  concept_id: number;
   name: string;
   description?: string;
   address?: string;
@@ -17,7 +17,7 @@ interface Company {
 
 interface CompanyModalProps {
   company?: Company | null;
-  conceptId: string;
+  conceptId: number;
   onClose: () => void;
   onSave: () => void;
 }
