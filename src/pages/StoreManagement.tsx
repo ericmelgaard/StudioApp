@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 import MetricsBar from '../components/MetricsBar';
 import StoresGrid from '../components/StoresGrid';
-import StoreMap from '../components/StoreMap';
 import StoreModal from '../components/StoreModal';
 import { useLocation } from '../hooks/useLocation';
 import NotificationPanel from '../components/NotificationPanel';
@@ -320,13 +319,6 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
             ]}
           />
-
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
-            <div className="h-52">
-              <StoreMap stores={stores.filter(s => s.latitude && s.longitude)} />
-            </div>
-          </div>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">

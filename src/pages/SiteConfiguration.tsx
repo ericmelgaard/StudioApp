@@ -7,7 +7,6 @@ import MetricsBar from '../components/MetricsBar';
 import ConceptsGrid from '../components/ConceptsGrid';
 import CompaniesGrid from '../components/CompaniesGrid';
 import StoresGrid from '../components/StoresGrid';
-import StoreMap from '../components/StoreMap';
 import ConceptModal from '../components/ConceptModal';
 import CompanyModal from '../components/CompanyModal';
 import StoreModal from '../components/StoreModal';
@@ -531,13 +530,6 @@ export default function SiteConfiguration() {
             ]}
           />
 
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
-            <div className="h-52">
-              <StoreMap stores={stores.filter(s => s.latitude && s.longitude)} />
-            </div>
-          </div>
-
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-slate-900">Companies</h2>
@@ -622,13 +614,6 @@ export default function SiteConfiguration() {
               { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
             ]}
           />
-
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
-            <div className="h-52">
-              <StoreMap stores={stores.filter(s => s.latitude && s.longitude)} />
-            </div>
-          </div>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
