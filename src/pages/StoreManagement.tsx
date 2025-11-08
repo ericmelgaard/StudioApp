@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Layers } from 'lucide-react';
+import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Layers, HelpCircle, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 import MetricsBar from '../components/MetricsBar';
@@ -7,6 +7,8 @@ import StoresGrid from '../components/StoresGrid';
 import StoreMap from '../components/StoreMap';
 import StoreModal from '../components/StoreModal';
 import { useLocation } from '../hooks/useLocation';
+import NotificationPanel from '../components/NotificationPanel';
+import UserMenu from '../components/UserMenu';
 
 interface PlacementGroup {
   id: string;
@@ -240,7 +242,55 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     const totalStores = stores.length;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen bg-slate-50">
+        <nav className="bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/WandLogoNoText.png"
+                    alt="WAND"
+                    className="h-8 w-8"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+                      <span className="text-slate-400">|</span>
+                      <span className="text-base font-semibold text-slate-700">Studio</span>
+                    </div>
+                    {location.company && (
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {location.store ? (
+                          <span>{location.company.name} › {location.store.name}</span>
+                        ) : (
+                          <span>{location.company.name}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Help"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </button>
+                <button
+                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Documentation"
+                >
+                  <FileText className="w-5 h-5" />
+                </button>
+                <NotificationPanel />
+                <UserMenu role="operator" onBackToRoles={onBack} />
+              </div>
+            </div>
+          </div>
+        </nav>
+
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
             <button
@@ -293,29 +343,77 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               onSelect={handleSelectStore}
             />
           </div>
-        </div>
 
-        {showStoreModal && (
-          <StoreModal
-            store={editingItem}
-            companyId={company?.id}
-            onClose={() => {
-              setShowStoreModal(false);
-              setEditingItem(null);
-            }}
-            onSave={() => {
-              setShowStoreModal(false);
-              setEditingItem(null);
-              loadCompanyLevelData();
-            }}
-          />
-        )}
+          {showStoreModal && (
+            <StoreModal
+              store={editingItem}
+              companyId={company?.id}
+              onClose={() => {
+                setShowStoreModal(false);
+                setEditingItem(null);
+              }}
+              onSave={() => {
+                setShowStoreModal(false);
+                setEditingItem(null);
+                loadCompanyLevelData();
+              }}
+            />
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-slate-50">
+      <nav className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <img
+                  src="/WandLogoNoText.png"
+                  alt="WAND"
+                  className="h-8 w-8"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+                    <span className="text-slate-400">|</span>
+                    <span className="text-base font-semibold text-slate-700">Studio</span>
+                  </div>
+                  {location.company && (
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {location.store ? (
+                        <span>{location.company.name} › {location.store.name}</span>
+                      ) : (
+                        <span>{location.company.name}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Help"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </button>
+              <button
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Documentation"
+              >
+                <FileText className="w-5 h-5" />
+              </button>
+              <NotificationPanel />
+              <UserMenu role="operator" onBackToRoles={handleBackToCompany} />
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
           <button
