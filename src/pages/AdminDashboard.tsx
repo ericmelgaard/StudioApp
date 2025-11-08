@@ -3,6 +3,7 @@ import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, 
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
+import { useLocation } from '../hooks/useLocation';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
@@ -58,15 +59,24 @@ interface Store {
 }
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
+  const { location, setLocation, getLocationDisplay } = useLocation();
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites'>('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
+  // Local state synced with global location context
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+
+  // Sync local state with global location context on mount and location changes
+  useEffect(() => {
+    setSelectedConcept(location.concept || null);
+    setSelectedCompany(location.company || null);
+    setSelectedStore(location.store || null);
+  }, [location]);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -475,31 +485,19 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div></div>}>
           <LocationSelector
             onClose={() => setShowLocationSelector(false)}
-            onSelect={(location) => {
-              let locationName = '';
+            onSelect={(selectedLocation) => {
+              // Update global location context (which handles localStorage and events)
+              setLocation(selectedLocation);
 
-              if (Object.keys(location).length === 0) {
-                locationName = 'WAND Digital';
-                setSelectedConcept(null);
-                setSelectedCompany(null);
-                setSelectedStore(null);
-              } else {
-                setSelectedConcept(location.concept || null);
-                setSelectedCompany(location.company || null);
-                setSelectedStore(location.store || null);
-
-                if (location.store) {
-                  locationName = location.store.name;
-                } else if (location.company) {
-                  locationName = location.company.name;
-                } else if (location.concept) {
-                  locationName = location.concept.name;
-                }
+              // Determine location name for toast
+              let locationName = 'WAND Digital';
+              if (selectedLocation.store) {
+                locationName = selectedLocation.store.name;
+              } else if (selectedLocation.company) {
+                locationName = selectedLocation.company.name;
+              } else if (selectedLocation.concept) {
+                locationName = selectedLocation.concept.name;
               }
-
-              // Update localStorage and dispatch event for other components
-              localStorage.setItem('selectedLocation', JSON.stringify(location));
-              window.dispatchEvent(new CustomEvent('locationChange', { detail: location }));
 
               setToastMessage(`Taking you to ${locationName} now`);
               setShowLocationSelector(false);
