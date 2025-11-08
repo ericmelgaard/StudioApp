@@ -295,6 +295,20 @@ export default function SiteConfiguration() {
     return IconComponent ? <IconComponent size={24} /> : <Building2 size={24} />;
   };
 
+  const handleEditConcept = () => {
+    if (selectedConcept) {
+      setEditingItem(selectedConcept);
+      setShowConceptModal(true);
+    }
+  };
+
+  const handleEditCompany = () => {
+    if (selectedCompany) {
+      setEditingItem(selectedCompany);
+      setShowCompanyModal(true);
+    }
+  };
+
   const handleEditStore = () => {
     if (storeRoot) {
       setEditingItem(storeRoot);
@@ -503,22 +517,31 @@ export default function SiteConfiguration() {
               </button>
             )}
 
-            <div className="flex items-center gap-3 mb-2">
-              <div
-                className="p-3 rounded-lg"
-                style={{
-                  backgroundColor: selectedConcept.brand_primary_color || '#E5E7EB',
-                  color: selectedConcept.brand_primary_color ? '#FFFFFF' : '#374151'
-                }}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div
+                  className="p-3 rounded-lg"
+                  style={{
+                    backgroundColor: selectedConcept.brand_primary_color || '#E5E7EB',
+                    color: selectedConcept.brand_primary_color ? '#FFFFFF' : '#374151'
+                  }}
+                >
+                  {renderIcon(selectedConcept.icon)}
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900">{selectedConcept.name}</h1>
+                  {selectedConcept.description && (
+                    <p className="text-slate-600">{selectedConcept.description}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleEditConcept}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
-                {renderIcon(selectedConcept.icon)}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">{selectedConcept.name}</h1>
-                {selectedConcept.description && (
-                  <p className="text-slate-600">{selectedConcept.description}</p>
-                )}
-              </div>
+                <Edit2 className="w-4 h-4" />
+                Edit Concept
+              </button>
             </div>
             {renderBreadcrumbs()}
           </div>
@@ -561,6 +584,21 @@ export default function SiteConfiguration() {
           </div>
         </div>
 
+        {showConceptModal && (
+          <ConceptModal
+            concept={editingItem}
+            onClose={() => {
+              setShowConceptModal(false);
+              setEditingItem(null);
+            }}
+            onSave={() => {
+              setShowConceptModal(false);
+              setEditingItem(null);
+              loadConceptLevelData();
+            }}
+          />
+        )}
+
         {showCompanyModal && (
           <CompanyModal
             company={editingItem}
@@ -602,10 +640,21 @@ export default function SiteConfiguration() {
               </button>
             )}
 
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">{selectedCompany.name}</h1>
-            {selectedCompany.description && (
-              <p className="text-slate-600 mb-2">{selectedCompany.description}</p>
-            )}
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">{selectedCompany.name}</h1>
+                {selectedCompany.description && (
+                  <p className="text-slate-600 mt-1">{selectedCompany.description}</p>
+                )}
+              </div>
+              <button
+                onClick={handleEditCompany}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit Company
+              </button>
+            </div>
             {renderBreadcrumbs()}
           </div>
 
@@ -646,6 +695,22 @@ export default function SiteConfiguration() {
             />
           </div>
         </div>
+
+        {showCompanyModal && (
+          <CompanyModal
+            company={editingItem}
+            conceptId={selectedCompany.concept_id}
+            onClose={() => {
+              setShowCompanyModal(false);
+              setEditingItem(null);
+            }}
+            onSave={() => {
+              setShowCompanyModal(false);
+              setEditingItem(null);
+              loadCompanyLevelData();
+            }}
+          />
+        )}
 
         {showStoreModal && (
           <StoreModal

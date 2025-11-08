@@ -5,6 +5,7 @@ import PlacementGroupModal from '../components/PlacementGroupModal';
 import MetricsBar from '../components/MetricsBar';
 import StoresGrid from '../components/StoresGrid';
 import StoreModal from '../components/StoreModal';
+import CompanyModal from '../components/CompanyModal';
 import { useLocation } from '../hooks/useLocation';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
@@ -60,6 +61,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   const [storeRoot, setStoreRoot] = useState<PlacementGroup | null>(null);
 
   const [showStoreModal, setShowStoreModal] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showPlacementModal, setShowPlacementModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [parentForNewPlacement, setParentForNewPlacement] = useState<string | null>(null);
@@ -161,6 +163,13 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
       company: location.company,
       store
     });
+  };
+
+  const handleEditCompany = () => {
+    if (company) {
+      setEditingItem(company);
+      setShowCompanyModal(true);
+    }
   };
 
   const handleEditStore = () => {
@@ -309,8 +318,24 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               Dashboard
             </button>
 
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
-            <p className="text-slate-600">Manage store locations and settings</p>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Store Configuration</h1>
+                <p className="text-slate-600 mt-1">Manage store locations and settings</p>
+                {company && (
+                  <p className="text-sm text-slate-500 mt-1">{company.name}</p>
+                )}
+              </div>
+              {company && (
+                <button
+                  onClick={handleEditCompany}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit Company
+                </button>
+              )}
+            </div>
             {renderBreadcrumbs()}
           </div>
 
@@ -344,6 +369,22 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               onSelect={handleSelectStore}
             />
           </div>
+
+          {showCompanyModal && (
+            <CompanyModal
+              company={editingItem}
+              conceptId={company?.concept_id}
+              onClose={() => {
+                setShowCompanyModal(false);
+                setEditingItem(null);
+              }}
+              onSave={() => {
+                setShowCompanyModal(false);
+                setEditingItem(null);
+                loadCompanyLevelData();
+              }}
+            />
+          )}
 
           {showStoreModal && (
             <StoreModal
