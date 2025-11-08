@@ -1,4 +1,4 @@
-import { Users, HelpCircle, FileText, ChevronDown, Store, Layers, Image, BarChart3, Video, FileText as Document, Palette, GripVertical } from 'lucide-react';
+import { Users, HelpCircle, FileText, ChevronDown, Layers, Image, BarChart3, Video, FileText as Document, Palette, GripVertical, Building2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
@@ -26,16 +26,17 @@ interface DashboardCard {
   order: number;
 }
 
-interface StoreLocation {
+interface Concept {
   id: number;
   name: string;
-  company_id: number;
-  company_name?: string;
+  privilege_level?: number;
+  parent_level?: number;
+  domain_level?: number;
 }
 
 export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps) {
-  const [stores, setStores] = useState<StoreLocation[]>([]);
-  const [selectedStore, setSelectedStore] = useState<StoreLocation | null>(null);
+  const [concepts, setConcepts] = useState<Concept[]>([]);
+  const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [loading, setLoading] = useState(true);
   const [cards, setCards] = useState<DashboardCard[]>([
     { id: 'projects', order: 0 },
@@ -48,84 +49,30 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
 
   useEffect(() => {
-    loadStores();
+    loadConcepts();
   }, []);
 
-  const loadStores = async () => {
+  const loadConcepts = async () => {
     setLoading(true);
 
+    let conceptsQuery = supabase
+      .from('concepts')
+      .select('id, name, privilege_level, parent_level, domain_level')
+      .order('name');
+
     if (user.concept_id) {
-      const { data: companies, error: compError } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('concept_id', user.concept_id);
+      conceptsQuery = conceptsQuery.eq('id', user.concept_id);
+    }
 
-      if (compError) {
-        console.error('Error loading companies:', compError);
-        setStores([]);
-        setLoading(false);
-        return;
-      }
+    const { data: conceptsData, error: conceptsError } = await conceptsQuery;
 
-      const companyIds = companies?.map(c => c.id) || [];
-
-      if (companyIds.length === 0) {
-        setStores([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data: stores, error: storesError } = await supabase
-        .from('stores')
-        .select(`
-          id,
-          name,
-          company_id,
-          companies(name)
-        `)
-        .in('company_id', companyIds)
-        .order('name');
-
-      if (storesError) {
-        console.error('Error loading stores:', storesError);
-        setStores([]);
-      } else if (stores) {
-        const formattedStores = stores.map((store: any) => ({
-          id: store.id,
-          name: store.name,
-          company_id: store.company_id,
-          company_name: store.companies?.name,
-        }));
-        setStores(formattedStores);
-        if (formattedStores.length > 0) {
-          setSelectedStore(formattedStores[0]);
-        }
-      }
-    } else {
-      const { data: stores, error } = await supabase
-        .from('stores')
-        .select(`
-          id,
-          name,
-          company_id,
-          companies(name)
-        `)
-        .order('name');
-
-      if (error) {
-        console.error('Error loading stores:', error);
-        setStores([]);
-      } else if (stores) {
-        const formattedStores = stores.map((store: any) => ({
-          id: store.id,
-          name: store.name,
-          company_id: store.company_id,
-          company_name: store.companies?.name,
-        }));
-        setStores(formattedStores);
-        if (formattedStores.length > 0) {
-          setSelectedStore(formattedStores[0]);
-        }
+    if (conceptsError) {
+      console.error('Error loading concepts:', conceptsError);
+      setConcepts([]);
+    } else if (conceptsData) {
+      setConcepts(conceptsData);
+      if (conceptsData.length > 0) {
+        setSelectedConcept(conceptsData[0]);
       }
     }
 
@@ -359,69 +306,67 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/WAND-Logo_Horizontal_Transp_Full-Color_White.png"
-                  alt="WAND"
-                  className="h-8 w-8 object-cover object-left"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-                    <span className="text-slate-400">|</span>
-                    <span className="text-base font-semibold text-slate-700">Studio</span>
-                  </div>
-                </div>
-              </div>
-              <div className="relative group">
-                <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
-                  <Store className="w-4 h-4 text-slate-600" />
-                  <span className="text-sm font-medium text-slate-900 max-w-xs truncate">
-                    {selectedStore ? `${selectedStore.name} - ${selectedStore.company_name}` : 'Loading...'}
-                  </span>
-                  {user.concept_id && (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                      Scoped
-                    </span>
-                  )}
-                  <ChevronDown className="w-4 h-4 text-slate-500" />
-                </button>
-                <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto">
-                  {stores.map((store) => (
-                    <button
-                      key={store.id}
-                      onClick={() => setSelectedStore(store)}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
-                        selectedStore?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                      }`}
-                    >
-                      {store.name} - {store.company_name}
-                    </button>
-                  ))}
-                  {stores.length === 0 && !loading && (
-                    <div className="px-4 py-2 text-sm text-slate-500">No stores available</div>
-                  )}
+      <header className="h-16 bg-white border-b border-slate-200">
+        <div className="max-w-[1400px] mx-auto h-full flex items-center justify-between px-6">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/WAND-Logo_Horizontal_Transp_Full-Color_White.png"
+                alt="WAND"
+                className="h-8 w-8 object-cover object-left"
+              />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+                  <span className="text-slate-400">|</span>
+                  <span className="text-base font-semibold text-slate-700">Studio</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Help"
-              >
-                <HelpCircle className="w-5 h-5" />
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+                <Building2 className="w-4 h-4 text-slate-600" />
+                <span className="text-sm font-medium text-slate-900 max-w-[180px] truncate">
+                  {loading ? 'Loading...' : selectedConcept ? selectedConcept.name : 'Select Concept'}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-500" />
               </button>
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Documentation"
-              >
-                <FileText className="w-5 h-5" />
-              </button>
-              <NotificationPanel />
-              <UserMenu role="creator" onBackToRoles={onBack} />
+              <div className="absolute top-full left-0 mt-1 w-96 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto z-50">
+                {concepts.map((concept) => (
+                  <button
+                    key={concept.id}
+                    onClick={() => setSelectedConcept(concept)}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                      selectedConcept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    {concept.name}
+                  </button>
+                ))}
+                {concepts.length === 0 && !loading && (
+                  <div className="px-4 py-2 text-sm text-slate-500">No concepts available</div>
+                )}
+              </div>
             </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Help"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Documentation"
+            >
+              <FileText className="w-5 h-5" />
+            </button>
+            <NotificationPanel />
+            <UserMenu role="creator" onBackToRoles={onBack} />
+          </div>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
