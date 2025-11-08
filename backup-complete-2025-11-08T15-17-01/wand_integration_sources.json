@@ -1,0 +1,377 @@
+[
+  {
+    "id": "dd189686-929c-4418-933e-c66a463f7cc1",
+    "name": "Revel POS",
+    "integration_type": "revel",
+    "description": "Revel Systems POS integration",
+    "base_url_template": "https://revel-{wand_domain}/integration?client={brand}&id={establishment}&date={modified_date}&storeId={store}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand",
+      "establishment",
+      "store"
+    ],
+    "optional_config_fields": [
+      "modified_date"
+    ],
+    "default_sync_frequency_minutes": 240,
+    "min_update_interval_ms": 9000000,
+    "max_update_interval_ms": 18000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatRevel",
+    "supports_incremental_sync": true,
+    "supports_products": true,
+    "supports_modifiers": true,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:14.714219+00:00",
+    "updated_at": "2025-11-07T02:13:14.714219+00:00",
+    "metadata": {
+      "filters_olo": true,
+      "uses_barcode": true
+    }
+  },
+  {
+    "id": "1afc6242-b11d-44c1-b599-44f843ec4356",
+    "name": "Toast POS",
+    "integration_type": "toast",
+    "description": "Toast POS restaurant management system",
+    "base_url_template": "https://{wand_domain}/services/toast/client/menu/",
+    "auth_method": "bearer_token",
+    "required_config_fields": [
+      "trm_store_id"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatToast",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": true,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:14.714219+00:00",
+    "updated_at": "2025-11-07T02:13:14.714219+00:00",
+    "metadata": {
+      "requires_header_auth": true,
+      "uses_multi_location_id": true,
+      "flattens_menu_structure": true
+    }
+  },
+  {
+    "id": "b86480b3-d8e2-45c7-9249-6deabaa4b89a",
+    "name": "Par Brink POS",
+    "integration_type": "par",
+    "description": "Par Brink (formerly Brink) POS system",
+    "base_url_template": "https://{wand_domain}/integrations/parbrink/v1?concept={brand}&id={establishment}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand",
+      "establishment"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatPar",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": true,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:14.714219+00:00",
+    "updated_at": "2025-11-07T02:13:14.714219+00:00",
+    "metadata": {
+      "filters_olo": true,
+      "returns_full_menu": true,
+      "has_modifier_groups": true
+    }
+  },
+  {
+    "id": "0fabf54d-a753-4657-8e6f-d6996aae8d8e",
+    "name": "Shift4 Payments",
+    "integration_type": "shift4",
+    "description": "Shift4 payment and POS integration",
+    "base_url_template": "https://shift4-{wand_domain}/integration?id={establishment}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "establishment"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatShift",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": true,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:14.714219+00:00",
+    "updated_at": "2025-11-07T02:13:14.714219+00:00",
+    "metadata": {
+      "parses_unique_id": true,
+      "returns_full_menu": true
+    }
+  },
+  {
+    "id": "c9ca7d73-11db-4c4b-aff6-0be84fc343dd",
+    "name": "Oracle Simphony",
+    "integration_type": "simphony",
+    "description": "Oracle Simphony POS system",
+    "base_url_template": "https://simphony-{wand_domain}/integration?concept={brand}&id={establishment}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand",
+      "establishment"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatSimphony",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": true,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:14.714219+00:00",
+    "updated_at": "2025-11-07T02:13:14.714219+00:00",
+    "metadata": {
+      "uses_family_groups": true,
+      "has_condiment_groups": true,
+      "supports_localization": true
+    }
+  },
+  {
+    "id": "a8e46bad-589a-4231-8669-f2fb792bca4e",
+    "name": "Transact Campus",
+    "integration_type": "transact",
+    "description": "Transact Campus dining and payment system",
+    "base_url_template": "https://transact-{wand_domain}/integration?concept={brand}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatTransact",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": false,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:39.675483+00:00",
+    "updated_at": "2025-11-07T02:13:39.675483+00:00",
+    "metadata": {
+      "uses_class_field": true,
+      "uses_item_number": true,
+      "returns_full_menu": true
+    }
+  },
+  {
+    "id": "889efb92-ce73-44b4-8eb6-2c7153d029d7",
+    "name": "Clover POS",
+    "integration_type": "clover",
+    "description": "Clover point-of-sale system",
+    "base_url_template": "https://{wand_domain}/integrations/{integration_type}/v1/{brand}?merchantId={establishment}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand",
+      "establishment"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatClover",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": true,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:39.675483+00:00",
+    "updated_at": "2025-11-07T02:13:39.675483+00:00",
+    "metadata": {
+      "price_in_cents": true,
+      "has_menu_structure": true
+    }
+  },
+  {
+    "id": "9f424fbe-10a8-4910-8127-c9f3efe8594c",
+    "name": "Meal Tracker (AppJel)",
+    "integration_type": "mealtracker",
+    "description": "Meal Tracker by AppJel dining management",
+    "base_url_template": "https://appjel-{wand_domain}/integration?id={establishment}&startDate={start_date}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "establishment"
+    ],
+    "optional_config_fields": [
+      "start_date"
+    ],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatMealtracker",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": false,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:39.675483+00:00",
+    "updated_at": "2025-11-07T02:13:39.675483+00:00",
+    "metadata": {
+      "has_meal_periods": true,
+      "has_day_structure": true,
+      "returns_full_menu": true
+    }
+  },
+  {
+    "id": "acdb59a9-84e5-4370-a5ac-e6b9fba60b5e",
+    "name": "Webtrition",
+    "integration_type": "webtrition",
+    "description": "Webtrition nutrition and menu management system",
+    "base_url_template": "https://{wand_domain}/services/webtrition/client/wds?SapCode={brand}&Venue={establishment}&mealPeriod=&MenuDate={menu_date}&SourceSystem=1&Days=3&IncludeNutrition=true&IncludeAllergens=true&IncludeIngredients=true&IncludeRecipe={include_recipes}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand",
+      "establishment"
+    ],
+    "optional_config_fields": [
+      "menu_date",
+      "include_recipes",
+      "days"
+    ],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatWebtrition",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": false,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:39.675483+00:00",
+    "updated_at": "2025-11-07T02:13:39.675483+00:00",
+    "metadata": {
+      "has_allergen_data": true,
+      "returns_full_menu": true,
+      "has_nutrition_data": true,
+      "supports_combo_items": true
+    }
+  },
+  {
+    "id": "5555e6b6-5c2a-4730-a6bc-15e79cc9efe0",
+    "name": "Bon Appétit",
+    "integration_type": "bonappetit",
+    "description": "Bon Appétit Management Company dining services",
+    "base_url_template": "https://{wand_domain}/integrations/{integration_type}?campus={brand}&cafe={establishment}&menuDate={menu_date}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand",
+      "establishment"
+    ],
+    "optional_config_fields": [
+      "menu_date"
+    ],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatBonappetit",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": false,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:39.675483+00:00",
+    "updated_at": "2025-11-07T02:13:39.675483+00:00",
+    "metadata": {
+      "returns_full_menu": true,
+      "uses_station_field": true
+    }
+  },
+  {
+    "id": "48e52a1d-c272-4d48-8804-cd05e251a888",
+    "name": "Bepoz POS",
+    "integration_type": "bepoz",
+    "description": "Bepoz restaurant POS system",
+    "base_url_template": "https://bepoz-{wand_domain}/integration?concept={brand}",
+    "auth_method": "api_key",
+    "required_config_fields": [
+      "brand"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatBepoz",
+    "supports_incremental_sync": false,
+    "supports_products": true,
+    "supports_modifiers": false,
+    "supports_discounts": false,
+    "documentation_url": null,
+    "status": "active",
+    "created_at": "2025-11-07T02:13:39.675483+00:00",
+    "updated_at": "2025-11-07T02:13:39.675483+00:00",
+    "metadata": {
+      "normalizes_ids": true,
+      "has_allergen_data": true,
+      "returns_full_menu": true
+    }
+  },
+  {
+    "id": "03495ae7-0341-4372-986f-71e739aac62b",
+    "name": "Qu POS API",
+    "integration_type": "qu",
+    "description": "Qu POS integration for restaurant menu and item data",
+    "base_url_template": "https://qubeyond-{wand_domain}/integration?id={establishment}&concept={brand}&date={modified_date}&time={time_of_day}",
+    "auth_method": "none",
+    "required_config_fields": [
+      "brand",
+      "establishment"
+    ],
+    "optional_config_fields": [],
+    "default_sync_frequency_minutes": 15,
+    "min_update_interval_ms": 3000000,
+    "max_update_interval_ms": 9000000,
+    "fallback_interval_ms": 30000,
+    "formatter_name": "formatQu",
+    "supports_incremental_sync": true,
+    "supports_products": true,
+    "supports_modifiers": true,
+    "supports_discounts": true,
+    "documentation_url": "https://docs.qu.com",
+    "status": "active",
+    "created_at": "2025-11-07T02:13:14.714219+00:00",
+    "updated_at": "2025-11-07T02:13:14.714219+00:00",
+    "metadata": {
+      "filters_olo": true,
+      "supports_path_id": true,
+      "uses_anchor_system": true
+    }
+  }
+]
