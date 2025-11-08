@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye } from 'lucide-react';
+import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddWandIntegrationModal from '../components/AddWandIntegrationModal';
+import EditWandIntegrationModal from '../components/EditWandIntegrationModal';
 import LocationRequired from '../components/LocationRequired';
 import { useLocation } from '../hooks/useLocation';
 
@@ -23,6 +24,7 @@ interface IntegrationSourceConfig {
     name: string;
     integration_type: string;
     description: string;
+    required_config_fields: string[];
   };
 }
 
@@ -82,8 +84,11 @@ export default function IntegrationAccess() {
   const [loading, setLoading] = useState(true);
   const [destinations] = useState<IntegrationDestination[]>(mockDestinations);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
   const [expandedDestinations, setExpandedDestinations] = useState<Record<string, boolean>>({});
+  const [syncingConfigs, setSyncingConfigs] = useState<Set<string>>(new Set());
 
   const hasLocation = location.concept || location.company || location.store;
 
@@ -100,12 +105,54 @@ export default function IntegrationAccess() {
         wand_integration_sources (
           name,
           integration_type,
-          description
+          description,
+          required_config_fields
         )
       `)
       .order('config_name');
     if (data) setSourceConfigs(data);
     setLoading(false);
+  };
+
+  const handleToggleActive = async (configId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+
+    // If activating, validate that required fields are filled
+    if (newStatus) {
+      const config = sourceConfigs.find(c => c.id === configId);
+      if (config?.wand_integration_sources) {
+        const source = config.wand_integration_sources;
+        const missingFields: string[] = [];
+
+        source.required_config_fields?.forEach((field: string) => {
+          if (!config.config_params?.[field] || config.config_params[field].trim() === '') {
+            missingFields.push(field);
+          }
+        });
+
+        if (missingFields.length > 0) {
+          alert(`Cannot activate: Missing required fields:\n${missingFields.join(', ')}\n\nPlease edit the configuration and fill in all required fields.`);
+          return;
+        }
+      }
+    }
+
+    const { error } = await supabase
+      .from('integration_source_configs')
+      .update({ is_active: newStatus })
+      .eq('id', configId);
+
+    if (error) {
+      console.error('Failed to toggle active status:', error);
+    } else {
+      setSourceConfigs(prev =>
+        prev.map(config =>
+          config.id === configId
+            ? { ...config, is_active: newStatus }
+            : config
+        )
+      );
+    }
   };
 
   const formatLastSync = (timestamp: string | null) => {
@@ -145,6 +192,43 @@ export default function IntegrationAccess() {
       [id]: !prev[id]
     }));
   }
+
+  const handleManualSync = async (configId: string) => {
+    if (!confirm('Start manual sync now? This will fetch data from the integration source.')) {
+      return;
+    }
+
+    setSyncingConfigs(prev => new Set(prev).add(configId));
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-orchestrator`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ config_id: configId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`Sync completed successfully!\nProducts: ${result.summary?.products_synced || 0}\nModifiers: ${result.summary?.modifiers_synced || 0}\nDiscounts: ${result.summary?.discounts_synced || 0}`);
+        loadSourceConfigs();
+      } else {
+        alert(`Sync failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Manual sync error:', error);
+      alert('Failed to start sync. Check console for details.');
+    } finally {
+      setSyncingConfigs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(configId);
+        return newSet;
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -217,18 +301,39 @@ export default function IntegrationAccess() {
 
                     <div className="flex items-center gap-2">
                       {config.is_active ? (
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors">
+                        <button
+                          onClick={() => handleToggleActive(config.id, config.is_active)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors"
+                        >
                           <ToggleRight className="w-4 h-4" />
                           Active
                         </button>
                       ) : (
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
+                        <button
+                          onClick={() => handleToggleActive(config.id, config.is_active)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
+                        >
                           <ToggleLeft className="w-4 h-4" />
                           Inactive
                         </button>
                       )}
-                      <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                      <button
+                        onClick={() => {
+                          setEditingConfigId(config.id);
+                          setShowEditModal(true);
+                        }}
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Edit configuration"
+                      >
                         <Edit2 className="w-4 h-4 text-slate-600" />
+                      </button>
+                      <button
+                        onClick={() => handleManualSync(config.id)}
+                        disabled={!config.is_active || syncingConfigs.has(config.id)}
+                        className="p-2 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={config.is_active ? 'Sync now' : 'Activate to sync'}
+                      >
+                        <RefreshCw className={`w-4 h-4 text-blue-600 ${syncingConfigs.has(config.id) ? 'animate-spin' : ''}`} />
                       </button>
                       <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 className="w-4 h-4 text-red-600" />
@@ -472,6 +577,22 @@ export default function IntegrationAccess() {
           conceptId={location.concept?.id}
           companyId={location.company?.id}
           storeId={location.store?.id}
+        />
+      )}
+
+      {/* Edit Source Modal */}
+      {showEditModal && editingConfigId && (
+        <EditWandIntegrationModal
+          configId={editingConfigId}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingConfigId(null);
+          }}
+          onSuccess={() => {
+            setShowEditModal(false);
+            setEditingConfigId(null);
+            loadSourceConfigs();
+          }}
         />
       )}
 

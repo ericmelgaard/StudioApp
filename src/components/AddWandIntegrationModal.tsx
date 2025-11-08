@@ -125,7 +125,7 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
         config_params: configForm.configParams,
         credentials: configForm.credentials,
         sync_frequency_minutes: configForm.syncFrequency,
-        is_active: true
+        is_active: false
       });
 
     setSaving(false);
@@ -369,6 +369,12 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
                   onChange={(e) => setConfigForm({ ...configForm, syncFrequency: parseInt(e.target.value) })}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <p className="text-sm text-slate-600">
+                  <strong>Note:</strong> This configuration will be created as inactive. You can configure all settings now and activate it later when you're ready to start syncing data.
+                </p>
               </div>
 
               <div className="border-t border-slate-200 pt-4 flex justify-end gap-3">

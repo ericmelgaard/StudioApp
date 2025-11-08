@@ -41,6 +41,7 @@ Deno.serve(async (req: Request) => {
       .select(`
         id,
         config_name,
+        is_active,
         application_level,
         concept_id,
         company_id,
@@ -56,6 +57,21 @@ Deno.serve(async (req: Request) => {
 
     if (configError || !config) {
       throw new Error(`Configuration not found: ${configError?.message}`);
+    }
+
+    // Check if config is active
+    if (!(config as any).is_active) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Configuration is inactive. Activate it to start syncing.",
+          error_code: "INACTIVE_CONFIG",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const wandSource = config.wand_source as any;
