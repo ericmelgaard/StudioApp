@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers } from 'lucide-react';
+import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
-import LocationRequired from '../components/LocationRequired';
 import { useLocation } from '../hooks/useLocation';
+import MetricsBar from '../components/MetricsBar';
+import ConceptsGrid from '../components/ConceptsGrid';
+import CompaniesGrid from '../components/CompaniesGrid';
+import StoresGrid from '../components/StoresGrid';
+import StoreMap from '../components/StoreMap';
+import ConceptModal from '../components/ConceptModal';
+import CompanyModal from '../components/CompanyModal';
+import StoreModal from '../components/StoreModal';
+import * as Icons from 'lucide-react';
 
 interface PlacementGroup {
   id: string;
@@ -23,113 +31,174 @@ interface PlacementGroup {
   created_at: string;
 }
 
-interface StoreType {
-  id: number;
+interface ConceptData {
+  id: string;
   name: string;
-  company_id: number;
+  description?: string;
+  icon?: string;
+  brand_primary_color?: string;
+  brand_secondary_color?: string;
 }
 
-interface Company {
-  id: number;
+interface CompanyData {
+  id: string;
+  concept_id: string;
   name: string;
-  concept_id: number;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  phone?: string;
+  email?: string;
 }
 
-interface Concept {
-  id: number;
+interface StoreData {
+  id: string;
+  company_id: string;
   name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  phone?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function SiteConfiguration() {
   const { location } = useLocation();
+
+  // Navigation state
+  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store'>('wand');
+  const [selectedConcept, setSelectedConcept] = useState<ConceptData | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
+  const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
+
+  // Data state
+  const [concepts, setConcepts] = useState<ConceptData[]>([]);
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [stores, setStores] = useState<StoreData[]>([]);
   const [placements, setPlacements] = useState<PlacementGroup[]>([]);
-  const [stores, setStores] = useState<StoreType[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [storeRoot, setStoreRoot] = useState<PlacementGroup | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<PlacementGroup | null>(null);
-  const [editingStore, setEditingStore] = useState(false);
+
+  // Modal state
+  const [showConceptModal, setShowConceptModal] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [showStoreModal, setShowStoreModal] = useState(false);
+  const [showPlacementModal, setShowPlacementModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
   const [parentForNewPlacement, setParentForNewPlacement] = useState<string | null>(null);
 
-  // Determine if we're at WAND Digital level (no location selected)
-  const isWandLevel = !location.concept && !location.company && !location.store;
+  // Loading state
+  const [loading, setLoading] = useState(true);
 
-  // Determine if we have enough context to show configuration
-  const hasStoreContext = location.store || selectedStore;
-
-  // Reset view when location changes
+  // Determine view level based on location context
   useEffect(() => {
-    setSelectedStore(null);
-    setSelectedCompany(null);
-    setPlacements([]);
-    setStoreRoot(null);
+    if (location.store) {
+      setViewLevel('store');
+      setSelectedStore(location.store);
+      setSelectedCompany(location.company);
+      setSelectedConcept(location.concept);
+    } else if (location.company) {
+      setViewLevel('company');
+      setSelectedCompany(location.company);
+      setSelectedConcept(location.concept);
+      setSelectedStore(null);
+    } else if (location.concept) {
+      setViewLevel('concept');
+      setSelectedConcept(location.concept);
+      setSelectedCompany(null);
+      setSelectedStore(null);
+    } else {
+      setViewLevel('wand');
+      setSelectedConcept(null);
+      setSelectedCompany(null);
+      setSelectedStore(null);
+    }
     loadData();
   }, [location]);
-
-  useEffect(() => {
-    if (selectedStore) {
-      loadStoreData();
-    }
-  }, [selectedStore]);
 
   const loadData = async () => {
     setLoading(true);
 
-    // If at WAND level, don't load anything
-    if (isWandLevel) {
-      setLoading(false);
-      return;
+    if (viewLevel === 'wand' || (!location.concept && !location.company && !location.store)) {
+      await loadWandLevelData();
+    } else if (viewLevel === 'concept' || (location.concept && !location.company && !location.store)) {
+      await loadConceptLevelData();
+    } else if (viewLevel === 'company' || (location.company && !location.store)) {
+      await loadCompanyLevelData();
+    } else if (viewLevel === 'store' || location.store) {
+      await loadStoreLevelData();
     }
 
-    // If at site level, auto-select that store
-    if (location.store) {
-      setSelectedStore(location.store);
-      setLoading(false);
-      return;
-    }
+    setLoading(false);
+  };
 
-    // If at company level, load stores for that company
-    if (location.company) {
-      const { data: storesData, error } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('company_id', location.company.id)
-        .order('name');
+  const loadWandLevelData = async () => {
+    const { data: conceptsData, error } = await supabase
+      .from('concepts')
+      .select(`
+        *,
+        companies:companies(count),
+        stores:companies(stores(count))
+      `)
+      .order('name');
 
-      if (error) {
-        console.error('Error loading stores:', error);
-      } else {
-        setStores(storesData || []);
-        // Auto-select if only one store
-        if (storesData && storesData.length === 1) {
-          setSelectedStore(storesData[0]);
-        }
-      }
-      setLoading(false);
-      return;
-    }
-
-    // If at concept level, load companies first
-    if (location.concept) {
-      const { data: companiesData, error: companiesError } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('concept_id', location.concept.id)
-        .order('name');
-
-      if (companiesError) {
-        console.error('Error loading companies:', companiesError);
-      } else {
-        setCompanies(companiesData || []);
-      }
-      setLoading(false);
+    if (error) {
+      console.error('Error loading concepts:', error);
+    } else {
+      const conceptsWithCounts = (conceptsData || []).map(concept => ({
+        ...concept,
+        company_count: concept.companies?.[0]?.count || 0,
+        store_count: concept.stores?.reduce((sum: number, company: any) =>
+          sum + (company.stores?.[0]?.count || 0), 0) || 0
+      }));
+      setConcepts(conceptsWithCounts);
     }
   };
 
-  const loadStoresForCompany = async (companyId: number) => {
+  const loadConceptLevelData = async () => {
+    if (!location.concept && !selectedConcept) return;
+
+    const conceptId = location.concept?.id || selectedConcept?.id;
+
+    const { data: companiesData, error: companiesError } = await supabase
+      .from('companies')
+      .select(`
+        *,
+        stores:stores(count)
+      `)
+      .eq('concept_id', conceptId)
+      .order('name');
+
+    if (companiesError) {
+      console.error('Error loading companies:', companiesError);
+    } else {
+      const companiesWithCounts = (companiesData || []).map(company => ({
+        ...company,
+        store_count: company.stores?.[0]?.count || 0
+      }));
+      setCompanies(companiesWithCounts);
+    }
+
+    const { data: storesData, error: storesError } = await supabase
+      .from('stores')
+      .select('*, company:companies!inner(concept_id)')
+      .eq('company.concept_id', conceptId);
+
+    if (storesError) {
+      console.error('Error loading stores for map:', storesError);
+    } else {
+      setStores(storesData || []);
+    }
+  };
+
+  const loadCompanyLevelData = async () => {
+    if (!location.company && !selectedCompany) return;
+
+    const companyId = location.company?.id || selectedCompany?.id;
+
     const { data: storesData, error } = await supabase
       .from('stores')
       .select('*')
@@ -140,23 +209,18 @@ export default function SiteConfiguration() {
       console.error('Error loading stores:', error);
     } else {
       setStores(storesData || []);
-      // Auto-select if only one store
-      if (storesData && storesData.length === 1) {
-        setSelectedStore(storesData[0]);
-      } else {
-        setSelectedStore(null);
-      }
     }
   };
 
-  const loadStoreData = async () => {
-    if (!selectedStore) return;
+  const loadStoreLevelData = async () => {
+    if (!location.store && !selectedStore) return;
 
-    // Load store root placement
+    const storeId = location.store?.id || selectedStore?.id;
+
     const { data: rootData, error: rootError } = await supabase
       .from('placement_groups')
       .select('*')
-      .eq('store_id', selectedStore.id)
+      .eq('store_id', storeId)
       .eq('is_store_root', true)
       .maybeSingle();
 
@@ -166,11 +230,10 @@ export default function SiteConfiguration() {
       setStoreRoot(rootData);
     }
 
-    // Load child placements
     const { data: placementsData, error: placementsError } = await supabase
       .from('placement_groups')
       .select('*')
-      .eq('store_id', selectedStore.id)
+      .eq('store_id', storeId)
       .eq('is_store_root', false)
       .order('name');
 
@@ -181,47 +244,28 @@ export default function SiteConfiguration() {
     }
   };
 
-  const handleCompanyChange = (companyId: number) => {
-    const company = companies.find(c => c.id === companyId);
-    setSelectedCompany(company || null);
-    setSelectedStore(null);
-    setStores([]);
-    if (company) {
-      loadStoresForCompany(company.id);
-    }
-  };
-
-  const handleStoreChange = (storeId: number) => {
-    const store = stores.find(s => s.id === storeId);
-    setSelectedStore(store || null);
-  };
-
-  const handleAddPlacement = (parentId: string | null = null) => {
-    setSelectedGroup(null);
-    setEditingStore(false);
-    setParentForNewPlacement(parentId);
-    setShowModal(true);
-  };
-
-  const handleAddChildToPlacement = (parentPlacement: PlacementGroup) => {
-    setSelectedGroup(null);
-    setEditingStore(false);
-    setParentForNewPlacement(parentPlacement.id);
-    setShowModal(true);
+  const renderIcon = (iconName?: string) => {
+    if (!iconName) return <Building2 size={24} />;
+    const IconComponent = Icons[iconName as keyof typeof Icons] as any;
+    return IconComponent ? <IconComponent size={24} /> : <Building2 size={24} />;
   };
 
   const handleEditStore = () => {
     if (storeRoot) {
-      setSelectedGroup(storeRoot);
-      setEditingStore(true);
-      setShowModal(true);
+      setEditingItem(storeRoot);
+      setShowPlacementModal(true);
     }
   };
 
+  const handleAddPlacement = (parentId: string | null = null) => {
+    setEditingItem(null);
+    setParentForNewPlacement(parentId);
+    setShowPlacementModal(true);
+  };
+
   const handleEditPlacement = (placement: PlacementGroup) => {
-    setSelectedGroup(placement);
-    setEditingStore(false);
-    setShowModal(true);
+    setEditingItem(placement);
+    setShowPlacementModal(true);
   };
 
   const handleDeletePlacement = async (placement: PlacementGroup) => {
@@ -243,39 +287,13 @@ export default function SiteConfiguration() {
       console.error('Error deleting placement:', error);
       alert(`Failed to delete placement: ${error.message}`);
     } else {
-      loadStoreData();
+      loadStoreLevelData();
     }
   };
 
-  const handleModalSuccess = () => {
-    setShowModal(false);
-    setSelectedGroup(null);
-    setEditingStore(false);
-    setParentForNewPlacement(null);
-    loadStoreData();
-  };
-
-  const availableParents = placements.filter(
-    (p) => p.id !== selectedGroup?.id
-  );
-  if (storeRoot && !editingStore) {
+  const availableParents = placements.filter((p) => p.id !== editingItem?.id);
+  if (storeRoot && editingItem?.id !== storeRoot.id) {
     availableParents.unshift(storeRoot);
-  }
-
-  // Show location required message at WAND level
-  if (isWandLevel) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Site Configuration</h1>
-            <p className="text-slate-600">Manage store locations and placement configurations</p>
-          </div>
-
-          <LocationRequired action="managing site configuration" className="mb-6" />
-        </div>
-      </div>
-    );
   }
 
   if (loading) {
@@ -290,115 +308,356 @@ export default function SiteConfiguration() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Site Configuration</h1>
-          <p className="text-slate-600">Manage store locations and placement configurations</p>
+  const renderBreadcrumbs = () => (
+    <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
+      <button
+        onClick={() => {
+          setViewLevel('wand');
+          setSelectedConcept(null);
+          setSelectedCompany(null);
+          setSelectedStore(null);
+        }}
+        className="hover:text-blue-600 transition-colors"
+      >
+        WAND Digital
+      </button>
 
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 mt-3 text-sm text-slate-500">
-            {location.concept && (
-              <>
-                <Building2 className="w-4 h-4" />
-                <span>{location.concept.name}</span>
-              </>
-            )}
-            {location.company && (
-              <>
-                <span>›</span>
-                <span>{location.company.name}</span>
-              </>
-            )}
-            {(location.store || selectedStore) && (
-              <>
-                <span>›</span>
-                <span className="font-medium text-slate-700">
-                  {location.store?.name || selectedStore?.name}
-                </span>
-              </>
-            )}
+      {selectedConcept && (
+        <>
+          <span>›</span>
+          <button
+            onClick={() => {
+              setViewLevel('concept');
+              setSelectedCompany(null);
+              setSelectedStore(null);
+            }}
+            className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+          >
+            <div
+              className="p-1 rounded"
+              style={{
+                backgroundColor: selectedConcept.brand_primary_color || '#E5E7EB',
+                color: selectedConcept.brand_primary_color ? '#FFFFFF' : '#374151'
+              }}
+            >
+              {renderIcon(selectedConcept.icon)}
+            </div>
+            {selectedConcept.name}
+          </button>
+        </>
+      )}
+
+      {selectedCompany && (
+        <>
+          <span>›</span>
+          <button
+            onClick={() => {
+              setViewLevel('company');
+              setSelectedStore(null);
+            }}
+            className="hover:text-blue-600 transition-colors"
+          >
+            {selectedCompany.name}
+          </button>
+        </>
+      )}
+
+      {selectedStore && (
+        <>
+          <span>›</span>
+          <span className="font-medium text-slate-900">{selectedStore.name}</span>
+        </>
+      )}
+    </div>
+  );
+
+  // WAND Digital Level View
+  if (viewLevel === 'wand' && !location.concept && !location.company && !location.store) {
+    const totalConcepts = concepts.length;
+    const totalCompanies = concepts.reduce((sum, c) => sum + (c.company_count || 0), 0);
+    const totalStores = concepts.reduce((sum, c) => sum + (c.store_count || 0), 0);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Locations</h1>
+            <p className="text-slate-600">Manage your organizational hierarchy and locations</p>
+            {renderBreadcrumbs()}
+          </div>
+
+          <MetricsBar
+            metrics={[
+              { label: 'Total Concepts', value: totalConcepts, icon: Building2, color: 'bg-blue-500' },
+              { label: 'Total Companies', value: totalCompanies, icon: Building2, color: 'bg-green-500' },
+              { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
+            ]}
+          />
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Concepts</h2>
+              <button
+                onClick={() => {
+                  setEditingItem(null);
+                  setShowConceptModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={18} />
+                Add Concept
+              </button>
+            </div>
+
+            <ConceptsGrid
+              concepts={concepts}
+              onEdit={(concept) => {
+                setEditingItem(concept);
+                setShowConceptModal(true);
+              }}
+              onSelect={(concept) => {
+                setSelectedConcept(concept);
+                setViewLevel('concept');
+              }}
+            />
           </div>
         </div>
 
-        {/* Context-based selectors */}
-        {location.concept && !location.company && !location.store && (
-          <div className="mb-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Select Company and Site</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Company
-                </label>
-                <select
-                  value={selectedCompany?.id || ''}
-                  onChange={(e) => handleCompanyChange(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select a company...</option>
-                  {companies.map(company => (
-                    <option key={company.id} value={company.id}>{company.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Site
-                </label>
-                <select
-                  value={selectedStore?.id || ''}
-                  onChange={(e) => handleStoreChange(parseInt(e.target.value))}
-                  disabled={!selectedCompany || stores.length === 0}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">Select a site...</option>
-                  {stores.map(store => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+        {showConceptModal && (
+          <ConceptModal
+            concept={editingItem}
+            onClose={() => {
+              setShowConceptModal(false);
+              setEditingItem(null);
+            }}
+            onSave={() => {
+              setShowConceptModal(false);
+              setEditingItem(null);
+              loadWandLevelData();
+            }}
+          />
         )}
+      </div>
+    );
+  }
 
-        {location.company && !location.store && (
-          <div className="mb-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Select Site</h2>
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Site
-                </label>
-                <select
-                  value={selectedStore?.id || ''}
-                  onChange={(e) => handleStoreChange(parseInt(e.target.value))}
-                  disabled={stores.length === 0}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">Select a site...</option>
-                  {stores.map(store => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
-                </select>
-              </div>
-              <button
-                onClick={() => {/* TODO: Add new site modal */}}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+  // Concept Level View
+  if (viewLevel === 'concept' && selectedConcept) {
+    const totalCompanies = companies.length;
+    const totalStores = companies.reduce((sum, c) => sum + (c.store_count || 0), 0);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                setViewLevel('wand');
+                setSelectedConcept(null);
+              }}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+            >
+              <ArrowLeft size={18} />
+              Back to Concepts
+            </button>
+
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className="p-3 rounded-lg"
+                style={{
+                  backgroundColor: selectedConcept.brand_primary_color || '#E5E7EB',
+                  color: selectedConcept.brand_primary_color ? '#FFFFFF' : '#374151'
+                }}
               >
-                <Plus className="w-4 h-4" />
-                Add Site
-              </button>
+                {renderIcon(selectedConcept.icon)}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">{selectedConcept.name}</h1>
+                {selectedConcept.description && (
+                  <p className="text-slate-600">{selectedConcept.description}</p>
+                )}
+              </div>
+            </div>
+            {renderBreadcrumbs()}
+          </div>
+
+          <MetricsBar
+            metrics={[
+              { label: 'Companies', value: totalCompanies, icon: Building2, color: 'bg-green-500' },
+              { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
+            ]}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-slate-900">Companies</h2>
+                <button
+                  onClick={() => {
+                    setEditingItem(null);
+                    setShowCompanyModal(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus size={18} />
+                  Add Company
+                </button>
+              </div>
+
+              <CompaniesGrid
+                companies={companies}
+                onEdit={(company) => {
+                  setEditingItem(company);
+                  setShowCompanyModal(true);
+                }}
+                onSelect={(company) => {
+                  setSelectedCompany(company);
+                  setViewLevel('company');
+                }}
+              />
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
+              <StoreMap stores={stores} />
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Show configuration only when we have a store selected */}
+        {showCompanyModal && (
+          <CompanyModal
+            company={editingItem}
+            conceptId={selectedConcept.id}
+            onClose={() => {
+              setShowCompanyModal(false);
+              setEditingItem(null);
+            }}
+            onSave={() => {
+              setShowCompanyModal(false);
+              setEditingItem(null);
+              loadConceptLevelData();
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Company Level View
+  if (viewLevel === 'company' && selectedCompany) {
+    const totalStores = stores.length;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                setViewLevel('concept');
+                setSelectedCompany(null);
+              }}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+            >
+              <ArrowLeft size={18} />
+              Back to {selectedConcept?.name || 'Concept'}
+            </button>
+
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">{selectedCompany.name}</h1>
+            {selectedCompany.description && (
+              <p className="text-slate-600 mb-2">{selectedCompany.description}</p>
+            )}
+            {renderBreadcrumbs()}
+          </div>
+
+          <MetricsBar
+            metrics={[
+              { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
+            ]}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-slate-900">Stores</h2>
+                <button
+                  onClick={() => {
+                    setEditingItem(null);
+                    setShowStoreModal(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus size={18} />
+                  Add Store
+                </button>
+              </div>
+
+              <StoresGrid
+                stores={stores}
+                onEdit={(store) => {
+                  setEditingItem(store);
+                  setShowStoreModal(true);
+                }}
+                onSelect={(store) => {
+                  setSelectedStore(store);
+                  setViewLevel('store');
+                }}
+              />
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Store Locations</h2>
+              <StoreMap stores={stores} />
+            </div>
+          </div>
+        </div>
+
+        {showStoreModal && (
+          <StoreModal
+            store={editingItem}
+            companyId={selectedCompany.id}
+            onClose={() => {
+              setShowStoreModal(false);
+              setEditingItem(null);
+            }}
+            onSave={() => {
+              setShowStoreModal(false);
+              setEditingItem(null);
+              loadCompanyLevelData();
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Store Level View (existing placement configuration)
+  const hasStoreContext = location.store || selectedStore;
+  const currentStore = location.store || selectedStore;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-6">
+          {selectedCompany && (
+            <button
+              onClick={() => {
+                setViewLevel('company');
+                setSelectedStore(null);
+              }}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+            >
+              <ArrowLeft size={18} />
+              Back to {selectedCompany.name}
+            </button>
+          )}
+
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Site Configuration</h1>
+          <p className="text-slate-600">Manage store locations and placement configurations</p>
+          {renderBreadcrumbs()}
+        </div>
+
         {hasStoreContext ? (
           <div className="space-y-6">
-            {/* Store Configuration Section */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
                 <div className="flex items-center justify-between">
@@ -436,7 +695,7 @@ export default function SiteConfiguration() {
                         ) : (
                           <div className="text-sm text-slate-400 italic">No address configured</div>
                         )}
-                        {storeRoot.phone ? (
+                        {storeRoot.phone && (
                           <div className="flex items-start gap-3">
                             <Phone className="w-5 h-5 text-slate-400 mt-0.5" />
                             <div>
@@ -444,7 +703,7 @@ export default function SiteConfiguration() {
                               <div className="text-sm text-slate-900">{storeRoot.phone}</div>
                             </div>
                           </div>
-                        ) : null}
+                        )}
                         {storeRoot.timezone && (
                           <div className="flex items-start gap-3">
                             <Globe className="w-5 h-5 text-slate-400 mt-0.5" />
@@ -483,18 +742,11 @@ export default function SiteConfiguration() {
                   <div className="text-center py-8">
                     <Store className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                     <p className="text-slate-600 mb-4">Store configuration not initialized</p>
-                    <button
-                      onClick={handleEditStore}
-                      className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                    >
-                      Initialize Store Configuration
-                    </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Placements Section */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-amber-50 to-slate-50">
                 <div className="flex items-center justify-between">
@@ -525,23 +777,10 @@ export default function SiteConfiguration() {
                     <p className="text-slate-600 mb-4 text-sm">
                       Create placements to organize different areas within the store
                     </p>
-                    <button
-                      onClick={() => handleAddPlacement(storeRoot?.id || null)}
-                      disabled={!storeRoot}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Placement Group
-                    </button>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {(() => {
-                      console.log('=== RENDERING PLACEMENTS ===');
-                      console.log('Total placements:', placements.length);
-                      console.log('Store root:', storeRoot?.name, storeRoot?.id);
-                      console.log('All placements:', placements.map(p => ({ name: p.name, id: p.id, parent_id: p.parent_id })));
-
                       const calculateDepth = (placementId: string, visited = new Set<string>()): number => {
                         if (visited.has(placementId)) return 0;
                         visited.add(placementId);
@@ -554,10 +793,8 @@ export default function SiteConfiguration() {
                       };
 
                       const buildHierarchy = (parentId: string | null | undefined): PlacementGroup[] => {
-                        // Get direct children of this parent
                         const children = placements
                           .filter(p => {
-                            // For store root, include both direct children and null parent_id placements
                             if (parentId === storeRoot?.id) {
                               return p.parent_id === parentId || p.parent_id === null;
                             }
@@ -565,16 +802,12 @@ export default function SiteConfiguration() {
                           })
                           .sort((a, b) => a.name.localeCompare(b.name));
 
-                        console.log('buildHierarchy parentId:', parentId, 'children:', children.map(c => c.name));
-
-                        // For each child, return the child followed by its descendants
                         const result: PlacementGroup[] = [];
                         for (const child of children) {
                           result.push(child);
                           const descendants = buildHierarchy(child.id);
                           result.push(...descendants);
                         }
-                        console.log('buildHierarchy result:', result.map(r => r.name));
                         return result;
                       };
 
@@ -588,56 +821,47 @@ export default function SiteConfiguration() {
 
                         return (
                           <div key={placement.id} style={{ marginLeft: `${depth * 2.5}rem` }}>
-                          <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group">
-                            <div className="w-1 h-10 bg-amber-400 rounded-full" />
-                            <Layers className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-slate-900">{placement.name}</h3>
-                              {placement.description && (
-                                <p className="text-sm text-slate-600">{placement.description}</p>
-                              )}
-                              <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                                <span>Parent: {parentName}</span>
-                                {childCount > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{childCount} child placement{childCount !== 1 ? 's' : ''}</span>
-                                  </>
+                            <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group">
+                              <div className="w-1 h-10 bg-amber-400 rounded-full" />
+                              <Layers className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-slate-900">{placement.name}</h3>
+                                {placement.description && (
+                                  <p className="text-sm text-slate-600">{placement.description}</p>
                                 )}
-                                {placement.meal_stations && placement.meal_stations.length > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{placement.meal_stations.length} meal station{placement.meal_stations.length !== 1 ? 's' : ''}</span>
-                                  </>
-                                )}
+                                <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                                  <span>Parent: {parentName}</span>
+                                  {childCount > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{childCount} child placement{childCount !== 1 ? 's' : ''}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleAddPlacement(placement.id)}
+                                  className="px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors flex items-center gap-2 opacity-0 group-hover:opacity-100"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  Add
+                                </button>
+                                <button
+                                  onClick={() => handleEditPlacement(placement)}
+                                  className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeletePlacement(placement)}
+                                  className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleAddChildToPlacement(placement)}
-                                className="px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors flex items-center gap-2 opacity-0 group-hover:opacity-100"
-                                title="Add child placement"
-                              >
-                                <Plus className="w-4 h-4" />
-                                Add
-                              </button>
-                              <button
-                                onClick={() => handleEditPlacement(placement)}
-                                className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                title="Edit placement"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeletePlacement(placement)}
-                                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                title="Delete placement"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
                           </div>
-                        </div>
                         );
                       });
                     })()}
@@ -647,36 +871,38 @@ export default function SiteConfiguration() {
             </div>
           </div>
         ) : (
-          !location.store && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
-              <div className="flex items-center gap-3">
-                <MapPin className="w-6 h-6 text-amber-600" />
-                <div>
-                  <h3 className="font-semibold text-amber-900 mb-1">Site Selection Required</h3>
-                  <p className="text-sm text-amber-800">
-                    Please select a site from the {location.concept && !location.company ? 'company and site selectors' : 'site selector'} above to view and manage its configuration.
-                  </p>
-                </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-6 h-6 text-amber-600" />
+              <div>
+                <h3 className="font-semibold text-amber-900 mb-1">Site Selection Required</h3>
+                <p className="text-sm text-amber-800">
+                  Please select a site to view and manage its configuration.
+                </p>
               </div>
             </div>
-          )
+          </div>
         )}
       </div>
 
-      {showModal && (
+      {showPlacementModal && (
         <PlacementGroupModal
-          group={selectedGroup}
+          group={editingItem}
           availableParents={availableParents}
-          storeId={selectedStore?.id || location.store?.id}
+          storeId={currentStore?.id}
           defaultParentId={parentForNewPlacement}
           isParentStoreRoot={parentForNewPlacement === storeRoot?.id}
           onClose={() => {
-            setShowModal(false);
-            setSelectedGroup(null);
-            setEditingStore(false);
+            setShowPlacementModal(false);
+            setEditingItem(null);
             setParentForNewPlacement(null);
           }}
-          onSuccess={handleModalSuccess}
+          onSuccess={() => {
+            setShowPlacementModal(false);
+            setEditingItem(null);
+            setParentForNewPlacement(null);
+            loadStoreLevelData();
+          }}
         />
       )}
     </div>
