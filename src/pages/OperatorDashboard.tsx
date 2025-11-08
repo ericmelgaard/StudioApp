@@ -377,7 +377,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               <div className="flex items-center gap-2">
                 <GripVertical className="w-5 h-5 text-slate-400 cursor-grab active:cursor-grabbing" />
                 <h3 className="text-sm font-semibold text-slate-900">
-                  Store Configuration
+                  {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : 'Store Configuration'}
                 </h3>
               </div>
               <button
@@ -393,13 +393,17 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                   <Store className="w-8 h-8 text-amber-600" />
                 </div>
                 <div>
-                  <div className="text-sm text-slate-900 font-medium">Placement Groups</div>
-                  <div className="text-sm text-slate-600">Configure templates</div>
+                  <div className="text-sm text-slate-900 font-medium">
+                    {selectedStore ? 'Store Configuration' : 'Manage Stores'}
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {selectedStore ? 'Configure settings and placements' : `${storesByCompany[selectedCompany?.id || 0]?.length || 0} locations`}
+                  </div>
                 </div>
               </div>
               <div className="pt-3 border-t border-slate-100">
                 <div className="text-sm text-slate-600">
-                  Manage store settings and layouts
+                  {selectedStore ? 'Manage store settings and layouts' : 'View and manage store locations'}
                 </div>
               </div>
             </div>

@@ -754,7 +754,7 @@ export default function SiteConfiguration() {
             </button>
           )}
 
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{currentStore?.name || 'Store Configuration'}</h1>
           <p className="text-slate-600">Manage store settings and placement groups</p>
           {renderBreadcrumbs()}
         </div>
