@@ -67,10 +67,10 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
   }, [configId]);
 
   useEffect(() => {
-    if (source?.integration_type === 'qu' && configForm.configParams.establishment) {
+    if (config?.wand_integration_sources?.integration_type === 'qu' && configForm.configParams.establishment) {
       loadLocationDetails(configForm.configParams.establishment);
     }
-  }, [source?.integration_type, configForm.configParams.establishment]);
+  }, [config?.wand_integration_sources?.integration_type, configForm.configParams.establishment]);
 
   const loadConfig = async () => {
     setLoading(true);
