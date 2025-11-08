@@ -306,66 +306,62 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="h-16 bg-white border-b border-slate-200">
-        <div className="max-w-[1400px] mx-auto h-full flex items-center justify-between px-6">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <img
-                src="/WAND-Logo_Horizontal_Transp_Full-Color_White.png"
-                alt="WAND"
-                className="h-8 w-8 object-cover object-left"
-              />
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-                  <span className="text-slate-400">|</span>
-                  <span className="text-base font-semibold text-slate-700">Studio</span>
-                </div>
-              </div>
-            </div>
-            <div className="relative group">
-              <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
-                <Building2 className="w-4 h-4 text-slate-600" />
-                <span className="text-sm font-medium text-slate-900 max-w-[180px] truncate">
-                  {loading ? 'Loading...' : selectedConcept ? selectedConcept.name : 'Select Concept'}
-                </span>
-                <ChevronDown className="w-4 h-4 text-slate-500" />
-              </button>
-              <div className="absolute top-full left-0 mt-1 w-96 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto z-50">
-                {concepts.map((concept) => (
-                  <button
-                    key={concept.id}
-                    onClick={() => setSelectedConcept(concept)}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                      selectedConcept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                    }`}
-                  >
-                    <Building2 className="w-4 h-4" />
-                    {concept.name}
-                  </button>
-                ))}
-                {concepts.length === 0 && !loading && (
-                  <div className="px-4 py-2 text-sm text-slate-500">No concepts available</div>
-                )}
-              </div>
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <img
+              src="/WAND-Logo_Horizontal_Transp_Full-Color_White.png"
+              alt="WAND"
+              className="h-8 w-8 object-cover object-left"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-base font-semibold text-slate-700">Studio</span>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Help"
-            >
-              <HelpCircle className="w-5 h-5" />
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+              <Building2 className="w-4 h-4 text-slate-600" />
+              <span className="text-sm font-medium text-slate-900 max-w-[180px] truncate">
+                {loading ? 'Loading...' : selectedConcept ? selectedConcept.name : 'Select Concept'}
+              </span>
+              <ChevronDown className="w-4 h-4 text-slate-500" />
             </button>
-            <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Documentation"
-            >
-              <FileText className="w-5 h-5" />
-            </button>
-            <NotificationPanel />
-            <UserMenu role="creator" onBackToRoles={onBack} />
+            <div className="absolute top-full left-0 mt-1 w-96 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto z-50">
+              {concepts.map((concept) => (
+                <button
+                  key={concept.id}
+                  onClick={() => setSelectedConcept(concept)}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                    selectedConcept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  {concept.name}
+                </button>
+              ))}
+              {concepts.length === 0 && !loading && (
+                <div className="px-4 py-2 text-sm text-slate-500">No concepts available</div>
+              )}
+            </div>
           </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Help"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Documentation"
+          >
+            <FileText className="w-5 h-5" />
+          </button>
+          <NotificationPanel />
+          <UserMenu role="creator" onBackToRoles={onBack} />
         </div>
       </header>
 
