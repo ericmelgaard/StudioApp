@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Database, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Database, AlertCircle, Loader2, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import QuLocationPicker from './QuLocationPicker';
 
 interface WandIntegrationSource {
   id: string;
@@ -58,9 +59,18 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
     syncFrequency: 15
   });
 
+  const [showQuLocationPicker, setShowQuLocationPicker] = useState(false);
+  const [locationDetails, setLocationDetails] = useState<Record<string, any>>({});
+
   useEffect(() => {
     loadConfig();
   }, [configId]);
+
+  useEffect(() => {
+    if (source?.integration_type === 'qu' && configForm.configParams.establishment) {
+      loadLocationDetails(configForm.configParams.establishment);
+    }
+  }, [source?.integration_type, configForm.configParams.establishment]);
 
   const loadConfig = async () => {
     setLoading(true);
@@ -108,6 +118,27 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
     }));
   };
 
+  const loadLocationDetails = async (locationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('qu_locations')
+        .select('*')
+        .eq('id', parseInt(locationId))
+        .maybeSingle();
+
+      if (data && !error) {
+        setLocationDetails(prev => ({ ...prev, [locationId]: data }));
+      }
+    } catch (err) {
+      console.error('Error loading location details:', err);
+    }
+  };
+
+  const handleQuLocationSelect = (locationId: number) => {
+    handleConfigChange('establishment', locationId.toString());
+    setShowQuLocationPicker(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!config) return;
@@ -138,6 +169,14 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
   const source = config?.wand_integration_sources;
 
   return (
+    <>
+      {showQuLocationPicker && configForm.configParams.brand && (
+        <QuLocationPicker
+          brand={configForm.configParams.brand}
+          onSelect={handleQuLocationSelect}
+          onClose={() => setShowQuLocationPicker(false)}
+        />
+      )}
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
@@ -203,14 +242,37 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
                     {source.required_config_fields.map(field => (
                       <div key={field}>
                         <label className="block text-sm font-medium text-slate-700 mb-1">{field}</label>
-                        <input
-                          type="text"
-                          required
-                          value={configForm.configParams[field] || ''}
-                          onChange={(e) => handleConfigChange(field, e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder={`Enter ${field}`}
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            value={configForm.configParams[field] || ''}
+                            onChange={(e) => handleConfigChange(field, e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder={`Enter ${field}`}
+                          />
+                          {source.integration_type === 'qu' && field === 'establishment' && (
+                            <button
+                              type="button"
+                              onClick={() => setShowQuLocationPicker(true)}
+                              disabled={!configForm.configParams.brand}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              title={!configForm.configParams.brand ? 'Enter brand/concept first' : 'Browse locations from Qu API'}
+                            >
+                              <MapPin className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
+                        {source.integration_type === 'qu' && field === 'establishment' && configForm.configParams[field] && locationDetails[configForm.configParams[field]] && (
+                          <div className="mt-2 p-2 bg-slate-50 border border-slate-200 rounded text-sm">
+                            <div className="font-medium text-slate-700">
+                              {locationDetails[configForm.configParams[field]].name}
+                            </div>
+                            <div className="text-slate-600 text-xs mt-1">
+                              {locationDetails[configForm.configParams[field]].city}, {locationDetails[configForm.configParams[field]].state_code}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -294,5 +356,6 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
         </div>
       </div>
     </div>
+    </>
   );
 }
