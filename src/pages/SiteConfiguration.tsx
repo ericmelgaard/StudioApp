@@ -158,8 +158,8 @@ export default function SiteConfiguration() {
       .select('id, company_id');
 
     // Build lookup maps
-    const companiesByConceptId: Record<string, number> = {};
-    const storesByCompanyId: Record<string, number> = {};
+    const companiesByConceptId: Record<number, number> = {};
+    const storesByCompanyId: Record<number, number> = {};
 
     (companiesData || []).forEach(company => {
       companiesByConceptId[company.concept_id] = (companiesByConceptId[company.concept_id] || 0) + 1;
@@ -170,7 +170,7 @@ export default function SiteConfiguration() {
     });
 
     // Calculate store counts per concept
-    const storesByConceptId: Record<string, number> = {};
+    const storesByConceptId: Record<number, number> = {};
     (companiesData || []).forEach(company => {
       const storeCount = storesByCompanyId[company.id] || 0;
       storesByConceptId[company.concept_id] = (storesByConceptId[company.concept_id] || 0) + storeCount;
@@ -221,7 +221,7 @@ export default function SiteConfiguration() {
     }
 
     // Count stores by company
-    const storesByCompanyId: Record<string, number> = {};
+    const storesByCompanyId: Record<number, number> = {};
     allStoresData.forEach(store => {
       storesByCompanyId[store.company_id] = (storesByCompanyId[store.company_id] || 0) + 1;
     });
