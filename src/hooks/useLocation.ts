@@ -30,10 +30,20 @@ export interface LocationState {
   store?: Store;
 }
 
+interface NavigationHistoryEntry {
+  location: LocationState;
+  timestamp: number;
+}
+
 export function useLocation() {
   const [location, setLocation] = useState<LocationState>(() => {
     const saved = localStorage.getItem('selectedLocation');
     return saved ? JSON.parse(saved) : {};
+  });
+
+  const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryEntry[]>(() => {
+    const saved = localStorage.getItem('navigationHistory');
+    return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
@@ -56,6 +66,43 @@ export function useLocation() {
       window.removeEventListener('locationChange', handleLocationChange);
     };
   }, []);
+
+  const setLocationWithHistory = (newLocation: LocationState) => {
+    const entry: NavigationHistoryEntry = {
+      location: newLocation,
+      timestamp: Date.now()
+    };
+
+    const updatedHistory = [...navigationHistory, entry].slice(-10);
+    setNavigationHistory(updatedHistory);
+    localStorage.setItem('navigationHistory', JSON.stringify(updatedHistory));
+
+    setLocation(newLocation);
+  };
+
+  const navigateBack = (): LocationState | null => {
+    if (navigationHistory.length < 2) {
+      return null;
+    }
+
+    const previousEntry = navigationHistory[navigationHistory.length - 2];
+    const updatedHistory = navigationHistory.slice(0, -1);
+
+    setNavigationHistory(updatedHistory);
+    localStorage.setItem('navigationHistory', JSON.stringify(updatedHistory));
+    setLocation(previousEntry.location);
+
+    return previousEntry.location;
+  };
+
+  const canNavigateBack = (): boolean => {
+    return navigationHistory.length >= 2;
+  };
+
+  const clearHistory = () => {
+    setNavigationHistory([]);
+    localStorage.removeItem('navigationHistory');
+  };
 
   const getLocationDisplay = (): string => {
     if (location.store) {
@@ -84,7 +131,10 @@ export function useLocation() {
 
   return {
     location,
-    setLocation,
+    setLocation: setLocationWithHistory,
+    navigateBack,
+    canNavigateBack,
+    clearHistory,
     getLocationDisplay,
     getLocationBreadcrumb,
   };

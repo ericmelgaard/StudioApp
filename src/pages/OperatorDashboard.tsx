@@ -49,7 +49,7 @@ interface DashboardCard {
 
 export default function OperatorDashboard({ onBack, user }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
-  const { location, setLocation } = useLocation();
+  const { location, setLocation, clearHistory } = useLocation();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [storesByCompany, setStoresByCompany] = useState<Record<number, Store[]>>({});
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -78,9 +78,12 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
 
   useEffect(() => {
+    if (currentView === 'home') {
+      clearHistory();
+    }
     loadCompaniesAndStores();
     loadStats();
-  }, [location]);
+  }, [location, currentView]);
 
   const loadCompaniesAndStores = async () => {
     setLoading(true);

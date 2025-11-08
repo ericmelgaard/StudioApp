@@ -52,7 +52,7 @@ interface StoreManagementProps {
 }
 
 export default function StoreManagement({ onBack }: StoreManagementProps) {
-  const { location, setLocation } = useLocation();
+  const { location, setLocation, canNavigateBack } = useLocation();
 
   const [viewLevel, setViewLevel] = useState<'company' | 'store'>('company');
   const [company, setCompany] = useState<CompanyData | null>(null);
@@ -214,7 +214,16 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
       {company && (
         <>
-          <span className="font-medium text-slate-900">{company.name}</span>
+          <button
+            onClick={() => {
+              if (location.company) {
+                setLocation({ company: location.company });
+              }
+            }}
+            className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            {company.name}
+          </button>
           {location.store && (
             <>
               <span>›</span>
@@ -298,7 +307,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
             >
               <ArrowLeft size={18} />
-              Back to Dashboard
+              Dashboard
             </button>
 
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
@@ -416,13 +425,23 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
-          <button
-            onClick={handleBackToCompany}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
-          >
-            <ArrowLeft size={18} />
-            Back to {company?.name || 'Stores'}
-          </button>
+          {canNavigateBack() ? (
+            <button
+              onClick={handleBackToCompany}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+            >
+              <ArrowLeft size={18} />
+              {company?.name || 'Stores'}
+            </button>
+          ) : (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+            >
+              <ArrowLeft size={18} />
+              Dashboard
+            </button>
+          )}
 
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
           <p className="text-slate-600">Manage store settings and placement groups</p>

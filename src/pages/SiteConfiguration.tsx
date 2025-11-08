@@ -67,7 +67,7 @@ interface StoreData {
 }
 
 export default function SiteConfiguration() {
-  const { location, setLocation } = useLocation();
+  const { location, setLocation, canNavigateBack } = useLocation();
 
   // Navigation state
   const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store'>('wand');
@@ -358,10 +358,7 @@ export default function SiteConfiguration() {
     <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
       <button
         onClick={() => {
-          setViewLevel('wand');
-          setSelectedConcept(null);
-          setSelectedCompany(null);
-          setSelectedStore(null);
+          setLocation({});
         }}
         className="hover:text-blue-600 transition-colors"
       >
@@ -373,9 +370,7 @@ export default function SiteConfiguration() {
           <span>›</span>
           <button
             onClick={() => {
-              setViewLevel('concept');
-              setSelectedCompany(null);
-              setSelectedStore(null);
+              setLocation({ concept: selectedConcept });
             }}
             className="flex items-center gap-2 hover:text-blue-600 transition-colors"
           >
@@ -398,8 +393,10 @@ export default function SiteConfiguration() {
           <span>›</span>
           <button
             onClick={() => {
-              setViewLevel('company');
-              setSelectedStore(null);
+              setLocation({
+                concept: selectedConcept || location.concept,
+                company: selectedCompany
+              });
             }}
             className="hover:text-blue-600 transition-colors"
           >
@@ -490,14 +487,12 @@ export default function SiteConfiguration() {
   if (viewLevel === 'concept' && selectedConcept) {
     const totalCompanies = companies.length;
     const totalStores = companies.reduce((sum, c) => sum + (c.store_count || 0), 0);
-    // Only show back button if we have loaded multiple concepts (meaning we came from the list view)
-    const canNavigateBack = concepts.length > 1;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
-            {canNavigateBack && (
+            {canNavigateBack() && (
               <button
                 onClick={() => {
                   setLocation({});
@@ -505,7 +500,7 @@ export default function SiteConfiguration() {
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
               >
                 <ArrowLeft size={18} />
-                Back to Concepts
+                WAND Digital
               </button>
             )}
 
@@ -601,7 +596,7 @@ export default function SiteConfiguration() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
-            {selectedConcept && (
+            {canNavigateBack() && selectedConcept && (
               <button
                 onClick={() => {
                   setLocation({
@@ -611,7 +606,7 @@ export default function SiteConfiguration() {
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
               >
                 <ArrowLeft size={18} />
-                Back to {selectedConcept?.name || 'Concept'}
+                {selectedConcept?.name || 'Concept'}
               </button>
             )}
 
@@ -694,7 +689,7 @@ export default function SiteConfiguration() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
-          {selectedCompany && (
+          {canNavigateBack() && selectedCompany && (
             <button
               onClick={() => {
                 setLocation({
@@ -705,12 +700,12 @@ export default function SiteConfiguration() {
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
             >
               <ArrowLeft size={18} />
-              Back to {selectedCompany.name}
+              {selectedCompany.name}
             </button>
           )}
 
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Site Configuration</h1>
-          <p className="text-slate-600">Manage store locations and placement configurations</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
+          <p className="text-slate-600">Manage store settings and placement groups</p>
           {renderBreadcrumbs()}
         </div>
 
