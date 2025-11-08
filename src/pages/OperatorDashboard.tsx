@@ -1,16 +1,18 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, ChevronDown, Building2 } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, ChevronDown, Building2, ImageIcon, Layers, MapPin } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
 import { supabase } from '../lib/supabase';
+import LocationSelector from '../components/LocationSelector';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
 const StoreManagement = lazy(() => import('./StoreManagement'));
 const ProductManagement = lazy(() => import('./ProductManagement'));
+const ResourceManagement = lazy(() => import('./ResourceManagement'));
 
-type DashboardView = 'home' | 'signage' | 'labels' | 'store' | 'products';
+type DashboardView = 'home' | 'signage' | 'labels' | 'store' | 'products' | 'resources';
 
 interface UserProfile {
   id: string;
@@ -53,6 +55,8 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreLocation | null>(null);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string>('content');
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -172,6 +176,12 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   };
 
   const sortedCards = [...cards].sort((a, b) => a.order - b.order);
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? '' : section);
+  };
+
+  const hasLocationSelected = selectedCompany || selectedStore;
 
   const renderCard = (cardId: CardType) => {
     const isClickableCard = cardId === 'signage' || cardId === 'labels';
@@ -454,6 +464,162 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
     );
   }
 
+  if (currentView === 'resources') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+        <ResourceManagement onBack={() => setCurrentView('home')} />
+      </Suspense>
+    );
+  }
+
+  // Show sidebar navigation when location is selected
+  if (hasLocationSelected) {
+    return (
+      <div className="flex h-screen bg-slate-50">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
+          {/* Logo */}
+          <div className="p-4 border-b border-slate-200">
+            <div className="flex items-center gap-2">
+              <img
+                src="/WandLogoNoText.png"
+                alt="WAND"
+                className="h-8 w-8"
+              />
+              <div>
+                <div className="font-bold text-slate-900">WAND Digital</div>
+                <div className="text-xs text-slate-600">Operator Studio</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Location Display */}
+          <div className="p-4 border-b border-slate-200">
+            <button
+              onClick={() => setShowLocationSelector(true)}
+              className={`w-full px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                showLocationSelector
+                  ? 'bg-blue-50 border-2 border-blue-200'
+                  : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
+              <div className="flex-1 text-left min-w-0">
+                <div className="font-medium text-slate-900 truncate">
+                  {selectedStore ? selectedStore.name : selectedCompany?.name || 'Select Location'}
+                </div>
+                {selectedStore && selectedCompany && (
+                  <div className="text-xs text-slate-600 truncate">
+                    {selectedCompany.name}
+                  </div>
+                )}
+              </div>
+              <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            </button>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="flex-1 overflow-y-auto py-4">
+            {/* Content Section */}
+            <div className="mb-6">
+              <button
+                onClick={() => toggleSection('content')}
+                className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
+              >
+                <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Content</div>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                    expandedSection !== 'content' ? '-rotate-90' : ''
+                  }`}
+                />
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  expandedSection !== 'content' ? 'max-h-0' : 'max-h-96'
+                }`}
+              >
+                <button
+                  onClick={() => setCurrentView('signage')}
+                  className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                    currentView === 'signage' ? 'bg-slate-100' : ''
+                  }`}
+                >
+                  <Monitor className="w-5 h-5" />
+                  <span className="text-sm font-medium">Signage</span>
+                </button>
+                <button
+                  onClick={() => setCurrentView('labels')}
+                  className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                    currentView === 'labels' ? 'bg-slate-100' : ''
+                  }`}
+                >
+                  <Tag className="w-5 h-5" />
+                  <span className="text-sm font-medium">Labels</span>
+                </button>
+                <button
+                  onClick={() => setCurrentView('products')}
+                  className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                    currentView === 'products' ? 'bg-slate-100' : ''
+                  }`}
+                >
+                  <Package className="w-5 h-5" />
+                  <span className="text-sm font-medium">Products</span>
+                </button>
+                <button
+                  onClick={() => setCurrentView('resources')}
+                  className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
+                    currentView === 'resources' ? 'bg-slate-100' : ''
+                  }`}
+                >
+                  <ImageIcon className="w-5 h-5" />
+                  <span className="text-sm font-medium">Resources</span>
+                </button>
+              </div>
+            </div>
+          </nav>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Bar */}
+          <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                {currentView === 'home' ? 'Dashboard' :
+                 currentView === 'signage' ? 'Signage Management' :
+                 currentView === 'labels' ? 'Shelf Label Management' :
+                 currentView === 'products' ? 'Product Management' :
+                 currentView === 'resources' ? 'Resource Management' :
+                 currentView === 'store' ? 'Store Configuration' : 'Dashboard'}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <NotificationPanel />
+              <UserMenu role="operator" onBackToRoles={onBack} />
+            </div>
+          </div>
+
+          {/* Page Content */}
+          <div className="flex-1 overflow-auto bg-slate-50">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sortedCards.map(card => renderCard(card.id))}
+              </div>
+            </main>
+          </div>
+        </div>
+
+        {/* Location Selector Modal */}
+        {showLocationSelector && (
+          <LocationSelector
+            onClose={() => setShowLocationSelector(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // No location selected - show location selection screen
   return (
     <div className="min-h-screen bg-slate-50" onClick={() => setShowCompanyDropdown(false)}>
       <nav className="bg-white border-b border-slate-200">
@@ -565,8 +731,10 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedCards.map(card => renderCard(card.id))}
+        <div className="text-center py-12">
+          <MapPin className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Select a Location</h2>
+          <p className="text-slate-600 mb-6">Choose a company or store from the dropdown above to get started</p>
         </div>
       </main>
     </div>
