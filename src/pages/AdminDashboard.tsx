@@ -184,18 +184,14 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 expandedSection !== 'organization' ? 'max-h-0' : 'max-h-96'
               }`}
             >
-              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-                <Building2 className="w-5 h-5" />
-                <span className="text-sm font-medium">Companies</span>
-              </button>
               <button
                 onClick={() => setCurrentView('sites')}
                 className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
                   currentView === 'sites' ? 'bg-slate-100' : ''
                 }`}
               >
-                <Store className="w-5 h-5" />
-                <span className="text-sm font-medium">Sites</span>
+                <MapPin className="w-5 h-5" />
+                <span className="text-sm font-medium">Locations</span>
               </button>
               <button
                 onClick={() => setCurrentView('users')}
