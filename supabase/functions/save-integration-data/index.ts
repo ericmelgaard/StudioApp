@@ -118,18 +118,29 @@ Deno.serve(async (req: Request) => {
     }
 
     if (formatted_data.discounts && formatted_data.discounts.length > 0) {
-      const discountsToInsert = formatted_data.discounts.map((discount) => ({
-        source_id,
-        source_config_id: config_id,
-        external_id: discount.mappingId || discount.id || discount.external_id,
-        name: discount.name,
-        discount_amount: discount.discountAmount || discount.discount_amount || discount.price,
-        data: discount,
-        last_synced_at: now,
-        concept_id: metadata?.concept_id,
-        company_id: metadata?.company_id,
-        site_id: metadata?.site_id,
-      }));
+      const discountsToInsert = formatted_data.discounts.map((discount) => {
+        // Handle discount_amount - ensure it's a valid number or null, never empty string
+        let discountAmount = discount.discountAmount || discount.discount_amount || discount.price;
+        if (discountAmount === "" || discountAmount === undefined) {
+          discountAmount = null;
+        } else if (typeof discountAmount === "string") {
+          const parsed = parseFloat(discountAmount);
+          discountAmount = isNaN(parsed) ? null : parsed;
+        }
+
+        return {
+          source_id,
+          source_config_id: config_id,
+          external_id: discount.mappingId || discount.id || discount.external_id,
+          name: discount.name,
+          discount_amount: discountAmount,
+          data: discount,
+          last_synced_at: now,
+          concept_id: metadata?.concept_id,
+          company_id: metadata?.company_id,
+          site_id: metadata?.site_id,
+        };
+      });
 
       const { data: insertedDiscounts, error: discountsError } = await supabase
         .from("integration_discounts")

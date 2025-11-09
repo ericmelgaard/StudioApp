@@ -65,14 +65,16 @@ function formatItem(item: any): FormattedProduct | null {
     }
   }
 
-  // Extract price
-  let price = "";
+  // Extract price - convert to number or null, never empty string
+  let price: number | null = null;
   try {
-    price = item.discountAmount
-      ? item.discountAmount
-      : item.prices?.prices?.[0]?.price || "";
+    const rawPrice = item.discountAmount || item.prices?.prices?.[0]?.price;
+    if (rawPrice !== undefined && rawPrice !== null && rawPrice !== "") {
+      const parsed = typeof rawPrice === "number" ? rawPrice : parseFloat(rawPrice);
+      price = isNaN(parsed) ? null : parsed;
+    }
   } catch {
-    price = "";
+    price = null;
   }
 
   // Extract mappingId
@@ -83,14 +85,25 @@ function formatItem(item: any): FormattedProduct | null {
     mappingId = "";
   }
 
+  // Extract calories - convert to number or null, never empty string
+  let calories: number | null = null;
+  try {
+    if (item.calories !== undefined && item.calories !== null && item.calories !== "") {
+      const parsed = typeof item.calories === "number" ? item.calories : parseFloat(item.calories);
+      calories = isNaN(parsed) ? null : parsed;
+    }
+  } catch {
+    calories = null;
+  }
+
   // Create clean formatted object
   return {
     mappingId,
     pathId: item.pathId?.toString() || mappingId,
     name: item.name || "",
     description: item.description || "",
-    price,
-    calories: item.calories || "",
+    price: price !== null ? price : 0,
+    calories: calories !== null ? calories : 0,
     isOutOfStock: item.isOutOfStock || false,
     category,
     categoryId,
