@@ -63,9 +63,9 @@ export default function IntegrationCatalog() {
 
   async function loadSources() {
     const { data } = await supabase
-      .from('integration_sources')
-      .select('*')
-      .order('created_at');
+      .from('wand_integration_sources')
+      .select('id, name, integration_type as type')
+      .order('name');
 
     if (data && data.length > 0) {
       setSources(data);
