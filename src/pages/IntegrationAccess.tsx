@@ -305,19 +305,26 @@ export default function IntegrationAccess() {
   const handleManualSync = async (configId: string) => {
     const config = sourceConfigs.find(c => c.id === configId);
 
-    // Prevent syncing concept-level configs (they're availability indicators, not configurations)
-    if (config?.application_level === 'concept') {
-      alert('Cannot sync concept-level configuration. This indicates the integration source is available.\n\nPlease create a site-specific configuration with API credentials and establishment ID to sync data.');
-      return;
-    }
-
-    // Check if config has API parameters
+    // Check if config has required API parameters
     if (!config?.config_params || Object.keys(config.config_params).length === 0) {
       alert('Cannot sync: This configuration is missing API parameters.\n\nPlease edit the configuration and add required fields like establishment ID, brand, and credentials.');
       return;
     }
 
-    if (!confirm('Start manual sync now? This will fetch data from the integration source.')) {
+    // Validate required fields are filled
+    const brand = config.config_params.brand?.trim();
+    const establishment = config.config_params.establishment?.trim();
+
+    if (!brand || !establishment) {
+      alert('Cannot sync: Missing required fields.\n\nBoth brand and establishment must be configured. Please edit the configuration.');
+      return;
+    }
+
+    const syncMessage = config.application_level === 'concept'
+      ? 'Start manual sync now? This will populate the product catalog for all child locations.'
+      : 'Start manual sync now? This will fetch data from the integration source.';
+
+    if (!confirm(syncMessage)) {
       return;
     }
 
