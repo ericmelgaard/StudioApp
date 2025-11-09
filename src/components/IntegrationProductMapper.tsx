@@ -33,18 +33,25 @@ interface AttributeMapping {
 
 interface SavedMapping {
   id: string;
-  source_id: string;
+  wand_integration_source_id: string;
   integration_type: string;
   attribute_mappings: {
     mappings: AttributeMapping[];
   };
   template_name: string | null;
+  application_level: string;
+  concept_id: number | null;
+  is_inherited: boolean;
+  parent_mapping_id: string | null;
 }
 
 interface IntegrationProductMapperProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  conceptId?: number;
+  companyId?: number;
+  siteId?: number;
 }
 
 const INTEGRATION_TYPES = [
@@ -53,9 +60,10 @@ const INTEGRATION_TYPES = [
   { value: 'discount', label: 'Discounts', description: 'Promotional items and discounts' }
 ];
 
-export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }: IntegrationProductMapperProps) {
+export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, conceptId, companyId, siteId }: IntegrationProductMapperProps) {
   const [loading, setLoading] = useState(false);
   const [sources, setSources] = useState<IntegrationSource[]>([]);
+  const [availableSources, setAvailableSources] = useState<IntegrationSource[]>([]);
   const [templates, setTemplates] = useState<AttributeTemplate[]>([]);
   const [sampleProducts, setSampleProducts] = useState<any[]>([]);
 
@@ -75,10 +83,16 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
   }, [isOpen]);
 
   useEffect(() => {
-    if (sources.length > 0 && !selectedSource) {
-      setSelectedSource(sources[0].id);
+    if (sources.length > 0) {
+      filterAvailableSources();
     }
-  }, [sources]);
+  }, [sources, conceptId, companyId, siteId]);
+
+  useEffect(() => {
+    if (availableSources.length > 0 && !selectedSource) {
+      setSelectedSource(availableSources[0].id);
+    }
+  }, [availableSources]);
 
   useEffect(() => {
     if (selectedSource && selectedType) {
@@ -118,26 +132,97 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
     }
   }
 
+  async function filterAvailableSources() {
+    if (!conceptId && !companyId && !siteId) {
+      setAvailableSources(sources);
+      return;
+    }
+
+    try {
+      let query = supabase
+        .from('integration_source_configs')
+        .select('wand_source_id, wand_integration_sources(id, name, integration_type)')
+        .eq('is_active', true);
+
+      if (siteId) {
+        query = query.eq('site_id', siteId);
+      } else if (companyId) {
+        query = query.eq('company_id', companyId);
+      } else if (conceptId) {
+        query = query.eq('concept_id', conceptId);
+      }
+
+      const { data } = await query;
+
+      if (data && data.length > 0) {
+        const configuredSourceIds = new Set(data.map(d => d.wand_source_id));
+        const filtered = sources.filter(s => configuredSourceIds.has(s.id));
+        setAvailableSources(filtered.length > 0 ? filtered : sources);
+      } else {
+        setAvailableSources(sources);
+      }
+    } catch (error) {
+      console.error('Error filtering sources:', error);
+      setAvailableSources(sources);
+    }
+  }
+
   async function loadExistingMapping() {
     setLoading(true);
     try {
-      const { data } = await supabase
+      let query = supabase
         .from('integration_attribute_mappings')
         .select('*')
-        .eq('source_id', selectedSource)
+        .eq('wand_integration_source_id', selectedSource)
         .eq('integration_type', selectedType)
-        .eq('is_template', true)
-        .maybeSingle();
+        .eq('is_template', true);
+
+      if (siteId) {
+        query = query.eq('site_id', siteId);
+      } else if (companyId) {
+        query = query.eq('company_id', companyId);
+      } else if (conceptId) {
+        query = query.eq('concept_id', conceptId);
+      }
+
+      const { data } = await query.maybeSingle();
 
       if (data) {
         setSavedMapping(data);
         setMappings(data.attribute_mappings.mappings || []);
       } else {
-        setSavedMapping(null);
-        setMappings([]);
+        const { data: inheritedData } = await supabase
+          .rpc('get_integration_mapping_for_context', {
+            p_wand_source_id: selectedSource,
+            p_integration_type: selectedType,
+            p_concept_id: conceptId || null,
+            p_company_id: companyId || null,
+            p_site_id: siteId || null
+          })
+          .maybeSingle();
+
+        if (inheritedData) {
+          setSavedMapping({
+            id: inheritedData.mapping_id,
+            wand_integration_source_id: selectedSource,
+            integration_type: selectedType,
+            attribute_mappings: inheritedData.mapping_data,
+            template_name: inheritedData.template_name,
+            application_level: inheritedData.application_level,
+            concept_id: inheritedData.source_concept_id,
+            is_inherited: true,
+            parent_mapping_id: inheritedData.mapping_id
+          });
+          setMappings(inheritedData.mapping_data.mappings || []);
+        } else {
+          setSavedMapping(null);
+          setMappings([]);
+        }
       }
     } catch (error) {
       console.error('Error loading mapping:', error);
+      setSavedMapping(null);
+      setMappings([]);
     } finally {
       setLoading(false);
     }
@@ -149,11 +234,20 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
         : selectedType === 'modifier' ? 'integration_modifiers'
         : 'integration_discounts';
 
-      const { data } = await supabase
+      let query = supabase
         .from(tableName)
         .select('*')
-        .eq('source_id', selectedSource)
         .limit(5);
+
+      if (siteId) {
+        query = query.eq('site_id', siteId);
+      } else if (companyId) {
+        query = query.eq('company_id', companyId);
+      } else if (conceptId) {
+        query = query.eq('concept_id', conceptId);
+      }
+
+      const { data } = await query;
 
       if (data && data.length > 0) {
         setSampleProducts(data);
@@ -277,27 +371,41 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
 
     setLoading(true);
     try {
-      const sourceName = sources.find(s => s.id === selectedSource)?.name || '';
+      const sourceName = availableSources.find(s => s.id === selectedSource)?.name || '';
       const typeName = INTEGRATION_TYPES.find(t => t.value === selectedType)?.label || '';
       const templateName = `${sourceName} - ${typeName}`;
 
-      if (savedMapping) {
+      const applicationLevel = siteId ? 'site' : companyId ? 'company' : 'concept';
+      const mappingData: any = {
+        attribute_mappings: { mappings },
+        template_name: templateName,
+        application_level: applicationLevel,
+        is_inherited: false,
+        updated_at: new Date().toISOString()
+      };
+
+      if (siteId) mappingData.site_id = siteId;
+      else if (companyId) mappingData.company_id = companyId;
+      else if (conceptId) mappingData.concept_id = conceptId;
+
+      if (savedMapping && !savedMapping.is_inherited) {
         await supabase
           .from('integration_attribute_mappings')
-          .update({
-            attribute_mappings: { mappings },
-            template_name: templateName,
-            updated_at: new Date().toISOString()
-          })
+          .update(mappingData)
           .eq('id', savedMapping.id);
       } else {
-        await supabase.from('integration_attribute_mappings').insert({
-          source_id: selectedSource,
+        const insertData = {
+          ...mappingData,
+          wand_integration_source_id: selectedSource,
           integration_type: selectedType,
-          attribute_mappings: { mappings },
-          is_template: true,
-          template_name: templateName
-        });
+          is_template: true
+        };
+
+        if (savedMapping?.is_inherited && savedMapping.parent_mapping_id) {
+          insertData.parent_mapping_id = savedMapping.parent_mapping_id;
+        }
+
+        await supabase.from('integration_attribute_mappings').insert(insertData);
       }
 
       alert('Mapping template saved successfully');
@@ -322,10 +430,19 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
 
     setLoading(true);
     try {
-      const { data: integrationProducts } = await supabase
+      let query = supabase
         .from('integration_products')
-        .select('id, data')
-        .eq('source_id', selectedSource);
+        .select('id, data');
+
+      if (siteId) {
+        query = query.eq('site_id', siteId);
+      } else if (companyId) {
+        query = query.eq('company_id', companyId);
+      } else if (conceptId) {
+        query = query.eq('concept_id', conceptId);
+      }
+
+      const { data: integrationProducts } = await query;
 
       if (!integrationProducts || integrationProducts.length === 0) {
         alert('No products found for this source');
@@ -388,8 +505,15 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
       ]
     : [];
 
-  const selectedSourceData = sources.find(s => s.id === selectedSource);
+  const selectedSourceData = availableSources.find(s => s.id === selectedSource);
   const selectedTypeData = INTEGRATION_TYPES.find(t => t.value === selectedType);
+
+  const getContextDisplay = () => {
+    if (siteId) return 'Site Level';
+    if (companyId) return 'Company Level';
+    if (conceptId) return 'Concept Level';
+    return 'Global Level';
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
@@ -401,7 +525,14 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">Integration Mapping Templates</h2>
-              <p className="text-sm text-slate-600">Create reusable attribute mappings for each integration source and type</p>
+              <p className="text-sm text-slate-600">
+                Create reusable attribute mappings for each integration source and type
+                {(conceptId || companyId || siteId) && (
+                  <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                    {getContextDisplay()}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
           <button
@@ -427,7 +558,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select a source...</option>
-                {sources.map(source => (
+                {availableSources.map(source => (
                   <option key={source.id} value={source.id}>
                     {source.name}
                   </option>
@@ -482,14 +613,25 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
           </div>
 
           {savedMapping && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className={`mb-4 p-3 border rounded-lg flex items-start gap-3 ${
+              savedMapping.is_inherited
+                ? 'bg-blue-50 border-blue-200'
+                : 'bg-green-50 border-green-200'
+            }`}>
+              <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                savedMapping.is_inherited ? 'text-blue-600' : 'text-green-600'
+              }`} />
               <div className="flex-1">
-                <p className="text-sm font-medium text-green-900">
-                  Existing mapping template found
+                <p className={`text-sm font-medium ${
+                  savedMapping.is_inherited ? 'text-blue-900' : 'text-green-900'
+                }`}>
+                  {savedMapping.is_inherited ? 'Inherited mapping template' : 'Existing mapping template found'}
                 </p>
-                <p className="text-xs text-green-700 mt-1">
+                <p className={`text-xs mt-1 ${
+                  savedMapping.is_inherited ? 'text-blue-700' : 'text-green-700'
+                }`}>
                   {savedMapping.template_name} - {savedMapping.attribute_mappings.mappings.length} mappings configured
+                  {savedMapping.is_inherited && ' (from parent concept)'}
                 </p>
               </div>
             </div>
@@ -655,7 +797,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              Save Template
+              {savedMapping?.is_inherited ? 'Save as Custom Template' : 'Save Template'}
             </button>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
+import { useLocation } from '../hooks/useLocation';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 import EditProductModal from '../components/EditProductModal';
@@ -31,6 +32,7 @@ interface ProductManagementProps {
 
 
 export default function ProductManagement({ onBack }: ProductManagementProps) {
+  const { location } = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -546,6 +548,9 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
         isOpen={showMapper}
         onClose={() => setShowMapper(false)}
         onSuccess={loadProducts}
+        conceptId={location.concept?.id}
+        companyId={location.company?.id}
+        siteId={location.store?.id}
       />
 
       <CategoryManagementModal
