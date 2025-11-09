@@ -76,7 +76,7 @@ export default function AutoImportModal({
     setLoading(true);
     try {
       const [sourceRes, templatesRes, orgSettingsRes] = await Promise.all([
-        supabase.from('integration_sources').select('*').eq('id', sourceId).maybeSingle(),
+        supabase.from('wand_integration_sources').select('id, name, integration_type as type').eq('id', sourceId).maybeSingle(),
         supabase.from('product_attribute_templates').select('id, name').order('name'),
         supabase.from('organization_settings').select('default_product_attribute_template_id').limit(1).maybeSingle()
       ]);
@@ -105,34 +105,39 @@ export default function AutoImportModal({
       .eq('source_id', sourceId);
 
     if (data) {
-      const categoryMap = new Map<string, { count: number; items: Set<string> }>();
+      const categoryMap = new Map<string, { count: number; names: Set<string> }>();
 
       data.forEach(item => {
-        const displayGroupId = item.data?.displayAttribute?.displayGroupId;
-        if (!displayGroupId) return;
+        const pathId = item.data?.pathId;
+        if (!pathId) return;
 
-        let category = categoryMap.get(displayGroupId);
+        const categoryId = pathId.split('-')[0];
+        if (!categoryId) return;
+
+        let category = categoryMap.get(categoryId);
         if (!category) {
-          category = { count: 0, items: new Set() };
-          categoryMap.set(displayGroupId, category);
+          category = { count: 0, names: new Set() };
+          categoryMap.set(categoryId, category);
         }
 
-        const itemTitle = item.data?.displayAttribute?.itemTitle || item.name;
-        category.items.add(itemTitle);
+        const productName = item.name;
+        const categoryPrefix = productName.split('-')[0]?.trim();
+        if (categoryPrefix) {
+          category.names.add(categoryPrefix);
+        }
         category.count++;
       });
 
       const cats = Array.from(categoryMap.entries()).map(([id, info]) => {
-        const itemNames = Array.from(info.items).sort();
-        const categoryName = itemNames.length > 0 ? itemNames[0] : `Category ${id}`;
-        const displayName = itemNames.length > 1 ? `${categoryName} (+${itemNames.length - 1} more)` : categoryName;
+        const nameArray = Array.from(info.names);
+        const categoryName = nameArray.length > 0 ? nameArray[0] : `Category ${id}`;
 
         return {
           id,
-          name: displayName,
+          name: `${categoryName} (${info.count} items)`,
           count: info.count
         };
-      }).sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      }).sort((a, b) => b.count - a.count);
 
       setCategories(cats);
     }
@@ -235,8 +240,10 @@ export default function AutoImportModal({
         if (allProducts) {
           const categoryArray = Array.from(selectedCategories);
           integrationProducts = allProducts.filter(product => {
-            const displayGroupId = product.data?.displayAttribute?.displayGroupId;
-            return displayGroupId && categoryArray.includes(displayGroupId);
+            const pathId = product.data?.pathId;
+            if (!pathId) return false;
+            const categoryId = pathId.split('-')[0];
+            return categoryId && categoryArray.includes(categoryId);
           });
         }
       }
@@ -288,7 +295,7 @@ export default function AutoImportModal({
           });
 
           return {
-            name: intProduct.data?.displayAttribute?.itemTitle || intProduct.name,
+            name: intProduct.name,
             integration_product_id: intProduct.id,
             attribute_template_id: selectedTemplate,
             attributes: attributes,
