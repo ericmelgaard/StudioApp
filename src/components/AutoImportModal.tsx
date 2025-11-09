@@ -99,43 +99,39 @@ export default function AutoImportModal({
   }
 
   async function loadCategories() {
+    let tableName = 'integration_products';
+    if (integrationType === 'modifiers') {
+      tableName = 'integration_modifiers';
+    } else if (integrationType === 'discounts') {
+      tableName = 'integration_discounts';
+    }
+
     const { data } = await supabase
-      .from('integration_products')
+      .from(tableName)
       .select('name, data')
       .eq('source_id', sourceId);
 
     if (data) {
-      const categoryMap = new Map<string, { count: number; names: Set<string> }>();
+      const categoryMap = new Map<string, number>();
 
       data.forEach(item => {
-        const pathId = item.data?.pathId;
-        if (!pathId) return;
+        const category = item.data?.category;
+        const categoryId = item.data?.categoryId;
 
-        const categoryId = pathId.split('-')[0];
-        if (!categoryId) return;
+        if (!category || !categoryId) return;
 
-        let category = categoryMap.get(categoryId);
-        if (!category) {
-          category = { count: 0, names: new Set() };
-          categoryMap.set(categoryId, category);
-        }
-
-        const productName = item.name;
-        const categoryPrefix = productName.split('-')[0]?.trim();
-        if (categoryPrefix) {
-          category.names.add(categoryPrefix);
-        }
-        category.count++;
+        const count = categoryMap.get(categoryId) || 0;
+        categoryMap.set(categoryId, count + 1);
       });
 
-      const cats = Array.from(categoryMap.entries()).map(([id, info]) => {
-        const nameArray = Array.from(info.names);
-        const categoryName = nameArray.length > 0 ? nameArray[0] : `Category ${id}`;
+      const cats = Array.from(categoryMap.entries()).map(([id, count]) => {
+        const firstItem = data.find(item => item.data?.categoryId === id);
+        const categoryName = firstItem?.data?.category || `Category ${id}`;
 
         return {
           id,
-          name: `${categoryName} (${info.count} items)`,
-          count: info.count
+          name: categoryName,
+          count
         };
       }).sort((a, b) => b.count - a.count);
 
@@ -223,26 +219,31 @@ export default function AutoImportModal({
 
     setImporting(true);
     try {
+      let tableName = 'integration_products';
+      if (integrationType === 'modifiers') {
+        tableName = 'integration_modifiers';
+      } else if (integrationType === 'discounts') {
+        tableName = 'integration_discounts';
+      }
+
       let integrationProducts: any[] = [];
 
       if (filterType === 'all') {
         const { data } = await supabase
-          .from('integration_products')
+          .from(tableName)
           .select('*')
           .eq('source_id', sourceId);
         integrationProducts = data || [];
       } else if (filterType === 'category' && selectedCategories.size > 0) {
         const { data: allProducts } = await supabase
-          .from('integration_products')
+          .from(tableName)
           .select('*')
           .eq('source_id', sourceId);
 
         if (allProducts) {
           const categoryArray = Array.from(selectedCategories);
           integrationProducts = allProducts.filter(product => {
-            const pathId = product.data?.pathId;
-            if (!pathId) return false;
-            const categoryId = pathId.split('-')[0];
+            const categoryId = product.data?.categoryId;
             return categoryId && categoryArray.includes(categoryId);
           });
         }
