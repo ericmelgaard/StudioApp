@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Database, AlertCircle, ChevronRight, Sparkles, Wrench, FileSpreadsheet, FileJson, Server } from 'lucide-react';
+import { X, Database, AlertCircle, ChevronRight, Sparkles, Wrench, FileSpreadsheet, FileJson, Server, Tag, Plus, Lock, Unlock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useBrandOptions } from '../hooks/useBrandOptions';
 
 interface WandIntegrationSource {
   id: string;
@@ -43,13 +44,26 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
     credentials: Record<string, string>;
     syncFrequency: number;
     syncSchedule: string;
+    selectedBrand: string;
+    localBrandOptions: string[];
+    isBrandInherited: boolean;
+    brandLocked: boolean;
   }>({
     configName: '',
     configParams: {},
     credentials: {},
     syncFrequency: 15,
-    syncSchedule: 'Manual'
+    syncSchedule: 'Manual',
+    selectedBrand: '',
+    localBrandOptions: [],
+    isBrandInherited: true,
+    brandLocked: false
   });
+
+  const [showBrandOverride, setShowBrandOverride] = useState(false);
+  const [newLocalBrand, setNewLocalBrand] = useState('');
+
+  const brandOptions = useBrandOptions({ conceptId, companyId, siteId });
 
   useEffect(() => {
     loadWandSources();
@@ -79,7 +93,11 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
       configParams: {},
       credentials: {},
       syncFrequency: source.default_sync_frequency_minutes,
-      syncSchedule: 'Manual'
+      syncSchedule: 'Manual',
+      selectedBrand: '',
+      localBrandOptions: [],
+      isBrandInherited: true,
+      brandLocked: false
     });
     setStep('wand-configure');
   };
@@ -104,6 +122,47 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
     }));
   };
 
+  const handleAddLocalBrand = () => {
+    const trimmed = newLocalBrand.trim();
+    if (trimmed && !configForm.localBrandOptions.includes(trimmed)) {
+      setConfigForm(prev => ({
+        ...prev,
+        localBrandOptions: [...prev.localBrandOptions, trimmed]
+      }));
+      setNewLocalBrand('');
+    }
+  };
+
+  const handleRemoveLocalBrand = (brand: string) => {
+    setConfigForm(prev => ({
+      ...prev,
+      localBrandOptions: prev.localBrandOptions.filter(b => b !== brand)
+    }));
+  };
+
+  const handleToggleBrandOverride = () => {
+    if (showBrandOverride) {
+      setConfigForm(prev => ({
+        ...prev,
+        localBrandOptions: [],
+        isBrandInherited: true
+      }));
+    } else {
+      setConfigForm(prev => ({
+        ...prev,
+        isBrandInherited: false
+      }));
+    }
+    setShowBrandOverride(!showBrandOverride);
+  };
+
+  const handleToggleBrandLock = () => {
+    setConfigForm(prev => ({
+      ...prev,
+      brandLocked: !prev.brandLocked
+    }));
+  };
+
   // Determine application level based on props
   const getApplicationLevel = (): 'concept' | 'company' | 'site' => {
     if (conceptId && !companyId && !storeId) return 'concept';
@@ -120,6 +179,12 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
     setError('');
     setSaving(true);
 
+    // Prepare config_params with brand field
+    const updatedConfigParams = { ...configForm.configParams };
+    if (configForm.selectedBrand) {
+      updatedConfigParams.brand = configForm.selectedBrand;
+    }
+
     const { error: saveError } = await supabase
       .from('integration_source_configs')
       .insert({
@@ -129,10 +194,13 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
         concept_id: conceptId || null,
         company_id: companyId || null,
         site_id: storeId || null,
-        config_params: configForm.configParams,
+        config_params: updatedConfigParams,
         credentials: configForm.credentials,
         sync_frequency_minutes: configForm.syncFrequency,
         sync_schedule: configForm.syncSchedule,
+        brand_options: configForm.localBrandOptions.length > 0 ? configForm.localBrandOptions : null,
+        is_brand_inherited: configForm.isBrandInherited,
+        brand_locked: configForm.brandLocked,
         is_active: false
       });
 
@@ -318,22 +386,167 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
                     : 'Enter API configuration values specific to this location. These values will NOT be inherited by child locations.'}
                 </p>
                 <div className="space-y-3">
-                  {selectedSource.required_config_fields.map(field => (
-                    <div key={field}>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        {field}
-                        {applicationLevel !== 'concept' && <span className="text-red-600 ml-1">*</span>}
-                      </label>
-                      <input
-                        type="text"
-                        required={applicationLevel !== 'concept'}
-                        value={configForm.configParams[field] || ''}
-                        onChange={(e) => handleConfigChange(field, e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder={applicationLevel === 'concept' ? `Leave empty for concept level` : `Enter ${field}`}
-                      />
-                    </div>
-                  ))}
+                  {selectedSource.required_config_fields.map(field => {
+                    // Special handling for brand field
+                    if (field === 'brand' && applicationLevel !== 'concept') {
+                      const activeBrands = showBrandOverride ? configForm.localBrandOptions : brandOptions.brands;
+                      return (
+                        <div key={field}>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-slate-700">
+                              {field}
+                              <span className="text-red-600 ml-1">*</span>
+                              {brandOptions.isInherited && !showBrandOverride && (
+                                <span className="ml-2 text-xs text-blue-600 font-normal">
+                                  (from {brandOptions.conceptName})
+                                </span>
+                              )}
+                              {showBrandOverride && (
+                                <span className="ml-2 text-xs text-green-600 font-normal">
+                                  (local override)
+                                </span>
+                              )}
+                            </label>
+                            <div className="flex items-center gap-2">
+                              {configForm.brandLocked ? (
+                                <button
+                                  type="button"
+                                  onClick={handleToggleBrandLock}
+                                  className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700"
+                                >
+                                  <Lock size={14} />
+                                  Locked
+                                </button>
+                              ) : (
+                                <>
+                                  {brandOptions.canOverride && !showBrandOverride && (
+                                    <button
+                                      type="button"
+                                      onClick={handleToggleBrandOverride}
+                                      className="text-xs text-blue-600 hover:text-blue-700"
+                                    >
+                                      Override
+                                    </button>
+                                  )}
+                                  {showBrandOverride && (
+                                    <button
+                                      type="button"
+                                      onClick={handleToggleBrandOverride}
+                                      className="text-xs text-slate-600 hover:text-slate-700"
+                                    >
+                                      Use inherited
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={handleToggleBrandLock}
+                                    className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-700"
+                                  >
+                                    <Unlock size={14} />
+                                    Lock
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {showBrandOverride ? (
+                            <div className="space-y-2">
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={newLocalBrand}
+                                  onChange={(e) => setNewLocalBrand(e.target.value)}
+                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLocalBrand())}
+                                  disabled={configForm.brandLocked}
+                                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100"
+                                  placeholder="Add brand option"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleAddLocalBrand}
+                                  disabled={!newLocalBrand.trim() || configForm.brandLocked}
+                                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  <Plus size={18} />
+                                </button>
+                              </div>
+                              {configForm.localBrandOptions.length > 0 && (
+                                <div className="flex flex-wrap gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                                  {configForm.localBrandOptions.map(brand => (
+                                    <div key={brand} className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-sm">
+                                      <Tag size={12} className="text-blue-600" />
+                                      <span>{brand}</span>
+                                      {!configForm.brandLocked && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveLocalBrand(brand)}
+                                          className="text-slate-400 hover:text-red-600 ml-1"
+                                        >
+                                          <X size={12} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <select
+                                value={configForm.selectedBrand}
+                                onChange={(e) => setConfigForm(prev => ({ ...prev, selectedBrand: e.target.value }))}
+                                disabled={configForm.brandLocked || configForm.localBrandOptions.length === 0}
+                                required
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100"
+                              >
+                                <option value="">Select brand...</option>
+                                {configForm.localBrandOptions.map(brand => (
+                                  <option key={brand} value={brand}>{brand}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <select
+                              value={configForm.selectedBrand}
+                              onChange={(e) => setConfigForm(prev => ({ ...prev, selectedBrand: e.target.value }))}
+                              disabled={configForm.brandLocked || activeBrands.length === 0}
+                              required
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100"
+                            >
+                              <option value="">
+                                {activeBrands.length === 0 ? 'No brands configured in concept' : 'Select brand...'}
+                              </option>
+                              {activeBrands.map(brand => (
+                                <option key={brand} value={brand}>{brand}</option>
+                              ))}
+                            </select>
+                          )}
+
+                          {activeBrands.length === 0 && !showBrandOverride && (
+                            <p className="mt-1 text-xs text-amber-600">
+                              No brands configured at concept level. Use override to add local brands.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Regular field rendering
+                    return (
+                      <div key={field}>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          {field}
+                          {applicationLevel !== 'concept' && <span className="text-red-600 ml-1">*</span>}
+                        </label>
+                        <input
+                          type="text"
+                          required={applicationLevel !== 'concept'}
+                          value={configForm.configParams[field] || ''}
+                          onChange={(e) => handleConfigChange(field, e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder={applicationLevel === 'concept' ? `Leave empty for concept level` : `Enter ${field}`}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

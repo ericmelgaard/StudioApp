@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Trash2 } from 'lucide-react';
+import { X, Save, Trash2, Plus, Tag } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
@@ -12,6 +12,7 @@ interface Concept {
   icon?: string;
   brand_primary_color?: string;
   brand_secondary_color?: string;
+  brand_options?: string[];
 }
 
 interface ConceptModalProps {
@@ -26,6 +27,8 @@ export default function ConceptModal({ concept, onClose, onSave }: ConceptModalP
   const [icon, setIcon] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string | null>(null);
   const [secondaryColor, setSecondaryColor] = useState<string | null>(null);
+  const [brandOptions, setBrandOptions] = useState<string[]>([]);
+  const [newBrand, setNewBrand] = useState('');
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +40,7 @@ export default function ConceptModal({ concept, onClose, onSave }: ConceptModalP
       setIcon(concept.icon || null);
       setPrimaryColor(concept.brand_primary_color || null);
       setSecondaryColor(concept.brand_secondary_color || null);
+      setBrandOptions(concept.brand_options || []);
     }
   }, [concept]);
 
@@ -44,6 +48,25 @@ export default function ConceptModal({ concept, onClose, onSave }: ConceptModalP
     if (!icon) return <Icons.Building2 size={24} />;
     const IconComponent = Icons[icon as keyof typeof Icons] as any;
     return IconComponent ? <IconComponent size={24} /> : <Icons.Building2 size={24} />;
+  };
+
+  const handleAddBrand = () => {
+    const trimmedBrand = newBrand.trim();
+    if (trimmedBrand && !brandOptions.includes(trimmedBrand)) {
+      setBrandOptions([...brandOptions, trimmedBrand]);
+      setNewBrand('');
+    }
+  };
+
+  const handleRemoveBrand = (brandToRemove: string) => {
+    setBrandOptions(brandOptions.filter(b => b !== brandToRemove));
+  };
+
+  const handleBrandKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddBrand();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +80,8 @@ export default function ConceptModal({ concept, onClose, onSave }: ConceptModalP
         description: description || null,
         icon: icon || null,
         brand_primary_color: primaryColor || null,
-        brand_secondary_color: secondaryColor || null
+        brand_secondary_color: secondaryColor || null,
+        brand_options: brandOptions.length > 0 ? brandOptions : []
       };
 
       if (concept) {
@@ -177,6 +201,64 @@ export default function ConceptModal({ concept, onClose, onSave }: ConceptModalP
                     {icon || 'Select an icon'}
                   </span>
                 </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Brand Options
+                </label>
+                <p className="text-sm text-gray-500 mb-3">
+                  Add brand names that will be available for API configurations at child sites and companies.
+                </p>
+
+                <div className="flex gap-2 mb-3">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={newBrand}
+                      onChange={(e) => setNewBrand(e.target.value)}
+                      onKeyPress={handleBrandKeyPress}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter brand name (e.g., Auntie Anne's)"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddBrand}
+                    disabled={!newBrand.trim()}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={18} />
+                    Add
+                  </button>
+                </div>
+
+                {brandOptions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    {brandOptions.map((brand) => (
+                      <div
+                        key={brand}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm"
+                      >
+                        <Tag size={14} className="text-blue-600" />
+                        <span className="text-gray-700">{brand}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBrand(brand)}
+                          className="text-gray-400 hover:text-red-600 transition-colors ml-1"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {brandOptions.length === 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                    No brands configured. Add at least one brand to enable API configurations for child sites.
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
