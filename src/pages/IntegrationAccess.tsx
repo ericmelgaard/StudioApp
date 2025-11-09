@@ -342,7 +342,8 @@ export default function IntegrationAccess() {
 
       const result = await response.json();
 
-      console.log('Sync orchestrator result:', result);
+      console.log('Sync orchestrator result:', JSON.stringify(result, null, 2));
+      console.log('Summary object:', result.summary);
 
       if (result.success) {
         alert(`Sync completed successfully!\nProducts: ${result.summary?.products_synced || 0}\nModifiers: ${result.summary?.modifiers_synced || 0}\nDiscounts: ${result.summary?.discounts_synced || 0}`);
