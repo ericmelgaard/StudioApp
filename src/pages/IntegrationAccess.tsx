@@ -225,49 +225,18 @@ export default function IntegrationAccess() {
     if (newStatus) {
       const config = sourceConfigs.find(c => c.id === configId);
 
-      // Cannot activate concept-level configs
-      if (config?.application_level === 'concept') {
-        alert('Cannot activate concept-level configuration.\n\nConcept configs indicate source availability only. Create a site-specific configuration to sync data.');
-        return;
-      }
-
       if (config?.wand_integration_sources) {
         const source = config.wand_integration_sources;
         const missingFields: string[] = [];
 
-        // Check all required fields, including inherited brand
+        // Check all required fields
         source.required_config_fields?.forEach((field: string) => {
           const value = config.config_params?.[field];
 
-          // For brand field, we need to check both local and inherited
-          if (field === 'brand') {
-            // Brand can be in config_params or inherited - we'll check if either exists
-            // For now, just check config_params
-            if (!value || value.trim() === '') {
-              // Brand might be inherited, we'll let the backend check
-              // For UI validation, we're just warning about local brand
-            }
-          } else {
-            if (!value || value.trim() === '') {
-              missingFields.push(field);
-            }
+          if (!value || value.trim() === '') {
+            missingFields.push(field);
           }
         });
-
-        // Special validation for Qu integrations: both brand and establishment required
-        if (source.integration_type === 'qu') {
-          const brand = config.config_params?.brand;
-          const establishment = config.config_params?.establishment;
-
-          if (!brand || brand.trim() === '') {
-            missingFields.push('brand (not inherited)');
-          }
-          if (!establishment || establishment.trim() === '') {
-            if (!missingFields.includes('establishment')) {
-              missingFields.push('establishment');
-            }
-          }
-        }
 
         if (missingFields.length > 0) {
           alert(`Cannot activate: Missing required fields:\n${missingFields.join(', ')}\n\nPlease edit the configuration and fill in all required fields.`);

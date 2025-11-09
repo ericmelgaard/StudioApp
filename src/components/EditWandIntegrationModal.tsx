@@ -156,10 +156,20 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
     const brand = configForm.configParams.brand?.trim() || inheritedBrand;
     const establishment = configForm.configParams.establishment?.trim();
 
-    // Determine if config should be active
-    // Both brand and establishment must be present for activation
+    // Determine if config should be active based on required fields
     let shouldBeActive = config.is_active;
-    if (!brand || !establishment) {
+    let missingFields: string[] = [];
+
+    // Check which required fields are missing
+    if (!brand) {
+      missingFields.push('brand');
+    }
+    if (!establishment) {
+      missingFields.push('establishment');
+    }
+
+    // If any required fields are missing, force inactive
+    if (missingFields.length > 0) {
       shouldBeActive = false;
     }
 
@@ -181,8 +191,8 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
     if (saveError) {
       setError(saveError.message);
     } else {
-      if (!brand || !establishment) {
-        alert('Configuration saved. Note: Configuration has been marked as inactive because brand or establishment is missing.');
+      if (missingFields.length > 0 && config.is_active) {
+        alert(`Configuration saved. Note: Configuration has been marked as inactive because the following fields are missing:\n${missingFields.join(', ')}`);
       }
       onSuccess();
     }
@@ -264,7 +274,7 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
                   <h3 className="font-semibold text-blue-900 mb-2">Required Configuration Fields</h3>
                   <p className="text-sm text-blue-800 mb-3">
                     {config.application_level === 'concept'
-                      ? 'Concept-level configs should have empty API fields. They indicate source availability only. Configure API values at site level.'
+                      ? 'Concept-level configs populate the product catalog for all child locations. Enter brand and establishment to activate and sync products.'
                       : 'Brand inherits from parent configs. Establishment is location-specific. Both are required to activate the configuration.'}
                   </p>
                   <div className="space-y-3">
