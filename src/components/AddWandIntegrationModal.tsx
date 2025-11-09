@@ -104,17 +104,21 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
     }));
   };
 
+  // Determine application level based on props
+  const getApplicationLevel = (): 'concept' | 'company' | 'site' => {
+    if (conceptId && !companyId && !storeId) return 'concept';
+    if (companyId && !storeId) return 'company';
+    return 'site';
+  };
+
+  const applicationLevel = getApplicationLevel();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSource) return;
 
     setError('');
     setSaving(true);
-
-    // Determine application level
-    let applicationLevel: 'concept' | 'company' | 'site' = 'site';
-    if (conceptId && !companyId && !storeId) applicationLevel = 'concept';
-    else if (companyId && !storeId) applicationLevel = 'company';
 
     const { error: saveError } = await supabase
       .from('integration_source_configs')
@@ -308,17 +312,25 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-900 mb-2">Required Configuration Fields</h3>
+                <p className="text-sm text-blue-800 mb-3">
+                  {applicationLevel === 'concept'
+                    ? 'For concept-level: Leave fields empty to indicate source availability only. API values should be set at site level.'
+                    : 'Enter API configuration values specific to this location. These values will NOT be inherited by child locations.'}
+                </p>
                 <div className="space-y-3">
                   {selectedSource.required_config_fields.map(field => (
                     <div key={field}>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">{field}</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        {field}
+                        {applicationLevel !== 'concept' && <span className="text-red-600 ml-1">*</span>}
+                      </label>
                       <input
                         type="text"
-                        required
+                        required={applicationLevel !== 'concept'}
                         value={configForm.configParams[field] || ''}
                         onChange={(e) => handleConfigChange(field, e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder={`Enter ${field}`}
+                        placeholder={applicationLevel === 'concept' ? `Leave empty for concept level` : `Enter ${field}`}
                       />
                     </div>
                   ))}
@@ -394,8 +406,21 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
               </div>
 
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p className="text-sm text-slate-600">
-                  <strong>Note:</strong> This configuration will be created as inactive. You can configure all settings now and activate it later when you're ready to start syncing data.
+                <p className="text-sm text-slate-600 mb-2">
+                  <strong>Two-Tier Inheritance Model:</strong>
+                </p>
+                <ul className="text-sm text-slate-600 list-disc list-inside space-y-1 ml-2">
+                  <li><strong>Source Availability:</strong> Concept-level configs indicate which integration sources are available to all child locations</li>
+                  <li><strong>API Configuration:</strong> Site/company-level configs contain actual API values (credentials, establishment IDs) that are NOT inherited</li>
+                  {applicationLevel === 'concept' && (
+                    <li className="text-blue-700"><strong>Concept Level:</strong> Leave API fields empty - they will be configured at each site</li>
+                  )}
+                  {applicationLevel !== 'concept' && (
+                    <li className="text-blue-700"><strong>{applicationLevel === 'site' ? 'Site' : 'Company'} Level:</strong> API values you enter are unique to this location and won't be inherited by child locations</li>
+                  )}
+                </ul>
+                <p className="text-sm text-slate-600 mt-2">
+                  <strong>Note:</strong> This configuration will be created as inactive. Activate it when ready to sync.
                 </p>
               </div>
 

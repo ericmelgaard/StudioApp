@@ -243,6 +243,11 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
               {source.required_config_fields.length > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 mb-2">Required Configuration Fields</h3>
+                  <p className="text-sm text-blue-800 mb-3">
+                    {config.application_level === 'concept'
+                      ? 'Concept-level configs should have empty API fields. They indicate source availability only. Configure API values at site level.'
+                      : 'API configuration values are location-specific and will NOT be inherited by child locations.'}
+                  </p>
                   <div className="space-y-3">
                     {source.required_config_fields.map(field => (
                       <div key={field}>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye, RefreshCw } from 'lucide-react';
+import { Plus, Database, FileSpreadsheet, FileJson, Server, Calendar, Clock, Zap, Link, Edit2, Trash2, ToggleLeft, ToggleRight, Send, ChevronDown, ChevronRight, MapPin, Eye, RefreshCw, Check, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import AddWandIntegrationModal from '../components/AddWandIntegrationModal';
 import EditWandIntegrationModal from '../components/EditWandIntegrationModal';
@@ -109,6 +109,8 @@ export default function IntegrationAccess() {
 
   const loadSourceConfigs = async () => {
     setLoading(true);
+
+    // Load all configs to show both concept-level (available) and site-level (configured)
     const { data } = await supabase
       .from('integration_source_configs')
       .select(`
@@ -121,7 +123,26 @@ export default function IntegrationAccess() {
         )
       `)
       .order('config_name');
-    if (data) setSourceConfigs(data);
+
+    if (data) {
+      // Filter to show:
+      // 1. Concept-level configs for current concept (shows availability)
+      // 2. Site-level configs for current site (shows full configuration)
+      const filteredConfigs = data.filter(config => {
+        if (config.application_level === 'concept' && location.concept) {
+          return config.concept_id === location.concept.id;
+        }
+        if (config.application_level === 'site' && location.store) {
+          return config.site_id === location.store.id;
+        }
+        if (config.application_level === 'company' && location.company) {
+          return config.company_id === location.company.id;
+        }
+        return false;
+      });
+
+      setSourceConfigs(filteredConfigs);
+    }
     setLoading(false);
   };
 
@@ -277,6 +298,20 @@ export default function IntegrationAccess() {
   }
 
   const handleManualSync = async (configId: string) => {
+    const config = sourceConfigs.find(c => c.id === configId);
+
+    // Prevent syncing concept-level configs (they're availability indicators, not configurations)
+    if (config?.application_level === 'concept') {
+      alert('Cannot sync concept-level configuration. This indicates the integration source is available.\n\nPlease create a site-specific configuration with API credentials and establishment ID to sync data.');
+      return;
+    }
+
+    // Check if config has API parameters
+    if (!config?.config_params || Object.keys(config.config_params).length === 0) {
+      alert('Cannot sync: This configuration is missing API parameters.\n\nPlease edit the configuration and add required fields like establishment ID, brand, and credentials.');
+      return;
+    }
+
     if (!confirm('Start manual sync now? This will fetch data from the integration source.')) {
       return;
     }
@@ -374,12 +409,42 @@ export default function IntegrationAccess() {
                             {config.wand_integration_sources?.integration_type}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded font-medium">
                             {config.application_level.toUpperCase()}
                           </span>
+                          {config.application_level === 'concept' && (
+                            <>
+                              {(!config.config_params || Object.keys(config.config_params).length === 0) ? (
+                                <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded font-medium flex items-center gap-1">
+                                  <Check className="w-3 h-3" />
+                                  Available (Not Configured)
+                                </span>
+                              ) : (
+                                <span className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded font-medium flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  Has API Values (Should Be Empty)
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {(config.application_level === 'site' || config.application_level === 'company') && (
+                            <>
+                              {config.config_params && Object.keys(config.config_params).length > 0 ? (
+                                <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded font-medium flex items-center gap-1">
+                                  <Check className="w-3 h-3" />
+                                  Fully Configured
+                                </span>
+                              ) : (
+                                <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded font-medium flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  Missing API Configuration
+                                </span>
+                              )}
+                            </>
+                          )}
                           {config.wand_integration_sources?.integration_type === 'qu' && config.config_params?.brand && (
-                            <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded font-medium">
+                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-medium">
                               Brand: {config.config_params.brand}
                             </span>
                           )}

@@ -76,6 +76,26 @@ Deno.serve(async (req: Request) => {
     }
 
     const intConfig = config as unknown as IntegrationConfig;
+
+    // Validate that config has actual API values (not just availability indicator)
+    // Concept-level configs indicate source availability but don't have API config
+    if (!intConfig.config_params || Object.keys(intConfig.config_params).length === 0) {
+      throw new Error(
+        `Configuration "${intConfig.config_name}" is available but not configured with API parameters. ` +
+        `Please configure this integration source for your specific location with establishment ID, brand, and credentials.`
+      );
+    }
+
+    // Validate required parameters based on integration type
+    if (intConfig.wand_source.integration_type === 'qu') {
+      if (!intConfig.config_params.brand) {
+        throw new Error('Missing required parameter: brand. Please configure the brand/concept name.');
+      }
+      if (!intConfig.config_params.establishment) {
+        throw new Error('Missing required parameter: establishment. Please configure the establishment ID for this location.');
+      }
+    }
+
     const url = buildUrl(intConfig, wand_domain);
     const headers = buildHeaders(intConfig);
 
