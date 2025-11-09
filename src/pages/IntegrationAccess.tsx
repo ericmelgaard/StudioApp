@@ -427,15 +427,15 @@ export default function IntegrationAccess() {
                           </span>
                           {config.application_level === 'concept' && (
                             <>
-                              {(!config.config_params || Object.keys(config.config_params).length === 0) ? (
+                              {config.config_params && Object.keys(config.config_params).length > 0 ? (
                                 <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded font-medium flex items-center gap-1">
                                   <Check className="w-3 h-3" />
-                                  Available (Not Configured)
+                                  Catalog Source Configured
                                 </span>
                               ) : (
-                                <span className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded font-medium flex items-center gap-1">
+                                <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded font-medium flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3" />
-                                  Has API Values (Should Be Empty)
+                                  Not Configured
                                 </span>
                               )}
                             </>
