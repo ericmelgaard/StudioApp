@@ -9,81 +9,91 @@ export function formatQu(data: any): FormattedData {
   const modifierItems = data.modifiers || [];
   const discountItems = data.discounts || [];
 
-  menuItems.forEach((eachItem: any) => {
-    if (eachItem.menuCategory) {
-      eachItem.category = eachItem.menuCategory.name;
-      eachItem.categoryId = eachItem.menuCategory.id;
+  // Process menu items (products)
+  menuItems.forEach((item: any) => {
+    const formatted = formatItem(item);
+    if (formatted) {
+      products.push(formatted);
     }
-    if (eachItem.modifierGroup) {
-      eachItem.category = eachItem.modifierGroup.name;
-      eachItem.categoryId = eachItem.modifierGroup.id;
-    }
-
-    if (typeof eachItem.category === "string") {
-      if (
-        eachItem.category.includes("OLO") ||
-        eachItem.category.includes("3PD") ||
-        eachItem.category.includes("3PO") ||
-        eachItem.category.includes("All Items")
-      ) {
-        return;
-      }
-    }
-
-    try {
-      eachItem.price = eachItem.discountAmount
-        ? eachItem.discountAmount
-        : eachItem.prices?.prices?.[0]?.price;
-    } catch {
-      eachItem.price = "";
-    }
-
-    try {
-      eachItem.mappingId = eachItem.pathId || eachItem.id || "";
-      eachItem.mappingId = eachItem.mappingId.toString();
-    } catch {
-      eachItem.mappingId = null;
-    }
-
-    delete eachItem.prices;
-    delete eachItem.displayAttribute;
-    products.push(eachItem);
   });
 
-  modifierItems.forEach((eachItem: any) => {
-    if (eachItem.modifierGroup) {
-      eachItem.category = eachItem.modifierGroup.name;
-      eachItem.categoryId = eachItem.modifierGroup.id;
+  // Process modifiers
+  modifierItems.forEach((item: any) => {
+    const formatted = formatItem(item);
+    if (formatted) {
+      modifiers.push(formatted);
     }
-
-    try {
-      eachItem.price = eachItem.prices?.prices?.[0]?.price;
-    } catch {
-      eachItem.price = "";
-    }
-
-    try {
-      eachItem.mappingId = eachItem.pathId || eachItem.id || "";
-      eachItem.mappingId = eachItem.mappingId.toString();
-    } catch {
-      eachItem.mappingId = null;
-    }
-
-    delete eachItem.prices;
-    delete eachItem.displayAttribute;
-    modifiers.push(eachItem);
   });
 
+  // Process discounts
   discountItems.forEach((item: any) => {
-    item.mappingId = item.id?.toString();
-    item.price = item.discountAmount;
-    discounts.push(item);
+    const formatted = formatItem(item);
+    if (formatted) {
+      discounts.push(formatted);
+    }
   });
 
   return {
     products: removeDuplicates(products, "mappingId"),
     modifiers: removeDuplicates(modifiers, "mappingId"),
-    discounts,
+    discounts: removeDuplicates(discounts, "mappingId"),
+  };
+}
+
+function formatItem(item: any): FormattedProduct | null {
+  // Extract category information
+  let category = "";
+  let categoryId = "";
+
+  if (item.menuCategory) {
+    category = item.menuCategory.name || "";
+    categoryId = item.menuCategory.id?.toString() || "";
+  } else if (item.modifierGroup) {
+    category = item.modifierGroup.name || "";
+    categoryId = item.modifierGroup.id?.toString() || "";
+  }
+
+  // Filter out unwanted categories
+  if (category && typeof category === "string") {
+    if (
+      category.includes("OLO") ||
+      category.includes("3PD") ||
+      category.includes("3PO") ||
+      category.includes("All Items")
+    ) {
+      return null;
+    }
+  }
+
+  // Extract price
+  let price = "";
+  try {
+    price = item.discountAmount
+      ? item.discountAmount
+      : item.prices?.prices?.[0]?.price || "";
+  } catch {
+    price = "";
+  }
+
+  // Extract mappingId
+  let mappingId = "";
+  try {
+    mappingId = (item.pathId || item.id || "").toString();
+  } catch {
+    mappingId = "";
+  }
+
+  // Create clean formatted object
+  return {
+    mappingId,
+    pathId: item.pathId?.toString() || mappingId,
+    name: item.name || "",
+    description: item.description || "",
+    price,
+    calories: item.calories || "",
+    isOutOfStock: item.isOutOfStock || false,
+    category,
+    categoryId,
   };
 }
 

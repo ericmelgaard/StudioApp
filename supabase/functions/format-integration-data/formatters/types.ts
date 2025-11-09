@@ -1,11 +1,13 @@
 export interface FormattedProduct {
   mappingId: string;
+  pathId: string;
   name: string;
-  category?: string;
-  price?: string | number;
-  description?: string;
-  active?: boolean;
-  [key: string]: any;
+  description: string;
+  price: string | number;
+  calories: string | number;
+  isOutOfStock: boolean;
+  category: string;
+  categoryId: string;
 }
 
 export interface FormattedModifier {
