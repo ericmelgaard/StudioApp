@@ -132,8 +132,7 @@ export default function IntegrationCatalog() {
   );
 
   const getPrice = (item: any) => {
-    const price = item.data?.prices?.prices?.[0]?.price ||
-                  item.data?.priceAttribute?.prices?.[0]?.price;
+    const price = item.data?.price;
     return price ? `$${price.toFixed(2)}` : 'N/A';
   };
 
@@ -275,16 +274,6 @@ export default function IntegrationCatalog() {
                         key={product.id}
                         className="relative p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
                       >
-                        {source && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <img
-                              src="/logo_32 copy.png"
-                              alt={source.name}
-                              className="w-5 h-5 rounded"
-                              title={source.name}
-                            />
-                          </div>
-                        )}
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="font-semibold text-slate-900 line-clamp-1 pr-10">
                             {product.data?.displayAttribute?.itemTitle || product.name}
@@ -319,16 +308,6 @@ export default function IntegrationCatalog() {
                         key={modifier.id}
                         className="relative p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
                       >
-                        {source && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <img
-                              src="/logo_32 copy.png"
-                              alt={source.name}
-                              className="w-5 h-5 rounded"
-                              title={source.name}
-                            />
-                          </div>
-                        )}
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="font-semibold text-slate-900 line-clamp-1 pr-10">
                             {modifier.data?.displayAttribute?.itemTitle || modifier.name}
@@ -366,16 +345,6 @@ export default function IntegrationCatalog() {
                         key={discount.id}
                         className="relative p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-white"
                       >
-                        {source && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <img
-                              src="/logo_32 copy.png"
-                              alt={source.name}
-                              className="w-5 h-5 rounded"
-                              title={source.name}
-                            />
-                          </div>
-                        )}
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="font-semibold text-slate-900 line-clamp-1 pr-10">
                             {discount.name}
