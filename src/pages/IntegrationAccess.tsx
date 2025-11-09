@@ -377,13 +377,10 @@ export default function IntegrationAccess() {
                           <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded font-medium">
                             {config.application_level.toUpperCase()}
                           </span>
-                          {config.wand_integration_sources?.integration_type === 'qu' && config.config_params?.establishment && locationDetails[config.config_params.establishment] && (
-                            <div className="flex items-center gap-1.5 text-xs px-2 py-1 bg-green-50 text-green-700 rounded font-medium">
-                              <MapPin className="w-3 h-3" />
-                              {locationDetails[config.config_params.establishment].name}
-                              <span className="text-green-600">·</span>
-                              {locationDetails[config.config_params.establishment].city}, {locationDetails[config.config_params.establishment].state_code}
-                            </div>
+                          {config.wand_integration_sources?.integration_type === 'qu' && config.config_params?.brand && (
+                            <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded font-medium">
+                              Brand: {config.config_params.brand}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -431,39 +428,92 @@ export default function IntegrationAccess() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-50 rounded-lg">
-                        <Zap className="w-4 h-4 text-blue-600" />
+                  {config.wand_integration_sources?.integration_type === 'qu' ? (
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                      {/* Assigned Establishment - Prominent Display */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 rounded-lg">
+                          <MapPin className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 font-medium">Assigned Establishment</div>
+                          {config.config_params?.establishment && locationDetails[config.config_params.establishment] ? (
+                            <div className="text-sm font-semibold text-slate-900">
+                              {locationDetails[config.config_params.establishment].name}
+                              <div className="text-xs font-normal text-slate-600 mt-0.5">
+                                {locationDetails[config.config_params.establishment].city}, {locationDetails[config.config_params.establishment].state_code}
+                              </div>
+                            </div>
+                          ) : config.config_params?.establishment ? (
+                            <div className="text-sm font-medium text-slate-900">
+                              ID: {config.config_params.establishment}
+                              <div className="text-xs text-slate-500 mt-0.5">Loading details...</div>
+                            </div>
+                          ) : (
+                            <div className="text-sm font-medium text-slate-500">Not configured</div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-slate-500">Sync Frequency</div>
-                        <div className="text-sm font-medium text-slate-900">
-                          {config.sync_frequency_minutes ? `Every ${config.sync_frequency_minutes} min` : 'Not configured'}
+
+                      {/* Sync Frequency */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <Zap className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 font-medium">Sync Frequency</div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            {config.sync_frequency_minutes ? `Every ${config.sync_frequency_minutes} min` : 'Not configured'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Last Sync */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-50 rounded-lg">
+                          <Clock className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 font-medium">Last Sync</div>
+                          <div className="text-sm font-semibold text-slate-900">{formatLastSync(config.last_sync_at)}</div>
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-50 rounded-lg">
-                        <Clock className="w-4 h-4 text-purple-600" />
+                  ) : (
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <Zap className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500">Sync Frequency</div>
+                          <div className="text-sm font-medium text-slate-900">
+                            {config.sync_frequency_minutes ? `Every ${config.sync_frequency_minutes} min` : 'Not configured'}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-slate-500">Last Sync</div>
-                        <div className="text-sm font-medium text-slate-900">{formatLastSync(config.last_sync_at)}</div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-50 rounded-lg">
+                          <Clock className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500">Last Sync</div>
+                          <div className="text-sm font-medium text-slate-900">{formatLastSync(config.last_sync_at)}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <Calendar className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500">Schedule</div>
+                          <div className="text-sm font-medium text-slate-900">{config.config?.schedule || 'Manual'}</div>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-50 rounded-lg">
-                        <Calendar className="w-4 h-4 text-green-600" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-500">Schedule</div>
-                        <div className="text-sm font-medium text-slate-900">{config.config?.schedule || 'Manual'}</div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             );
