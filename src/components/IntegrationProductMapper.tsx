@@ -98,7 +98,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess }:
     setLoading(true);
     try {
       const [sourcesRes, templatesRes, orgSettingsRes] = await Promise.all([
-        supabase.from('integration_sources').select('*').order('name'),
+        supabase.from('wand_integration_sources').select('*').order('name'),
         supabase.from('product_attribute_templates').select('*').order('name'),
         supabase.from('organization_settings').select('default_product_attribute_template_id').limit(1).maybeSingle()
       ]);

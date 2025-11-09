@@ -43,7 +43,7 @@ export default function WandIntegrationMapper({ onBack }: WandIntegrationMapperP
     setLoading(true);
 
     const [integrationsData, templatesData, mappingsData] = await Promise.all([
-      supabase.from('integration_sources').select('*').order('name'),
+      supabase.from('wand_integration_sources').select('*').order('name'),
       supabase.from('product_attribute_templates').select('id, name, description').order('name'),
       supabase.from('integration_attribute_mappings').select('*')
     ]);
@@ -53,10 +53,12 @@ export default function WandIntegrationMapper({ onBack }: WandIntegrationMapperP
 
     if (mappingsData.data) {
       const enrichedMappings = mappingsData.data.map((mapping: any) => {
-        const integration = integrationsData.data?.find(i => i.id === mapping.integration_source_id);
-        const template = templatesData.data?.find(t => t.id === mapping.template_id);
+        const integration = integrationsData.data?.find(i => i.id === mapping.wand_integration_source_id);
+        const template = templatesData.data?.find(t => t.id === mapping.product_attribute_template_id);
         return {
           ...mapping,
+          integration_source_id: mapping.wand_integration_source_id,
+          template_id: mapping.product_attribute_template_id,
           source_name: integration?.name || 'Unknown',
           template_name: template?.name || 'Unknown'
         };
