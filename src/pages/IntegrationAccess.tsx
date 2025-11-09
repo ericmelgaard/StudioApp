@@ -89,12 +89,22 @@ export default function IntegrationAccess() {
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
   const [expandedDestinations, setExpandedDestinations] = useState<Record<string, boolean>>({});
   const [syncingConfigs, setSyncingConfigs] = useState<Set<string>>(new Set());
+  const [locationDetails, setLocationDetails] = useState<Record<string, any>>({});
 
   const hasLocation = location.concept || location.company || location.store;
 
   useEffect(() => {
     loadSourceConfigs();
   }, []);
+
+  useEffect(() => {
+    // Load location details for all Qu configs
+    sourceConfigs.forEach(config => {
+      if (config.wand_integration_sources?.integration_type === 'qu' && config.config_params?.establishment) {
+        loadLocationDetails(config.config_params.establishment);
+      }
+    });
+  }, [sourceConfigs]);
 
   const loadSourceConfigs = async () => {
     setLoading(true);
@@ -112,6 +122,78 @@ export default function IntegrationAccess() {
       .order('config_name');
     if (data) setSourceConfigs(data);
     setLoading(false);
+  };
+
+  const loadLocationDetails = async (locationId: string) => {
+    if (locationDetails[locationId]) return; // Already loaded
+
+    try {
+      const { data, error } = await supabase
+        .from('qu_locations')
+        .select('*')
+        .eq('id', parseInt(locationId))
+        .maybeSingle();
+
+      if (data && !error) {
+        setLocationDetails(prev => ({ ...prev, [locationId]: data }));
+      } else if (error) {
+        console.error('Error loading location details:', error);
+      } else {
+        // Location not found in database, fetch from API
+        fetchLocationFromApi(locationId);
+      }
+    } catch (err) {
+      console.error('Error loading location details:', err);
+    }
+  };
+
+  const fetchLocationFromApi = async (locationId: string) => {
+    // Find the config with this location to get the brand
+    const config = sourceConfigs.find(c =>
+      c.wand_integration_sources?.integration_type === 'qu' &&
+      c.config_params?.establishment === locationId
+    );
+
+    if (!config?.config_params?.brand) return;
+
+    try {
+      const apiUrl = `https://qubeyond-api.wanddigital.com/integration?concept=${encodeURIComponent(config.config_params.brand)}&locations=true`;
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) return;
+
+      const locations = await response.json();
+      const location = locations.find((loc: any) => loc.id === parseInt(locationId));
+
+      if (location) {
+        // Store in database for future use
+        await supabase.from('qu_locations').upsert({
+          id: location.id,
+          name: location.name,
+          address_line1: location.address.address1,
+          address_line2: location.address.address2 || '',
+          city: location.address.city,
+          state_code: location.address.stateCode,
+          postal_code: location.address.postalCode,
+          country_code: location.address.countryCode,
+          phone: location.phone,
+          latitude: location.address.latitude,
+          longitude: location.address.longitude,
+          brand: config.config_params.brand,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+        setLocationDetails(prev => ({ ...prev, [locationId]: {
+          id: location.id,
+          name: location.name,
+          city: location.address.city,
+          state_code: location.address.stateCode,
+          address_line1: location.address.address1
+        }}));
+      }
+    } catch (err) {
+      console.error('Error fetching location from API:', err);
+    }
   };
 
   const handleToggleActive = async (configId: string, currentStatus: boolean) => {
@@ -295,6 +377,14 @@ export default function IntegrationAccess() {
                           <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded font-medium">
                             {config.application_level.toUpperCase()}
                           </span>
+                          {config.wand_integration_sources?.integration_type === 'qu' && config.config_params?.establishment && locationDetails[config.config_params.establishment] && (
+                            <div className="flex items-center gap-1.5 text-xs px-2 py-1 bg-green-50 text-green-700 rounded font-medium">
+                              <MapPin className="w-3 h-3" />
+                              {locationDetails[config.config_params.establishment].name}
+                              <span className="text-green-600">·</span>
+                              {locationDetails[config.config_params.establishment].city}, {locationDetails[config.config_params.establishment].state_code}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
