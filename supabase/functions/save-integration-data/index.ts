@@ -49,6 +49,11 @@ Deno.serve(async (req: Request) => {
     let modifiersInserted = 0;
     let discountsInserted = 0;
 
+    console.log("Received formatted_data counts:");
+    console.log(`  Products: ${formatted_data.products?.length || 0}`);
+    console.log(`  Modifiers: ${formatted_data.modifiers?.length || 0}`);
+    console.log(`  Discounts: ${formatted_data.discounts?.length || 0}`);
+
     if (formatted_data.products && formatted_data.products.length > 0) {
       const productsToInsert = formatted_data.products.map((product) => ({
         source_id,
