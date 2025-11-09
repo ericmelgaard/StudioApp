@@ -63,15 +63,26 @@ export default function IntegrationCatalog() {
 
   async function loadSources() {
     const { data } = await supabase
-      .from('wand_integration_sources')
-      .select('id, name, integration_type')
-      .order('name');
+      .from('integration_source_configs')
+      .select(`
+        id,
+        config_name,
+        is_active,
+        wand_integration_sources (
+          id,
+          name,
+          integration_type
+        )
+      `)
+      .eq('is_active', true)
+      .not('wand_integration_sources', 'is', null)
+      .order('config_name');
 
     if (data && data.length > 0) {
-      const mappedSources = data.map(s => ({
-        id: s.id,
-        name: s.name,
-        type: s.integration_type
+      const mappedSources = data.map(config => ({
+        id: config.wand_integration_sources.id,
+        name: config.config_name,
+        type: config.wand_integration_sources.integration_type
       }));
       setSources(mappedSources);
       setSource(mappedSources[0]);
