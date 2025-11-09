@@ -42,11 +42,13 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
     configParams: Record<string, string>;
     credentials: Record<string, string>;
     syncFrequency: number;
+    syncSchedule: string;
   }>({
     configName: '',
     configParams: {},
     credentials: {},
-    syncFrequency: 15
+    syncFrequency: 15,
+    syncSchedule: 'Manual'
   });
 
   useEffect(() => {
@@ -76,7 +78,8 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
       configName: `${source.name} Configuration`,
       configParams: {},
       credentials: {},
-      syncFrequency: source.default_sync_frequency_minutes
+      syncFrequency: source.default_sync_frequency_minutes,
+      syncSchedule: 'Manual'
     });
     setStep('wand-configure');
   };
@@ -125,6 +128,7 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
         config_params: configForm.configParams,
         credentials: configForm.credentials,
         sync_frequency_minutes: configForm.syncFrequency,
+        sync_schedule: configForm.syncSchedule,
         is_active: false
       });
 
@@ -360,15 +364,33 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Sync Frequency (minutes)</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={configForm.syncFrequency}
-                  onChange={(e) => setConfigForm({ ...configForm, syncFrequency: parseInt(e.target.value) })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Sync Frequency (minutes)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={configForm.syncFrequency}
+                    onChange={(e) => setConfigForm({ ...configForm, syncFrequency: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Schedule</label>
+                  <select
+                    value={configForm.syncSchedule}
+                    onChange={(e) => setConfigForm({ ...configForm, syncSchedule: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Manual">Manual</option>
+                    <option value="Business hours only">Business hours only</option>
+                    <option value="24/7">24/7</option>
+                    <option value="Weekdays only">Weekdays only</option>
+                    <option value="Weekends only">Weekends only</option>
+                    <option value="Night hours only">Night hours only</option>
+                  </select>
+                </div>
               </div>
 
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">

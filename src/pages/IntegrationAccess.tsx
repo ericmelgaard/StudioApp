@@ -16,6 +16,7 @@ interface IntegrationSourceConfig {
   site_id: number | null;
   config_params: Record<string, any>;
   sync_frequency_minutes: number | null;
+  sync_schedule: string | null;
   is_active: boolean;
   last_sync_at: string | null;
   created_at: string;
@@ -429,7 +430,7 @@ export default function IntegrationAccess() {
                   </div>
 
                   {config.wand_integration_sources?.integration_type === 'qu' ? (
-                    <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                    <div className="grid grid-cols-4 gap-4 pt-4 border-t border-slate-100">
                       {/* Assigned Establishment - Prominent Display */}
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-emerald-50 rounded-lg">
@@ -478,6 +479,17 @@ export default function IntegrationAccess() {
                           <div className="text-sm font-semibold text-slate-900">{formatLastSync(config.last_sync_at)}</div>
                         </div>
                       </div>
+
+                      {/* Schedule */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <Calendar className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 font-medium">Schedule</div>
+                          <div className="text-sm font-semibold text-slate-900">{config.sync_schedule || 'Manual'}</div>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
@@ -509,7 +521,7 @@ export default function IntegrationAccess() {
                         </div>
                         <div>
                           <div className="text-xs text-slate-500">Schedule</div>
-                          <div className="text-sm font-medium text-slate-900">{config.config?.schedule || 'Manual'}</div>
+                          <div className="text-sm font-medium text-slate-900">{config.sync_schedule || 'Manual'}</div>
                         </div>
                       </div>
                     </div>
