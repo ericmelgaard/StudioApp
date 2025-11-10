@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Search, X, Building2, Layers, MapPin } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, X, Building2, Layers, MapPin, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+
+// Standardized icon mapping for location hierarchy
+const getLocationIcon = (level: 'wand' | 'concept' | 'company' | 'store', className = "w-5 h-5") => {
+  const colorClass = level === 'wand' ? 'text-purple-600' :
+                     level === 'concept' ? 'text-blue-600' :
+                     level === 'company' ? 'text-green-600' :
+                     'text-red-600';
+
+  switch (level) {
+    case 'wand':
+      return <Sparkles className={`${className} ${colorClass}`} />;
+    case 'concept':
+      return <Building2 className={`${className} ${colorClass}`} />;
+    case 'company':
+      return <Layers className={`${className} ${colorClass}`} />;
+    case 'store':
+      return <MapPin className={`${className} ${colorClass}`} />;
+  }
+};
 
 interface Concept {
   id: number;
@@ -278,7 +297,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
                           isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
                         )}
                       </button>
-                      <Building2 className="w-5 h-5 text-blue-600" />
+                      {getLocationIcon('concept', "w-5 h-5")}
                       <button
                         onClick={() => handleSelectConcept(concept)}
                         className="flex-1 text-left font-medium text-slate-900 hover:text-blue-600"
@@ -305,7 +324,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
                                     isCompanyExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
                                   )}
                                 </button>
-                                <Layers className="w-4 h-4 text-green-600" />
+                                {getLocationIcon('company', "w-4 h-4")}
                                 <button
                                   onClick={() => handleSelectCompany(company, concept)}
                                   className="flex-1 text-left text-slate-700 hover:text-blue-600"
@@ -323,7 +342,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
                                       onClick={() => handleSelectStore(store, company, concept)}
                                       className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded w-full text-left"
                                     >
-                                      <MapPin className="w-4 h-4 text-red-600" />
+                                      {getLocationIcon('store', "w-4 h-4")}
                                       <span className="text-slate-600 hover:text-blue-600 text-sm">{store.name}</span>
                                     </button>
                                   ))}

@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown, Map } from 'lucide-react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
@@ -59,10 +59,12 @@ interface Store {
   company_id: number;
 }
 
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites';
+
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay } = useLocation();
   const [showLocationSelector, setShowLocationSelector] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites'>('dashboard');
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -80,316 +82,264 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   }, [location]);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [activeMenu, setActiveMenu] = useState<'organization' | 'content' | 'wand' | 'integration' | 'system' | null>(null);
 
-  const [expandedSection, setExpandedSection] = useState<string | null>(() => {
-    const saved = localStorage.getItem('adminExpandedSection');
-    return saved || null;
-  });
-
-  useEffect(() => {
-    if (expandedSection) {
-      localStorage.setItem('adminExpandedSection', expandedSection);
-    } else {
-      localStorage.removeItem('adminExpandedSection');
-    }
-  }, [expandedSection]);
-
-  const toggleSection = (sectionId: string) => {
-    setExpandedSection(prev => prev === sectionId ? null : sectionId);
+  const navigationMenus = {
+    organization: [
+      { id: 'sites' as ViewType, label: 'Location Manager', icon: MapPin },
+      { id: 'users' as ViewType, label: 'Users', icon: Users },
+    ],
+    content: [
+      { id: 'signage' as ViewType, label: 'Signage', icon: Monitor },
+      { id: 'labels' as ViewType, label: 'Labels', icon: Tag },
+      { id: 'products' as ViewType, label: 'Products', icon: Package },
+      { id: 'resources' as ViewType, label: 'Resources', icon: ImageIcon },
+    ],
+    wand: [
+      { id: 'wand-products' as ViewType, label: 'Product Library', icon: Package },
+      { id: 'integration-sources' as ViewType, label: 'Integration Sources', icon: Database },
+      { id: 'core-attributes' as ViewType, label: 'Core Attributes', icon: Sliders },
+      { id: 'wand-templates' as ViewType, label: 'Manage Templates', icon: Layers },
+      { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
+    ],
+    integration: [
+      { id: 'integration-dashboard' as ViewType, label: 'Dashboard', icon: BarChart3 },
+      { id: 'integration-access' as ViewType, label: 'Access', icon: Settings },
+      { id: 'integration' as ViewType, label: 'Catalog', icon: Layers },
+    ],
+    system: [
+      { label: 'Settings', icon: Settings },
+      { label: 'Analytics', icon: BarChart3 },
+    ],
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top Header */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <img
-              src="/WandLogoNoText.png"
-              alt="WAND"
-              className="h-8 w-8"
-            />
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-              <span className="text-slate-400">|</span>
-              <span className="text-base font-semibold text-slate-700">Admin</span>
+      <header className="h-16 bg-white border-b border-slate-200">
+        <div className="h-full flex items-center justify-between px-6">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/WandLogoNoText.png"
+                alt="WAND"
+                className="h-8 w-8"
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+                <span className="text-slate-400">|</span>
+                <span className="text-base font-semibold text-slate-700">Admin</span>
+              </div>
             </div>
+            <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
+              <HeaderNavigation
+                userConceptId={null}
+                userCompanyId={null}
+                userStoreId={null}
+                onOpenFullNavigator={() => setShowLocationSelector(true)}
+              />
+            </Suspense>
           </div>
-          <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
-            <HeaderNavigation
-              userConceptId={null}
-              userCompanyId={null}
-              userStoreId={null}
-              onOpenFullNavigator={() => setShowLocationSelector(true)}
-            />
-          </Suspense>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-            title="Help"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
-          <button
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-            title="Documentation"
-          >
-            <FileText className="w-5 h-5" />
-          </button>
-          <NotificationPanel />
-          <UserMenu role="admin" onBackToRoles={onBack} />
+          <div className="flex items-center gap-1">
+            <button
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Help"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Documentation"
+            >
+              <FileText className="w-5 h-5" />
+            </button>
+            <NotificationPanel />
+            <UserMenu role="admin" onBackToRoles={onBack} />
+          </div>
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Left Sidebar Navigation */}
-        <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col">
-        {/* Navigation Menu */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          {/* Organization Section */}
-          <div className="mb-6">
+      {/* Horizontal Navigation Menu */}
+      <nav className="bg-white border-b border-slate-200">
+        <div className="px-6 flex items-center gap-1">
+          {/* Organization Menu */}
+          <div className="relative">
             <button
-              onClick={() => toggleSection('organization')}
-              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
-            >
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Organization</div>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  expandedSection !== 'organization' ? '-rotate-90' : ''
-                }`}
-              />
-            </button>
-            <div
-              className={`overflow-hidden transition-all duration-200 ${
-                expandedSection !== 'organization' ? 'max-h-0' : 'max-h-96'
+              onClick={() => setActiveMenu(activeMenu === 'organization' ? null : 'organization')}
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
+                activeMenu === 'organization' || ['sites', 'users'].includes(currentView)
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-700 hover:text-slate-900'
               }`}
             >
-              <button
-                onClick={() => setCurrentView('sites')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'sites' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <MapPin className="w-5 h-5" />
-                <span className="text-sm font-medium">Location Manager</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('users')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'users' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Users className="w-5 h-5" />
-                <span className="text-sm font-medium">Users</span>
-              </button>
-            </div>
+              Organization
+            </button>
+            {activeMenu === 'organization' && (
+              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
+                {navigationMenus.organization.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id);
+                        setActiveMenu(null);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
+                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Content Section */}
-          <div className="mb-6">
+          {/* Content Menu */}
+          <div className="relative">
             <button
-              onClick={() => toggleSection('content')}
-              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
-            >
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Content</div>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  expandedSection !== 'content' ? '-rotate-90' : ''
-                }`}
-              />
-            </button>
-            <div
-              className={`overflow-hidden transition-all duration-200 ${
-                expandedSection !== 'content' ? 'max-h-0' : 'max-h-96'
+              onClick={() => setActiveMenu(activeMenu === 'content' ? null : 'content')}
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
+                activeMenu === 'content' || ['signage', 'labels', 'products', 'resources'].includes(currentView)
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-700 hover:text-slate-900'
               }`}
             >
-              <button
-                onClick={() => setCurrentView('signage')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'signage' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Monitor className="w-5 h-5" />
-                <span className="text-sm font-medium">Signage</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('labels')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'labels' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Tag className="w-5 h-5" />
-                <span className="text-sm font-medium">Labels</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('products')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'products' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Package className="w-5 h-5" />
-                <span className="text-sm font-medium">Products</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('resources')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'resources' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <ImageIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">Resources</span>
-              </button>
-            </div>
+              Content
+            </button>
+            {activeMenu === 'content' && (
+              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
+                {navigationMenus.content.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id);
+                        setActiveMenu(null);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
+                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Wand Section */}
-          <div className="mb-6">
+          {/* Wand Menu */}
+          <div className="relative">
             <button
-              onClick={() => toggleSection('wand')}
-              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
-            >
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Wand</div>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  expandedSection !== 'wand' ? '-rotate-90' : ''
-                }`}
-              />
-            </button>
-            <div
-              className={`overflow-hidden transition-all duration-200 ${
-                expandedSection !== 'wand' ? 'max-h-0' : 'max-h-96'
+              onClick={() => setActiveMenu(activeMenu === 'wand' ? null : 'wand')}
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
+                activeMenu === 'wand' || ['wand-products', 'integration-sources', 'core-attributes', 'wand-templates', 'wand-mapper'].includes(currentView)
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-700 hover:text-slate-900'
               }`}
             >
-              <button
-                onClick={() => setCurrentView('wand-products')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'wand-products' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Package className="w-5 h-5" />
-                <span className="text-sm font-medium">Product Library</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('integration-sources')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'integration-sources' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Database className="w-5 h-5" />
-                <span className="text-sm font-medium">Integration Sources</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('core-attributes')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'core-attributes' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Sliders className="w-5 h-5" />
-                <span className="text-sm font-medium">Core Attributes</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('wand-templates')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'wand-templates' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Layers className="w-5 h-5" />
-                <span className="text-sm font-medium">Manage Templates</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('wand-mapper')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'wand-mapper' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <MapPin className="w-5 h-5" />
-                <span className="text-sm font-medium">Map Integration Templates</span>
-              </button>
-            </div>
+              Wand
+            </button>
+            {activeMenu === 'wand' && (
+              <div className="absolute top-full left-0 mt-0 w-72 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
+                {navigationMenus.wand.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id);
+                        setActiveMenu(null);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
+                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Integration Section */}
-          <div className="mb-6">
+          {/* Integration Menu */}
+          <div className="relative">
             <button
-              onClick={() => toggleSection('integration')}
-              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
-            >
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Integration</div>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  expandedSection !== 'integration' ? '-rotate-90' : ''
-                }`}
-              />
-            </button>
-            <div
-              className={`overflow-hidden transition-all duration-200 ${
-                expandedSection !== 'integration' ? 'max-h-0' : 'max-h-96'
+              onClick={() => setActiveMenu(activeMenu === 'integration' ? null : 'integration')}
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
+                activeMenu === 'integration' || ['integration-dashboard', 'integration-access', 'integration'].includes(currentView)
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-700 hover:text-slate-900'
               }`}
             >
-              <button
-                onClick={() => setCurrentView('integration-dashboard')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'integration-dashboard' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <BarChart3 className="w-5 h-5" />
-                <span className="text-sm font-medium">Dashboard</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('integration-access')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'integration-access' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Settings className="w-5 h-5" />
-                <span className="text-sm font-medium">Access</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('integration')}
-                className={`w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3 ${
-                  currentView === 'integration' ? 'bg-slate-100' : ''
-                }`}
-              >
-                <Layers className="w-5 h-5" />
-                <span className="text-sm font-medium">Catalog</span>
-              </button>
-            </div>
+              Integration
+            </button>
+            {activeMenu === 'integration' && (
+              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
+                {navigationMenus.integration.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id);
+                        setActiveMenu(null);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
+                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* System Section */}
-          <div className="mb-6">
+          {/* System Menu */}
+          <div className="relative">
             <button
-              onClick={() => toggleSection('system')}
-              className="w-full px-4 mb-2 flex items-center justify-between hover:bg-slate-50 transition-colors py-2 rounded-lg mx-0"
-            >
-              <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold">System</div>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  expandedSection !== 'system' ? '-rotate-90' : ''
-                }`}
-              />
-            </button>
-            <div
-              className={`overflow-hidden transition-all duration-200 ${
-                expandedSection !== 'system' ? 'max-h-0' : 'max-h-96'
+              onClick={() => setActiveMenu(activeMenu === 'system' ? null : 'system')}
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
+                activeMenu === 'system'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-700 hover:text-slate-900'
               }`}
             >
-              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-                <Settings className="w-5 h-5" />
-                <span className="text-sm font-medium">Settings</span>
-              </button>
-              <button className="w-full px-4 py-3 text-left hover:bg-slate-100 transition-colors flex items-center gap-3">
-                <BarChart3 className="w-5 h-5" />
-                <span className="text-sm font-medium">Analytics</span>
-              </button>
-            </div>
+              System
+            </button>
+            {activeMenu === 'system' && (
+              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
+                {navigationMenus.system.map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={idx}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 text-slate-700"
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </nav>
-      </aside>
+        </div>
+      </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="p-6">
         <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
           {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
@@ -455,7 +405,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
         )}
       </main>
-      </div>
 
       {/* Location Selector Modal */}
       {showLocationSelector && (
