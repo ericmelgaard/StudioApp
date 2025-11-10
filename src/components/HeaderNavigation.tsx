@@ -195,17 +195,22 @@ export default function HeaderNavigation({
     return options;
   };
 
-  const showConcepts = !userConceptId && !userCompanyId && !userStoreId && !location.concept;
-  const showCompanies = (userConceptId && !userCompanyId && !userStoreId && !location.concept) || (location.concept && !location.company);
-  const showStores = userStoreId || (userCompanyId && !userStoreId && !location.concept) || (location.company && !location.store);
+  // Determine what to show based on what data was loaded
+  // These should match the logic in loadNavigationData
+  const showConcepts = concepts.length > 0;
+  const showCompanies = companies.length > 0;
+  const showStores = stores.length > 0;
 
+  // Show dropdown if we have any locations OR parent navigation options
+  const hasLocationContent = showConcepts || showCompanies || showStores;
+  const parentNavOptions = getParentNavigationOptions();
+  const hasDropdownContent = hasLocationContent || parentNavOptions.length > 0;
+
+  // Only show filter if there are multiple locations to filter through
   const hasMultipleLocations =
     (showConcepts && concepts.length > 1) ||
     (showCompanies && companies.length > 1) ||
     (showStores && stores.length > 1);
-
-  const parentNavOptions = getParentNavigationOptions();
-  const hasDropdownContent = hasMultipleLocations || parentNavOptions.length > 0;
 
   // Filter logic
   const filterLower = filterQuery.toLowerCase();
@@ -261,7 +266,7 @@ export default function HeaderNavigation({
             )}
 
             {/* Scrollable Content */}
-            {hasMultipleLocations && (
+            {hasLocationContent && (
               <div className="max-h-80 overflow-y-auto py-1">
                 {showConcepts && filteredConcepts.map((concept) => (
                   <button
