@@ -109,7 +109,7 @@ export default function AutoImportModal({
     const { data } = await supabase
       .from(tableName)
       .select('name, data')
-      .eq('source_id', sourceId);
+      .eq('wand_source_id', sourceId);
 
     if (data) {
       const categoryMap = new Map<string, number>();
@@ -232,13 +232,13 @@ export default function AutoImportModal({
         const { data } = await supabase
           .from(tableName)
           .select('*')
-          .eq('source_id', sourceId);
+          .eq('wand_source_id', sourceId);
         integrationProducts = data || [];
       } else if (filterType === 'category' && selectedCategories.size > 0) {
         const { data: allProducts } = await supabase
           .from(tableName)
           .select('*')
-          .eq('source_id', sourceId);
+          .eq('wand_source_id', sourceId);
 
         if (allProducts) {
           const categoryArray = Array.from(selectedCategories);
@@ -257,7 +257,7 @@ export default function AutoImportModal({
       const { data: mappingData } = await supabase
         .from('integration_attribute_mappings')
         .select('attribute_mappings')
-        .eq('source_id', sourceId)
+        .eq('wand_integration_source_id', sourceId)
         .eq('integration_type', normalizeType(integrationType))
         .eq('is_template', true)
         .maybeSingle();

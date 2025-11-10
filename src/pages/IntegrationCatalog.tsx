@@ -96,21 +96,21 @@ export default function IntegrationCatalog() {
       const { data } = await supabase
         .from('integration_products')
         .select('*')
-        .eq('source_id', source!.id)
+        .eq('wand_source_id', source!.id)
         .order('name');
       setProducts(data || []);
     } else if (activeTab === 'modifiers') {
       const { data } = await supabase
         .from('integration_modifiers')
         .select('*')
-        .eq('source_id', source!.id)
+        .eq('wand_source_id', source!.id)
         .order('name');
       setModifiers(data || []);
     } else if (activeTab === 'discounts') {
       const { data } = await supabase
         .from('integration_discounts')
         .select('*')
-        .eq('source_id', source!.id)
+        .eq('wand_source_id', source!.id)
         .order('name');
       setDiscounts(data || []);
     }

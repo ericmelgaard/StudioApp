@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
 
     if (formatted_data.products && formatted_data.products.length > 0) {
       const productsToInsert = formatted_data.products.map((product) => ({
-        source_id,
+        wand_source_id: source_id,
         source_config_id: config_id,
         external_id: product.mappingId || product.id || product.external_id,
         path_id: product.pathId || product.path_id,
@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
       const { data: insertedProducts, error: productsError } = await supabase
         .from("integration_products")
         .upsert(productsToInsert, {
-          onConflict: "source_id,external_id",
+          onConflict: "wand_source_id,external_id",
           ignoreDuplicates: false,
         })
         .select("id");
@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
 
     if (formatted_data.modifiers && formatted_data.modifiers.length > 0) {
       const modifiersToInsert = formatted_data.modifiers.map((modifier) => ({
-        source_id,
+        wand_source_id: source_id,
         source_config_id: config_id,
         external_id: modifier.mappingId || modifier.id || modifier.external_id,
         path_id: modifier.pathId || modifier.path_id,
@@ -104,7 +104,7 @@ Deno.serve(async (req: Request) => {
       const { data: insertedModifiers, error: modifiersError } = await supabase
         .from("integration_modifiers")
         .upsert(modifiersToInsert, {
-          onConflict: "source_id,external_id,path_id",
+          onConflict: "wand_source_id,external_id,path_id",
           ignoreDuplicates: false,
         })
         .select("id");
@@ -129,7 +129,7 @@ Deno.serve(async (req: Request) => {
         }
 
         return {
-          source_id,
+          wand_source_id: source_id,
           source_config_id: config_id,
           external_id: discount.mappingId || discount.id || discount.external_id,
           name: discount.name,
@@ -145,7 +145,7 @@ Deno.serve(async (req: Request) => {
       const { data: insertedDiscounts, error: discountsError } = await supabase
         .from("integration_discounts")
         .upsert(discountsToInsert, {
-          onConflict: "source_id,external_id",
+          onConflict: "wand_source_id,external_id",
           ignoreDuplicates: false,
         })
         .select("id");
