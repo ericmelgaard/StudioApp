@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown } from 'lucide-react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown, Map } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
@@ -20,6 +20,7 @@ const WandProducts = lazy(() => import('./WandProducts'));
 const UserManagement = lazy(() => import('./UserManagement'));
 const SiteConfiguration = lazy(() => import('./SiteConfiguration'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
+const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
 const AddUserModal = lazy(() => import('../components/AddUserModal'));
 const EditUserModal = lazy(() => import('../components/EditUserModal'));
 
@@ -101,17 +102,27 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     <div className="min-h-screen bg-slate-50">
       {/* Top Header */}
       <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-        <div className="flex items-center gap-3">
-          <img
-            src="/WandLogoNoText.png"
-            alt="WAND"
-            className="h-8 w-8"
-          />
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-            <span className="text-slate-400">|</span>
-            <span className="text-base font-semibold text-slate-700">Admin</span>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <img
+              src="/WandLogoNoText.png"
+              alt="WAND"
+              className="h-8 w-8"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-base font-semibold text-slate-700">Admin</span>
+            </div>
           </div>
+          <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
+            <HeaderNavigation
+              userConceptId={null}
+              userCompanyId={null}
+              userStoreId={null}
+              onOpenFullNavigator={() => setShowLocationSelector(true)}
+            />
+          </Suspense>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -134,36 +145,6 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Left Sidebar Navigation */}
         <aside className="bg-white border-r border-slate-200 text-slate-700 w-64 flex flex-col">
-          {/* Location Selector Button */}
-          <div className="p-4 border-b border-slate-200">
-            <button
-              onClick={() => setShowLocationSelector(true)}
-              className="w-full flex items-center gap-3 text-sm hover:bg-slate-100 p-3 rounded-lg transition-all border border-slate-200 bg-white group relative"
-              title={
-                selectedStore && selectedCompany && selectedConcept
-                  ? `${selectedConcept.name} > ${selectedCompany.name} > ${selectedStore.name}`
-                  : selectedCompany && selectedConcept
-                  ? `${selectedConcept.name} > ${selectedCompany.name}`
-                  : selectedConcept
-                  ? selectedConcept.name
-                  : 'WAND Digital - All Locations'
-              }
-            >
-              <Layers className="w-5 h-5 text-slate-600 flex-shrink-0" />
-              <div className="flex-1 text-left min-w-0">
-                <div className="font-medium text-slate-900 truncate">
-                  {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : selectedConcept ? selectedConcept.name : 'WAND Digital'}
-                </div>
-                {selectedStore && selectedCompany && (
-                  <div className="text-xs text-slate-600 truncate">
-                    {selectedCompany.name}
-                  </div>
-                )}
-              </div>
-              <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
-            </button>
-          </div>
-
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4">
           {/* Organization Section */}

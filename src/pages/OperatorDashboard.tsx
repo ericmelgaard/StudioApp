@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2, ChevronDown } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2, ChevronDown, Map } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
@@ -10,6 +10,8 @@ const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
 const StoreManagement = lazy(() => import('./StoreManagement'));
 const ProductManagement = lazy(() => import('./ProductManagement'));
+const LocationSelector = lazy(() => import('../components/LocationSelector'));
+const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
 
 type DashboardView = 'home' | 'signage' | 'labels' | 'store' | 'products';
 
@@ -76,6 +78,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
     { id: 'activity', order: 5 },
   ]);
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
 
   useEffect(() => {
     if (currentView === 'home') {
@@ -513,49 +516,14 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               <span className="text-base font-semibold text-slate-700">Studio</span>
             </div>
           </div>
-          <div className="relative group">
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
-              {selectedStore ? (
-                <Store className="w-4 h-4 text-slate-600" />
-              ) : (
-                <Building2 className="w-4 h-4 text-slate-600" />
-              )}
-              <span className="text-sm font-medium text-slate-900 max-w-[140px] truncate">
-                {loading ? 'Loading...' : selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : 'Select Location'}
-              </span>
-              <ChevronDown className="w-4 h-4 text-slate-500" />
-            </button>
-            <div className="absolute top-full left-0 mt-1 w-80 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto z-50">
-              {companies.map((company) => (
-                <div key={company.id}>
-                  <button
-                    onClick={() => handleCompanySelect(company)}
-                    className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                      selectedCompany?.id === company.id && !selectedStore ? 'bg-blue-50 text-blue-700' : 'text-slate-900'
-                    }`}
-                  >
-                    <Building2 className="w-4 h-4" />
-                    {company.name}
-                  </button>
-                  {storesByCompany[company.id]?.map((store) => (
-                    <button
-                      key={store.id}
-                      onClick={() => handleStoreSelect(store)}
-                      className={`w-full text-left px-4 py-2 pl-10 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                        selectedStore?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600'
-                      }`}
-                    >
-                      <Store className="w-4 h-4" />
-                      {store.name}
-                    </button>
-                  ))}
-                </div>
-              ))}
-              {companies.length === 0 && !loading && (
-                <div className="px-4 py-2 text-sm text-slate-500">No locations available</div>
-              )}
-            </div>
-          </div>
+          <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
+            <HeaderNavigation
+              userConceptId={user.concept_id}
+              userCompanyId={user.company_id}
+              userStoreId={user.store_id}
+              onOpenFullNavigator={() => setShowLocationSelector(true)}
+            />
+          </Suspense>
         </div>
         <div className="flex items-center gap-1">
               <button
@@ -580,6 +548,28 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
           {sortedCards.map(card => renderCard(card.id))}
         </div>
       </main>
+
+      {showLocationSelector && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div></div>}>
+          <LocationSelector
+            onClose={() => setShowLocationSelector(false)}
+            onSelect={(selectedLocation) => {
+              if (selectedLocation.company) {
+                setSelectedCompany(selectedLocation.company);
+              }
+              if (selectedLocation.store) {
+                setSelectedStore(selectedLocation.store);
+              }
+              setShowLocationSelector(false);
+            }}
+            selectedLocation={{
+              concept: location.concept,
+              company: selectedCompany || undefined,
+              store: selectedStore || undefined
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
