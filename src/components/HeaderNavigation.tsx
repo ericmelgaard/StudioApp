@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search } from 'lucide-react';
+import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search, ArrowUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 
@@ -25,6 +25,13 @@ interface HeaderNavigationProps {
   userCompanyId?: number | null;
   userStoreId?: number | null;
   onOpenFullNavigator: () => void;
+}
+
+interface ParentNavigationOption {
+  type: 'wand' | 'concept' | 'company';
+  label: string;
+  icon: JSX.Element;
+  onClick: () => void;
 }
 
 // Standardized icon mapping for location hierarchy
@@ -61,28 +68,45 @@ export default function HeaderNavigation({
   const loadNavigationData = async () => {
     setLoading(true);
 
-    if (userStoreId && location.company) {
+    // Special case: Store-level users should see sibling stores
+    if (userStoreId) {
+      // First, get the user's store to find its company
+      const { data: userStore } = await supabase
+        .from('stores')
+        .select('id, name, company_id')
+        .eq('id', userStoreId)
+        .maybeSingle();
+
+      if (userStore) {
+        // Fetch all sibling stores in the same company
+        const { data: storeData } = await supabase
+          .from('stores')
+          .select('id, name, company_id')
+          .eq('company_id', userStore.company_id)
+          .order('name');
+
+        if (storeData) setStores(storeData);
+      }
+    } else if (userCompanyId && !location.concept) {
+      // Company-level user at company level: show direct child stores
       const { data: storeData } = await supabase
         .from('stores')
         .select('id, name, company_id')
-        .eq('company_id', location.company.id);
+        .eq('company_id', userCompanyId)
+        .order('name');
 
       if (storeData) setStores(storeData);
-    } else if (userCompanyId && location.concept) {
+    } else if (userConceptId && !location.concept) {
+      // Concept-level user at concept level: show direct child companies
       const { data: companyData } = await supabase
         .from('companies')
         .select('id, name, concept_id')
-        .eq('concept_id', location.concept.id);
+        .eq('concept_id', userConceptId)
+        .order('name');
 
       if (companyData) setCompanies(companyData);
-    } else if (userConceptId) {
-      const { data: conceptData } = await supabase
-        .from('concepts')
-        .select('id, name')
-        .eq('id', userConceptId);
-
-      if (conceptData) setConcepts(conceptData);
     } else if (!location.concept && !location.company && !location.store) {
+      // Admin at root: show all concepts
       const { data: conceptData } = await supabase
         .from('concepts')
         .select('id, name')
@@ -90,17 +114,21 @@ export default function HeaderNavigation({
 
       if (conceptData) setConcepts(conceptData);
     } else if (location.concept && !location.company) {
+      // At concept level: show child companies
       const { data: companyData } = await supabase
         .from('companies')
         .select('id, name, concept_id')
-        .eq('concept_id', location.concept.id);
+        .eq('concept_id', location.concept.id)
+        .order('name');
 
       if (companyData) setCompanies(companyData);
     } else if (location.company && !location.store) {
+      // At company level: show child stores
       const { data: storeData } = await supabase
         .from('stores')
         .select('id, name, company_id')
-        .eq('company_id', location.company.id);
+        .eq('company_id', location.company.id)
+        .order('name');
 
       if (storeData) setStores(storeData);
     }
@@ -122,14 +150,62 @@ export default function HeaderNavigation({
     return getLocationIcon('wand', "w-4 h-4 text-slate-600");
   };
 
-  const showConcepts = !userConceptId && !userCompanyId && !userStoreId;
-  const showCompanies = (userConceptId && !userCompanyId && !userStoreId) || (location.concept && !location.company);
-  const showStores = (userCompanyId && !userStoreId) || location.company;
+  const getParentNavigationOptions = (): ParentNavigationOption[] => {
+    const options: ParentNavigationOption[] = [];
+
+    // If at store level, add "Go to Company" if user has company access
+    if (location.store && location.company) {
+      // Only show if user isn't store-scoped only (store-only users can't navigate to company)
+      if (!userStoreId || userCompanyId || userConceptId || (!userConceptId && !userCompanyId && !userStoreId)) {
+        options.push({
+          type: 'company',
+          label: `Go to ${location.company.name}`,
+          icon: getLocationIcon('company', "w-4 h-4 flex-shrink-0"),
+          onClick: () => setLocation({ concept: location.concept, company: location.company })
+        });
+      }
+    }
+
+    // If at company level, add "Go to Concept" if user has concept access
+    if (location.company && location.concept && !location.store) {
+      // Only show if user isn't company-scoped only
+      if (!userCompanyId || userConceptId || (!userConceptId && !userCompanyId && !userStoreId)) {
+        options.push({
+          type: 'concept',
+          label: `Go to ${location.concept.name}`,
+          icon: getLocationIcon('concept', "w-4 h-4 flex-shrink-0"),
+          onClick: () => setLocation({ concept: location.concept })
+        });
+      }
+    }
+
+    // If at concept level, add "Go to WAND Digital" if user is admin
+    if (location.concept && !location.company && !location.store) {
+      // Only show for admin users (no scope restrictions)
+      if (!userConceptId && !userCompanyId && !userStoreId) {
+        options.push({
+          type: 'wand',
+          label: 'Go to WAND Digital',
+          icon: getLocationIcon('wand', "w-4 h-4 flex-shrink-0"),
+          onClick: () => setLocation({})
+        });
+      }
+    }
+
+    return options;
+  };
+
+  const showConcepts = !userConceptId && !userCompanyId && !userStoreId && !location.concept;
+  const showCompanies = (userConceptId && !userCompanyId && !userStoreId && !location.concept) || (location.concept && !location.company);
+  const showStores = userStoreId || (userCompanyId && !userStoreId && !location.concept) || (location.company && !location.store);
 
   const hasMultipleLocations =
     (showConcepts && concepts.length > 1) ||
     (showCompanies && companies.length > 1) ||
     (showStores && stores.length > 1);
+
+  const parentNavOptions = getParentNavigationOptions();
+  const hasDropdownContent = hasMultipleLocations || parentNavOptions.length > 0;
 
   // Filter logic
   const filterLower = filterQuery.toLowerCase();
@@ -145,86 +221,95 @@ export default function HeaderNavigation({
           <span className="text-sm font-medium text-slate-900 max-w-[360px] truncate">
             {loading ? 'Loading...' : getCurrentDisplayName()}
           </span>
-          {hasMultipleLocations && <ChevronDown className="w-4 h-4 text-slate-500" />}
+          {hasDropdownContent && <ChevronDown className="w-4 h-4 text-slate-500" />}
         </button>
 
-        {hasMultipleLocations && (
+        {hasDropdownContent && (
           <div className="absolute top-full left-0 mt-1 w-[960px] bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-[32rem] overflow-hidden z-50">
-            {/* Filter Input */}
-            <div className="p-3 border-b border-slate-200 bg-slate-50">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Filter locations..."
-                  value={filterQuery}
-                  onChange={(e) => setFilterQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  onClick={(e) => e.stopPropagation()}
-                />
+            {/* Parent Navigation Options */}
+            {parentNavOptions.length > 0 && (
+              <div className="p-2 border-b border-slate-200 bg-slate-50">
+                {parentNavOptions.map((option) => (
+                  <button
+                    key={option.type}
+                    onClick={option.onClick}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-white rounded transition-colors flex items-center gap-2 text-blue-600 font-medium"
+                  >
+                    <ArrowUp className="w-4 h-4 flex-shrink-0" />
+                    {option.icon}
+                    <span>{option.label}</span>
+                  </button>
+                ))}
               </div>
-            </div>
+            )}
+
+            {/* Filter Input - Only show if there are locations to filter */}
+            {hasMultipleLocations && (
+              <div className="p-3 border-b border-slate-200 bg-slate-50">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Filter locations..."
+                    value={filterQuery}
+                    onChange={(e) => setFilterQuery(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Scrollable Content */}
-            <div className="max-h-80 overflow-y-auto py-1">
-              {showConcepts && filteredConcepts.map((concept) => (
-                <button
-                  key={concept.id}
-                  onClick={() => setLocation({ concept })}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                    location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                  }`}
-                >
-                  {getLocationIcon('concept', "w-4 h-4 flex-shrink-0")}
-                  <span className="truncate">{concept.name}</span>
-                </button>
-              ))}
-
-              {showCompanies && filteredCompanies.map((company) => (
-                <button
-                  key={company.id}
-                  onClick={() => setLocation({
-                    concept: location.concept,
-                    company
-                  })}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                    location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                  }`}
-                >
-                  {getLocationIcon('company', "w-4 h-4 flex-shrink-0")}
-                  <span className="truncate">{company.name}</span>
-                </button>
-              ))}
-
-              {showStores && filteredStores.map((store) => (
-                <button
-                  key={store.id}
-                  onClick={() => setLocation({
-                    concept: location.concept,
-                    company: location.company,
-                    store
-                  })}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                    location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                  }`}
-                >
-                  {getLocationIcon('store', "w-4 h-4 flex-shrink-0")}
-                  <span className="truncate">{store.name}</span>
-                </button>
-              ))}
-
-              {(filteredConcepts.length > 0 || filteredCompanies.length > 0 || filteredStores.length > 0) && (
-                <div className="border-t border-slate-200 mt-1 pt-1">
+            {hasMultipleLocations && (
+              <div className="max-h-80 overflow-y-auto py-1">
+                {showConcepts && filteredConcepts.map((concept) => (
                   <button
-                    onClick={onOpenFullNavigator}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 text-blue-600 font-medium"
+                    key={concept.id}
+                    onClick={() => setLocation({ concept })}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                      location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                    }`}
                   >
-                    <Map className="w-4 h-4 flex-shrink-0" />
-                    <span>View Full Navigation</span>
+                    {getLocationIcon('concept', "w-4 h-4 flex-shrink-0")}
+                    <span className="truncate">{concept.name}</span>
                   </button>
-                </div>
-              )}
-            </div>
+                ))}
+
+                {showCompanies && filteredCompanies.map((company) => (
+                  <button
+                    key={company.id}
+                    onClick={() => setLocation({
+                      concept: location.concept,
+                      company
+                    })}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                      location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                    }`}
+                  >
+                    {getLocationIcon('company', "w-4 h-4 flex-shrink-0")}
+                    <span className="truncate">{company.name}</span>
+                  </button>
+                ))}
+
+                {showStores && filteredStores.map((store) => (
+                  <button
+                    key={store.id}
+                    onClick={() => setLocation({
+                      concept: location.concept,
+                      company: location.company,
+                      store
+                    })}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                      location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                    }`}
+                  >
+                    {getLocationIcon('store', "w-4 h-4 flex-shrink-0")}
+                    <span className="truncate">{store.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
