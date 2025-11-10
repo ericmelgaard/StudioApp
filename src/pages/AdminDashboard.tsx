@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders } from 'lucide-react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, Menu } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
@@ -23,6 +23,7 @@ const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
 const AddUserModal = lazy(() => import('../components/AddUserModal'));
 const EditUserModal = lazy(() => import('../components/EditUserModal'));
+import NavigationModal from '../components/NavigationModal';
 
 interface UserProfile {
   id: string;
@@ -82,36 +83,56 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   }, [location]);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [activeMenu, setActiveMenu] = useState<'organization' | 'content' | 'wand' | 'integration' | 'system' | null>(null);
+  const [showNavigationModal, setShowNavigationModal] = useState(false);
 
-  const navigationMenus = {
-    organization: [
-      { id: 'sites' as ViewType, label: 'Location Manager', icon: MapPin },
-      { id: 'users' as ViewType, label: 'Users', icon: Users },
-    ],
-    content: [
-      { id: 'signage' as ViewType, label: 'Signage', icon: Monitor },
-      { id: 'labels' as ViewType, label: 'Labels', icon: Tag },
-      { id: 'products' as ViewType, label: 'Products', icon: Package },
-      { id: 'resources' as ViewType, label: 'Resources', icon: ImageIcon },
-    ],
-    wand: [
-      { id: 'wand-products' as ViewType, label: 'Product Library', icon: Package },
-      { id: 'integration-sources' as ViewType, label: 'Integration Sources', icon: Database },
-      { id: 'core-attributes' as ViewType, label: 'Core Attributes', icon: Sliders },
-      { id: 'wand-templates' as ViewType, label: 'Manage Templates', icon: Layers },
-      { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
-    ],
-    integration: [
-      { id: 'integration-dashboard' as ViewType, label: 'Dashboard', icon: BarChart3 },
-      { id: 'integration-access' as ViewType, label: 'Access', icon: Settings },
-      { id: 'integration' as ViewType, label: 'Catalog', icon: Layers },
-    ],
-    system: [
-      { label: 'Settings', icon: Settings },
-      { label: 'Analytics', icon: BarChart3 },
-    ],
-  };
+  const navigationCategories = [
+    {
+      id: 'organization',
+      label: 'Organization',
+      items: [
+        { id: 'sites', label: 'Location Manager', icon: MapPin },
+        { id: 'users', label: 'Users', icon: Users },
+      ],
+    },
+    {
+      id: 'content',
+      label: 'Content',
+      items: [
+        { id: 'signage', label: 'Signage', icon: Monitor },
+        { id: 'labels', label: 'Labels', icon: Tag },
+        { id: 'products', label: 'Products', icon: Package },
+        { id: 'resources', label: 'Resources', icon: ImageIcon },
+      ],
+    },
+    {
+      id: 'wand',
+      label: 'Wand',
+      items: [
+        { id: 'wand-products', label: 'Product Library', icon: Package },
+        { id: 'integration-sources', label: 'Integration Sources', icon: Database },
+        { id: 'core-attributes', label: 'Core Attributes', icon: Sliders },
+        { id: 'wand-templates', label: 'Manage Templates', icon: Layers },
+        { id: 'wand-mapper', label: 'Map Integration Templates', icon: MapPin },
+      ],
+    },
+    {
+      id: 'integration',
+      label: 'Integration',
+      items: [
+        { id: 'integration-dashboard', label: 'Dashboard', icon: BarChart3 },
+        { id: 'integration-access', label: 'Access', icon: Settings },
+        { id: 'integration', label: 'Catalog', icon: Layers },
+      ],
+    },
+    {
+      id: 'system',
+      label: 'System',
+      items: [
+        { label: 'Settings', icon: Settings },
+        { label: 'Analytics', icon: BarChart3 },
+      ],
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -159,187 +180,20 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         </div>
       </header>
 
-      {/* Horizontal Navigation Menu */}
-      <nav className="bg-white border-b border-slate-200">
-        <div className="px-6 flex items-center gap-1">
-          {/* Organization Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setActiveMenu(activeMenu === 'organization' ? null : 'organization')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeMenu === 'organization' || ['sites', 'users'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              Organization
-            </button>
-            {activeMenu === 'organization' && (
-              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
-                {navigationMenus.organization.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentView(item.id);
-                        setActiveMenu(null);
-                      }}
-                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
-                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Content Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setActiveMenu(activeMenu === 'content' ? null : 'content')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeMenu === 'content' || ['signage', 'labels', 'products', 'resources'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              Content
-            </button>
-            {activeMenu === 'content' && (
-              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
-                {navigationMenus.content.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentView(item.id);
-                        setActiveMenu(null);
-                      }}
-                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
-                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Wand Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setActiveMenu(activeMenu === 'wand' ? null : 'wand')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeMenu === 'wand' || ['wand-products', 'integration-sources', 'core-attributes', 'wand-templates', 'wand-mapper'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              Wand
-            </button>
-            {activeMenu === 'wand' && (
-              <div className="absolute top-full left-0 mt-0 w-72 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
-                {navigationMenus.wand.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentView(item.id);
-                        setActiveMenu(null);
-                      }}
-                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
-                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Integration Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setActiveMenu(activeMenu === 'integration' ? null : 'integration')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeMenu === 'integration' || ['integration-dashboard', 'integration-access', 'integration'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              Integration
-            </button>
-            {activeMenu === 'integration' && (
-              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
-                {navigationMenus.integration.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentView(item.id);
-                        setActiveMenu(null);
-                      }}
-                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
-                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* System Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setActiveMenu(activeMenu === 'system' ? null : 'system')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeMenu === 'system'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              System
-            </button>
-            {activeMenu === 'system' && (
-              <div className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
-                {navigationMenus.system.map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={idx}
-                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 text-slate-700"
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content Area */}
       <main className="p-6">
+        {/* Hamburger Menu Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowNavigationModal(true)}
+            className="p-3 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all shadow-sm border border-slate-200 hover:border-slate-300 hover:shadow-md"
+            title="Open Navigation"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content */}
         <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
           {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
@@ -467,6 +321,15 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           />
         </Suspense>
       )}
+
+      {/* Navigation Modal */}
+      <NavigationModal
+        isOpen={showNavigationModal}
+        onClose={() => setShowNavigationModal(false)}
+        categories={navigationCategories}
+        currentView={currentView}
+        onNavigate={(viewId) => setCurrentView(viewId as ViewType)}
+      />
 
       {/* Toast Notification */}
       {toastMessage && (

@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2, ChevronDown, Map } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2, ChevronDown, Map, Menu } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
@@ -12,6 +12,7 @@ const StoreManagement = lazy(() => import('./StoreManagement'));
 const ProductManagement = lazy(() => import('./ProductManagement'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
+import NavigationModal from '../components/NavigationModal';
 
 type DashboardView = 'home' | 'signage' | 'labels' | 'store' | 'products';
 
@@ -79,6 +80,20 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   ]);
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [showNavigationModal, setShowNavigationModal] = useState(false);
+
+  const navigationCategories = [
+    {
+      id: 'operations',
+      label: 'Operations',
+      items: [
+        { id: 'signage', label: 'Digital Signage', icon: Monitor },
+        { id: 'labels', label: 'Shelf Labels', icon: Tag },
+        { id: 'products', label: 'Products', icon: Package },
+        { id: 'store', label: 'Store Configuration', icon: Store },
+      ],
+    },
+  ];
 
   useEffect(() => {
     if (currentView === 'home') {
@@ -544,6 +559,18 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hamburger Menu Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowNavigationModal(true)}
+            className="p-3 text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all shadow-sm border border-slate-200 hover:border-slate-300 hover:shadow-md"
+            title="Open Navigation"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedCards.map(card => renderCard(card.id))}
         </div>
@@ -570,6 +597,15 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
           />
         </Suspense>
       )}
+
+      {/* Navigation Modal */}
+      <NavigationModal
+        isOpen={showNavigationModal}
+        onClose={() => setShowNavigationModal(false)}
+        categories={navigationCategories}
+        currentView={currentView}
+        onNavigate={(viewId) => setCurrentView(viewId as DashboardView)}
+      />
     </div>
   );
 }
