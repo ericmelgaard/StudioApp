@@ -44,18 +44,23 @@ export default function ImageUploadField({
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `product-images/${fileName}`;
+      const filePath = `${fileName}`;
 
       // Check if bucket exists, create if it doesn't
       const { data: buckets } = await supabase.storage.listBuckets();
       const bucketExists = buckets?.some(b => b.name === 'product-images');
 
       if (!bucketExists) {
-        await supabase.storage.createBucket('product-images', {
+        const { error: bucketError } = await supabase.storage.createBucket('product-images', {
           public: true,
           fileSizeLimit: MAX_FILE_SIZE,
           allowedMimeTypes: ALLOWED_TYPES
         });
+
+        if (bucketError) {
+          console.error('Error creating bucket:', bucketError);
+          // Continue anyway - bucket might exist but we don't have permission to list
+        }
       }
 
       // Upload file to Supabase Storage
@@ -66,7 +71,30 @@ export default function ImageUploadField({
           upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        // If bucket doesn't exist, try to create it and retry
+        if (uploadError.message?.includes('Bucket not found')) {
+          const { error: createError } = await supabase.storage.createBucket('product-images', {
+            public: true
+          });
+
+          if (!createError) {
+            // Retry upload after creating bucket
+            const { data: retryData, error: retryError } = await supabase.storage
+              .from('product-images')
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
+
+            if (retryError) throw retryError;
+          } else {
+            throw uploadError;
+          }
+        } else {
+          throw uploadError;
+        }
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -95,12 +123,11 @@ export default function ImageUploadField({
         const url = new URL(value);
         const pathParts = url.pathname.split('/');
         const fileName = pathParts[pathParts.length - 1];
-        const filePath = `product-images/${fileName}`;
 
-        // Delete from storage
+        // Delete from storage (just the filename, not prefixed with bucket name)
         await supabase.storage
           .from('product-images')
-          .remove([filePath]);
+          .remove([fileName]);
       } catch (err) {
         console.error('Error deleting image from storage:', err);
         // Continue anyway - the reference will be removed from the database
