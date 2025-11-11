@@ -1,0 +1,30 @@
+[
+  {
+    "id": "b5d6c2ae-a021-463b-926c-e7db62ac2347",
+    "wand_source_id": "03495ae7-0341-4372-986f-71e739aac62b",
+    "config_name": "Qu POS API Configuration",
+    "application_level": "concept",
+    "concept_id": 214,
+    "company_id": null,
+    "site_id": null,
+    "config_params": {
+      "brand": "focus",
+      "establishment": "2232"
+    },
+    "sync_frequency_minutes": 15,
+    "sync_schedule": "Manual",
+    "is_active": true,
+    "credentials": {},
+    "last_sync_at": "2025-11-11T16:39:13.74+00:00",
+    "last_sync_status": "success",
+    "sync_count": 1,
+    "error_count": 0,
+    "last_error": null,
+    "created_at": "2025-11-08T17:56:56.885129+00:00",
+    "updated_at": "2025-11-09T01:33:31.185+00:00",
+    "created_by": null,
+    "brand_options": null,
+    "is_brand_inherited": false,
+    "brand_locked": false
+  }
+]
