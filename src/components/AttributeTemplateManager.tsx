@@ -352,7 +352,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     if (!selectedTemplate) return;
 
     const confirmed = confirm(
-      `This will update all products using the "${selectedTemplate.name}" template with any missing attributes. ` +
+      `This will update all products using the "${selectedTemplate.name}" template with any missing attributes and translations. ` +
       `Existing attribute values will not be changed. Continue?`
     );
 
@@ -363,7 +363,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
       // Get all products using this template
       const { data: products, error: fetchError } = await supabase
         .from('products')
-        .select('id, attributes')
+        .select('id, name, attributes')
         .eq('attribute_template_id', selectedTemplate.id);
 
       if (fetchError) throw fetchError;
@@ -380,20 +380,23 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
       ];
 
       let updatedCount = 0;
+      const updateDetails: string[] = [];
 
       // Update each product
       for (const product of products) {
         const currentAttrs = product.attributes || {};
         let needsUpdate = false;
         const updatedAttrs = { ...currentAttrs };
+        const addedFields: string[] = [];
 
         // Add missing attributes with appropriate defaults
         for (const attr of allTemplateAttrs) {
           if (!(attr.name in updatedAttrs)) {
             needsUpdate = true;
+            addedFields.push(attr.name);
 
             // Set appropriate default based on type
-            if (attr.type === 'sizes') {
+            if (attr.type === 'sizes' || attr.type === 'options') {
               updatedAttrs[attr.name] = [];
             } else if (attr.type === 'boolean') {
               updatedAttrs[attr.name] = false;
@@ -410,11 +413,12 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
         }
 
         // Add missing translation attributes
-        if (selectedTemplate.translations) {
+        if (selectedTemplate.translations && Array.isArray(selectedTemplate.translations)) {
           for (const translation of selectedTemplate.translations) {
             const translationKey = `translations_${translation.locale.replace('-', '_').toLowerCase()}`;
             if (!(translationKey in updatedAttrs)) {
               needsUpdate = true;
+              addedFields.push(`${translation.locale_name} translation`);
               updatedAttrs[translationKey] = {};
             }
           }
@@ -432,16 +436,19 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
 
           if (updateError) {
             console.error(`Error updating product ${product.id}:`, updateError);
+            updateDetails.push(`❌ ${product.name}: Failed to update`);
           } else {
             updatedCount++;
+            updateDetails.push(`✓ ${product.name}: Added ${addedFields.join(', ')}`);
           }
         }
       }
 
-      alert(
-        `Successfully updated ${updatedCount} of ${products.length} products. ` +
-        `${products.length - updatedCount} products already had all attributes.`
-      );
+      const message = updatedCount > 0
+        ? `Successfully updated ${updatedCount} of ${products.length} products:\n\n${updateDetails.slice(0, 10).join('\n')}${updateDetails.length > 10 ? `\n\n...and ${updateDetails.length - 10} more` : ''}`
+        : `All ${products.length} products already had all attributes and translations.`;
+
+      alert(message);
     } catch (error) {
       console.error('Error pushing to products:', error);
       alert('Failed to push changes to products');

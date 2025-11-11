@@ -362,6 +362,16 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             }
           });
 
+          // Initialize translation attributes if template has translations
+          if (templateData.translations && Array.isArray(templateData.translations)) {
+            templateData.translations.forEach((translation: any) => {
+              const translationKey = `translations_${translation.locale.replace('-', '_').toLowerCase()}`;
+              if (!(translationKey in mergedAttributes)) {
+                mergedAttributes[translationKey] = {};
+              }
+            });
+          }
+
           setAttributes(mergedAttributes);
           return;
         }
