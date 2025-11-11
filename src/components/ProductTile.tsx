@@ -99,7 +99,7 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
               <h3 className="font-semibold text-slate-900 text-sm line-clamp-2">
                 {displayName}
               </h3>
-              <p className="text-xs text-slate-500">ID: {product.id.slice(0, 8)}</p>
+              <p className="text-xs text-slate-500">ID: {product.id?.slice(0, 8) || 'N/A'}</p>
               {description && (
                 <div
                   className="text-xs text-slate-600 line-clamp-3 prose prose-xs max-w-none"
@@ -147,7 +147,7 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
             <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
               {displayName}
             </h3>
-            <p className="text-xs text-slate-500 mb-3">ID: {product.id.slice(0, 8)}</p>
+            <p className="text-xs text-slate-500 mb-3">ID: {product.id?.slice(0, 8) || 'N/A'}</p>
           </>
         )}
 
