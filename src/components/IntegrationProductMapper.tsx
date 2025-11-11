@@ -237,7 +237,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
       let query = supabase
         .from(tableName)
         .select('*')
-        .eq('wand_source_id', selectedSource)
+        .eq('source_id', selectedSource)
         .limit(5);
 
       if (siteId) {

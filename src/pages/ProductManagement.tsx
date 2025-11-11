@@ -77,7 +77,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
     if (integrationProductIds.length > 0) {
       const { data: integrationData, error: intError } = await supabase
         .from('integration_products')
-        .select('id, data, wand_source_id, wand_integration_sources(name)')
+        .select('id, data, source_id, wand_integration_sources:source_id(name)')
         .in('id', integrationProductIds);
 
       if (!intError && integrationData) {
