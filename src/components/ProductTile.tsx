@@ -170,9 +170,9 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
 
           {!imageUrl && Array.isArray(mealPeriods) && mealPeriods.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {mealPeriods.slice(0, 2).map((mp: any, idx: number) => (
+              {mealPeriods.slice(0, 2).map((mp: any) => (
                 <span
-                  key={idx}
+                  key={mp.period || mp.id || Math.random()}
                   className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                 >
                   {mp.period}
@@ -202,9 +202,9 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
 
           {Array.isArray(sizes) && sizes.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {sizes.slice(0, 3).map((size: any, idx: number) => (
+              {sizes.slice(0, 3).map((size: any) => (
                 <span
-                  key={idx}
+                  key={size.label || size.id || Math.random()}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700"
                 >
                   {size.label} {size.price && `$${size.price}`}
