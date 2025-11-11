@@ -538,7 +538,6 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
               value={value}
               onChange={(url) => handleAttributeChange(field.name, url)}
               label={field.label}
-              resolution={field.resolution}
             />
             {isLinked && (
               <div className="absolute top-2 right-2 bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">

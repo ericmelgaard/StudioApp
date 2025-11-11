@@ -710,7 +710,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   function renderAttributeField(key: string, actualValue: any, syncStatus: SyncStatus | null, isOverridden: any, isLocalOnly: boolean) {
     const meta = getAttributeMeta(key);
 
-    if (meta?.type === 'image' && meta?.resolution) {
+    if (meta?.type === 'image') {
       return (
         <ImageUploadField
           value={actualValue || ''}
@@ -720,8 +720,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               lockOverride(key);
             }
           }}
-          targetWidth={meta.resolution.width}
-          targetHeight={meta.resolution.height}
           label={meta.label || key}
         />
       );

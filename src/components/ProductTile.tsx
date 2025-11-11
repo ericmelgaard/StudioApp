@@ -47,7 +47,8 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
 
   const rawName = product.attributes?.name || product.name;
   const displayName = stripHtmlTags(rawName);
-  const rawImageUrl = product.attributes?.thumbnail || product.attributes?.image_url;
+  // Check both image_url (new) and thumbnail (legacy) attributes
+  const rawImageUrl = product.attributes?.image_url || product.attributes?.thumbnail;
   // Filter out invalid/empty data URLs
   const imageUrl = rawImageUrl && rawImageUrl !== 'data:,' && rawImageUrl.length > 10 ? rawImageUrl : null;
   const description = product.attributes?.description;
