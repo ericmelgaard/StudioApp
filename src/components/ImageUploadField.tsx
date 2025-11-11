@@ -46,24 +46,7 @@ export default function ImageUploadField({
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Check if bucket exists, create if it doesn't
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(b => b.name === 'product-images');
-
-      if (!bucketExists) {
-        const { error: bucketError } = await supabase.storage.createBucket('product-images', {
-          public: true,
-          fileSizeLimit: MAX_FILE_SIZE,
-          allowedMimeTypes: ALLOWED_TYPES
-        });
-
-        if (bucketError) {
-          console.error('Error creating bucket:', bucketError);
-          // Continue anyway - bucket might exist but we don't have permission to list
-        }
-      }
-
-      // Upload file to Supabase Storage
+      // Upload file to Supabase Storage (bucket is created via migration)
       const { data, error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(filePath, file, {
@@ -71,30 +54,7 @@ export default function ImageUploadField({
           upsert: false
         });
 
-      if (uploadError) {
-        // If bucket doesn't exist, try to create it and retry
-        if (uploadError.message?.includes('Bucket not found')) {
-          const { error: createError } = await supabase.storage.createBucket('product-images', {
-            public: true
-          });
-
-          if (!createError) {
-            // Retry upload after creating bucket
-            const { data: retryData, error: retryError } = await supabase.storage
-              .from('product-images')
-              .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-              });
-
-            if (retryError) throw retryError;
-          } else {
-            throw uploadError;
-          }
-        } else {
-          throw uploadError;
-        }
-      }
+      if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
