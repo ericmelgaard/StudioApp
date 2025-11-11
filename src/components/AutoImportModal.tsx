@@ -77,7 +77,7 @@ export default function AutoImportModal({
     try {
       const [sourceRes, templatesRes, orgSettingsRes] = await Promise.all([
         supabase.from('wand_integration_sources').select('id, name, integration_type as type').eq('id', sourceId).maybeSingle(),
-        supabase.from('product_attribute_templates').select('id, name').order('name'),
+        supabase.from('product_templates').select('id, name').order('name'),
         supabase.from('organization_settings').select('default_product_attribute_template_id').limit(1).maybeSingle()
       ]);
 
