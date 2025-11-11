@@ -11,7 +11,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "import-locations": "node import-locations.js",
     "import-integration-products": "node import-integration-products.js",
-    "generate-sync-history": "node generate-sync-history.js"
+    "generate-sync-history": "node generate-sync-history.js",
+    "db:verify": "node scripts/verify-database-state.js",
+    "db:lock": "node scripts/lock-environment.js verify",
+    "db:lock:create": "node scripts/lock-environment.js create",
+    "db:new": "node scripts/migration-helpers.js new",
+    "db:list": "node scripts/migration-helpers.js list-applied"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
