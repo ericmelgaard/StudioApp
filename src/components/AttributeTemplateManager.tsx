@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Sparkles, Check, Plus, Settings, Tag, Globe, Trash2 } from 'lucide-react';
+import { X, Sparkles, Check, Plus, Settings, Tag, Globe, Trash2, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface TranslationConfig {
@@ -348,6 +348,108 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     }
   }
 
+  async function pushToExistingProducts() {
+    if (!selectedTemplate) return;
+
+    const confirmed = confirm(
+      `This will update all products using the "${selectedTemplate.name}" template with any missing attributes. ` +
+      `Existing attribute values will not be changed. Continue?`
+    );
+
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      // Get all products using this template
+      const { data: products, error: fetchError } = await supabase
+        .from('products')
+        .select('id, attributes')
+        .eq('attribute_template_id', selectedTemplate.id);
+
+      if (fetchError) throw fetchError;
+
+      if (!products || products.length === 0) {
+        alert('No products found using this template');
+        return;
+      }
+
+      // Get all attribute names from the template
+      const allTemplateAttrs = [
+        ...selectedTemplate.attribute_schema.core_attributes,
+        ...selectedTemplate.attribute_schema.extended_attributes
+      ];
+
+      let updatedCount = 0;
+
+      // Update each product
+      for (const product of products) {
+        const currentAttrs = product.attributes || {};
+        let needsUpdate = false;
+        const updatedAttrs = { ...currentAttrs };
+
+        // Add missing attributes with appropriate defaults
+        for (const attr of allTemplateAttrs) {
+          if (!(attr.name in updatedAttrs)) {
+            needsUpdate = true;
+
+            // Set appropriate default based on type
+            if (attr.type === 'sizes') {
+              updatedAttrs[attr.name] = [];
+            } else if (attr.type === 'boolean') {
+              updatedAttrs[attr.name] = false;
+            } else if (attr.type === 'number') {
+              updatedAttrs[attr.name] = null;
+            } else if (attr.type === 'array') {
+              updatedAttrs[attr.name] = [];
+            } else if (attr.type === 'object') {
+              updatedAttrs[attr.name] = {};
+            } else {
+              updatedAttrs[attr.name] = '';
+            }
+          }
+        }
+
+        // Add missing translation attributes
+        if (selectedTemplate.translations) {
+          for (const translation of selectedTemplate.translations) {
+            const translationKey = `translations_${translation.locale.replace('-', '_').toLowerCase()}`;
+            if (!(translationKey in updatedAttrs)) {
+              needsUpdate = true;
+              updatedAttrs[translationKey] = {};
+            }
+          }
+        }
+
+        // Only update if there are missing attributes
+        if (needsUpdate) {
+          const { error: updateError } = await supabase
+            .from('products')
+            .update({
+              attributes: updatedAttrs,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', product.id);
+
+          if (updateError) {
+            console.error(`Error updating product ${product.id}:`, updateError);
+          } else {
+            updatedCount++;
+          }
+        }
+      }
+
+      alert(
+        `Successfully updated ${updatedCount} of ${products.length} products. ` +
+        `${products.length - updatedCount} products already had all attributes.`
+      );
+    } catch (error) {
+      console.error('Error pushing to products:', error);
+      alert('Failed to push changes to products');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (!isOpen) return null;
 
   const defaultTemplateId = settings?.default_product_attribute_template_id;
@@ -441,6 +543,15 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                       Template Details: {selectedTemplate.name}
                     </h3>
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={pushToExistingProducts}
+                        disabled={loading}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+                        title="Update all products using this template with any missing attributes"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Push to Products
+                      </button>
                       <button
                         onClick={() => setShowAddTranslation(!showAddTranslation)}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
