@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-11-11T17:07:36.192Z",
+  "database": "https://igqlyqbhbqmxcksiuzix.supabase.co",
+  "tables": {
+    "concepts": 0,
+    "companies": 0,
+    "stores": 0,
+    "user_profiles": 0,
+    "placement_groups": 0,
+    "products": 0,
+    "product_templates": 0,
+    "product_assignments": 0,
+    "template_assignments": 0,
+    "wand_products": 0,
+    "wand_templates": 0,
+    "wand_attributes": 0,
+    "wand_integration_sources": 0,
+    "integration_sources": 0,
+    "integration_source_configs": 0,
+    "integration_products": 0,
+    "integration_modifiers": 0,
+    "integration_discounts": 0,
+    "integration_api_templates": 0,
+    "integration_formatters": 0,
+    "audit_logs": 0
+  },
+  "total_records": 0
+}
