@@ -2,13 +2,15 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ArrowUpDown, ArrowUp, ArrowDown, Filter, Settings, Download,
   Image as ImageIcon, Check, X, Eye, EyeOff, MoreVertical, Maximize2,
-  Grid3x3, AlignJustify, ChevronRight, Calendar, Search
+  Grid3x3, AlignJustify, ChevronRight, Calendar, Search, Upload, MapPin
 } from 'lucide-react';
 import { Product, ColumnDefinition, SortConfig, FilterConfig, DensityMode } from '../types/productList';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../hooks/useUser';
 import ColumnManager from './ColumnManager';
 import ColumnFilter from './ColumnFilter';
+import ProductExportModal from './ProductExportModal';
+import ProductImportModal from './ProductImportModal';
 
 interface ProductListViewProps {
   products: Product[];
@@ -18,6 +20,11 @@ interface ProductListViewProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   advancedFilterComponent?: React.ReactNode;
+  conceptId?: number;
+  companyId?: number;
+  siteId?: number;
+  onProductsRefresh: () => void;
+  onShowHierarchy: () => void;
 }
 
 export default function ProductListView({
@@ -27,7 +34,12 @@ export default function ProductListView({
   onSelectionChange,
   searchQuery = '',
   onSearchChange,
-  advancedFilterComponent
+  advancedFilterComponent,
+  conceptId,
+  companyId,
+  siteId,
+  onProductsRefresh,
+  onShowHierarchy
 }: ProductListViewProps) {
   const { user } = useUser();
   const [density, setDensity] = useState<DensityMode>('comfortable');
@@ -38,6 +50,8 @@ export default function ProductListView({
   const [showFilters, setShowFilters] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const defaultColumns: ColumnDefinition[] = useMemo(() => [
     {
@@ -619,6 +633,35 @@ export default function ProductListView({
               Sorted by {sortConfig.length} column{sortConfig.length > 1 ? 's' : ''}
             </div>
           )}
+
+          {selectedProductIds.size > 0 && (
+            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-slate-300">
+              <button
+                onClick={() => onSelectionChange(new Set())}
+                className="text-slate-500 hover:text-slate-700 transition-colors"
+                title="Clear selection"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-medium text-slate-700">
+                {selectedProductIds.size} selected
+              </span>
+              <button
+                onClick={() => setShowExportModal(true)}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <Download className="w-3 h-3" />
+                Export
+              </button>
+              <button
+                onClick={onShowHierarchy}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <MapPin className="w-3 h-3" />
+                Hierarchy
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -630,23 +673,38 @@ export default function ProductListView({
             Columns
           </button>
 
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg font-medium transition-all"
+          >
+            <Upload className="w-4 h-4" />
+            Import
+          </button>
+
           <div className="relative group">
-            <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all">
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-all">
               <Download className="w-4 h-4" />
               Export
             </button>
-            <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-slate-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+              <button
+                onClick={() => setShowExportModal(true)}
+                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 rounded-t-lg font-medium"
+              >
+                Advanced Export...
+              </button>
+              <div className="border-t border-slate-200" />
               <button
                 onClick={exportToCSV}
-                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 rounded-t-lg"
+                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
               >
-                Export as CSV
+                Quick CSV Export
               </button>
               <button
                 onClick={exportToJSON}
                 className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 rounded-b-lg"
               >
-                Export as JSON
+                Quick JSON Export
               </button>
             </div>
           </div>
@@ -827,6 +885,27 @@ export default function ProductListView({
           />
         </div>
       )}
+
+      <ProductExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        conceptId={conceptId}
+        companyId={companyId}
+        siteId={siteId}
+        selectedProductIds={selectedProductIds.size > 0 ? Array.from(selectedProductIds) : undefined}
+      />
+
+      <ProductImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
+          onProductsRefresh();
+          setShowImportModal(false);
+        }}
+        conceptId={conceptId}
+        companyId={companyId}
+        siteId={siteId}
+      />
     </div>
   );
 }

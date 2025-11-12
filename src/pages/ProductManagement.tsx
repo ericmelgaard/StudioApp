@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree, Download, Upload, MapPin } from 'lucide-react';
+import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
@@ -13,8 +13,6 @@ import CategoryManagementModal from '../components/CategoryManagementModal';
 import BulkCategoryAssignModal from '../components/BulkCategoryAssignModal';
 import AdvancedFilter, { FilterSection, FilterState } from '../components/AdvancedFilter';
 import ProductListView from '../components/ProductListView';
-import ProductExportModal from '../components/ProductExportModal';
-import ProductImportModal from '../components/ProductImportModal';
 import ProductHierarchyModal from '../components/ProductHierarchyModal';
 
 interface Product {
@@ -53,8 +51,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [showBulkCategoryAssign, setShowBulkCategoryAssign] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [showHierarchyModal, setShowHierarchyModal] = useState(false);
 
   useEffect(() => {
@@ -293,20 +289,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowImportModal(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-medium transition-all"
-              >
-                <Upload className="w-4 h-4" />
-                Import
-              </button>
-              <button
-                onClick={() => setShowExportModal(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg font-medium transition-all"
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-              <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
               >
@@ -390,20 +372,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </span>
                 <div className="w-px h-4 bg-slate-300" />
                 <button
-                  onClick={() => setShowExportModal(true)}
-                  className="text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
-                >
-                  <Download className="w-3 h-3" />
-                  Export selected
-                </button>
-                <button
-                  onClick={() => setShowHierarchyModal(true)}
-                  className="text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
-                >
-                  <MapPin className="w-3 h-3" />
-                  View hierarchy
-                </button>
-                <button
                   onClick={() => setShowBulkCategoryAssign(true)}
                   className="text-blue-600 hover:text-blue-700 transition-colors"
                 >
@@ -456,6 +424,11 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                       onChange={setFilterState}
                     />
                   }
+                  conceptId={location.concept?.id}
+                  companyId={location.company?.id}
+                  siteId={location.store?.id}
+                  onProductsRefresh={loadProducts}
+                  onShowHierarchy={() => setShowHierarchyModal(true)}
                 />
               </div>
             ) : (
@@ -527,24 +500,6 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
           setSelectedProductIds(new Set());
           loadProducts();
         }}
-      />
-
-      <ProductExportModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        conceptId={location.concept?.id}
-        companyId={location.company?.id}
-        siteId={location.store?.id}
-        selectedProductIds={selectedProductIds.size > 0 ? Array.from(selectedProductIds) : undefined}
-      />
-
-      <ProductImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={loadProducts}
-        conceptId={location.concept?.id}
-        companyId={location.company?.id}
-        siteId={location.store?.id}
       />
 
       <ProductHierarchyModal
