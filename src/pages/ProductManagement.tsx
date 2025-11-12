@@ -413,6 +413,15 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                   }}
                   selectedProductIds={selectedProductIds}
                   onSelectionChange={setSelectedProductIds}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  advancedFilterComponent={
+                    <AdvancedFilter
+                      sections={filterSections}
+                      value={filterState}
+                      onChange={setFilterState}
+                    />
+                  }
                 />
               </div>
             ) : (

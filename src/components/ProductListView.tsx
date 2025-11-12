@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ArrowUpDown, ArrowUp, ArrowDown, Filter, Settings, Download,
   Image as ImageIcon, Check, X, Eye, EyeOff, MoreVertical, Maximize2,
-  Grid3x3, AlignJustify, ChevronRight, Calendar
+  Grid3x3, AlignJustify, ChevronRight, Calendar, Search
 } from 'lucide-react';
 import { Product, ColumnDefinition, SortConfig, FilterConfig, DensityMode } from '../types/productList';
 import { supabase } from '../lib/supabase';
@@ -15,13 +15,19 @@ interface ProductListViewProps {
   onProductClick: (product: Product) => void;
   selectedProductIds: Set<string>;
   onSelectionChange: (ids: Set<string>) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  advancedFilterComponent?: React.ReactNode;
 }
 
 export default function ProductListView({
   products,
   onProductClick,
   selectedProductIds,
-  onSelectionChange
+  onSelectionChange,
+  searchQuery = '',
+  onSearchChange,
+  advancedFilterComponent
 }: ProductListViewProps) {
   const { user } = useUser();
   const [density, setDensity] = useState<DensityMode>('comfortable');
@@ -200,6 +206,26 @@ export default function ProductListView({
   useEffect(() => {
     loadUserPreferences();
   }, [user]);
+
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+      document.body.style.overflow = '';
+    };
+  }, [isFullscreen]);
 
   const loadUserPreferences = async () => {
     if (!user) {
@@ -528,8 +554,31 @@ export default function ProductListView({
   };
 
   return (
-    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'relative'}`}>
-      <div className="flex items-center justify-between mb-4 px-2">
+    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-white flex flex-col' : 'relative'}`}>
+      {isFullscreen && (onSearchChange || advancedFilterComponent) && (
+        <div className={`border-b border-slate-200 ${isFullscreen ? 'px-6 pt-6 pb-4' : ''}`}>
+          <div className="flex flex-col md:flex-row gap-4">
+            {onSearchChange && (
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            )}
+            {advancedFilterComponent && (
+              <div className="flex gap-2">
+                {advancedFilterComponent}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'px-6 pt-4' : 'px-2'}`}>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -604,16 +653,21 @@ export default function ProductListView({
 
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium transition-all ${
+              isFullscreen
+                ? 'bg-purple-100 text-purple-700'
+                : 'hover:bg-slate-100 text-slate-700'
+            }`}
+            title={isFullscreen ? 'Exit fullscreen (ESC)' : 'Enter fullscreen'}
           >
-            <Maximize2 className="w-4 h-4 text-slate-600" />
+            <Maximize2 className="w-4 h-4" />
+            {isFullscreen && <span className="text-xs">ESC</span>}
           </button>
         </div>
       </div>
 
       {showFilters && (
-        <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+        <div className={`mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg ${isFullscreen ? 'mx-6' : ''}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {columns.filter(c => c.filterable && c.visible).map(column => (
               <ColumnFilter
@@ -643,7 +697,7 @@ export default function ProductListView({
         </div>
       )}
 
-      <div className="overflow-x-auto border border-slate-200 rounded-lg">
+      <div className={`overflow-x-auto border border-slate-200 rounded-lg ${isFullscreen ? 'flex-1 mx-6 mb-6' : ''}`}>
         <table className="w-full">
           <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
             <tr>
@@ -760,17 +814,21 @@ export default function ProductListView({
       </div>
 
       {sortedProducts.length === 0 && (
-        <div className="text-center py-12 text-slate-500">
+        <div className={`text-center py-12 text-slate-500 ${isFullscreen ? 'mx-6' : ''}`}>
           No products match your current filters
         </div>
       )}
 
-      <ColumnManager
-        isOpen={showColumnManager}
-        onClose={() => setShowColumnManager(false)}
-        columns={columns}
-        onColumnsChange={setColumns}
-      />
+      {showColumnManager && (
+        <div className="fixed inset-0 z-[60]">
+          <ColumnManager
+            isOpen={showColumnManager}
+            onClose={() => setShowColumnManager(false)}
+            columns={columns}
+            onColumnsChange={setColumns}
+          />
+        </div>
+      )}
     </div>
   );
 }
