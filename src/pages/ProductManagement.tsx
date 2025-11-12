@@ -12,6 +12,7 @@ import IntegrationProductMapper from '../components/IntegrationProductMapper';
 import CategoryManagementModal from '../components/CategoryManagementModal';
 import BulkCategoryAssignModal from '../components/BulkCategoryAssignModal';
 import AdvancedFilter, { FilterSection, FilterState } from '../components/AdvancedFilter';
+import ProductListView from '../components/ProductListView';
 
 interface Product {
   id: string;
@@ -385,7 +386,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
             ) : null}
           </div>
 
-          <div className={viewMode === 'tile' ? 'p-6' : 'overflow-x-auto'}>
+          <div className={viewMode === 'tile' ? 'p-6' : ''}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
@@ -403,106 +404,17 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </p>
               </div>
             ) : viewMode === 'list' ? (
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3 w-12">
-                        <input
-                          type="checkbox"
-                          checked={selectedProductIds.size === filteredProducts.length && filteredProducts.length > 0}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedProductIds(new Set(filteredProducts.map(p => p.id)));
-                            } else {
-                              setSelectedProductIds(new Set());
-                            }
-                          }}
-                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                        />
-                      </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Attributes
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      API Source
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                    {filteredProducts.map((product) => (
-                      <tr
-                        key={product.id}
-                        className={`transition-colors ${
-                          selectedProductIds.has(product.id)
-                            ? 'bg-purple-50 hover:bg-purple-100'
-                            : 'hover:bg-slate-50'
-                        }`}
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setShowEditModal(true);
-                        }}
-                      >
-                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={selectedProductIds.has(product.id)}
-                            onChange={(e) => {
-                              const newSelected = new Set(selectedProductIds);
-                              if (e.target.checked) {
-                                newSelected.add(product.id);
-                              } else {
-                                newSelected.delete(product.id);
-                              }
-                              setSelectedProductIds(newSelected);
-                            }}
-                            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                          />
-                        </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="font-medium text-slate-900">{product.name}</div>
-                          {product.attributes?.description && (
-                            <div className="text-sm text-slate-500 mt-1 line-clamp-1">
-                              {product.attributes.description}
-                            </div>
-                          )}
-                          <div className="text-xs text-slate-400 mt-1">ID: {product.id.slice(0, 8)}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-slate-600 space-y-1">
-                          {product.attributes?.price && (
-                            <div>Price: ${product.attributes.price}</div>
-                          )}
-                          {product.attributes?.calories && (
-                            <div>Calories: {product.attributes.calories}</div>
-                          )}
-                          {product.attributes?.portion && (
-                            <div>Portion: {product.attributes.portion}</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {(product.integration_source_name || product.attribute_mappings?.price?.type === 'calculation') ? (
-                          <div className="flex justify-center">
-                            <img
-                              src="/logo_32 copy.png"
-                              alt={product.integration_source_name || 'QU Beyond'}
-                              className="w-6 h-6 rounded"
-                              title={product.integration_source_name || 'QU Beyond (Calculated)'}
-                            />
-                          </div>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </td>
-                      </tr>
-                    ))}
-                  </tbody>
-              </table>
+              <div className="p-6">
+                <ProductListView
+                  products={filteredProducts}
+                  onProductClick={(product) => {
+                    setSelectedProduct(product);
+                    setShowEditModal(true);
+                  }}
+                  selectedProductIds={selectedProductIds}
+                  onSelectionChange={setSelectedProductIds}
+                />
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProducts.map((product) => (
