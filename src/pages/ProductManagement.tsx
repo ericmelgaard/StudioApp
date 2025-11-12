@@ -359,26 +359,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
             </div>
 
-            {viewMode === 'list' && selectedProductIds.size > 0 ? (
-              <div className="mt-4 flex items-center gap-4 text-sm text-slate-600">
-                <button
-                  onClick={() => setSelectedProductIds(new Set())}
-                  className="text-slate-500 hover:text-slate-700 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <span className="text-slate-700">
-                  Selected {selectedProductIds.size} of {filteredProducts.length}
-                </span>
-                <div className="w-px h-4 bg-slate-300" />
-                <button
-                  onClick={() => setShowBulkCategoryAssign(true)}
-                  className="text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  Add to category
-                </button>
-              </div>
-            ) : products.length > 0 && products[0].updated_at ? (
+            {products.length > 0 && products[0].updated_at ? (
               <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
                 <Calendar className="w-4 h-4" />
                 <span>
@@ -429,6 +410,8 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                   siteId={location.store?.id}
                   onProductsRefresh={loadProducts}
                   onShowHierarchy={() => setShowHierarchyModal(true)}
+                  onShowCategoryAssign={() => setShowBulkCategoryAssign(true)}
+                  totalProductCount={filteredProducts.length}
                 />
               </div>
             ) : (

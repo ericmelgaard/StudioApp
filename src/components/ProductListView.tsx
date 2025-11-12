@@ -25,6 +25,8 @@ interface ProductListViewProps {
   siteId?: number;
   onProductsRefresh: () => void;
   onShowHierarchy: () => void;
+  onShowCategoryAssign: () => void;
+  totalProductCount: number;
 }
 
 export default function ProductListView({
@@ -39,7 +41,9 @@ export default function ProductListView({
   companyId,
   siteId,
   onProductsRefresh,
-  onShowHierarchy
+  onShowHierarchy,
+  onShowCategoryAssign,
+  totalProductCount
 }: ProductListViewProps) {
   const { user } = useUser();
   const [density, setDensity] = useState<DensityMode>('comfortable');
@@ -655,7 +659,35 @@ export default function ProductListView({
           </div>
         </div>
       )}
-      <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'px-6 pt-4' : 'px-2'}`}>
+
+      {selectedProductIds.size > 0 && (
+        <div className={`flex items-center gap-4 text-sm text-slate-600 mb-4 ${isFullscreen ? 'px-6 pt-4' : 'px-2'}`}>
+          <button
+            onClick={() => onSelectionChange(new Set())}
+            className="text-slate-500 hover:text-slate-700 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <span className="text-slate-700">
+            Selected {selectedProductIds.size} of {totalProductCount}
+          </span>
+          <div className="w-px h-4 bg-slate-300" />
+          <button
+            onClick={onShowCategoryAssign}
+            className="text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            Add to category
+          </button>
+          <button
+            onClick={onShowHierarchy}
+            className="text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            View Customizations
+          </button>
+        </div>
+      )}
+
+      <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'px-6' : 'px-2'} ${selectedProductIds.size > 0 ? '' : isFullscreen ? 'pt-4' : ''}`}>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -694,35 +726,6 @@ export default function ProductListView({
           {sortConfig.length > 0 && (
             <div className="text-sm text-slate-600">
               Sorted by {sortConfig.length} column{sortConfig.length > 1 ? 's' : ''}
-            </div>
-          )}
-
-          {selectedProductIds.size > 0 && (
-            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-slate-300">
-              <button
-                onClick={() => onSelectionChange(new Set())}
-                className="text-slate-500 hover:text-slate-700 transition-colors"
-                title="Clear selection"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <span className="text-sm font-medium text-slate-700">
-                {selectedProductIds.size} selected
-              </span>
-              <button
-                onClick={() => setShowExportModal(true)}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors"
-              >
-                <Download className="w-3 h-3" />
-                Export
-              </button>
-              <button
-                onClick={onShowHierarchy}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors"
-              >
-                <MapPin className="w-3 h-3" />
-                Hierarchy
-              </button>
             </div>
           )}
         </div>
