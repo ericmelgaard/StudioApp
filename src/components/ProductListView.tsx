@@ -222,6 +222,12 @@ export default function ProductListView({
   }, [user]);
 
   useEffect(() => {
+    if (products.length > 0) {
+      detectAndAddTranslationColumns();
+    }
+  }, [products]);
+
+  useEffect(() => {
     const handleEscKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
         setIsFullscreen(false);
@@ -240,6 +246,63 @@ export default function ProductListView({
       document.body.style.overflow = '';
     };
   }, [isFullscreen]);
+
+  const detectAndAddTranslationColumns = () => {
+    const translationLocales = new Set<string>();
+    const translationFields = new Set<string>();
+
+    products.forEach(product => {
+      if (product.attributes) {
+        Object.keys(product.attributes).forEach(key => {
+          const match = key.match(/^translations_([a-z]{2}[_-][A-Z]{2})$/i);
+          if (match) {
+            const locale = match[1].replace('_', '-');
+            translationLocales.add(locale);
+
+            const translationData = product.attributes[key];
+            if (translationData && typeof translationData === 'object') {
+              Object.keys(translationData).forEach(field => translationFields.add(field));
+            }
+          }
+        });
+      }
+    });
+
+    if (translationLocales.size > 0) {
+      const newColumns = [...defaultColumns];
+      let columnOrder = defaultColumns.length;
+
+      translationLocales.forEach(locale => {
+        const localeKey = locale.toLowerCase().replace('-', '_');
+        const localeName = locale === 'fr-FR' ? 'French' : locale;
+
+        translationFields.forEach(field => {
+          const baseColumn = defaultColumns.find(col => col.key === field);
+          if (baseColumn) {
+            newColumns.push({
+              key: `${field}_${localeKey}`,
+              label: `${baseColumn.label} (${localeName})`,
+              type: baseColumn.type,
+              visible: false,
+              width: baseColumn.width,
+              order: columnOrder++,
+              priority: 9,
+              sortable: true,
+              filterable: true,
+              accessor: (p) => {
+                const translationKey = `translations_${localeKey}`;
+                return p.attributes?.[translationKey]?.[field];
+              }
+            });
+          }
+        });
+      });
+
+      if (columns.length === 0 || columns.length === defaultColumns.length) {
+        setColumns(newColumns);
+      }
+    }
+  };
 
   const loadUserPreferences = async () => {
     if (!user) {
