@@ -660,7 +660,7 @@ export default function ProductListView({
         </div>
       )}
 
-      {selectedProductIds.size > 0 && (
+      {isFullscreen && selectedProductIds.size > 0 && (
         <div className={`flex items-center gap-4 text-sm text-slate-600 mb-4 ${isFullscreen ? 'px-6 pt-4' : 'px-2'}`}>
           <button
             onClick={() => onSelectionChange(new Set())}
@@ -687,7 +687,7 @@ export default function ProductListView({
         </div>
       )}
 
-      <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'px-6' : 'px-2'} ${selectedProductIds.size > 0 ? '' : isFullscreen ? 'pt-4' : ''}`}>
+      <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'px-6' : 'px-2'} ${isFullscreen && selectedProductIds.size === 0 ? 'pt-4' : ''}`}>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}

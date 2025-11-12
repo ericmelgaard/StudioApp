@@ -359,14 +359,41 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
             </div>
 
-            {products.length > 0 && products[0].updated_at ? (
-              <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  Last updated: {new Date(products[0].updated_at).toLocaleString()}
-                </span>
-              </div>
-            ) : null}
+            <div className="mt-4 h-6 flex items-center gap-2 text-sm text-slate-600">
+              {selectedProductIds.size > 0 ? (
+                <>
+                  <button
+                    onClick={() => setSelectedProductIds(new Set())}
+                    className="text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <span className="text-slate-700">
+                    Selected {selectedProductIds.size} of {filteredProducts.length}
+                  </span>
+                  <div className="w-px h-4 bg-slate-300" />
+                  <button
+                    onClick={() => setShowBulkCategoryAssign(true)}
+                    className="text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    Add to category
+                  </button>
+                  <button
+                    onClick={() => setShowHierarchyModal(true)}
+                    className="text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    View Customizations
+                  </button>
+                </>
+              ) : products.length > 0 && products[0].updated_at ? (
+                <>
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    Last updated: {new Date(products[0].updated_at).toLocaleString()}
+                  </span>
+                </>
+              ) : null}
+            </div>
           </div>
 
           <div className={viewMode === 'tile' ? 'p-6' : ''}>
