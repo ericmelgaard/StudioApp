@@ -249,7 +249,6 @@ export default function ProductListView({
 
   const detectAndAddTranslationColumns = () => {
     const translationLocales = new Set<string>();
-    const translationFields = new Set<string>();
 
     products.forEach(product => {
       if (product.attributes) {
@@ -258,11 +257,6 @@ export default function ProductListView({
           if (match) {
             const locale = match[1].replace('_', '-');
             translationLocales.add(locale);
-
-            const translationData = product.attributes[key];
-            if (translationData && typeof translationData === 'object') {
-              Object.keys(translationData).forEach(field => translationFields.add(field));
-            }
           }
         });
       }
@@ -272,11 +266,17 @@ export default function ProductListView({
       const newColumns = [...defaultColumns];
       let columnOrder = defaultColumns.length;
 
+      const translatableFields = ['name', 'description', 'portion'];
+
       translationLocales.forEach(locale => {
         const localeKey = locale.toLowerCase().replace('-', '_');
-        const localeName = locale === 'fr-FR' ? 'French' : locale;
+        const localeName = locale === 'fr-FR' ? 'French' :
+                          locale === 'es-ES' ? 'Spanish' :
+                          locale === 'de-DE' ? 'German' :
+                          locale === 'it-IT' ? 'Italian' :
+                          locale === 'pt-PT' ? 'Portuguese' : locale;
 
-        translationFields.forEach(field => {
+        translatableFields.forEach(field => {
           const baseColumn = defaultColumns.find(col => col.key === field);
           if (baseColumn) {
             newColumns.push({
