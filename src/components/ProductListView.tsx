@@ -660,7 +660,34 @@ export default function ProductListView({
         </div>
       )}
 
-      {selectedProductIds.size > 0 && (
+      {!isFullscreen && selectedProductIds.size > 0 && (
+        <div className="absolute left-0 right-0 top-0 bg-white z-10 flex items-center gap-4 text-sm text-slate-600 h-10 px-2 border-b border-slate-200">
+          <button
+            onClick={() => onSelectionChange(new Set())}
+            className="text-slate-500 hover:text-slate-700 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <span className="text-slate-700">
+            Selected {selectedProductIds.size} of {totalProductCount}
+          </span>
+          <div className="w-px h-4 bg-slate-300" />
+          <button
+            onClick={onShowCategoryAssign}
+            className="text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            Add to category
+          </button>
+          <button
+            onClick={onShowHierarchy}
+            className="text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            View Customizations
+          </button>
+        </div>
+      )}
+
+      {isFullscreen && selectedProductIds.size > 0 && (
         <div className={`flex items-center gap-4 text-sm text-slate-600 mb-4 ${isFullscreen ? 'px-6 pt-4' : 'px-2'}`}>
           <button
             onClick={() => onSelectionChange(new Set())}
@@ -687,7 +714,7 @@ export default function ProductListView({
         </div>
       )}
 
-      <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'px-6' : 'px-2'} ${selectedProductIds.size > 0 ? '' : isFullscreen ? 'pt-4' : ''}`}>
+      <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'px-6' : 'px-2'} ${isFullscreen && selectedProductIds.size === 0 ? 'pt-4' : ''}`}>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}

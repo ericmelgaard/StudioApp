@@ -359,14 +359,16 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
               </div>
             </div>
 
-            {products.length > 0 && products[0].updated_at ? (
-              <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  Last updated: {new Date(products[0].updated_at).toLocaleString()}
-                </span>
-              </div>
-            ) : null}
+            <div className="relative h-10 mt-4">
+              {products.length > 0 && products[0].updated_at ? (
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    Last updated: {new Date(products[0].updated_at).toLocaleString()}
+                  </span>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className={viewMode === 'tile' ? 'p-6' : ''}>
@@ -387,33 +389,31 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
                 </p>
               </div>
             ) : viewMode === 'list' ? (
-              <div className="p-6">
-                <ProductListView
-                  products={filteredProducts}
-                  onProductClick={(product) => {
-                    setSelectedProduct(product);
-                    setShowEditModal(true);
-                  }}
-                  selectedProductIds={selectedProductIds}
-                  onSelectionChange={setSelectedProductIds}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  advancedFilterComponent={
-                    <AdvancedFilter
-                      sections={filterSections}
-                      value={filterState}
-                      onChange={setFilterState}
-                    />
-                  }
-                  conceptId={location.concept?.id}
-                  companyId={location.company?.id}
-                  siteId={location.store?.id}
-                  onProductsRefresh={loadProducts}
-                  onShowHierarchy={() => setShowHierarchyModal(true)}
-                  onShowCategoryAssign={() => setShowBulkCategoryAssign(true)}
-                  totalProductCount={filteredProducts.length}
-                />
-              </div>
+              <ProductListView
+                products={filteredProducts}
+                onProductClick={(product) => {
+                  setSelectedProduct(product);
+                  setShowEditModal(true);
+                }}
+                selectedProductIds={selectedProductIds}
+                onSelectionChange={setSelectedProductIds}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                advancedFilterComponent={
+                  <AdvancedFilter
+                    sections={filterSections}
+                    value={filterState}
+                    onChange={setFilterState}
+                  />
+                }
+                conceptId={location.concept?.id}
+                companyId={location.company?.id}
+                siteId={location.store?.id}
+                onProductsRefresh={loadProducts}
+                onShowHierarchy={() => setShowHierarchyModal(true)}
+                onShowCategoryAssign={() => setShowBulkCategoryAssign(true)}
+                totalProductCount={filteredProducts.length}
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProducts.map((product) => (
