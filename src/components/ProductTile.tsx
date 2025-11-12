@@ -94,7 +94,7 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
             </div>
           </div>
           <div
-            className={`absolute inset-0 bg-white p-4 flex flex-col justify-between transition-opacity duration-300 z-[15] ${
+            className={`absolute inset-0 bg-white p-4 flex flex-col transition-opacity duration-300 z-[15] ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}
           >
@@ -105,20 +105,10 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
               <p className="text-xs text-slate-500">ID: {product.id.slice(0, 8)}</p>
               {description && (
                 <div
-                  className="text-xs text-slate-600 line-clamp-3 prose prose-xs max-w-none"
+                  className="text-xs text-slate-600 line-clamp-4 prose prose-xs max-w-none"
                   dangerouslySetInnerHTML={{ __html: description }}
                 />
               )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-900">
-                  {price ? `$${price}` : 'N/A'}
-                </span>
-                {calories && (
-                  <span className="text-slate-600">{calories} cal</span>
-                )}
-              </div>
             </div>
             {hasIntegrationSource && (
               <div className="absolute top-2 right-2">
@@ -154,15 +144,17 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
           </>
         )}
 
-        <div className="space-y-3 flex-1 flex flex-col justify-between">
-          {!imageUrl && description && (
-            <div
-              className="text-sm text-slate-600 line-clamp-2 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: description }}
-            />
-          )}
+        <div className="space-y-3 flex-1 flex flex-col">
+          <div className="flex-1">
+            {!imageUrl && description && (
+              <div
+                className="text-sm text-slate-600 line-clamp-2 prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: description }}
+              />
+            )}
+          </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-auto">
             <span className="font-semibold text-slate-900">
               {price ? `$${price}` : 'N/A'}
             </span>
