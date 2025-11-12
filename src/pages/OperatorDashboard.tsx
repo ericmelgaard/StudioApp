@@ -4,6 +4,7 @@ import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
 import { supabase } from '../lib/supabase';
+import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
@@ -84,6 +85,9 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
     if (currentView === 'home') {
       clearHistory();
     }
+    checkAndApplyPendingPublications().catch(err => {
+      console.error('Error checking pending publications:', err);
+    });
     loadCompaniesAndStores();
     loadStats();
   }, [location, currentView]);

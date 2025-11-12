@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
+import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
@@ -50,7 +51,12 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
   const [showBulkCategoryAssign, setShowBulkCategoryAssign] = useState(false);
 
   useEffect(() => {
-    loadProducts();
+    checkAndApplyPendingPublications().then(() => {
+      loadProducts();
+    }).catch(err => {
+      console.error('Error checking pending publications:', err);
+      loadProducts();
+    });
   }, []);
 
   const loadProducts = async () => {

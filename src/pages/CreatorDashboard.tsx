@@ -3,6 +3,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
+import { checkAndApplyPendingPublications } from '../lib/publicationService';
 
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
@@ -53,6 +54,9 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
   const [showLocationSelector, setShowLocationSelector] = useState(false);
 
   useEffect(() => {
+    checkAndApplyPendingPublications().catch(err => {
+      console.error('Error checking pending publications:', err);
+    });
     loadConcepts();
   }, []);
 
