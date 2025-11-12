@@ -24,6 +24,7 @@ interface ProductVariation {
   locationId: number;
   locationName: string;
   locationType: string;
+  locationPath: string;
   attributes: Record<string, any>;
   translations: Record<string, Record<string, any>>;
 }
@@ -65,24 +66,8 @@ export default function ProductHierarchyModal({
   }
 
   async function loadLocationTree() {
-    setLocationTree([
-      {
-        id: 1,
-        name: 'Main Concept',
-        type: 'concept',
-        children: [
-          {
-            id: 2,
-            name: 'Company A',
-            type: 'company',
-            children: [
-              { id: 3, name: 'Store 1', type: 'site' },
-              { id: 4, name: 'Store 2', type: 'site' }
-            ]
-          }
-        ]
-      }
-    ]);
+    // Currently not displaying tree view, but keeping for future enhancement
+    setLocationTree([]);
   }
 
   async function loadProductVariations() {
@@ -92,12 +77,77 @@ export default function ProductHierarchyModal({
       .in('id', productIds);
 
     if (products) {
+      // Fetch location details if we have IDs
+      let locationInfo: { name: string; type: string; path: string } = {
+        name: 'Unknown Location',
+        type: 'unknown',
+        path: ''
+      };
+
+      if (conceptId || companyId || siteId) {
+        const locationPath: string[] = [];
+        let locationType = 'concept';
+        let locationName = '';
+
+        // Fetch concept name
+        if (conceptId) {
+          const { data: concept } = await supabase
+            .from('concepts')
+            .select('name')
+            .eq('id', conceptId)
+            .maybeSingle();
+
+          if (concept) {
+            locationPath.push(concept.name);
+            locationName = concept.name;
+            locationType = 'concept';
+          }
+        }
+
+        // Fetch company name
+        if (companyId) {
+          const { data: company } = await supabase
+            .from('companies')
+            .select('name')
+            .eq('id', companyId)
+            .maybeSingle();
+
+          if (company) {
+            locationPath.push(company.name);
+            locationName = company.name;
+            locationType = 'company';
+          }
+        }
+
+        // Fetch site name
+        if (siteId) {
+          const { data: site } = await supabase
+            .from('sites')
+            .select('name')
+            .eq('id', siteId)
+            .maybeSingle();
+
+          if (site) {
+            locationPath.push(site.name);
+            locationName = site.name;
+            locationType = 'site';
+          }
+        }
+
+        locationInfo = {
+          name: locationName,
+          type: locationType,
+          path: locationPath.join(' > ')
+        };
+      }
+
       const variationData: ProductVariation[] = products.map(product => ({
         productId: product.id,
         productName: product.name,
-        locationId: 1,
-        locationName: 'Main Location',
-        locationType: 'concept',
+        locationId: siteId || companyId || conceptId || 0,
+        locationName: locationInfo.name,
+        locationType: locationInfo.type,
+        locationPath: locationInfo.path,
         attributes: product.attributes || {},
         translations: extractTranslations(product.attributes)
       }));
@@ -238,14 +288,16 @@ export default function ProductHierarchyModal({
                   <div key={`${variation.productId}-${variation.locationId}`} className="border border-slate-200 rounded-lg overflow-hidden">
                     <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-1">
                           <h3 className="font-semibold text-slate-900">{variation.productName}</h3>
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
-                          <span className="text-sm text-slate-600">{variation.locationName}</span>
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span>{variation.locationPath || variation.locationName}</span>
+                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                              {variation.locationType}
+                            </span>
+                          </div>
                         </div>
-                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded">
-                          {variation.locationType}
-                        </span>
                       </div>
                     </div>
 
