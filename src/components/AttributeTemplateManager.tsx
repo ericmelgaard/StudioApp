@@ -333,13 +333,22 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
 
     setLoading(true);
     try {
-      await supabase
+      const { data, error } = await supabase
         .from('product_attribute_templates')
         .update({ translations: selectedTemplate.translations })
-        .eq('id', selectedTemplate.id);
+        .eq('id', selectedTemplate.id)
+        .select();
 
+      if (error) {
+        console.error('Error saving translations:', error);
+        alert(`Failed to save translations: ${error.message}`);
+        return;
+      }
+
+      console.log('Translations saved successfully:', data);
       setHasUnsavedChanges(false);
       await loadData();
+      alert('Translations saved successfully!');
     } catch (error) {
       console.error('Error saving translations:', error);
       alert('Failed to save translations');
