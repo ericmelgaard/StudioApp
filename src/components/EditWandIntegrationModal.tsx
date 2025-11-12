@@ -66,7 +66,9 @@ export default function EditWandIntegrationModal({ configId, onClose, onSuccess 
   const [showQuLocationPicker, setShowQuLocationPicker] = useState(false);
   const [locationDetails, setLocationDetails] = useState<Record<string, any>>({});
 
-  const { brand: inheritedBrand, isInherited, inheritedFrom } = useBrandOptions({ configId });
+  const { brands: inheritedBrands, isInherited, conceptName } = useBrandOptions({ configId });
+  const inheritedBrand = inheritedBrands.length > 0 ? inheritedBrands[0] : '';
+  const inheritedFrom = conceptName;
 
   useEffect(() => {
     loadConfig();

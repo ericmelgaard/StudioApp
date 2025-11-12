@@ -63,7 +63,7 @@ export default function AddWandIntegrationModal({ onClose, onSuccess, conceptId,
   const [showBrandOverride, setShowBrandOverride] = useState(false);
   const [newLocalBrand, setNewLocalBrand] = useState('');
 
-  const brandOptions = useBrandOptions({ conceptId, companyId, siteId });
+  const brandOptions = useBrandOptions({ conceptId, companyId, siteId: storeId });
 
   useEffect(() => {
     loadWandSources();

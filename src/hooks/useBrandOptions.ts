@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface BrandOptionsResult {
-  brand: string;
+  brands: string[];
   loading: boolean;
   error: string | null;
   isInherited: boolean;
-  inheritedFrom: string | null;
+  conceptName: string | null;
+  canOverride: boolean;
 }
 
 /**
@@ -19,11 +20,12 @@ export function useBrandOptions(params: {
   companyId?: number;
   siteId?: number;
 }): BrandOptionsResult {
-  const [brand, setBrand] = useState<string>('');
+  const [brands, setBrands] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInherited, setIsInherited] = useState(false);
-  const [inheritedFrom, setInheritedFrom] = useState<string | null>(null);
+  const [conceptName, setConceptName] = useState<string | null>(null);
+  const [canOverride, setCanOverride] = useState(false);
 
   useEffect(() => {
     loadBrandValue();
@@ -64,11 +66,21 @@ export function useBrandOptions(params: {
       throw new Error('Configuration not found');
     }
 
-    // Check if config has a brand in config_params
-    if (config.config_params?.brand && config.config_params.brand.trim() !== '') {
-      setBrand(config.config_params.brand);
+    // Check if config has local brand_options array
+    if (config.brand_options && Array.isArray(config.brand_options) && config.brand_options.length > 0) {
+      setBrands(config.brand_options);
       setIsInherited(false);
-      setInheritedFrom(null);
+      setConceptName(null);
+      setCanOverride(false);
+      return;
+    }
+
+    // Check if config has a single brand in config_params (legacy support)
+    if (config.config_params?.brand && config.config_params.brand.trim() !== '') {
+      setBrands([config.config_params.brand]);
+      setIsInherited(false);
+      setConceptName(null);
+      setCanOverride(false);
       return;
     }
 
@@ -108,16 +120,26 @@ export function useBrandOptions(params: {
     if (companyId && config.wand_source_id) {
       const { data: parentConfig } = await supabase
         .from('integration_source_configs')
-        .select('config_params, config_name')
+        .select('config_params, config_name, brand_options')
         .eq('wand_source_id', config.wand_source_id)
         .eq('company_id', companyId)
         .eq('application_level', 'company')
         .maybeSingle();
 
-      if (parentConfig?.config_params?.brand) {
-        setBrand(parentConfig.config_params.brand);
+      if (parentConfig?.brand_options && Array.isArray(parentConfig.brand_options) && parentConfig.brand_options.length > 0) {
+        setBrands(parentConfig.brand_options);
         setIsInherited(true);
-        setInheritedFrom(parentConfig.config_name || 'company');
+        setConceptName(parentConfig.config_name || 'Company');
+        setCanOverride(config.application_level === 'site');
+        return;
+      }
+
+      // Legacy: check config_params.brand
+      if (parentConfig?.config_params?.brand) {
+        setBrands([parentConfig.config_params.brand]);
+        setIsInherited(true);
+        setConceptName(parentConfig.config_name || 'Company');
+        setCanOverride(config.application_level === 'site');
         return;
       }
     }
@@ -126,70 +148,98 @@ export function useBrandOptions(params: {
     if (conceptId && config.wand_source_id) {
       const { data: conceptConfig } = await supabase
         .from('integration_source_configs')
-        .select('config_params, config_name')
+        .select('config_params, config_name, brand_options, concepts(name)')
         .eq('wand_source_id', config.wand_source_id)
         .eq('concept_id', conceptId)
         .eq('application_level', 'concept')
         .maybeSingle();
 
-      if (conceptConfig?.config_params?.brand) {
-        setBrand(conceptConfig.config_params.brand);
+      if (conceptConfig?.brand_options && Array.isArray(conceptConfig.brand_options) && conceptConfig.brand_options.length > 0) {
+        setBrands(conceptConfig.brand_options);
         setIsInherited(true);
-        setInheritedFrom(conceptConfig.config_name || 'concept');
+        setConceptName((conceptConfig.concepts as any)?.name || conceptConfig.config_name || 'Concept');
+        setCanOverride(config.application_level === 'site' || config.application_level === 'company');
+        return;
+      }
+
+      // Legacy: check config_params.brand
+      if (conceptConfig?.config_params?.brand) {
+        setBrands([conceptConfig.config_params.brand]);
+        setIsInherited(true);
+        setConceptName((conceptConfig.concepts as any)?.name || conceptConfig.config_name || 'Concept');
+        setCanOverride(config.application_level === 'site' || config.application_level === 'company');
         return;
       }
     }
 
     // No brand found anywhere
-    setBrand('');
+    setBrands([]);
     setIsInherited(false);
-    setInheritedFrom(null);
+    setConceptName(null);
+    setCanOverride(config.application_level === 'site' || config.application_level === 'company');
   };
 
   const loadFromLocation = async () => {
     let conceptId: number | null = null;
+    let conceptNameValue: string | null = null;
 
     // Direct concept lookup
     if (params.conceptId) {
       conceptId = params.conceptId;
+      const { data: concept } = await supabase
+        .from('concepts')
+        .select('name')
+        .eq('id', params.conceptId)
+        .maybeSingle();
+
+      if (concept) {
+        conceptNameValue = concept.name;
+      }
     }
     // Get concept from company
     else if (params.companyId) {
       const { data: company } = await supabase
         .from('companies')
-        .select('concept_id')
+        .select('concept_id, concepts(name)')
         .eq('id', params.companyId)
-        .single();
+        .maybeSingle();
 
       if (company) {
         conceptId = company.concept_id;
+        conceptNameValue = (company.concepts as any)?.name || null;
       }
     }
     // Get concept from site
     else if (params.siteId) {
       const { data: store } = await supabase
         .from('stores')
-        .select('company_id, companies(concept_id)')
+        .select('company_id, companies(concept_id, concepts(name))')
         .eq('id', params.siteId)
-        .single();
+        .maybeSingle();
 
       if (store && store.companies) {
         conceptId = (store.companies as any).concept_id;
+        conceptNameValue = (store.companies as any).concepts?.name || null;
       }
     }
 
-    // For location-based lookups, we just return empty
-    // The actual brand will come from the config itself
-    setBrand('');
+    // Determine if user can override based on their level
+    const userCanOverride = Boolean(params.companyId || params.siteId);
+
+    // For location-based lookups, we return empty brands
+    // but set canOverride based on level
+    setBrands([]);
     setIsInherited(false);
-    setInheritedFrom(null);
+    setConceptName(conceptNameValue);
+    setCanOverride(userCanOverride);
   };
 
   return {
-    brand,
+    brands,
     loading,
     error,
     isInherited,
-    inheritedFrom
+    conceptName,
+    canOverride
   };
 }
