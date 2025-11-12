@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -225,25 +225,45 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [showEditChoice, setShowEditChoice] = useState(false);
   const [showPriceCaloriesLinkModal, setShowPriceCaloriesLinkModal] = useState(false);
   const [linkingFieldKey, setLinkingFieldKey] = useState<string | null>(null);
-
-  const commonLocales = [
-    { code: 'fr-FR', name: 'French (France)' },
-    { code: 'es-ES', name: 'Spanish (Spain)' },
-    { code: 'de-DE', name: 'German (Germany)' },
-    { code: 'it-IT', name: 'Italian (Italy)' },
-    { code: 'pt-BR', name: 'Portuguese (Brazil)' },
-    { code: 'en-GB', name: 'English (UK)' },
-    { code: 'ja-JP', name: 'Japanese (Japan)' },
-    { code: 'zh-CN', name: 'Chinese (Simplified)' },
-    { code: 'ko-KR', name: 'Korean (Korea)' },
-    { code: 'nl-NL', name: 'Dutch (Netherlands)' },
-  ];
+  const [currentLanguage, setCurrentLanguage] = useState<string>('en');
+  const [translationData, setTranslationData] = useState<Record<string, Record<string, any>>>({});
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  // Get available languages from template
+  const availableLanguages = () => {
+    const langs = [{ code: 'en', name: 'English' }];
+    if (template?.translations && Array.isArray(template.translations)) {
+      template.translations.forEach((t: any) => {
+        langs.push({ code: t.locale, name: t.locale_name });
+      });
+    }
+    return langs;
+  };
+
+  // Check if a field is translatable
+  const isFieldTranslatable = (fieldName: string): boolean => {
+    if (!templateSchema) return false;
+    const allAttrs = [...(templateSchema.core_attributes || []), ...(templateSchema.extended_attributes || [])];
+    const attr = allAttrs.find((a: any) => a.name === fieldName);
+    return attr && (attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
+  };
+
+  // Get translation status for a field
+  const getTranslationStatus = (fieldName: string): 'complete' | 'missing' | null => {
+    if (currentLanguage === 'en' || !isFieldTranslatable(fieldName)) return null;
+    const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
+    const value = translationData[translationKey]?.[fieldName];
+    const hasValue = value !== undefined && value !== null && value !== '';
+    const isRequired = ['name', 'description'].includes(fieldName);
+    if (!hasValue && isRequired) return 'missing';
+    if (hasValue) return 'complete';
+    return null;
   };
 
   useEffect(() => {
@@ -256,6 +276,16 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       const mappings = product.attribute_mappings || {};
       setFieldLinks(mappings);
       setTranslations(product.attributes?.translations || {});
+
+      // Load translation data from attributes
+      const translations: Record<string, Record<string, any>> = {};
+      Object.keys(product.attributes || {}).forEach(key => {
+        if (key.startsWith('translations_')) {
+          translations[key] = product.attributes[key] || {};
+        }
+      });
+      setTranslationData(translations);
+
       loadIntegrationData();
       checkPendingPublication();
 
@@ -373,6 +403,17 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           }
 
           setAttributes(mergedAttributes);
+
+          // Load translation data
+          const translations: Record<string, Record<string, any>> = {};
+          if (templateData.translations && Array.isArray(templateData.translations)) {
+            templateData.translations.forEach((translation: any) => {
+              const translationKey = `translations_${translation.locale.replace('-', '_').toLowerCase()}`;
+              translations[translationKey] = mergedAttributes[translationKey] || {};
+            });
+          }
+          setTranslationData(translations);
+
           return;
         }
       } catch (error) {
@@ -501,9 +542,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
     setLoading(true);
     try {
+      // Merge translation data back into attributes
       const updatedAttributes = {
         ...attributes,
-        translations: translations
+        ...translationData
       };
 
       // Use attributes.name if it exists, otherwise fall back to the name state
@@ -620,10 +662,32 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   }
 
   function updateAttribute(key: string, value: any) {
-    setAttributes(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    if (currentLanguage === 'en') {
+      // Update base attributes
+      setAttributes(prev => ({
+        ...prev,
+        [key]: value
+      }));
+    } else {
+      // Update translation data
+      const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
+      setTranslationData(prev => ({
+        ...prev,
+        [translationKey]: {
+          ...(prev[translationKey] || {}),
+          [key]: value
+        }
+      }));
+    }
+  }
+
+  function getAttributeValue(key: string): any {
+    if (currentLanguage === 'en') {
+      return attributes[key];
+    } else {
+      const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
+      return translationData[translationKey]?.[key];
+    }
   }
 
   function addAttribute() {
@@ -719,35 +783,62 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
   function renderAttributeField(key: string, actualValue: any, syncStatus: SyncStatus | null, isOverridden: any, isLocalOnly: boolean) {
     const meta = getAttributeMeta(key);
+    const isTranslatable = isFieldTranslatable(key);
+    const isTranslationView = currentLanguage !== 'en';
+    const isDisabled = isTranslationView && !isTranslatable;
+
+    // For translation view, use translation value if available, otherwise show English as placeholder
+    const displayValue = isTranslationView && isTranslatable ? getAttributeValue(key) : actualValue;
+    const englishValue = attributes[key];
 
     if (meta?.type === 'image') {
       return (
-        <ImageUploadField
-          value={actualValue || ''}
-          onChange={(newValue) => {
-            updateAttribute(key, newValue);
-            if (syncStatus && !isLocalOnly && !isOverridden) {
-              lockOverride(key);
-            }
-          }}
-          label={meta.label || key}
-        />
+        <div className="relative">
+          <ImageUploadField
+            value={isDisabled ? englishValue : (displayValue || '')}
+            onChange={(newValue) => {
+              if (!isDisabled) {
+                updateAttribute(key, newValue);
+                if (syncStatus && !isLocalOnly && !isOverridden) {
+                  lockOverride(key);
+                }
+              }
+            }}
+            label={meta.label || key}
+          />
+          {isDisabled && (
+            <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-xs text-slate-600">
+              <Lock className="w-3 h-3" />
+              Uses default
+            </div>
+          )}
+        </div>
       );
     }
 
     if (meta?.type === 'richtext') {
       return (
-        <RichTextEditor
-          value={actualValue || ''}
-          onChange={(newValue) => {
-            updateAttribute(key, newValue);
-            if (syncStatus && !isLocalOnly && !isOverridden) {
-              lockOverride(key);
-            }
-          }}
-          placeholder={`Enter ${meta.label || key}`}
-          minHeight={meta.minHeight || '120px'}
-        />
+        <div className="relative">
+          <RichTextEditor
+            value={displayValue || ''}
+            onChange={(newValue) => {
+              if (!isDisabled) {
+                updateAttribute(key, newValue);
+                if (syncStatus && !isLocalOnly && !isOverridden) {
+                  lockOverride(key);
+                }
+              }
+            }}
+            placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${meta.label || key}`}
+            minHeight={meta.minHeight || '120px'}
+          />
+          {isDisabled && (
+            <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-xs text-slate-600">
+              <Lock className="w-3 h-3" />
+              Uses default
+            </div>
+          )}
+        </div>
       );
     }
 
@@ -783,17 +874,22 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     }
 
     if (meta?.type === 'boolean') {
-      const boolValue = actualValue === true || actualValue === 'true';
+      const boolValue = (isDisabled ? englishValue : displayValue) === true || (isDisabled ? englishValue : displayValue) === 'true';
       return (
-        <button
-          onClick={() => {
-            const newValue = !boolValue;
+        <div className="flex items-center gap-2">
+          <button
+            disabled={isDisabled}
+            onClick={() => {
+              if (isDisabled) return;
+              const newValue = !boolValue;
             updateAttribute(key, newValue);
             if (syncStatus && !isLocalOnly && !isOverridden) {
               lockOverride(key);
             }
           }}
           className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+            isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+          } ${
             boolValue ? 'bg-blue-600' : 'bg-slate-300'
           }`}
         >
@@ -803,23 +899,41 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             }`}
           />
         </button>
+          {isDisabled && (
+            <span className="flex items-center gap-1 text-xs text-slate-600">
+              <Lock className="w-3 h-3" />
+              Uses default
+            </span>
+          )}
+        </div>
       );
     }
 
     return (
-      <input
-        type="text"
-        value={typeof actualValue === 'object' ? JSON.stringify(actualValue) : actualValue || ''}
-        onChange={(e) => {
-          const newValue = e.target.value;
-          updateAttribute(key, newValue);
-          if (syncStatus && !isLocalOnly && !isOverridden) {
-            lockOverride(key);
-          }
-        }}
-        className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900"
-        placeholder={`Enter ${key}`}
-      />
+      <div className="relative">
+        <input
+          type="text"
+          disabled={isDisabled}
+          value={typeof (isDisabled ? englishValue : displayValue) === 'object' ? JSON.stringify(isDisabled ? englishValue : displayValue) : (isDisabled ? englishValue : displayValue) || ''}
+          onChange={(e) => {
+            if (isDisabled) return;
+            const newValue = e.target.value;
+            updateAttribute(key, newValue);
+            if (syncStatus && !isLocalOnly && !isOverridden) {
+              lockOverride(key);
+            }
+          }}
+          className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 ${
+            isDisabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
+          }`}
+          placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${key}`}
+        />
+        {isDisabled && (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-slate-600">
+            <Lock className="w-3 h-3" />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -920,30 +1034,64 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             </div>
             <p className="text-sm text-slate-500 mt-1">ID: {product.id}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Language Selector */}
+            {availableLanguages().length > 1 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowLocaleDropdown(!showLocaleDropdown)}
+                  className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors"
+                >
+                  <Globe className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-700">
+                    {availableLanguages().find(l => l.code === currentLanguage)?.name || 'English'}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-slate-600" />
+                </button>
+                {showLocaleDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
+                    {availableLanguages().map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setCurrentLanguage(lang.code);
+                          setShowLocaleDropdown(false);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50 transition-colors flex items-center justify-between ${
+                          currentLanguage === lang.code ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                        }`}
+                      >
+                        <span>{lang.name}</span>
+                        {currentLanguage === lang.code && <Check className="w-4 h-4" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
-        {/* Quick Navigation Bookmarks */}
-        <div className="border-b border-slate-200 px-6 py-3 flex gap-2 flex-shrink-0 bg-slate-50">
-          <span className="text-xs font-medium text-slate-500 self-center mr-2">Jump to:</span>
-          <button
-            onClick={() => scrollToSection('attributes-section')}
-            className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 hover:border-slate-300 transition-colors"
-          >
-            Product Attributes
-          </button>
-          <button
-            onClick={() => scrollToSection('translations-section')}
-            className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 hover:border-slate-300 transition-colors"
-          >
-            Translations
-          </button>
-        </div>
+        {/* Language Context Banner */}
+        {currentLanguage !== 'en' && (
+          <div className="border-b border-blue-200 px-6 py-3 flex items-center justify-between flex-shrink-0 bg-blue-50">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">
+                Editing {availableLanguages().find(l => l.code === currentLanguage)?.name} translation
+              </span>
+            </div>
+            <span className="text-xs text-blue-700">
+              Non-translatable fields show default values
+            </span>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* Attributes Section */}
@@ -973,18 +1121,33 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   {/* Name and Description - Full Width */}
                   {['name', 'description'].map(key => {
                     if (!(key in attributes)) return null;
-                    const value = attributes[key];
+                    const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                     const isOverridden = syncStatus?.overridden[key];
                     const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
                     const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
                     const integrationValue = isOverridden?.integration;
                     const isDropdownOpen = openDropdown === key;
                     const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+                    const translationStatus = getTranslationStatus(key);
 
                     return (
                       <div key={key}>
                         <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{key}</label>
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{key}</label>
+                            {translationStatus === 'complete' && (
+                              <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                <Check className="w-3 h-3" />
+                                Translated
+                              </span>
+                            )}
+                            {translationStatus === 'missing' && (
+                              <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                                <AlertCircle className="w-3 h-3" />
+                                Translation needed
+                              </span>
+                            )}
+                          </div>
                           {syncStatus && !isLocalOnly && hasValue && (
                             <div className="relative">
                               {isOverridden ? (
@@ -1444,94 +1607,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 })()}
               </div>
             )}
-          </div>
-
-          {/* Translations Section */}
-          <div id="translations-section" className="pt-6 border-t-2 border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <label className="block text-sm font-medium text-slate-700">
-                Translations
-              </label>
-            </div>
-
-            <div className="space-y-6">
-              {(() => {
-                // Check if template has translation configs
-                const translationConfigs = template?.translations || [];
-
-                if (translationConfigs.length === 0) {
-                  return (
-                    <p className="text-sm text-slate-500 text-center py-8">
-                      No translations enabled. Add translations in the Product Attribute Template Manager.
-                    </p>
-                  );
-                }
-
-                return translationConfigs.map((translationConfig: any) => {
-                  // Create or get the translation attribute key
-                  const translationKey = `translations_${translationConfig.locale.replace('-', '_').toLowerCase()}`;
-
-                  // Initialize if doesn't exist
-                  if (!attributes[translationKey]) {
-                    attributes[translationKey] = {};
-                  }
-
-                  const value = attributes[translationKey] || {};
-                  const translatableFields = [
-                    ...(template.attribute_schema.core_attributes || []),
-                    ...(template.attribute_schema.extended_attributes || [])
-                  ].filter((attr: any) => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
-
-                  return (
-                    <div key={translationKey} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                      <div className="flex items-center gap-2 mb-4">
-                        <h3 className="text-sm font-bold text-slate-900">{translationConfig.locale_name}</h3>
-                        <span className="text-xs text-slate-500 font-mono">({translationConfig.locale})</span>
-                      </div>
-
-                      <div className="space-y-3">
-                        {translatableFields.map((field: any) => {
-                          const customLabel = translationConfig.field_labels?.[field.name] || field.label;
-                          const translatedValue = value[field.name];
-
-                          return (
-                            <div key={field.name} className="space-y-1">
-                              <label className="block text-sm font-medium text-slate-700">
-                                {customLabel}
-                                {field.required && <span className="text-red-600 ml-1">*</span>}
-                              </label>
-                              {field.type === 'number' ? (
-                                <input
-                                  type="number"
-                                  value={translatedValue ?? ''}
-                                  onChange={(e) => {
-                                    const updated = { ...attributes[translationKey], [field.name]: parseFloat(e.target.value) || 0 };
-                                    updateAttribute(translationKey, updated);
-                                  }}
-                                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder={`Enter ${translationConfig.locale} translation`}
-                                />
-                              ) : (
-                                <input
-                                  type="text"
-                                  value={translatedValue ?? ''}
-                                  onChange={(e) => {
-                                    const updated = { ...attributes[translationKey], [field.name]: e.target.value };
-                                    updateAttribute(translationKey, updated);
-                                  }}
-                                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder={`Enter ${translationConfig.locale} translation`}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
           </div>
 
         </div>
