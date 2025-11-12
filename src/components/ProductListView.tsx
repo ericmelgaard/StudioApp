@@ -709,33 +709,52 @@ export default function ProductListView({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {sortedProducts.map((product) => (
-              <tr
-                key={product.id}
-                className={`transition-colors cursor-pointer ${
-                  selectedProductIds.has(product.id)
-                    ? 'bg-purple-50 hover:bg-purple-100'
-                    : 'hover:bg-slate-50'
-                }`}
-                onClick={() => onProductClick(product)}
-              >
-                {visibleColumns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={`px-4 ${rowHeight} ${fontSize} text-slate-900 ${
-                      column.pinned ? 'sticky left-0 bg-white z-10' : ''
-                    }`}
-                    onClick={(e) => {
-                      if (column.key === 'select') {
-                        e.stopPropagation();
-                      }
-                    }}
-                  >
-                    {renderCellContent(column, product)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {sortedProducts.map((product, index) => {
+              const isEven = index % 2 === 0;
+              const isSelected = selectedProductIds.has(product.id);
+
+              const rowBg = isSelected
+                ? 'bg-purple-50'
+                : isEven
+                ? 'bg-white'
+                : 'bg-slate-50';
+
+              const rowHoverBg = isSelected
+                ? 'hover:bg-purple-100'
+                : isEven
+                ? 'hover:bg-slate-50'
+                : 'hover:bg-slate-100';
+
+              const pinnedBg = isSelected
+                ? 'bg-purple-50'
+                : isEven
+                ? 'bg-white'
+                : 'bg-slate-50';
+
+              return (
+                <tr
+                  key={product.id}
+                  className={`transition-colors cursor-pointer ${rowBg} ${rowHoverBg}`}
+                  onClick={() => onProductClick(product)}
+                >
+                  {visibleColumns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-4 ${rowHeight} ${fontSize} text-slate-900 ${
+                        column.pinned ? `sticky left-0 ${pinnedBg} z-10` : ''
+                      }`}
+                      onClick={(e) => {
+                        if (column.key === 'select') {
+                          e.stopPropagation();
+                        }
+                      }}
+                    >
+                      {renderCellContent(column, product)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
