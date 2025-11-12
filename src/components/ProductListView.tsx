@@ -771,19 +771,17 @@ export default function ProductListView({
                 ? 'bg-purple-50'
                 : isEven
                 ? 'bg-white'
-                : 'bg-slate-50';
+                : 'bg-slate-50/30';
 
               const rowHoverBg = isSelected
                 ? 'hover:bg-purple-100'
-                : isEven
-                ? 'hover:bg-slate-50'
-                : 'hover:bg-slate-100';
+                : 'hover:bg-blue-50';
 
               const pinnedBg = isSelected
                 ? 'bg-purple-50'
                 : isEven
                 ? 'bg-white'
-                : 'bg-slate-50';
+                : 'bg-slate-50/30';
 
               return (
                 <tr
