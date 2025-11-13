@@ -247,6 +247,24 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     return langs;
   };
 
+  // Get translated field label
+  const getFieldLabel = (fieldName: string): string => {
+    if (currentLanguage === 'en') {
+      const meta = getAttributeMeta(fieldName);
+      return meta?.label || fieldName;
+    }
+
+    const translation = template?.translations?.find((t: any) => t.locale === currentLanguage);
+    const translatedLabel = translation?.field_labels?.[fieldName];
+
+    if (translatedLabel) {
+      return translatedLabel;
+    }
+
+    const meta = getAttributeMeta(fieldName);
+    return meta?.label || fieldName;
+  };
+
   // Check if a field is translatable
   const isFieldTranslatable = (fieldName: string): boolean => {
     if (!templateSchema) return false;
@@ -285,7 +303,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           translations[key] = product.attributes[key] || {};
         }
       });
-      console.log('Initial translationData from product:', translations);
       setTranslationData(translations);
 
       loadIntegrationData();
@@ -434,10 +451,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             templateData.translations.forEach((translation: any) => {
               const translationKey = `translations_${translation.locale.replace('-', '_').toLowerCase()}`;
               translations[translationKey] = mergedAttributes[translationKey] || {};
-              console.log(`Loading translation for ${translationKey}:`, mergedAttributes[translationKey]);
             });
           }
-          console.log('Template-loaded translationData:', translations);
           setTranslationData(translations);
 
           return;
@@ -712,14 +727,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       return attributes[key];
     } else {
       const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
-      const value = translationData[translationKey]?.[key];
-      console.log(`getAttributeValue(${key}):`, {
-        currentLanguage,
-        translationKey,
-        translationData,
-        value
-      });
-      return value;
+      return translationData[translationKey]?.[key];
     }
   }
 
@@ -837,7 +845,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 }
               }
             }}
-            label={meta.label || key}
+            label={getFieldLabel(key)}
           />
           {isDisabled && (
             <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-xs text-slate-600">
@@ -862,7 +870,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 }
               }
             }}
-            placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${meta.label || key}`}
+            placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${getFieldLabel(key)}`}
             minHeight={meta.minHeight || '120px'}
           />
           {isDisabled && (
@@ -959,7 +967,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-900 ${
             isDisabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
           }`}
-          placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${key}`}
+          placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${getFieldLabel(key)}`}
         />
         {isDisabled && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-slate-600">
@@ -1187,7 +1195,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       <div key={key}>
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-2">
-                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{key}</label>
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{getFieldLabel(key)}</label>
                             {translationStatus === 'complete' && (
                               <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
                                 <Check className="w-3 h-3" />
@@ -1262,7 +1270,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
                       return (
                         <div key={key}>
-                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{key}</label>
+                          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">{getFieldLabel(key)}</label>
                           <div className="relative">
                             <input
                               type="text"
@@ -1271,7 +1279,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                                 fieldLink ? 'border-green-400 bg-green-50 pr-24' : 'border-slate-300'
                               }`}
-                              placeholder={key}
+                              placeholder={getFieldLabel(key)}
                             />
                             {fieldLink && (
                               <button
@@ -1363,7 +1371,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
-                                <label className="text-xs font-medium text-slate-600">{key}</label>
+                                <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
                                 <div className="flex items-center gap-1">
                                   {/* Product-level mapping button */}
                                   {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && !isLocalOnly && (
@@ -1456,7 +1464,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           return (
                             <div key={key} className="flex flex-col">
                               <div className="flex items-center justify-between mb-2">
-                                <label className="text-xs font-medium text-slate-600">{meta?.label || key}</label>
+                                <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
                                 {syncStatus && !isLocalOnly && hasValue && (
                                   <div className="relative">
                                     {isOverridden ? (
@@ -1526,7 +1534,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
                         return (
                           <div key={key}>
-                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">{meta?.label || key}</h3>
+                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">{getFieldLabel(key)}</h3>
                             {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                           </div>
                         );
@@ -1564,7 +1572,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
-                                <label className="text-xs font-medium text-slate-600">{key}</label>
+                                <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
                                 <div className="flex items-center gap-1">
                                   {/* Product-level mapping button */}
                                   {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && !isLocalOnly && (
