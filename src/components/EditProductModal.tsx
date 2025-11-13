@@ -1341,7 +1341,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                     return (
                       <div className="flex flex-wrap gap-3 pt-4">
                         {otherCoreKeys.map(key => {
-                          const value = attributes[key];
+                          const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                           const isOverridden = syncStatus?.overridden[key];
                           const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
                           const isMapped = attributeMappings[key] !== undefined;
@@ -1434,7 +1434,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Images</h3>
                       <div className="grid grid-cols-2 gap-4">
                         {imageKeys.map(key => {
-                          const value = attributes[key];
+                          const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                           const isOverridden = syncStatus?.overridden[key];
                           const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
                           const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
@@ -1508,7 +1508,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   return (
                     <div className="pt-4 border-t border-slate-200">
                       {optionsKeys.map(key => {
-                        const value = attributes[key];
+                        const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                         const isOverridden = syncStatus?.overridden[key];
                         const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
                         const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
@@ -1542,7 +1542,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Extended Attributes</h3>
                       <div className="flex flex-wrap gap-3">
                         {extendedKeys.map(key => {
-                          const value = attributes[key];
+                          const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                           const isOverridden = syncStatus?.overridden[key];
                           const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
                           const isMapped = attributeMappings[key] !== undefined;
