@@ -709,7 +709,14 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       return attributes[key];
     } else {
       const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
-      return translationData[translationKey]?.[key];
+      const value = translationData[translationKey]?.[key];
+      console.log(`getAttributeValue(${key}):`, {
+        currentLanguage,
+        translationKey,
+        translationData,
+        value
+      });
+      return value;
     }
   }
 
@@ -1245,7 +1252,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   <div className="grid grid-cols-2 gap-4">
                     {['price', 'calories'].map(key => {
                       if (!(key in attributes)) return null;
-                      const value = attributes[key];
+                      const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                       const fieldLink = fieldLinks[key];
                       const hasCalculation = fieldLink?.type === 'calculation';
                       const actualValue = value ?? '';
