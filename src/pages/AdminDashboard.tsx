@@ -343,7 +343,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
           {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'products' && <ProductManagement onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'products' && <ProductManagement showBackButton={false} />}
           {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-products' && <WandProducts />}
           {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}

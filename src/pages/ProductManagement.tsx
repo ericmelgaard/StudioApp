@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree } from 'lucide-react';
+import Breadcrumb from '../components/Breadcrumb';
 import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
@@ -30,11 +31,12 @@ interface Product {
 }
 
 interface ProductManagementProps {
-  onBack: () => void;
+  onBack?: () => void;
+  showBackButton?: boolean;
 }
 
 
-export default function ProductManagement({ onBack }: ProductManagementProps) {
+export default function ProductManagement({ onBack, showBackButton = true }: ProductManagementProps) {
   const { location } = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,20 +273,33 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <button
-                onClick={onBack}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-slate-600" />
-              </button>
+              {showBackButton && onBack && (
+                <button
+                  onClick={onBack}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-slate-600" />
+                </button>
+              )}
               <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
                 <Package className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-900">Product Management</h1>
-                <p className="text-xs text-slate-500">
-                  {products.length} products in catalog
-                </p>
+                {showBackButton ? (
+                  <p className="text-xs text-slate-500">
+                    {products.length} products in catalog
+                  </p>
+                ) : (
+                  <Breadcrumb
+                    items={[
+                      { label: 'Admin' },
+                      { label: 'Content' },
+                      { label: 'Products' },
+                      { label: location.store?.name || location.company?.name || location.concept?.name || 'All Locations' }
+                    ]}
+                  />
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
