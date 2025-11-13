@@ -293,10 +293,10 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                 ) : (
                   <Breadcrumb
                     items={[
-                      { label: 'Admin' },
-                      { label: 'Content' },
-                      { label: 'Products' },
-                      { label: location.store?.name || location.company?.name || location.concept?.name || 'All Locations' }
+                      ...(location.concept ? [{ label: location.concept.name }] : []),
+                      ...(location.company ? [{ label: location.company.name }] : []),
+                      ...(location.store ? [{ label: location.store.name }] : []),
+                      ...(!location.concept && !location.company && !location.store ? [{ label: 'All Locations' }] : [])
                     ]}
                   />
                 )}
