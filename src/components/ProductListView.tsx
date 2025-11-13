@@ -257,10 +257,12 @@ export default function ProductListView({
     products.forEach(product => {
       if (product.attributes) {
         Object.keys(product.attributes).forEach(key => {
-          const match = key.match(/^translations_([a-z]{2}[_-][A-Z]{2})$/i);
+          const match = key.match(/^translations_([a-z]{2}[_-][a-z]{2})$/i);
           if (match) {
-            const locale = match[1].replace('_', '-');
-            translationLocales.add(locale);
+            const locale = match[1].replace('_', '-').toUpperCase();
+            const parts = locale.split('-');
+            const formattedLocale = `${parts[0].toLowerCase()}-${parts[1].toUpperCase()}`;
+            translationLocales.add(formattedLocale);
           }
         });
       }
@@ -274,7 +276,7 @@ export default function ProductListView({
 
       translationLocales.forEach(locale => {
         const localeKey = locale.toLowerCase().replace('-', '_');
-        const localeName = locale === 'fr-FR' ? 'French' :
+        const localeName = locale === 'fr-CA' ? 'French (Canadian)' :
                           locale === 'es-ES' ? 'Spanish' :
                           locale === 'de-DE' ? 'German' :
                           locale === 'it-IT' ? 'Italian' :
