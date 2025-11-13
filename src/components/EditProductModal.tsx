@@ -285,6 +285,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           translations[key] = product.attributes[key] || {};
         }
       });
+      console.log('Initial translationData from product:', translations);
       setTranslationData(translations);
 
       loadIntegrationData();
@@ -433,8 +434,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             templateData.translations.forEach((translation: any) => {
               const translationKey = `translations_${translation.locale.replace('-', '_').toLowerCase()}`;
               translations[translationKey] = mergedAttributes[translationKey] || {};
+              console.log(`Loading translation for ${translationKey}:`, mergedAttributes[translationKey]);
             });
           }
+          console.log('Template-loaded translationData:', translations);
           setTranslationData(translations);
 
           return;
