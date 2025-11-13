@@ -227,6 +227,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [linkingFieldKey, setLinkingFieldKey] = useState<string | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState<string>('en');
   const [translationData, setTranslationData] = useState<Record<string, Record<string, any>>>({});
+  const [policyViolations, setPolicyViolations] = useState<any[]>([]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -288,6 +289,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
       loadIntegrationData();
       checkPendingPublication();
+      loadPolicyViolations();
 
       // Calculate any computed fields
       calculateComputedFields(mappings, product.attributes);
@@ -340,6 +342,27 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       setPendingPublication(null);
       setEditMode(null);
     }
+  }
+
+  async function loadPolicyViolations() {
+    if (!product) return;
+
+    const { data } = await supabase
+      .from('product_policy_evaluations')
+      .select(`
+        id,
+        status,
+        violation_details,
+        product_policies (
+          display_name,
+          severity,
+          description
+        )
+      `)
+      .eq('product_id', product.id)
+      .eq('status', 'violation');
+
+    setPolicyViolations(data || []);
   }
 
   async function loadTemplateAttributes() {
@@ -1020,15 +1043,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-slate-900">Edit Product</h2>
-              {product.integration_source_name && (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg shadow-sm text-xs font-medium text-slate-700">
-                  <img
-                    src="/logo_32 copy.png"
-                    alt={product.integration_source_name}
-                    className="w-4 h-4"
-                    title={product.integration_source_name}
-                  />
-                  {product.integration_source_name}
+              {policyViolations.length > 0 && (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-lg shadow-sm text-xs font-medium text-amber-800">
+                  <AlertCircle className="w-4 h-4" />
+                  {policyViolations.length} Policy Violation{policyViolations.length > 1 ? 's' : ''}
                 </span>
               )}
             </div>
@@ -1077,6 +1095,31 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             </button>
           </div>
         </div>
+
+        {/* Policy Violations Banner */}
+        {policyViolations.length > 0 && (
+          <div className="border-b border-amber-200 px-6 py-3 flex-shrink-0 bg-amber-50">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-900 mb-2">Policy Violations Detected</h3>
+                <div className="space-y-2">
+                  {policyViolations.map((violation: any, idx: number) => (
+                    <div key={idx} className="text-sm text-amber-800">
+                      <span className="font-medium">{violation.product_policies?.display_name}:</span>{' '}
+                      {violation.violation_details?.message || 'Policy violation detected'}
+                      {violation.violation_details?.missing_fields && violation.violation_details.missing_fields.length > 0 && (
+                        <span className="ml-1 text-amber-700">
+                          (Missing: {violation.violation_details.missing_fields.join(', ')})
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Language Context Banner */}
         {currentLanguage !== 'en' && (

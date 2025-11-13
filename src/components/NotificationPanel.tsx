@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, X, AlertCircle, CheckCircle, Info, AlertTriangle, Settings } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface Notification {
   id: string;
@@ -8,12 +9,53 @@ interface Notification {
   type: 'info' | 'warning' | 'error' | 'success';
   is_read: boolean;
   created_at: string;
+  product_id?: string;
+  product_name?: string;
 }
 
 export default function NotificationPanel() {
-  const [notifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showPanel, setShowPanel] = useState(false);
-  const [unreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    loadPolicyViolationNotifications();
+  }, []);
+
+  async function loadPolicyViolationNotifications() {
+    const { data: violations, error } = await supabase
+      .from('product_policy_evaluations')
+      .select(`
+        id,
+        product_id,
+        violation_details,
+        evaluated_at,
+        products (name),
+        product_policies (display_name, severity)
+      `)
+      .eq('status', 'violation')
+      .order('evaluated_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error loading policy violations:', error);
+      return;
+    }
+
+    const policyNotifications: Notification[] = (violations || []).map((v: any) => ({
+      id: v.id,
+      title: `Policy Violation: ${v.product_policies?.display_name || 'Unknown Policy'}`,
+      message: `${v.products?.name || 'Product'} - ${v.violation_details?.message || 'Policy violation detected'}`,
+      type: v.product_policies?.severity === 'error' ? 'error' : 'warning',
+      is_read: false,
+      created_at: v.evaluated_at,
+      product_id: v.product_id,
+      product_name: v.products?.name
+    }));
+
+    setNotifications(policyNotifications);
+    setUnreadCount(policyNotifications.filter(n => !n.is_read).length);
+  }
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -102,9 +144,14 @@ export default function NotificationPanel() {
             </div>
 
             <div className="border-t border-slate-200 p-3">
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+              <button
+                onClick={() => {
+                  loadPolicyViolationNotifications();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              >
                 <Settings className="w-4 h-4" />
-                Notification Policies
+                Refresh Notifications
               </button>
             </div>
           </div>

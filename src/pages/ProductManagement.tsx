@@ -66,7 +66,7 @@ export default function ProductManagement({ onBack }: ProductManagementProps) {
     setLoading(true);
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, policy_status, last_policy_check')
       .order('name');
 
     if (error) {

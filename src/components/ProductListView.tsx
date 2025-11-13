@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ArrowUpDown, ArrowUp, ArrowDown, Filter, Settings, Download,
   Image as ImageIcon, Check, X, Eye, EyeOff, MoreVertical, Maximize2,
-  Grid3x3, AlignJustify, ChevronRight, Calendar, Search, Upload, MapPin
+  Grid3x3, AlignJustify, ChevronRight, Calendar, Search, Upload, MapPin, AlertTriangle
 } from 'lucide-react';
 import { Product, ColumnDefinition, SortConfig, FilterConfig, DensityMode } from '../types/productList';
 import { supabase } from '../lib/supabase';
@@ -184,16 +184,16 @@ export default function ProductListView({
       accessor: (p) => p.attributes?.meal_stations
     },
     {
-      key: 'integration_source',
-      label: 'API Source',
-      type: 'boolean',
+      key: 'policy_status',
+      label: 'Policy Status',
+      type: 'policy',
       visible: true,
-      width: 110,
+      width: 130,
       order: 10,
-      priority: 3,
+      priority: 2,
       sortable: true,
       filterable: true,
-      accessor: (p) => !!(p.integration_source_name || p.attribute_mappings?.price?.type === 'calculation')
+      accessor: (p) => (p as any).policy_status || 'compliant'
     },
     {
       key: 'created_at',
@@ -588,6 +588,39 @@ export default function ProductListView({
       case 'number':
         return value ? <span>{value}</span> : <span className="text-slate-400">-</span>;
 
+      case 'policy':
+        if (column.key === 'policy_status') {
+          if (value === 'violation') {
+            return (
+              <div className="flex items-center justify-center gap-1" title="Policy violations detected">
+                <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-lg">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-xs font-medium">Violation</span>
+                </div>
+              </div>
+            );
+          } else if (value === 'warning') {
+            return (
+              <div className="flex items-center justify-center gap-1" title="Policy warnings">
+                <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-xs font-medium">Warning</span>
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <div className="flex items-center justify-center">
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg">
+                  <Check className="w-4 h-4" />
+                  <span className="text-xs font-medium">Compliant</span>
+                </div>
+              </div>
+            );
+          }
+        }
+        return <span>{value || '-'}</span>;
+
       default:
         return <span>{value || '-'}</span>;
     }
@@ -890,19 +923,26 @@ export default function ProductListView({
             {sortedProducts.map((product, index) => {
               const isEven = index % 2 === 0;
               const isSelected = selectedProductIds.has(product.id);
+              const hasPolicyViolation = (product as any).policy_status === 'violation';
 
               const rowBg = isSelected
                 ? 'bg-purple-50'
+                : hasPolicyViolation
+                ? 'bg-amber-50/30'
                 : isEven
                 ? 'bg-white'
                 : 'bg-slate-50/30';
 
               const rowHoverBg = isSelected
                 ? 'hover:bg-purple-100'
+                : hasPolicyViolation
+                ? 'hover:bg-amber-100/50'
                 : 'hover:bg-blue-50';
 
               const pinnedBg = isSelected
                 ? 'bg-purple-50'
+                : hasPolicyViolation
+                ? 'bg-amber-50/30'
                 : isEven
                 ? 'bg-white'
                 : 'bg-slate-50/30';

@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Product {
@@ -11,6 +11,8 @@ interface Product {
   integration_product_id: string | null;
   integration_source_name?: string;
   attribute_mappings?: Record<string, any>;
+  policy_status?: 'compliant' | 'warning' | 'violation';
+  last_policy_check?: string;
 }
 
 interface ProductTileProps {
@@ -21,10 +23,14 @@ interface ProductTileProps {
 export default memo(function ProductTile({ product, onClick }: ProductTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [pendingPublication, setPendingPublication] = useState<any>(null);
+  const [policyViolations, setPolicyViolations] = useState<any[]>([]);
 
   useEffect(() => {
     checkPendingPublication();
-  }, [product.id]);
+    if (product.policy_status === 'violation') {
+      loadPolicyViolations();
+    }
+  }, [product.id, product.policy_status]);
 
   async function checkPendingPublication() {
     const { data } = await supabase
@@ -37,6 +43,24 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
       .maybeSingle();
 
     setPendingPublication(data);
+  }
+
+  async function loadPolicyViolations() {
+    const { data } = await supabase
+      .from('product_policy_evaluations')
+      .select(`
+        id,
+        status,
+        violation_details,
+        product_policies (
+          display_name,
+          severity
+        )
+      `)
+      .eq('product_id', product.id)
+      .eq('status', 'violation');
+
+    setPolicyViolations(data || []);
   }
 
   function stripHtmlTags(html: string): string {
@@ -61,10 +85,23 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
 
   const hasCalculatedPrice = product.attribute_mappings?.price?.type === 'calculation';
   const hasIntegrationSource = product.integration_source_name || hasCalculatedPrice;
+  const hasPolicyViolation = product.policy_status === 'violation';
+
+  const getViolationSummary = () => {
+    if (policyViolations.length === 0) return 'Policy violation';
+    const messages = policyViolations
+      .map((v: any) => v.product_policies?.display_name || 'Policy violation')
+      .join(', ');
+    return messages;
+  };
 
   return (
     <div
-      className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative"
+      className={`bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative ${
+        hasPolicyViolation
+          ? 'border-amber-400 shadow-amber-100 shadow-md'
+          : 'border-slate-200'
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
@@ -110,14 +147,14 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
                 />
               )}
             </div>
-            {hasIntegrationSource && (
-              <div className="absolute top-2 right-2">
-                <img
-                  src="/logo_32 copy.png"
-                  alt={product.integration_source_name || 'QU Beyond'}
-                  className="w-5 h-5 rounded"
-                  title={product.integration_source_name || 'QU Beyond (Calculated)'}
-                />
+            {hasPolicyViolation && (
+              <div className="absolute top-2 right-2 z-20">
+                <div
+                  className="flex items-center justify-center w-7 h-7 bg-amber-500 rounded-lg shadow-lg"
+                  title={getViolationSummary()}
+                >
+                  <AlertTriangle className="w-4 h-4 text-white" />
+                </div>
               </div>
             )}
           </div>
@@ -125,14 +162,14 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
       )}
 
       <div className="p-4 flex-1 flex flex-col relative">
-        {!imageUrl && hasIntegrationSource && (
+        {!imageUrl && hasPolicyViolation && (
           <div className="absolute top-2 right-2 z-10">
-            <img
-              src="/logo_32 copy.png"
-              alt={product.integration_source_name || 'QU Beyond'}
-              className="w-5 h-5 rounded"
-              title={product.integration_source_name || 'QU Beyond (Calculated)'}
-            />
+            <div
+              className="flex items-center justify-center w-7 h-7 bg-amber-500 rounded-lg shadow-lg"
+              title={getViolationSummary()}
+            >
+              <AlertTriangle className="w-4 h-4 text-white" />
+            </div>
           </div>
         )}
         {!imageUrl && (
