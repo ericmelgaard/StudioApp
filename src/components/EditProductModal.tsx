@@ -1596,10 +1596,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                 }}
                                 className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                               >
+                                {source === 'custom' && hasApiLink && <option value="custom">Custom Value</option>}
                                 {hasApiLink && <option value="api">Inherit from API</option>}
-                                <option value="custom">Custom Value</option>
+                                {!hasApiLink && source === 'custom' && <option value="custom">Custom Value</option>}
                                 {hasCalculatedValue && <option value="calculated">Calculated</option>}
-                                {!hasApiLink && <option value="manual">Manual</option>}
+                                {!hasApiLink && source === 'manual' && <option value="manual">Manual</option>}
                               </select>
                             </div>
                           </div>
@@ -1615,38 +1616,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               }}
                               disabled={source === 'api'}
                               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                fieldLink ? 'border-green-400 bg-green-50 pr-24' :
-                                source === 'api' ? 'border-blue-300 bg-blue-50 text-slate-600' :
-                                source === 'custom' ? 'border-slate-400 bg-white' :
-                                'border-slate-300 bg-white'
+                                source === 'api' ? 'border-slate-300 bg-slate-50 text-slate-600' : 'border-slate-300 bg-white'
                               }`}
                               placeholder={getFieldLabel(key)}
                             />
-                            {fieldLink && (
-                              <button
-                                onClick={() => {
-                                  setLinkingFieldKey(key);
-                                  setShowPriceCaloriesLinkModal(true);
-                                }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 hover:bg-green-100 transition-colors cursor-pointer"
-                                title="Click to edit calculation/link"
-                              >
-                                {hasCalculation ? <Calculator className="w-3 h-3" /> : <Link className="w-3 h-3" />}
-                                {hasCalculation ? 'Calculated' : 'Synced'}
-                              </button>
-                            )}
-                            {!fieldLink && key === 'price' && (
-                              <button
-                                onClick={() => {
-                                  setLinkingFieldKey(key);
-                                  setShowPriceCaloriesLinkModal(true);
-                                }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                                title="Add calculation or link"
-                              >
-                                <Link className="w-3 h-3" />
-                              </button>
-                            )}
                           </div>
                           {key === 'price' && hasCalculation && fieldLink.calculation && (
                             <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
@@ -1676,12 +1649,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   );
                                 })}
                               </div>
-                            </div>
-                          )}
-                          {source === 'custom' && hasApiLink && (
-                            <div className="mt-2 text-xs text-slate-600 bg-blue-50 border border-blue-200 rounded px-3 py-2">
-                              API value: <span className="font-medium text-blue-700">{integrationData?.[key] || 'Loading...'}</span>
-                              <span className="ml-2 text-slate-500">(Select "Inherit from API" to use)</span>
                             </div>
                           )}
                         </div>
