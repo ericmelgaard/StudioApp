@@ -1705,13 +1705,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                           const actualValue = value ?? '';
                           const isLocalOverride = currentProduct?.local_fields?.includes(key);
-                          const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+                          const isChildProduct = !!currentProduct?.parent_product_id;
+                          const isFieldSynced = syncStatus?.synced[key] !== undefined;
+                          const showBadge = isChildProduct ? isLocalOverride : isFieldSynced;
 
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
                                 <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
-                                {hasApiLink && (
+                                {showBadge && (
                                   <div className="relative">
                                     {isLocalOverride ? (
                                       <select
@@ -1880,13 +1882,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                           const actualValue = value ?? '';
                           const isLocalOverride = currentProduct?.local_fields?.includes(key);
-                          const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+                          const isChildProduct = !!currentProduct?.parent_product_id;
+                          const isFieldSynced = syncStatus?.synced[key] !== undefined;
+                          const showBadge = isChildProduct ? isLocalOverride : isFieldSynced;
 
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
                                 <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
-                                {hasApiLink && (
+                                {showBadge && (
                                   <div className="relative">
                                     {isLocalOverride ? (
                                       <select
