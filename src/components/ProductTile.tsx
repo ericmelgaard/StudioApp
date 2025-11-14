@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { Calendar, AlertTriangle } from 'lucide-react';
+import { Calendar, AlertTriangle, Link2, Calculator, Edit3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Product {
@@ -13,6 +13,10 @@ interface Product {
   attribute_mappings?: Record<string, any>;
   policy_status?: 'compliant' | 'warning' | 'violation';
   last_policy_check?: string;
+  mapping_id?: string | null;
+  integration_source_id?: string | null;
+  local_fields?: string[];
+  price_calculations?: Record<string, any>;
 }
 
 interface ProductTileProps {
@@ -83,9 +87,12 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
   const mealStations = product.attributes?.meal_stations;
   const sizes = product.attributes?.sizes;
 
-  const hasCalculatedPrice = product.attribute_mappings?.price?.type === 'calculation';
-  const hasIntegrationSource = product.integration_source_name || hasCalculatedPrice;
+  const hasCalculatedPrice = product.attribute_mappings?.price?.type === 'calculation' || product.price_calculations?.price;
+  const hasIntegrationSource = product.integration_source_name || hasCalculatedPrice || product.integration_source_id;
   const hasPolicyViolation = product.policy_status === 'violation';
+  const isApiLinked = !!product.mapping_id && !!product.integration_source_id;
+  const hasLocalOverrides = product.local_fields && product.local_fields.length > 0;
+  const isHybrid = isApiLinked && hasLocalOverrides;
 
   const getViolationSummary = () => {
     if (policyViolations.length === 0) return 'Policy violation';
@@ -106,12 +113,30 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      {pendingPublication && (
-        <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
-          <Calendar className="w-3.5 h-3.5" />
-          Scheduled
-        </div>
-      )}
+      <div className="absolute top-2 left-2 z-20 flex items-center gap-2">
+        {pendingPublication && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
+            <Calendar className="w-3.5 h-3.5" />
+            Scheduled
+          </div>
+        )}
+        {isApiLinked && !isHybrid && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500 text-white rounded-lg shadow-lg text-xs font-medium">
+            <Link2 className="w-3.5 h-3.5" />
+          </div>
+        )}
+        {isHybrid && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
+            <Link2 className="w-3 h-3" />
+            <Edit3 className="w-3 h-3" />
+          </div>
+        )}
+        {hasCalculatedPrice && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500 text-white rounded-lg shadow-lg text-xs font-medium">
+            <Calculator className="w-3.5 h-3.5" />
+          </div>
+        )}
+      </div>
       {imageUrl && (
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: '140px' }}>
           <div className={`absolute inset-0 bg-white transition-opacity duration-300 z-10 ${
