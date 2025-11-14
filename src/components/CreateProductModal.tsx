@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Package, LayoutGrid as Layout, Database, Sparkles, Plus, Link, Calculator } from 'lucide-react';
+import { X, Package, LayoutGrid as Layout, Database, Sparkles, Plus, Link, Calculator, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
 import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
 import TranslationEditor from './TranslationEditor';
+import SyncBadge from './SyncBadge';
 
 interface AttributeTemplate {
   id: string;
@@ -704,20 +705,28 @@ export default function CreateProductModal({ isOpen, onClose, onSuccess }: Creat
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className={`p-4 border rounded-lg ${selectedIntegrationProduct ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
             <div className="flex items-start gap-2">
-              <Database className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              {selectedIntegrationProduct ? (
+                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              ) : (
+                <Database className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              )}
               <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-1">Link Integration Product (Optional)</h3>
-                <p className="text-sm text-blue-700 mb-3">
-                  Import data from an external integration product to auto-fill attributes
+                <h3 className={`font-semibold mb-1 ${selectedIntegrationProduct ? 'text-green-900' : 'text-blue-900'}`}>
+                  {selectedIntegrationProduct ? 'Integration Product Linked' : 'Link Integration Product (Optional)'}
+                </h3>
+                <p className={`text-sm mb-3 ${selectedIntegrationProduct ? 'text-green-700' : 'text-blue-700'}`}>
+                  {selectedIntegrationProduct
+                    ? 'All available attributes will sync from the selected integration product'
+                    : 'Import data from an external integration product to auto-fill attributes'}
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowIntegrationSearch(!showIntegrationSearch)}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 underline"
+                  className={`text-sm font-medium underline ${selectedIntegrationProduct ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}`}
                 >
-                  {showIntegrationSearch ? 'Hide Search' : 'Search Integration Products'}
+                  {showIntegrationSearch ? 'Hide Search' : selectedIntegrationProduct ? 'Change Integration Product' : 'Search Integration Products'}
                 </button>
 
                 {showIntegrationSearch && (

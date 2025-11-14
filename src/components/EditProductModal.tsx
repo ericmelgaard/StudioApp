@@ -5,6 +5,8 @@ import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
 import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
 import TranslationEditor from './TranslationEditor';
+import SyncBadge from './SyncBadge';
+import { SyncStateManager, ProductSyncState } from '../lib/syncStateManager';
 
 interface Product {
   id: string;
@@ -16,6 +18,9 @@ interface Product {
   attribute_overrides?: Record<string, boolean>;
   attribute_mappings?: Record<string, FieldLinkData>;
   integration_source_name?: string;
+  disabled_sync_fields?: string[];
+  active_integration_source_id?: string;
+  last_sync_metadata?: Record<string, any>;
 }
 
 interface EditProductModalProps {
@@ -228,6 +233,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [currentLanguage, setCurrentLanguage] = useState<string>('en');
   const [translationData, setTranslationData] = useState<Record<string, Record<string, any>>>({});
   const [policyViolations, setPolicyViolations] = useState<any[]>([]);
+  const [syncStateManager, setSyncStateManager] = useState<SyncStateManager | null>(null);
+  const [disabledSyncFields, setDisabledSyncFields] = useState<string[]>([]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -295,6 +302,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       const mappings = product.attribute_mappings || {};
       setFieldLinks(mappings);
       setTranslations(product.attributes?.translations || {});
+      setDisabledSyncFields(product.disabled_sync_fields || []);
 
       // Load translation data from attributes
       const translations: Record<string, Record<string, any>> = {};
@@ -304,6 +312,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         }
       });
       setTranslationData(translations);
+
+      // Initialize sync state manager
+      initializeSyncStateManager();
 
       loadIntegrationData();
       checkPendingPublication();
@@ -339,6 +350,24 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     if (hasChanges) {
       setAttributes(updatedAttrs);
     }
+  }
+
+  async function initializeSyncStateManager() {
+    if (!product) return;
+
+    const productSyncState: ProductSyncState = {
+      integrationProductId: product.integration_product_id || undefined,
+      integrationSourceId: product.active_integration_source_id,
+      integrationSourceName: product.integration_source_name,
+      isLinked: !!product.integration_product_id,
+      hasActiveMappings: Object.keys(product.attribute_mappings || {}).length > 0,
+      attributeMappings: product.attribute_mappings,
+      attributeOverrides: product.attribute_overrides,
+      disabledSyncFields: product.disabled_sync_fields || []
+    };
+
+    const manager = new SyncStateManager(productSyncState, [], {});
+    setSyncStateManager(manager);
   }
 
   async function checkPendingPublication() {
@@ -597,6 +626,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         attributes: updatedAttributes,
         attribute_overrides: attributeOverrides,
         attribute_mappings: fieldLinks,
+        disabled_sync_fields: disabledSyncFields,
       };
 
       if (editMode === 'scheduled' && pendingPublication) {
@@ -802,6 +832,46 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       delete newMappings[key];
       return newMappings;
     });
+  }
+
+  function handleToggleSync(fieldName: string) {
+    if (!syncStateManager) return;
+
+    const isSyncDisabled = disabledSyncFields.includes(fieldName);
+
+    if (isSyncDisabled) {
+      const newDisabledFields = disabledSyncFields.filter(f => f !== fieldName);
+      setDisabledSyncFields(newDisabledFields);
+
+      const newOverrides = { ...attributeOverrides };
+      delete newOverrides[fieldName];
+      setAttributeOverrides(newOverrides);
+    } else {
+      setDisabledSyncFields([...disabledSyncFields, fieldName]);
+      setAttributeOverrides({
+        ...attributeOverrides,
+        [fieldName]: true
+      });
+    }
+  }
+
+  function handleRevertToSync(fieldName: string) {
+    if (!syncStateManager || !integrationData) return;
+
+    const mapping = fieldLinks[fieldName];
+    if (mapping && mapping.type === 'direct' && mapping.directLink) {
+      const syncedValue = getNestedValue(integrationData, mapping.directLink.field);
+      if (syncedValue !== undefined) {
+        updateAttribute(fieldName, syncedValue);
+      }
+    }
+
+    const newDisabledFields = disabledSyncFields.filter(f => f !== fieldName);
+    setDisabledSyncFields(newDisabledFields);
+
+    const newOverrides = { ...attributeOverrides };
+    delete newOverrides[fieldName];
+    setAttributeOverrides(newOverrides);
   }
 
   function isAttributeInCoreSchema(key: string): boolean {
@@ -1191,6 +1261,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                     const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
                     const translationStatus = getTranslationStatus(key);
 
+                    const syncState = syncStateManager?.getSyncState(key) || 'none';
+                    const syncConfig = syncStateManager?.getSyncConfig(key);
+                    const canRevert = syncStateManager?.canRevertToSync(key) || false;
+
                     return (
                       <div key={key}>
                         <div className="flex items-center justify-between mb-1.5">
@@ -1209,7 +1283,19 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               </span>
                             )}
                           </div>
-                          {syncStatus && !isLocalOnly && hasValue && (
+                          <div className="flex items-center gap-2">
+                            {syncState !== 'none' && (
+                              <SyncBadge
+                                state={syncState}
+                                mappedTo={syncConfig?.mappedTo}
+                                apiSource={syncConfig?.apiSourceName}
+                                isActive={syncConfig?.isActive}
+                                canSync={syncStateManager?.canSync(key)}
+                                onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                onRevert={canRevert ? () => handleRevertToSync(key) : undefined}
+                              />
+                            )}
+                            {syncStatus && !isLocalOnly && hasValue && !syncState && (
                             <div className="relative">
                               {isOverridden ? (
                                 <>
@@ -1253,6 +1339,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               )}
                             </div>
                           )}
+                          </div>
                         </div>
                         {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                       </div>

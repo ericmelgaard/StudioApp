@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Link as LinkIcon, Plus, Trash2, Calculator } from 'lucide-react';
+import { X, Search, Link as LinkIcon, Plus, Trash2, Calculator, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface FieldLinkModalProps {
@@ -61,6 +61,7 @@ export default function FieldLinkModal({
   const [loading, setLoading] = useState(false);
   const [mappedField, setMappedField] = useState<string>('');
   const [hasMapping, setHasMapping] = useState(false);
+  const [showInactiveAPIs, setShowInactiveAPIs] = useState(false);
 
   const [calculationParts, setCalculationParts] = useState<CalculationPart[]>([]);
   const [editingPart, setEditingPart] = useState<CalculationPart | null>(null);
@@ -328,6 +329,26 @@ export default function FieldLinkModal({
               <p className="text-sm text-blue-700 mt-1">{String(currentValue)}</p>
             </div>
           )}
+
+          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-slate-600" />
+              <span className="text-sm font-medium text-slate-700">Show inactive API sources</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowInactiveAPIs(!showInactiveAPIs)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                showInactiveAPIs ? 'bg-blue-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  showInactiveAPIs ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Link Mode</label>
