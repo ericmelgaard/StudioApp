@@ -11,6 +11,8 @@ import { StateBadge, FieldBadgeGroup } from './StateBadge';
 import ApiLinkModal from './ApiLinkModal';
 import { productValueResolver } from '../lib/productValueResolver';
 import { integrationLinkService } from '../lib/integrationLinkService';
+import { LocationProductService } from '../lib/locationProductService';
+import { useLocation } from '../hooks/useLocation';
 
 interface Product {
   id: string;
@@ -216,6 +218,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange }: Options
 });
 
 export default function EditProductModal({ isOpen, onClose, product, onSuccess }: EditProductModalProps) {
+  const { location } = useLocation();
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [name, setName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
@@ -1586,12 +1589,15 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                     value="custom"
                                     onChange={async (e) => {
                                       if (e.target.value === 'api' && currentProduct) {
-                                        await integrationLinkService.clearLocalOverride(currentProduct.id, key);
-                                        const { data: updatedProduct } = await supabase
-                                          .from('products')
-                                          .select('*')
-                                          .eq('id', currentProduct.id)
-                                          .single();
+                                        if (currentProduct.parent_product_id) {
+                                          await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                        } else {
+                                          await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                        }
+                                        const updatedProduct = await LocationProductService.getProductForLocation(
+                                          currentProduct.parent_product_id || currentProduct.id,
+                                          location
+                                        );
                                         if (updatedProduct) {
                                           setCurrentProduct(updatedProduct);
                                           setAttributes(updatedProduct.attributes || {});
@@ -1602,7 +1608,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                     className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                   >
                                     <option value="custom">Custom</option>
-                                    <option value="api">Inherit from API</option>
+                                    <option value="api">
+                                      {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                    </option>
                                   </select>
                                 ) : (
                                   <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
@@ -1617,16 +1625,22 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               onChange={async (e) => {
                                 const newValue = e.target.value;
                                 if (hasApiLink && !isLocalOverride && currentProduct) {
-                                  await integrationLinkService.enableLocalOverride(currentProduct.id, key, newValue);
-                                  const { data: updatedProduct } = await supabase
-                                    .from('products')
-                                    .select('*')
-                                    .eq('id', currentProduct.id)
-                                    .single();
-                                  if (updatedProduct) {
-                                    setCurrentProduct(updatedProduct);
-                                    setAttributes(updatedProduct.attributes || {});
-                                    onSuccess();
+                                  const success = await LocationProductService.enableLocationOverride(
+                                    currentProduct.id,
+                                    key,
+                                    newValue,
+                                    location
+                                  );
+                                  if (success) {
+                                    const updatedProduct = await LocationProductService.getProductForLocation(
+                                      currentProduct.id,
+                                      location
+                                    );
+                                    if (updatedProduct) {
+                                      setCurrentProduct(updatedProduct);
+                                      setAttributes(updatedProduct.attributes || {});
+                                      onSuccess();
+                                    }
                                   }
                                 } else {
                                   updateAttribute(key, newValue);

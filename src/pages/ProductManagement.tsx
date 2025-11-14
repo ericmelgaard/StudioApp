@@ -62,14 +62,27 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       console.error('Error checking pending publications:', err);
       loadProducts();
     });
-  }, []);
+  }, [location]);
 
   const loadProducts = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+
+    let query = supabase
       .from('products')
       .select('*, policy_status, last_policy_check')
       .order('name');
+
+    if (location.store) {
+      query = query.or(`site_id.eq.${location.store.id},and(site_id.is.null,company_id.is.null,concept_id.is.null)`);
+    } else if (location.company) {
+      query = query.or(`company_id.eq.${location.company.id},and(site_id.is.null,company_id.is.null,concept_id.is.null)`);
+    } else if (location.concept) {
+      query = query.or(`concept_id.eq.${location.concept.id},and(site_id.is.null,company_id.is.null,concept_id.is.null)`);
+    } else {
+      query = query.is('site_id', null).is('company_id', null).is('concept_id', null);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading products:', error);
