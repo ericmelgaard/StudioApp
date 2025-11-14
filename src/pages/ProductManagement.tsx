@@ -67,22 +67,11 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const loadProducts = async () => {
     setLoading(true);
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('products')
       .select('*, policy_status, last_policy_check')
+      .is('parent_product_id', null)
       .order('name');
-
-    if (location.store) {
-      query = query.or(`site_id.eq.${location.store.id},and(site_id.is.null,company_id.is.null,concept_id.is.null)`);
-    } else if (location.company) {
-      query = query.or(`company_id.eq.${location.company.id},and(site_id.is.null,company_id.is.null,concept_id.is.null)`);
-    } else if (location.concept) {
-      query = query.or(`concept_id.eq.${location.concept.id},and(site_id.is.null,company_id.is.null,concept_id.is.null)`);
-    } else {
-      query = query.is('site_id', null).is('company_id', null).is('concept_id', null);
-    }
-
-    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading products:', error);
@@ -90,7 +79,52 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       return;
     }
 
-    const productsData = data || [];
+    let productsData = data || [];
+
+    if (location.store || location.company || location.concept) {
+      const conceptId = location.concept?.id || null;
+      const companyId = location.company?.id || null;
+      const siteId = location.store?.id || null;
+
+      const parentIds = productsData.map(p => p.id);
+
+      let query = supabase
+        .from('products')
+        .select('*')
+        .in('parent_product_id', parentIds);
+
+      if (conceptId !== null) {
+        query = query.eq('concept_id', conceptId);
+      } else {
+        query = query.is('concept_id', null);
+      }
+
+      if (companyId !== null) {
+        query = query.eq('company_id', companyId);
+      } else {
+        query = query.is('company_id', null);
+      }
+
+      if (siteId !== null) {
+        query = query.eq('site_id', siteId);
+      } else {
+        query = query.is('site_id', null);
+      }
+
+      const { data: locationProducts } = await query;
+
+      if (locationProducts && locationProducts.length > 0) {
+        const locationProductMap = new Map(
+          locationProducts.map(p => [p.parent_product_id, p])
+        );
+
+        productsData = productsData.map(product => {
+          const locationProduct = locationProductMap.get(product.id);
+          return locationProduct || product;
+        });
+      }
+    }
+
     const integrationProductIds = productsData
       .filter(p => p.integration_product_id)
       .map(p => p.integration_product_id);
