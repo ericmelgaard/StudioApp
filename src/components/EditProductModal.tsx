@@ -1703,89 +1703,51 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       <div className="flex flex-wrap gap-3 pt-4">
                         {otherCoreKeys.map(key => {
                           const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
-                          const isChildProduct = !!product?.parent_product_id;
-                          const isInLocalFields = product?.local_fields?.includes(key);
-
-                          const isOverridden = isChildProduct ? isInLocalFields : syncStatus?.overridden[key];
-                          const isLocalOnly = isChildProduct ? false : (syncStatus?.localOnly[key] !== undefined);
-                          const isMapped = isChildProduct ? false : (attributeMappings[key] !== undefined);
-                          const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
-                          const integrationValue = isOverridden?.integration;
-                          const isDropdownOpen = openDropdown === key;
-                          const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
+                          const actualValue = value ?? '';
+                          const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                          const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
 
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
                                 <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
-                                <div className="flex items-center gap-1">
-                                  {!isChildProduct && (
-                                    <>
-                                      {/* Product-level mapping button */}
-                                      {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && !isLocalOnly && (
-                                        <button
-                                          onClick={() => openMappingModal(key)}
-                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
-                                          title="Link to integration field"
-                                        >
-                                          <Link className="w-3 h-3" />
-                                        </button>
-                                      )}
-                                      {/* Mapped indicator */}
-                                      {isMapped && (
-                                        <button
-                                          onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
-                                          title={`Mapped to ${attributeMappings[key]}`}
-                                        >
-                                          <Link className="w-3 h-3" />
-                                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                        </button>
-                                      )}
-                                      {isDropdownOpen && isMapped && (
-                                        <div className="dropdown-menu absolute right-0 mt-8 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleUnmapAttribute(key);
-                                              setOpenDropdown(null);
-                                            }}
-                                            className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
-                                          >
-                                            <Unlink className="w-3.5 h-3.5 text-red-600 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1">
-                                              <div className="font-medium text-slate-900">Remove Mapping</div>
-                                              <div className="text-xs text-slate-500 mt-0.5 truncate">
-                                                Currently: {attributeMappings[key]}
-                                              </div>
-                                            </div>
-                                          </button>
-                                        </div>
-                                      )}
-                                      {/* Sync status badges */}
-                                      {syncStatus && !isLocalOnly && !isMapped && hasValue && (
-                                        isOverridden ? (
-                                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                            <Unlink className="w-3 h-3" />
-                                            Local
-                                          </span>
-                                        ) : (
-                                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                                            <Link className="w-3 h-3" />
-                                            Synced
-                                          </span>
-                                        )
-                                      )}
-                                    </>
-                                  )}
-                                  {isChildProduct && isInLocalFields && (
-                                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                      <Lock className="w-3 h-3" />
-                                    </span>
-                                  )}
-                                </div>
+                                {hasApiLink && (
+                                  <div className="relative">
+                                    {isLocalOverride ? (
+                                      <select
+                                        value="custom"
+                                        onChange={async (e) => {
+                                          if (e.target.value === 'api' && currentProduct) {
+                                            if (currentProduct.parent_product_id) {
+                                              await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                            } else {
+                                              await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                            }
+                                            const updatedProduct = await LocationProductService.getProductForLocation(
+                                              currentProduct.parent_product_id || currentProduct.id,
+                                              location
+                                            );
+                                            if (updatedProduct) {
+                                              setCurrentProduct(updatedProduct);
+                                              setAttributes(updatedProduct.attributes || {});
+                                            }
+                                            onSuccess();
+                                          }
+                                        }}
+                                        className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      >
+                                        <option value="custom">Custom</option>
+                                        <option value="api">
+                                          {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                        </option>
+                                      </select>
+                                    ) : (
+                                      <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
+                              {renderAttributeField(key, actualValue, syncStatus, isLocalOverride, false)}
                             </div>
                           );
                         })}
@@ -1916,117 +1878,51 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       <div className="flex flex-wrap gap-3">
                         {extendedKeys.map(key => {
                           const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
-                          const isChildProduct = !!product?.parent_product_id;
-                          const isInLocalFields = product?.local_fields?.includes(key);
-
-                          const isOverridden = isChildProduct ? isInLocalFields : syncStatus?.overridden[key];
-                          const isLocalOnly = isChildProduct ? false : (syncStatus?.localOnly[key] !== undefined);
-                          const isMapped = isChildProduct ? false : (attributeMappings[key] !== undefined);
-                          const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
-                          const integrationValue = isOverridden?.integration;
-                          const isDropdownOpen = openDropdown === key;
-                          const hasValue = actualValue !== undefined && actualValue !== null && actualValue !== '';
-                          const showBadge = isChildProduct ? isInLocalFields : (syncStatus && (syncStatus.synced[key] !== undefined || syncStatus.overridden[key]) && hasValue && !isMapped);
+                          const actualValue = value ?? '';
+                          const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                          const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
 
                           return (
                             <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
                               <div className="flex items-center justify-between mb-1.5">
                                 <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
-                                <div className="flex items-center gap-1">
-                                  {!isChildProduct && (
-                                    <>
-                                      {/* Product-level mapping button */}
-                                      {canMapAttribute(key) && !isMapped && !syncStatus?.synced[key] && !isLocalOnly && (
-                                        <button
-                                          onClick={() => openMappingModal(key)}
-                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
-                                          title="Link to integration field"
-                                        >
-                                          <Link className="w-3 h-3" />
-                                        </button>
-                                      )}
-                                      {/* Show mapped indicator */}
-                                      {isMapped && (
-                                        <button
-                                          onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
-                                          title={`Mapped to ${attributeMappings[key]}`}
-                                        >
-                                          <Link className="w-3 h-3" />
-                                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                        </button>
-                                      )}
-                                      {isDropdownOpen && isMapped && (
-                                        <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              removeMapping(key);
-                                              setOpenDropdown(null);
-                                            }}
-                                            className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
-                                          >
-                                            <Unlink className="w-3.5 h-3.5 text-red-600 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1">
-                                              <div className="font-medium text-slate-900">Remove Mapping</div>
-                                              <div className="text-xs text-slate-500 mt-0.5 truncate">{attributeMappings[key]}</div>
-                                            </div>
-                                          </button>
-                                        </div>
-                                      )}
-                                      {/* Template-level sync status */}
-                                      {showBadge && (
-                                        <div className="relative">
-                                          {isOverridden ? (
-                                            <>
-                                              <button
-                                                onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-                                              >
-                                                <Unlink className="w-3 h-3" />
-                                                <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                              </button>
-                                              {isDropdownOpen && (
-                                                <div className="dropdown-menu absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      enableSync(key);
-                                                      setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 flex items-start gap-2"
-                                                  >
-                                                    <RotateCcw className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                                    <div className="flex-1">
-                                                      <div className="font-medium text-slate-900">Revert</div>
-                                                      <div className="text-xs text-slate-500 mt-0.5 truncate">
-                                                        {typeof integrationValue === 'object' ? JSON.stringify(integrationValue) : integrationValue}
-                                                      </div>
-                                                    </div>
-                                                  </button>
-                                                </div>
-                                              )}
-                                            </>
-                                          ) : (
-                                            <button
-                                              onClick={() => lockOverride(key)}
-                                              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
-                                            >
-                                              <Link className="w-3 h-3" />
-                                            </button>
-                                          )}
-                                        </div>
-                                      )}
-                                    </>
-                                  )}
-                                  {isChildProduct && isInLocalFields && (
-                                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                      <Lock className="w-3 h-3" />
-                                    </span>
-                                  )}
-                                </div>
+                                {hasApiLink && (
+                                  <div className="relative">
+                                    {isLocalOverride ? (
+                                      <select
+                                        value="custom"
+                                        onChange={async (e) => {
+                                          if (e.target.value === 'api' && currentProduct) {
+                                            if (currentProduct.parent_product_id) {
+                                              await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                            } else {
+                                              await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                            }
+                                            const updatedProduct = await LocationProductService.getProductForLocation(
+                                              currentProduct.parent_product_id || currentProduct.id,
+                                              location
+                                            );
+                                            if (updatedProduct) {
+                                              setCurrentProduct(updatedProduct);
+                                              setAttributes(updatedProduct.attributes || {});
+                                            }
+                                            onSuccess();
+                                          }
+                                        }}
+                                        className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      >
+                                        <option value="custom">Custom</option>
+                                        <option value="api">
+                                          {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                        </option>
+                                      </select>
+                                    ) : (
+                                      <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
+                              {renderAttributeField(key, actualValue, syncStatus, isLocalOverride, false)}
                             </div>
                           );
                         })}
