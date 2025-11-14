@@ -29,7 +29,13 @@ export function resolveProductAttributes(
     return resolvedAttributes;
   }
 
+  const localFields = product.local_fields || [];
+
   for (const [attrKey, mappingPath] of Object.entries(product.attribute_mappings)) {
+    if (localFields.includes(attrKey)) {
+      continue;
+    }
+
     if (typeof mappingPath === 'string') {
       const resolvedValue = resolveAttributePath(integrationData, mappingPath);
       if (resolvedValue !== undefined) {
