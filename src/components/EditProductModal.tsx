@@ -216,6 +216,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange }: Options
 });
 
 export default function EditProductModal({ isOpen, onClose, product, onSuccess }: EditProductModalProps) {
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [name, setName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [attributeOverrides, setAttributeOverrides] = useState<Record<string, boolean>>({});
@@ -304,6 +305,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
   useEffect(() => {
     if (product) {
+      setCurrentProduct(product);
       setName(product.name);
       loadTemplateAttributes();
       setAttributeOverrides(product.attribute_overrides || {});
@@ -1559,9 +1561,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       const fieldLink = fieldLinks[key];
                       const hasCalculation = fieldLink?.type === 'calculation';
                       const actualValue = value ?? '';
-                      const isLocalOverride = product.local_fields?.includes(key);
-                      const hasApiLink = product.mapping_id && product.integration_source_id;
-                      const hasCalculatedValue = product.price_calculations?.[key];
+                      const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                      const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+                      const hasCalculatedValue = currentProduct?.price_calculations?.[key];
 
                       // Determine the source
                       let source = 'manual';
@@ -1583,8 +1585,17 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   <select
                                     value="custom"
                                     onChange={async (e) => {
-                                      if (e.target.value === 'api') {
-                                        await integrationLinkService.clearLocalOverride(product.id, key);
+                                      if (e.target.value === 'api' && currentProduct) {
+                                        await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                        const { data: updatedProduct } = await supabase
+                                          .from('products')
+                                          .select('*')
+                                          .eq('id', currentProduct.id)
+                                          .single();
+                                        if (updatedProduct) {
+                                          setCurrentProduct(updatedProduct);
+                                          setAttributes(updatedProduct.attributes || {});
+                                        }
                                         onSuccess();
                                       }
                                     }}
@@ -1605,9 +1616,18 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               value={actualValue}
                               onChange={async (e) => {
                                 const newValue = e.target.value;
-                                if (hasApiLink && !isLocalOverride) {
-                                  await integrationLinkService.enableLocalOverride(product.id, key, newValue);
-                                  onSuccess();
+                                if (hasApiLink && !isLocalOverride && currentProduct) {
+                                  await integrationLinkService.enableLocalOverride(currentProduct.id, key, newValue);
+                                  const { data: updatedProduct } = await supabase
+                                    .from('products')
+                                    .select('*')
+                                    .eq('id', currentProduct.id)
+                                    .single();
+                                  if (updatedProduct) {
+                                    setCurrentProduct(updatedProduct);
+                                    setAttributes(updatedProduct.attributes || {});
+                                    onSuccess();
+                                  }
                                 } else {
                                   updateAttribute(key, newValue);
                                 }
