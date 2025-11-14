@@ -1604,10 +1604,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               type="text"
                               value={actualValue}
                               onChange={async (e) => {
-                                updateAttribute(key, e.target.value);
+                                const newValue = e.target.value;
                                 if (hasApiLink && !isLocalOverride) {
-                                  await integrationLinkService.enableLocalOverride(product.id, key, e.target.value);
+                                  await integrationLinkService.enableLocalOverride(product.id, key, newValue);
                                   onSuccess();
+                                } else {
+                                  updateAttribute(key, newValue);
                                 }
                               }}
                               className="w-full px-4 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
