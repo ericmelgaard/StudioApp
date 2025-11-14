@@ -149,26 +149,23 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       }
     }
 
-    const resolvedProducts = productsData.map(product => {
-      const sourceName = product.integration_product_id
-        ? integrationSourceMap.get(product.integration_product_id)
-        : undefined;
+    const resolvedProducts = await Promise.all(
+      productsData.map(async product => {
+        const sourceName = product.integration_product_id
+          ? integrationSourceMap.get(product.integration_product_id)
+          : undefined;
 
-      if (product.integration_product_id && product.attribute_mappings) {
-        const integrationData = integrationDataMap.get(product.integration_product_id);
-        if (integrationData) {
-          return {
-            ...product,
-            attributes: resolveProductAttributes(product, integrationData),
-            integration_source_name: sourceName
-          };
-        }
-      }
-      return {
-        ...product,
-        integration_source_name: sourceName
-      };
-    });
+        const resolvedProduct = await LocationProductService.resolveProductWithInheritance(
+          product,
+          integrationDataMap
+        );
+
+        return {
+          ...resolvedProduct,
+          integration_source_name: sourceName
+        };
+      })
+    );
 
     setProducts(resolvedProducts);
     extractFilters(resolvedProducts);

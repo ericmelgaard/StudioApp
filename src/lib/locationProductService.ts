@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { resolveProductAttributes } from './attributeResolver';
 
 interface LocationState {
   concept?: { id: number };
@@ -47,7 +48,7 @@ export class LocationProductService {
       .from('products')
       .insert({
         name: parentProduct.name,
-        attributes: parentProduct.attributes,
+        attributes: {},
         attribute_template_id: parentProduct.attribute_template_id,
         display_template_id: parentProduct.display_template_id,
         parent_product_id: parentProductId,
@@ -55,9 +56,9 @@ export class LocationProductService {
         company_id: companyId,
         site_id: siteId,
         local_fields: [],
-        mapping_id: parentProduct.mapping_id,
-        integration_source_id: parentProduct.integration_source_id,
-        integration_type: parentProduct.integration_type
+        mapping_id: null,
+        integration_source_id: null,
+        integration_type: null
       })
       .select()
       .single();
@@ -222,5 +223,56 @@ export class LocationProductService {
       .single();
 
     return rootProduct;
+  }
+
+  static async resolveProductWithInheritance(
+    product: any,
+    integrationDataMap?: Map<string, any>
+  ): Promise<any> {
+    if (!product.parent_product_id) {
+      if (product.integration_product_id && product.attribute_mappings) {
+        const integrationData = integrationDataMap?.get(product.integration_product_id);
+        if (integrationData) {
+          return {
+            ...product,
+            attributes: resolveProductAttributes(product, integrationData)
+          };
+        }
+      }
+      return product;
+    }
+
+    const { data: parentProduct } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', product.parent_product_id)
+      .single();
+
+    if (!parentProduct) {
+      return product;
+    }
+
+    let parentAttributes = { ...parentProduct.attributes };
+
+    if (parentProduct.integration_product_id && parentProduct.attribute_mappings) {
+      const integrationData = integrationDataMap?.get(parentProduct.integration_product_id);
+      if (integrationData) {
+        parentAttributes = resolveProductAttributes(parentProduct, integrationData);
+      }
+    }
+
+    const mergedAttributes = {
+      ...parentAttributes,
+      ...product.attributes
+    };
+
+    return {
+      ...product,
+      attributes: mergedAttributes,
+      mapping_id: parentProduct.mapping_id,
+      integration_source_id: parentProduct.integration_source_id,
+      integration_product_id: parentProduct.integration_product_id,
+      attribute_mappings: parentProduct.attribute_mappings
+    };
   }
 }
