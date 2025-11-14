@@ -566,7 +566,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         onSuccess={loadProducts}
         conceptId={location.concept?.id}
         companyId={location.company?.id}
-        siteId={location.store?.id}
+        storeId={location.store?.id}
       />
 
       <CategoryManagementModal

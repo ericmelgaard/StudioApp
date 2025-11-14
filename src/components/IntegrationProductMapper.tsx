@@ -51,7 +51,7 @@ interface IntegrationProductMapperProps {
   onSuccess: () => void;
   conceptId?: number;
   companyId?: number;
-  siteId?: number;
+  storeId?: number;
 }
 
 const INTEGRATION_TYPES = [
@@ -60,7 +60,7 @@ const INTEGRATION_TYPES = [
   { value: 'discount', label: 'Discounts', description: 'Promotional items and discounts' }
 ];
 
-export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, conceptId, companyId, siteId }: IntegrationProductMapperProps) {
+export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, conceptId, companyId, storeId }: IntegrationProductMapperProps) {
   const [loading, setLoading] = useState(false);
   const [sources, setSources] = useState<IntegrationSource[]>([]);
   const [availableSources, setAvailableSources] = useState<IntegrationSource[]>([]);
@@ -86,7 +86,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
     if (sources.length > 0) {
       filterAvailableSources();
     }
-  }, [sources, conceptId, companyId, siteId]);
+  }, [sources, conceptId, companyId, storeId]);
 
   useEffect(() => {
     if (availableSources.length > 0 && !selectedSource) {
@@ -133,7 +133,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
   }
 
   async function filterAvailableSources() {
-    if (!conceptId && !companyId && !siteId) {
+    if (!conceptId && !companyId && !storeId) {
       setAvailableSources(sources);
       return;
     }
@@ -144,8 +144,8 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
         .select('wand_source_id, wand_integration_sources(id, name, integration_type)')
         .eq('is_active', true);
 
-      if (siteId) {
-        query = query.eq('site_id', siteId);
+      if (storeId) {
+        query = query.eq('store_id', storeId);
       } else if (companyId) {
         query = query.eq('company_id', companyId);
       } else if (conceptId) {
@@ -177,8 +177,8 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
         .eq('integration_type', selectedType)
         .eq('is_template', true);
 
-      if (siteId) {
-        query = query.eq('site_id', siteId);
+      if (storeId) {
+        query = query.eq('store_id', storeId);
       } else if (companyId) {
         query = query.eq('company_id', companyId);
       } else if (conceptId) {
@@ -197,7 +197,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
             p_integration_type: selectedType,
             p_concept_id: conceptId || null,
             p_company_id: companyId || null,
-            p_site_id: siteId || null
+            p_site_id: storeId || null
           })
           .maybeSingle();
 
@@ -240,8 +240,8 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
         .eq('wand_source_id', selectedSource)
         .limit(5);
 
-      if (siteId) {
-        query = query.eq('site_id', siteId);
+      if (storeId) {
+        query = query.eq('store_id', storeId);
       } else if (companyId) {
         query = query.eq('company_id', companyId);
       } else if (conceptId) {
@@ -376,7 +376,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
       const typeName = INTEGRATION_TYPES.find(t => t.value === selectedType)?.label || '';
       const templateName = `${sourceName} - ${typeName}`;
 
-      const applicationLevel = siteId ? 'site' : companyId ? 'company' : 'concept';
+      const applicationLevel = storeId ? 'store' : companyId ? 'company' : 'concept';
       const mappingData: any = {
         attribute_mappings: { mappings },
         template_name: templateName,
@@ -385,7 +385,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
         updated_at: new Date().toISOString()
       };
 
-      if (siteId) mappingData.site_id = siteId;
+      if (storeId) mappingData.store_id = storeId;
       else if (companyId) mappingData.company_id = companyId;
       else if (conceptId) mappingData.concept_id = conceptId;
 
@@ -435,8 +435,8 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
         .from('integration_products')
         .select('id, data');
 
-      if (siteId) {
-        query = query.eq('site_id', siteId);
+      if (storeId) {
+        query = query.eq('store_id', storeId);
       } else if (companyId) {
         query = query.eq('company_id', companyId);
       } else if (conceptId) {
@@ -524,7 +524,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
   const selectedTypeData = INTEGRATION_TYPES.find(t => t.value === selectedType);
 
   const getContextDisplay = () => {
-    if (siteId) return 'Site Level';
+    if (storeId) return 'Site Level';
     if (companyId) return 'Company Level';
     if (conceptId) return 'Concept Level';
     return 'Global Level';
@@ -542,7 +542,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
               <h2 className="text-xl font-bold text-slate-900">Integration Mapping Templates</h2>
               <p className="text-sm text-slate-600">
                 Create reusable attribute mappings for each integration source and type
-                {(conceptId || companyId || siteId) && (
+                {(conceptId || companyId || storeId) && (
                   <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
                     {getContextDisplay()}
                   </span>
