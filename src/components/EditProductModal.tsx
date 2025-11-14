@@ -1608,16 +1608,14 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                             <input
                               type="text"
                               value={actualValue}
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 updateAttribute(key, e.target.value);
-                                if (hasApiLink && !isLocalOverride) {
-                                  integrationLinkService.enableLocalOverride(product.id, key, e.target.value);
+                                if (hasApiLink && source === 'api') {
+                                  await integrationLinkService.enableLocalOverride(product.id, key, e.target.value);
+                                  onSuccess();
                                 }
                               }}
-                              disabled={source === 'api'}
-                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                source === 'api' ? 'border-slate-300 bg-slate-50 text-slate-600' : 'border-slate-300 bg-white'
-                              }`}
+                              className="w-full px-4 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder={getFieldLabel(key)}
                             />
                           </div>
