@@ -452,7 +452,7 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
 
       const { data: existingProducts } = await supabase
         .from('products')
-        .select('id, integration_product_id')
+        .select('id, integration_product_id, attributes')
         .in('integration_product_id', integrationProducts.map(p => p.id));
 
       if (!existingProducts || existingProducts.length === 0) {
@@ -464,17 +464,28 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
         const integrationProduct = integrationProducts.find(ip => ip.id === product.integration_product_id);
         if (!integrationProduct) return null;
 
-        const attributes: any = {};
+        const newAttributes: any = {};
         mappings.forEach((mapping: any) => {
           const value = getNestedValue(integrationProduct.data, mapping.integration_field);
           if (value !== undefined) {
-            attributes[mapping.wand_field] = value;
+            newAttributes[mapping.wand_field] = value;
           }
+        });
+
+        const mergedAttributes = {
+          ...(product.attributes || {}),
+          ...newAttributes
+        };
+
+        const productMappings: any = {};
+        mappings.forEach((mapping: any) => {
+          productMappings[mapping.wand_field] = mapping.integration_field;
         });
 
         return {
           id: product.id,
-          attributes: attributes,
+          attributes: mergedAttributes,
+          attribute_mappings: productMappings,
           updated_at: new Date().toISOString()
         };
       }).filter(Boolean);
@@ -482,7 +493,10 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
       for (const update of updates) {
         await supabase
           .from('products')
-          .update({ attributes: update!.attributes })
+          .update({
+            attributes: update!.attributes,
+            attribute_mappings: update!.attribute_mappings
+          })
           .eq('id', update!.id);
       }
 
