@@ -537,19 +537,55 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   }, [openDropdown]);
 
   async function loadIntegrationData() {
-    if (!product?.integration_product_id) {
+    // Support both old and new linking systems
+    const hasNewLink = product?.mapping_id && product?.integration_source_id;
+    const hasOldLink = product?.integration_product_id;
+
+    if (!hasNewLink && !hasOldLink) {
       setSyncStatus(null);
+      setIntegrationData(null);
       return;
     }
 
     try {
-      const { data: integrationProduct } = await supabase
-        .from('integration_products')
-        .select('data, source_id')
-        .eq('id', product.integration_product_id)
-        .maybeSingle();
+      let integrationProduct = null;
 
-      if (!integrationProduct) return;
+      // New system: use mapping_id and integration_source_id
+      if (hasNewLink) {
+        const tableName = product.integration_type === 'product'
+          ? 'integration_products'
+          : product.integration_type === 'modifier'
+          ? 'integration_modifiers'
+          : 'integration_discounts';
+
+        const { data } = await supabase
+          .from(tableName)
+          .select('data, wand_source_id')
+          .eq('mapping_id', product.mapping_id)
+          .eq('wand_source_id', product.integration_source_id)
+          .maybeSingle();
+
+        if (data) {
+          integrationProduct = { data: data.data, source_id: data.wand_source_id };
+        }
+      }
+      // Old system: use integration_product_id
+      else if (hasOldLink) {
+        const { data } = await supabase
+          .from('integration_products')
+          .select('data, source_id')
+          .eq('id', product.integration_product_id)
+          .maybeSingle();
+
+        if (data) {
+          integrationProduct = data;
+        }
+      }
+
+      if (!integrationProduct) {
+        setIntegrationData(null);
+        return;
+      }
 
       setIntegrationData(integrationProduct.data);
 
@@ -1524,22 +1560,47 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       const hasCalculation = fieldLink?.type === 'calculation';
                       const actualValue = value ?? '';
                       const isLocalOverride = product.local_fields?.includes(key);
-                      const isApiLinked = product.mapping_id && product.integration_source_id && !isLocalOverride;
+                      const hasApiLink = product.mapping_id && product.integration_source_id;
+                      const hasCalculatedValue = product.price_calculations?.[key];
+
+                      // Determine the source
+                      let source = 'manual';
+                      if (hasCalculatedValue) {
+                        source = 'calculated';
+                      } else if (hasApiLink && !isLocalOverride) {
+                        source = 'api';
+                      } else if (isLocalOverride) {
+                        source = 'custom';
+                      }
 
                       return (
                         <div key={key}>
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">{getFieldLabel(key)}</label>
-                            <div className="flex items-center gap-2">
-                              {isLocalOverride && (
-                                <StateBadge variant="local" text="Custom" />
-                              )}
-                              {isApiLinked && (
-                                <StateBadge variant="api" text="From API" />
-                              )}
-                              {product.price_calculations?.[key] && (
-                                <StateBadge variant="calculated" text="Calculated" />
-                              )}
+                            <div className="relative">
+                              <select
+                                value={source}
+                                onChange={async (e) => {
+                                  const newSource = e.target.value;
+                                  try {
+                                    if (newSource === 'api' && hasApiLink) {
+                                      await integrationLinkService.clearLocalOverride(product.id, key);
+                                      onSuccess();
+                                    } else if (newSource === 'custom' && hasApiLink) {
+                                      await integrationLinkService.enableLocalOverride(product.id, key, actualValue);
+                                      onSuccess();
+                                    }
+                                  } catch (error: any) {
+                                    alert(error.message);
+                                  }
+                                }}
+                                className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                {hasApiLink && <option value="api">Inherit from API</option>}
+                                <option value="custom">Custom Value</option>
+                                {hasCalculatedValue && <option value="calculated">Calculated</option>}
+                                {!hasApiLink && <option value="manual">Manual</option>}
+                              </select>
                             </div>
                           </div>
                           <div className="relative">
@@ -1548,12 +1609,16 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               value={actualValue}
                               onChange={(e) => {
                                 updateAttribute(key, e.target.value);
-                                if (product.mapping_id && product.integration_source_id && !isLocalOverride) {
+                                if (hasApiLink && !isLocalOverride) {
                                   integrationLinkService.enableLocalOverride(product.id, key, e.target.value);
                                 }
                               }}
+                              disabled={source === 'api'}
                               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                fieldLink ? 'border-green-400 bg-green-50 pr-24' : isLocalOverride ? 'border-slate-400 bg-white' : isApiLinked ? 'border-blue-300 bg-blue-50' : 'border-slate-300'
+                                fieldLink ? 'border-green-400 bg-green-50 pr-24' :
+                                source === 'api' ? 'border-blue-300 bg-blue-50 text-slate-600' :
+                                source === 'custom' ? 'border-slate-400 bg-white' :
+                                'border-slate-300 bg-white'
                               }`}
                               placeholder={getFieldLabel(key)}
                             />
@@ -1613,22 +1678,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               </div>
                             </div>
                           )}
-                          {isLocalOverride && (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await integrationLinkService.clearLocalOverride(product.id, key);
-                                  alert(`Reverted ${key} to API value`);
-                                  onSuccess();
-                                } catch (error: any) {
-                                  alert(error.message);
-                                }
-                              }}
-                              className="mt-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-                            >
-                              <RotateCcw className="w-3 h-3" />
-                              Revert to API Value
-                            </button>
+                          {source === 'custom' && hasApiLink && (
+                            <div className="mt-2 text-xs text-slate-600 bg-blue-50 border border-blue-200 rounded px-3 py-2">
+                              API value: <span className="font-medium text-blue-700">{integrationData?.[key] || 'Loading...'}</span>
+                              <span className="ml-2 text-slate-500">(Select "Inherit from API" to use)</span>
+                            </div>
                           )}
                         </div>
                       );
