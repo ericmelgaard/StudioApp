@@ -1577,32 +1577,27 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                         <div key={key}>
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">{getFieldLabel(key)}</label>
-                            <div className="relative">
-                              <select
-                                value={source}
-                                onChange={async (e) => {
-                                  const newSource = e.target.value;
-                                  try {
-                                    if (newSource === 'api' && hasApiLink) {
-                                      await integrationLinkService.clearLocalOverride(product.id, key);
-                                      onSuccess();
-                                    } else if (newSource === 'custom' && hasApiLink) {
-                                      await integrationLinkService.enableLocalOverride(product.id, key, actualValue);
-                                      onSuccess();
-                                    }
-                                  } catch (error: any) {
-                                    alert(error.message);
-                                  }
-                                }}
-                                className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              >
-                                {source === 'custom' && hasApiLink && <option value="custom">Custom Value</option>}
-                                {hasApiLink && <option value="api">Inherit from API</option>}
-                                {!hasApiLink && source === 'custom' && <option value="custom">Custom Value</option>}
-                                {hasCalculatedValue && <option value="calculated">Calculated</option>}
-                                {!hasApiLink && source === 'manual' && <option value="manual">Manual</option>}
-                              </select>
-                            </div>
+                            {hasApiLink && (
+                              <div className="relative">
+                                {isLocalOverride ? (
+                                  <select
+                                    value="custom"
+                                    onChange={async (e) => {
+                                      if (e.target.value === 'api') {
+                                        await integrationLinkService.clearLocalOverride(product.id, key);
+                                        onSuccess();
+                                      }
+                                    }}
+                                    className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  >
+                                    <option value="custom">Custom</option>
+                                    <option value="api">Inherit from API</option>
+                                  </select>
+                                ) : (
+                                  <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="relative">
                             <input
@@ -1610,7 +1605,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                               value={actualValue}
                               onChange={async (e) => {
                                 updateAttribute(key, e.target.value);
-                                if (hasApiLink && source === 'api') {
+                                if (hasApiLink && !isLocalOverride) {
                                   await integrationLinkService.enableLocalOverride(product.id, key, e.target.value);
                                   onSuccess();
                                 }
