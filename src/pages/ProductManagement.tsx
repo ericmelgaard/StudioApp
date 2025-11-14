@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
+import { LocationProductService } from '../lib/locationProductService';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 import EditProductModal from '../components/EditProductModal';
@@ -509,8 +510,20 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   <ProductTile
                     key={product.id}
                     product={product}
-                    onClick={() => {
-                      setSelectedProduct(product);
+                    onClick={async () => {
+                      let productToEdit = product;
+
+                      if (!product.parent_product_id && (location.concept || location.company || location.store)) {
+                        const locationProduct = await LocationProductService.getOrCreateLocationProduct(
+                          product.id,
+                          location
+                        );
+                        if (locationProduct) {
+                          productToEdit = locationProduct;
+                        }
+                      }
+
+                      setSelectedProduct(productToEdit);
                       setShowEditModal(true);
                     }}
                   />
