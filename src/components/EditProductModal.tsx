@@ -355,6 +355,17 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   async function initializeSyncStateManager() {
     if (!product) return;
 
+    // Load integration sources
+    const integrationSources = [];
+    if (product.active_integration_source_id) {
+      integrationSources.push({
+        id: product.active_integration_source_id,
+        name: product.integration_source_name || 'Integration',
+        isActive: true,
+        priority: 1
+      });
+    }
+
     const productSyncState: ProductSyncState = {
       integrationProductId: product.integration_product_id || undefined,
       integrationSourceId: product.active_integration_source_id,
@@ -366,7 +377,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       disabledSyncFields: product.disabled_sync_fields || []
     };
 
-    const manager = new SyncStateManager(productSyncState, [], {});
+    const manager = new SyncStateManager(productSyncState, integrationSources, {});
     setSyncStateManager(manager);
   }
 
@@ -1285,15 +1296,102 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                           </div>
                           <div className="flex items-center gap-2">
                             {syncState !== 'none' && (
-                              <SyncBadge
-                                state={syncState}
-                                mappedTo={syncConfig?.mappedTo}
-                                apiSource={syncConfig?.apiSourceName}
-                                isActive={syncConfig?.isActive}
-                                canSync={syncStateManager?.canSync(key)}
-                                onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                onRevert={canRevert ? () => handleRevertToSync(key) : undefined}
-                              />
+                              <div className="relative">
+                                <SyncBadge
+                                  state={syncState}
+                                  mappedTo={syncConfig?.mappedTo}
+                                  apiSource={syncConfig?.apiSourceName}
+                                  isActive={syncConfig?.isActive}
+                                  canSync={syncStateManager?.canSync(key)}
+                                  onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
+                                  onRevert={canRevert ? () => handleRevertToSync(key) : undefined}
+                                />
+                                {isDropdownOpen && (
+                                  <div className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] overflow-hidden">
+                                    {syncState === 'linked-active' && (
+                                      <>
+                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+                                          <p className="text-xs font-medium text-slate-700">Currently synced from:</p>
+                                          <p className="text-xs text-slate-600 mt-0.5">{syncConfig?.apiSourceName} → {syncConfig?.mappedTo}</p>
+                                        </div>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleToggleSync(key);
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors flex items-start gap-2 border-b border-slate-100"
+                                        >
+                                          <Unlink className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1">
+                                            <div className="font-medium text-slate-900">Disable Sync</div>
+                                            <div className="text-xs text-slate-500 mt-0.5">Edit this field manually</div>
+                                          </div>
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setMappingAttributeKey(key);
+                                            setShowMappingModal(true);
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors flex items-start gap-2"
+                                        >
+                                          <Link className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1">
+                                            <div className="font-medium text-slate-900">Change Mapping</div>
+                                            <div className="text-xs text-slate-500 mt-0.5">Link to different API field</div>
+                                          </div>
+                                        </button>
+                                      </>
+                                    )}
+                                    {syncState === 'linked-inactive' && (
+                                      <>
+                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+                                          <p className="text-xs font-medium text-slate-700">Sync available from:</p>
+                                          <p className="text-xs text-slate-600 mt-0.5">{syncConfig?.apiSourceName} → {syncConfig?.mappedTo}</p>
+                                        </div>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleToggleSync(key);
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors flex items-start gap-2"
+                                        >
+                                          <Link className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1">
+                                            <div className="font-medium text-slate-900">Enable Sync</div>
+                                            <div className="text-xs text-slate-500 mt-0.5">Sync value from integration</div>
+                                          </div>
+                                        </button>
+                                      </>
+                                    )}
+                                    {syncState === 'locally-applied' && canRevert && (
+                                      <>
+                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+                                          <p className="text-xs font-medium text-slate-700">Local override active</p>
+                                          <p className="text-xs text-slate-600 mt-0.5">Sync is disabled for this field</p>
+                                        </div>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRevertToSync(key);
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors flex items-start gap-2"
+                                        >
+                                          <RotateCcw className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1">
+                                            <div className="font-medium text-slate-900">Revert to Sync</div>
+                                            <div className="text-xs text-slate-500 mt-0.5">Restore synced value</div>
+                                          </div>
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             )}
                             {syncStatus && !isLocalOnly && hasValue && !syncState && (
                             <div className="relative">

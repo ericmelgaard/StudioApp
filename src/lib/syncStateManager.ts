@@ -80,10 +80,15 @@ export class SyncStateManager {
     const mapping = this.productState.attributeMappings?.[fieldName];
     if (!mapping) return false;
 
-    const activeSource = this.getActiveSource();
-    if (!activeSource) return false;
+    // If we have an explicit integrationSourceId, check if it's active
+    if (this.productState.integrationSourceId) {
+      const activeSource = this.getActiveSource();
+      if (!activeSource) return false;
+      return this.productState.integrationSourceId === activeSource.id;
+    }
 
-    return this.productState.integrationSourceId === activeSource.id;
+    // If integrationSourceId is not set but we have integrationProductId and mappings, it's active
+    return this.productState.isLinked && !!mapping;
   }
 
   canSync(fieldName: string): boolean {
@@ -110,12 +115,15 @@ export class SyncStateManager {
     const productMapping = this.productState.attributeMappings?.[fieldName];
     if (productMapping) {
       if (typeof productMapping === 'string') return productMapping;
-      if (productMapping.type === 'direct' && productMapping.directLink) {
+      if (typeof productMapping === 'object' && productMapping.type === 'direct' && productMapping.directLink) {
         return productMapping.directLink.field;
       }
     }
 
-    return this.attributeMappings[fieldName];
+    const templateMapping = this.attributeMappings[fieldName];
+    if (typeof templateMapping === 'string') return templateMapping;
+
+    return undefined;
   }
 
   getSyncConfig(fieldName: string): AttributeSyncConfig {
