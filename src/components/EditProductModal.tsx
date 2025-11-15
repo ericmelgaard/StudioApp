@@ -1893,7 +1893,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   <>
                                     <button
                                       onClick={() => setOpenDropdown(openDropdown === `price-cal-${key}` ? null : `price-cal-${key}`)}
-                                      className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                      className="flex items-center gap-0.5 text-xs px-2 py-1 text-slate-600 font-medium hover:text-slate-800"
                                     >
                                       Custom
                                       <ChevronDown className="w-3 h-3" />
