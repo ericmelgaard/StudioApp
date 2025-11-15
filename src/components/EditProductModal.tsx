@@ -1609,7 +1609,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
     );
   }
 
-  if (!isOpen || !product) return null;
+  if (!isOpen) return null;
+  if (mode === 'edit' && !product) return null;
 
   // Show edit choice modal if there's a pending publication
   if (showEditChoice && pendingPublication) {
