@@ -11,6 +11,7 @@ import ColumnManager from './ColumnManager';
 import ColumnFilter from './ColumnFilter';
 import ProductExportModal from './ProductExportModal';
 import ProductImportModal from './ProductImportModal';
+import { getProductType } from '../lib/productTypeUtils';
 
 interface ProductListViewProps {
   products: Product[];
@@ -926,11 +927,15 @@ export default function ProductListView({
               const isEven = index % 2 === 0;
               const isSelected = selectedProductIds.has(product.id);
               const hasPolicyViolation = (product as any).policy_status === 'violation';
+              const productType = getProductType(product as any);
+              const isCustomProduct = productType === 'custom';
 
               const rowBg = isSelected
                 ? 'bg-purple-50'
                 : hasPolicyViolation
                 ? 'bg-amber-50/30'
+                : isCustomProduct
+                ? 'bg-blue-50'
                 : isEven
                 ? 'bg-white'
                 : 'bg-slate-50/30';
@@ -939,12 +944,16 @@ export default function ProductListView({
                 ? 'hover:bg-purple-100'
                 : hasPolicyViolation
                 ? 'hover:bg-amber-100/50'
+                : isCustomProduct
+                ? 'hover:bg-blue-100'
                 : 'hover:bg-blue-50';
 
               const pinnedBg = isSelected
                 ? 'bg-purple-50'
                 : hasPolicyViolation
                 ? 'bg-amber-50/30'
+                : isCustomProduct
+                ? 'bg-blue-50'
                 : isEven
                 ? 'bg-white'
                 : 'bg-slate-50/30';

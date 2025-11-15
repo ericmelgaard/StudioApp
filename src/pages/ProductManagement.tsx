@@ -16,6 +16,7 @@ import BulkCategoryAssignModal from '../components/BulkCategoryAssignModal';
 import AdvancedFilter, { FilterSection, FilterState } from '../components/AdvancedFilter';
 import ProductListView from '../components/ProductListView';
 import ProductHierarchyModal from '../components/ProductHierarchyModal';
+import { getProductType, ProductType } from '../lib/productTypeUtils';
 
 interface Product {
   id: string;
@@ -29,6 +30,9 @@ interface Product {
   created_at: string;
   updated_at: string;
   integration_source_name?: string;
+  mapping_id?: string | null;
+  local_fields?: string[];
+  productType?: ProductType;
 }
 
 interface ProductManagementProps {
@@ -175,6 +179,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const extractFilters = (products: Product[]) => {
     const periods = new Set<string>();
     const stations = new Set<string>();
+    const typeCounts = { custom: 0, imported: 0, linked: 0 };
 
     products.forEach(p => {
       const mealPeriods = p.attributes?.meal_periods;
@@ -187,9 +192,22 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       if (Array.isArray(mealStations)) {
         mealStations.forEach((ms: any) => stations.add(ms.station));
       }
+
+      const productType = getProductType(p);
+      typeCounts[productType]++;
     });
 
     const sections: FilterSection[] = [];
+
+    sections.push({
+      id: 'productTypes',
+      label: 'Product Type',
+      options: [
+        { value: 'custom', label: `Custom (${typeCounts.custom})` },
+        { value: 'imported', label: `Imported (${typeCounts.imported})` },
+        { value: 'linked', label: `Linked (${typeCounts.linked})` }
+      ]
+    });
 
     if (periods.size > 0) {
       sections.push({
@@ -209,6 +227,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
 
     setFilterSections(sections);
     setFilterState({
+      productTypes: ['custom', 'imported', 'linked'],
       periods: [],
       stations: []
     });
@@ -221,11 +240,15 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.attributes?.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
+    const selectedTypes = filterState.productTypes || [];
     const selectedPeriods = filterState.periods || [];
     const selectedStations = filterState.stations || [];
 
+    const productType = getProductType(product);
     const mealPeriods = product.attributes?.meal_periods;
     const mealStations = product.attributes?.meal_stations;
+
+    const matchesType = selectedTypes.length === 0 || selectedTypes.includes(productType);
 
     const matchesPeriod = selectedPeriods.length === 0 ||
       (Array.isArray(mealPeriods) && mealPeriods.some((mp: any) => selectedPeriods.includes(mp.period)));
@@ -233,7 +256,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     const matchesStation = selectedStations.length === 0 ||
       (Array.isArray(mealStations) && mealStations.some((ms: any) => selectedStations.includes(ms.station)));
 
-    return matchesSearch && matchesPeriod && matchesStation;
+    return matchesSearch && matchesType && matchesPeriod && matchesStation;
   });
 
   return (

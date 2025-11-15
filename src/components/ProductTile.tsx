@@ -1,6 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { Calendar, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getProductType } from '../lib/productTypeUtils';
 
 interface Product {
   id: string;
@@ -88,6 +89,8 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
   const sizes = product.attributes?.sizes;
 
   const hasPolicyViolation = product.policy_status === 'violation';
+  const productType = getProductType(product);
+  const isCustomProduct = productType === 'custom';
 
   const getViolationSummary = () => {
     if (policyViolations.length === 0) return 'Policy violation';
@@ -99,7 +102,9 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
 
   return (
     <div
-      className={`bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative ${
+      className={`border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative ${
+        isCustomProduct ? 'bg-blue-50' : 'bg-white'
+      } ${
         hasPolicyViolation
           ? 'border-amber-400 shadow-amber-100 shadow-md'
           : 'border-slate-200'
