@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -1231,24 +1231,23 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     if (meta?.type === 'richtext') {
       return (
         <div className="relative">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={displayValue ? displayValue.replace(/<[^>]*>/g, '').substring(0, 50) + (displayValue.length > 50 ? '...' : '') : ''}
-              readOnly
-              placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${getFieldLabel(key)}`}
-              className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 cursor-pointer"
-              onClick={() => setRichTextModal({ key, value: displayValue || '' })}
-            />
-            <button
-              onClick={() => setRichTextModal({ key, value: displayValue || '' })}
-              className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-1"
-            >
-              Edit
-            </button>
-          </div>
+          <input
+            type="text"
+            value={displayValue ? displayValue.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
+            readOnly
+            placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${getFieldLabel(key)}`}
+            className="w-full px-3 py-2 pr-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 cursor-pointer"
+            onClick={() => setRichTextModal({ key, value: displayValue || '' })}
+          />
+          <button
+            onClick={() => setRichTextModal({ key, value: displayValue || '' })}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+            title="Open rich text editor"
+          >
+            <FileText className="w-4 h-4" />
+          </button>
           {isDisabled && (
-            <div className="absolute top-2 right-14 flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-xs text-slate-600">
+            <div className="absolute top-2 right-12 flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-xs text-slate-600">
               <Lock className="w-3 h-3" />
               Uses default
             </div>
