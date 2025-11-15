@@ -549,14 +549,6 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
 });
 
 export default function EditProductModal({ isOpen, onClose, product, onSuccess, mode = 'edit' }: EditProductModalProps) {
-  console.log('EditProductModal component called:', { isOpen, mode, product });
-
-  const wrappedOnClose = () => {
-    console.log('onClose called from modal');
-    console.trace('onClose call stack');
-    onClose();
-  };
-
   const { location } = useLocation();
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [name, setName] = useState('');
@@ -650,9 +642,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   };
 
   useEffect(() => {
-    console.log('EditProductModal useEffect:', { isOpen, mode, product });
     if (isOpen && mode === 'create') {
-      console.log('Creating new product - resetting form and loading templates');
       // Reset form first, then load available templates for create mode
       resetForm();
       loadAvailableTemplates();
@@ -690,29 +680,24 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   }, [product, isOpen, mode]);
 
   async function loadAvailableTemplates() {
-    console.log('loadAvailableTemplates called');
     const [templatesResult, orgSettingsResult] = await Promise.all([
       supabase.from('product_attribute_templates').select('*').order('name'),
       supabase.from('organization_settings').select('*').limit(1).maybeSingle()
     ]);
 
-    console.log('Templates loaded:', templatesResult.data?.length, 'templates');
     if (templatesResult.data) {
       setAvailableTemplates(templatesResult.data);
     }
 
     if (orgSettingsResult.data?.default_product_attribute_template_id) {
-      console.log('Loading default template:', orgSettingsResult.data.default_product_attribute_template_id);
       setSelectedTemplateId(orgSettingsResult.data.default_product_attribute_template_id);
       loadTemplateForCreate(orgSettingsResult.data.default_product_attribute_template_id);
     } else {
-      console.log('No default template set');
     }
   }
 
   async function loadTemplateForCreate(templateId: string) {
     try {
-      console.log('loadTemplateForCreate called with:', templateId);
       const { data: templateData, error } = await supabase
         .from('product_attribute_templates')
         .select('*')
@@ -724,7 +709,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
         return;
       }
 
-      console.log('Template data loaded:', templateData);
 
       if (templateData?.attribute_schema) {
         setTemplate(templateData);
@@ -751,7 +735,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
           }
         });
 
-        console.log('Default attributes initialized:', defaultAttrs);
         setAttributes(defaultAttrs);
       }
     } catch (err) {
@@ -1153,7 +1136,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
 
         alert('Product created successfully');
         onSuccess();
-        wrappedOnClose();
+        onClose();
         return;
       }
 
@@ -1226,7 +1209,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
       }
 
       onSuccess();
-      wrappedOnClose();
+      onClose();
     } catch (error) {
       console.error('Error publishing product:', error);
       alert('Failed to publish product');
@@ -1252,7 +1235,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
 
       alert('Product deleted successfully');
       onSuccess();
-      wrappedOnClose();
+      onClose();
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Failed to delete product');
@@ -1696,14 +1679,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
     );
   }
 
-  console.log('EditProductModal render:', { isOpen, mode, selectedTemplateId, availableTemplatesCount: availableTemplates.length });
-
   if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4"
-      onClick={wrappedOnClose}
+      onClick={onClose}
     >
       <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[61]"
@@ -1770,7 +1751,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
               </div>
             )}
             <button
-              onClick={wrappedOnClose}
+              onClick={onClose}
               className="text-slate-400 hover:text-slate-600 transition-colors"
             >
               <X className="w-6 h-6" />
@@ -2451,7 +2432,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
           {(mode === 'create' || !product?.integration_product_id) && <div></div>}
           <div className="flex gap-3">
             <button
-              onClick={wrappedOnClose}
+              onClick={onClose}
               className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
             >
               Cancel
