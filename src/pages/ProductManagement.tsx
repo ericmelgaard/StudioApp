@@ -9,6 +9,7 @@ import { LocationProductService } from '../lib/locationProductService';
 import ProductTile from '../components/ProductTile';
 import CreateProductModal from '../components/CreateProductModal';
 import EditProductModal from '../components/EditProductModal';
+import AttributeTemplateManager from '../components/AttributeTemplateManager';
 import IntegrationProductMapper from '../components/IntegrationProductMapper';
 import CategoryManagementModal from '../components/CategoryManagementModal';
 import BulkCategoryAssignModal from '../components/BulkCategoryAssignModal';
@@ -48,6 +49,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showMapper, setShowMapper] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
@@ -276,6 +278,20 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                 <div className="text-left">
                   <div className="font-semibold">Map Integration Products</div>
                   <div className="text-xs text-blue-100">Link integration data to products</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowTemplateManager(true);
+                  setSidePanelOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+              >
+                <Settings className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-semibold">Manage Templates</div>
+                  <div className="text-xs text-purple-100">Set default attribute template</div>
                 </div>
               </button>
 
@@ -537,6 +553,11 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         }}
         product={selectedProduct}
         onSuccess={loadProducts}
+      />
+
+      <AttributeTemplateManager
+        isOpen={showTemplateManager}
+        onClose={() => setShowTemplateManager(false)}
       />
 
       <IntegrationProductMapper
