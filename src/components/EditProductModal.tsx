@@ -60,12 +60,7 @@ interface Option {
     integration_type: 'product' | 'modifier' | 'discount';
     integration_source_id: string;
   };
-  attribute_overrides?: {
-    label?: boolean;
-    description?: boolean;
-    price?: boolean;
-    calories?: boolean;
-  };
+  local_fields?: string[];
   price_calculation?: any;
   calories_calculation?: any;
 }
@@ -143,19 +138,28 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   };
 
   const handleIntegrationUnlink = (optionId: string) => {
-    updateOption(optionId, { integration_link: undefined, attribute_overrides: undefined });
+    updateOption(optionId, { integration_link: undefined, local_fields: undefined });
   };
 
-  const toggleAttributeOverride = (optionId: string, attribute: 'label' | 'description' | 'price' | 'calories') => {
+  const enableLocalOverride = (optionId: string, field: string) => {
     const option = options.find(o => o.id === optionId);
     if (!option) return;
 
-    const currentOverrides = option.attribute_overrides || {};
+    const localFields = option.local_fields || [];
+    if (!localFields.includes(field)) {
+      updateOption(optionId, {
+        local_fields: [...localFields, field]
+      });
+    }
+  };
+
+  const clearLocalOverride = (optionId: string, field: string) => {
+    const option = options.find(o => o.id === optionId);
+    if (!option) return;
+
+    const localFields = option.local_fields || [];
     updateOption(optionId, {
-      attribute_overrides: {
-        ...currentOverrides,
-        [attribute]: !currentOverrides[attribute]
-      }
+      local_fields: localFields.filter(f => f !== field)
     });
   };
 
@@ -165,7 +169,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
     <div className="space-y-4">
       {sortedOptions.map((option, index) => {
         const hasIntegrationLink = !!option.integration_link;
-        const overrides = option.attribute_overrides || {};
+        const localFields = option.local_fields || [];
 
         return (
           <div
@@ -219,23 +223,37 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-medium text-slate-600">Label</label>
                       {hasIntegrationLink && (
-                        <select
-                          value={overrides.label ? 'custom' : 'api'}
-                          onChange={() => toggleAttributeOverride(option.id, 'label')}
-                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
-                        >
-                          <option value="api">Syncing</option>
-                          <option value="custom">Custom</option>
-                        </select>
+                        <div className="relative">
+                          {localFields.includes('label') ? (
+                            <select
+                              value="custom"
+                              onChange={(e) => {
+                                if (e.target.value === 'api') {
+                                  clearLocalOverride(option.id, 'label');
+                                }
+                              }}
+                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="custom">Custom</option>
+                              <option value="api">Inherit from API</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <input
                       type="text"
                       value={option.label}
-                      onChange={(e) => updateOption(option.id, { label: e.target.value })}
-                      disabled={hasIntegrationLink && !overrides.label}
+                      onChange={(e) => {
+                        if (hasIntegrationLink && !localFields.includes('label')) {
+                          enableLocalOverride(option.id, 'label');
+                        }
+                        updateOption(option.id, { label: e.target.value });
+                      }}
                       placeholder="e.g., Small, Medium, Large"
-                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>
 
@@ -243,23 +261,37 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-medium text-slate-600">Description</label>
                       {hasIntegrationLink && (
-                        <select
-                          value={overrides.description ? 'custom' : 'api'}
-                          onChange={() => toggleAttributeOverride(option.id, 'description')}
-                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
-                        >
-                          <option value="api">Syncing</option>
-                          <option value="custom">Custom</option>
-                        </select>
+                        <div className="relative">
+                          {localFields.includes('description') ? (
+                            <select
+                              value="custom"
+                              onChange={(e) => {
+                                if (e.target.value === 'api') {
+                                  clearLocalOverride(option.id, 'description');
+                                }
+                              }}
+                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="custom">Custom</option>
+                              <option value="api">Inherit from API</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <input
                       type="text"
                       value={option.description || ''}
-                      onChange={(e) => updateOption(option.id, { description: e.target.value })}
-                      disabled={hasIntegrationLink && !overrides.description}
+                      onChange={(e) => {
+                        if (hasIntegrationLink && !localFields.includes('description')) {
+                          enableLocalOverride(option.id, 'description');
+                        }
+                        updateOption(option.id, { description: e.target.value });
+                      }}
                       placeholder="Optional description"
-                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>
                 </div>
@@ -269,14 +301,24 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-medium text-slate-600">Price</label>
                       {hasIntegrationLink && (
-                        <select
-                          value={overrides.price ? 'custom' : 'api'}
-                          onChange={() => toggleAttributeOverride(option.id, 'price')}
-                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
-                        >
-                          <option value="api">Syncing</option>
-                          <option value="custom">Custom</option>
-                        </select>
+                        <div className="relative">
+                          {localFields.includes('price') ? (
+                            <select
+                              value="custom"
+                              onChange={(e) => {
+                                if (e.target.value === 'api') {
+                                  clearLocalOverride(option.id, 'price');
+                                }
+                              }}
+                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="custom">Custom</option>
+                              <option value="api">Inherit from API</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="relative">
@@ -285,8 +327,13 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                         type="number"
                         step="0.01"
                         value={option.price}
-                        onChange={(e) => updateOption(option.id, { price: parseFloat(e.target.value) || 0 })}
-                        disabled={(hasIntegrationLink && !overrides.price) || !!option.price_calculation}
+                        onChange={(e) => {
+                          if (hasIntegrationLink && !localFields.includes('price')) {
+                            enableLocalOverride(option.id, 'price');
+                          }
+                          updateOption(option.id, { price: parseFloat(e.target.value) || 0 });
+                        }}
+                        disabled={!!option.price_calculation}
                         placeholder="0.00"
                         className="w-full pl-7 pr-10 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
                       />
@@ -309,22 +356,37 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-medium text-slate-600">Calories</label>
                       {hasIntegrationLink && (
-                        <select
-                          value={overrides.calories ? 'custom' : 'api'}
-                          onChange={() => toggleAttributeOverride(option.id, 'calories')}
-                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
-                        >
-                          <option value="api">Syncing</option>
-                          <option value="custom">Custom</option>
-                        </select>
+                        <div className="relative">
+                          {localFields.includes('calories') ? (
+                            <select
+                              value="custom"
+                              onChange={(e) => {
+                                if (e.target.value === 'api') {
+                                  clearLocalOverride(option.id, 'calories');
+                                }
+                              }}
+                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="custom">Custom</option>
+                              <option value="api">Inherit from API</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="relative">
                       <input
                         type="number"
                         value={option.calories || 0}
-                        onChange={(e) => updateOption(option.id, { calories: parseInt(e.target.value) || 0 })}
-                        disabled={(hasIntegrationLink && !overrides.calories) || !!option.calories_calculation}
+                        onChange={(e) => {
+                          if (hasIntegrationLink && !localFields.includes('calories')) {
+                            enableLocalOverride(option.id, 'calories');
+                          }
+                          updateOption(option.id, { calories: parseInt(e.target.value) || 0 });
+                        }}
+                        disabled={!!option.calories_calculation}
                         placeholder="0"
                         className="w-full pl-3 pr-10 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
                       />
