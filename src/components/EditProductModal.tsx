@@ -642,10 +642,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   };
 
   useEffect(() => {
+    console.log('EditProductModal useEffect:', { isOpen, mode, product });
     if (isOpen && mode === 'create') {
-      // Load available templates for create mode
-      loadAvailableTemplates();
+      console.log('Creating new product - resetting form and loading templates');
+      // Reset form first, then load available templates for create mode
       resetForm();
+      loadAvailableTemplates();
     } else if (product && mode === 'edit') {
       setCurrentProduct(product);
       setName(product.name);
@@ -680,18 +682,23 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   }, [product, isOpen, mode]);
 
   async function loadAvailableTemplates() {
+    console.log('loadAvailableTemplates called');
     const [templatesResult, orgSettingsResult] = await Promise.all([
       supabase.from('product_attribute_templates').select('*').order('name'),
       supabase.from('organization_settings').select('*').limit(1).maybeSingle()
     ]);
 
+    console.log('Templates loaded:', templatesResult.data?.length, 'templates');
     if (templatesResult.data) {
       setAvailableTemplates(templatesResult.data);
     }
 
     if (orgSettingsResult.data?.default_product_attribute_template_id) {
+      console.log('Loading default template:', orgSettingsResult.data.default_product_attribute_template_id);
       setSelectedTemplateId(orgSettingsResult.data.default_product_attribute_template_id);
       loadTemplateForCreate(orgSettingsResult.data.default_product_attribute_template_id);
+    } else {
+      console.log('No default template set');
     }
   }
 
@@ -747,6 +754,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
     setCurrentLanguage('en');
     setExpandedRichTextFields(new Set());
     setCurrentProduct(null);
+    setTemplate(null);
+    setTemplateSchema(null);
+    setTemplateAttributes([]);
+    setAvailableTemplates([]);
+    setSelectedTemplateId('');
   }
 
   function calculateComputedFields(mappings: Record<string, FieldLinkData>, attrs: Record<string, any>) {
@@ -1662,6 +1674,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
       </div>
     );
   }
+
+  console.log('EditProductModal render:', { isOpen, mode, selectedTemplateId, availableTemplatesCount: availableTemplates.length });
 
   if (!isOpen) return null;
 
