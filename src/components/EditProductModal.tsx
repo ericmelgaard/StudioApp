@@ -68,9 +68,11 @@ interface OptionsEditorProps {
   options: Option[];
   onChange: (options: Option[]) => void;
   integrationSourceId?: string | null;
+  expandedRichTextFields: Set<string>;
+  setExpandedRichTextFields: (fields: Set<string>) => void;
 }
 
-const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrationSourceId }: OptionsEditorProps) {
+const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrationSourceId, expandedRichTextFields, setExpandedRichTextFields }: OptionsEditorProps) {
   const [showPriceCalcModal, setShowPriceCalcModal] = useState(false);
   const [linkingOptionId, setLinkingOptionId] = useState<string | null>(null);
   const [showApiLinkModal, setShowApiLinkModal] = useState(false);
@@ -1401,6 +1403,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
             }
           }}
           integrationSourceId={currentProduct?.integration_source_id}
+          expandedRichTextFields={expandedRichTextFields}
+          setExpandedRichTextFields={setExpandedRichTextFields}
         />
       );
     }
