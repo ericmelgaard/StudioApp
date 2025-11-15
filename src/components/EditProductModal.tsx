@@ -9,8 +9,7 @@ import SyncBadge from './SyncBadge';
 import { SyncStateManager, ProductSyncState } from '../lib/syncStateManager';
 import { StateBadge, FieldBadgeGroup } from './StateBadge';
 import ApiLinkModal from './ApiLinkModal';
-import CalculationBuilder from './CalculationBuilder';
-import { productValueResolver, CalculationPart } from '../lib/productValueResolver';
+import { productValueResolver } from '../lib/productValueResolver';
 import { integrationLinkService } from '../lib/integrationLinkService';
 import { LocationProductService } from '../lib/locationProductService';
 import { useLocation } from '../hooks/useLocation';
@@ -250,9 +249,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [policyViolations, setPolicyViolations] = useState<any[]>([]);
   const [syncStateManager, setSyncStateManager] = useState<SyncStateManager | null>(null);
   const [disabledSyncFields, setDisabledSyncFields] = useState<string[]>([]);
-  const [showCalculationModal, setShowCalculationModal] = useState(false);
-  const [calculatingField, setCalculatingField] = useState<string | null>(null);
-  const [priceCalculations, setPriceCalculations] = useState<Record<string, CalculationPart[]>>({});
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -334,9 +330,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
 
       // Initialize sync state manager
       initializeSyncStateManager();
-
-      // Load price calculations
-      setPriceCalculations(product.price_calculations || {});
 
       loadIntegrationData();
       checkPendingPublication();
@@ -1537,52 +1530,23 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                   updateAttribute(key, newValue);
                                 }
                               }}
-                              className={`w-full px-4 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${key === 'price' && hasApiLink ? 'pr-10' : ''}`}
+                              disabled={hasCalculation}
+                              className={`w-full px-4 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:text-slate-500 ${key === 'price' && hasApiLink ? 'pr-10' : ''}`}
                               placeholder={getFieldLabel(key)}
                             />
                             {key === 'price' && hasApiLink && (
                               <button
                                 onClick={() => {
-                                  setCalculatingField(key);
-                                  setShowCalculationModal(true);
+                                  setLinkingFieldKey(key);
+                                  setShowPriceCaloriesLinkModal(true);
                                 }}
                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                                 title="Add price calculation"
                               >
-                                <Calculator className={`w-4 h-4 ${priceCalculations[key] ? 'text-blue-600' : ''}`} />
+                                <Calculator className={`w-4 h-4 ${hasCalculation ? 'text-blue-600' : ''}`} />
                               </button>
                             )}
                           </div>
-                          {key === 'price' && priceCalculations[key] && priceCalculations[key].length > 0 && (
-                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
-                              <p className="text-xs font-medium text-slate-600 mb-2">Price Calculation:</p>
-                              <div className="space-y-1">
-                                {priceCalculations[key].map((part: CalculationPart, index: number) => {
-                                  const isSubtract = part.operation === 'subtract';
-                                  return (
-                                    <div key={index} className="flex items-center gap-2 text-sm">
-                                      {index > 0 && (
-                                        <span className={`font-bold w-4 text-center ${
-                                          isSubtract ? 'text-red-600' : 'text-slate-600'
-                                        }`}>
-                                          {part.operation === 'add' ? '+' : '−'}
-                                        </span>
-                                      )}
-                                      {index === 0 && <span className="w-4"></span>}
-                                      <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
-                                        <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
-                                          {part.mapping_id} ({part.integration_type})
-                                        </span>
-                                        <span className={`font-semibold ${isSubtract ? 'text-red-700' : 'text-slate-900'}`}>
-                                          {part.field_path}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
                           {key === 'price' && hasCalculation && fieldLink.calculation && (
                             <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
                               <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
@@ -2013,75 +1977,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           fieldLabel={linkingFieldKey === 'price' ? 'Price' : 'Calories'}
           currentLink={linkingFieldKey ? fieldLinks[linkingFieldKey] : null}
         />
-      )}
-
-      {/* Price Calculation Modal */}
-      {showCalculationModal && calculatingField && currentProduct && (
-        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
-            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
-              <h3 className="text-lg font-bold text-slate-900">Price Calculation</h3>
-              <button
-                onClick={() => {
-                  setShowCalculationModal(false);
-                  setCalculatingField(null);
-                }}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-6">
-              <CalculationBuilder
-                value={priceCalculations[calculatingField] || []}
-                onChange={(newCalculation) => {
-                  setPriceCalculations({
-                    ...priceCalculations,
-                    [calculatingField]: newCalculation
-                  });
-                }}
-                integrationSourceId={currentProduct.integration_source_id}
-              />
-            </div>
-            <div className="border-t border-slate-200 px-6 py-4 flex justify-end gap-3 flex-shrink-0">
-              <button
-                onClick={() => {
-                  setShowCalculationModal(false);
-                  setCalculatingField(null);
-                }}
-                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  if (!currentProduct || !calculatingField) return;
-
-                  try {
-                    const { error } = await supabase
-                      .from('products')
-                      .update({
-                        price_calculations: priceCalculations
-                      })
-                      .eq('id', currentProduct.id);
-
-                    if (error) throw error;
-
-                    setShowCalculationModal(false);
-                    setCalculatingField(null);
-                    onSuccess();
-                  } catch (error: any) {
-                    alert(`Error saving calculation: ${error.message}`);
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                Save Calculation
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Integration Field Mapping Modal */}
