@@ -1701,19 +1701,21 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm text-slate-500">ID: {product.id}</p>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.clipboard.writeText(product.id);
-                }}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                title="Copy ID"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {mode === 'edit' && product && (
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-slate-500">ID: {product.id}</p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(product.id);
+                  }}
+                  className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                  title="Copy ID"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {/* Language Selector */}
