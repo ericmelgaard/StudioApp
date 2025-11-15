@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -51,28 +51,47 @@ interface SyncStatus {
 interface Option {
   id: string;
   label: string;
+  description?: string;
   price: number;
-  is_active: boolean;
-  is_out_of_stock: boolean;
-  link?: FieldLinkData;
+  calories?: number;
+  sort_order: number;
+  integration_link?: {
+    mapping_id: string;
+    integration_type: 'product' | 'modifier' | 'discount';
+    integration_source_id: string;
+  };
+  attribute_overrides?: {
+    label?: boolean;
+    description?: boolean;
+    price?: boolean;
+    calories?: boolean;
+  };
+  price_calculation?: any;
+  calories_calculation?: any;
 }
 
 interface OptionsEditorProps {
   options: Option[];
   onChange: (options: Option[]) => void;
+  integrationSourceId?: string | null;
 }
 
-const OptionsEditor = memo(function OptionsEditor({ options, onChange }: OptionsEditorProps) {
-  const [showLinkModal, setShowLinkModal] = useState(false);
+const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrationSourceId }: OptionsEditorProps) {
+  const [showPriceCalcModal, setShowPriceCalcModal] = useState(false);
+  const [showCaloriesCalcModal, setShowCaloriesCalcModal] = useState(false);
   const [linkingOptionId, setLinkingOptionId] = useState<string | null>(null);
-  const [currentLink, setCurrentLink] = useState<FieldLinkData | null>(null);
+  const [showApiLinkModal, setShowApiLinkModal] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
   const addOption = () => {
+    const maxSortOrder = options.length > 0 ? Math.max(...options.map(o => o.sort_order)) : 0;
     const newOption: Option = {
       id: crypto.randomUUID(),
       label: '',
+      description: '',
       price: 0,
-      is_active: true,
-      is_out_of_stock: false,
+      calories: 0,
+      sort_order: maxSortOrder + 1,
     };
     onChange([...options, newOption]);
   };
@@ -81,138 +100,324 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange }: Options
     onChange(options.map(option => option.id === id ? { ...option, ...updates } : option));
   };
 
-  const openLinkModal = (optionId: string) => {
-    const option = options.find(o => o.id === optionId);
-    setLinkingOptionId(optionId);
-    setCurrentLink(option?.link || null);
-    setShowLinkModal(true);
-  };
-
-  const handleLink = (linkData: FieldLinkData) => {
-    if (linkingOptionId) {
-      updateOption(linkingOptionId, { link: linkData });
-    }
-  };
-
-  const handleUnlink = (optionId: string) => {
-    updateOption(optionId, { link: undefined });
-  };
-
   const removeOption = (id: string) => {
     onChange(options.filter(option => option.id !== id));
   };
 
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const newOptions = [...options];
+    const draggedOption = newOptions[draggedIndex];
+    newOptions.splice(draggedIndex, 1);
+    newOptions.splice(index, 0, draggedOption);
+
+    newOptions.forEach((opt, idx) => {
+      opt.sort_order = idx + 1;
+    });
+
+    onChange(newOptions);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleIntegrationLink = (mapping_id: string, integration_type: 'product' | 'modifier' | 'discount') => {
+    if (linkingOptionId && integrationSourceId) {
+      updateOption(linkingOptionId, {
+        integration_link: {
+          mapping_id,
+          integration_type,
+          integration_source_id: integrationSourceId
+        }
+      });
+    }
+    setShowApiLinkModal(false);
+  };
+
+  const handleIntegrationUnlink = (optionId: string) => {
+    updateOption(optionId, { integration_link: undefined, attribute_overrides: undefined });
+  };
+
+  const toggleAttributeOverride = (optionId: string, attribute: 'label' | 'description' | 'price' | 'calories') => {
+    const option = options.find(o => o.id === optionId);
+    if (!option) return;
+
+    const currentOverrides = option.attribute_overrides || {};
+    updateOption(optionId, {
+      attribute_overrides: {
+        ...currentOverrides,
+        [attribute]: !currentOverrides[attribute]
+      }
+    });
+  };
+
+  const sortedOptions = [...options].sort((a, b) => a.sort_order - b.sort_order);
+
   return (
-    <div className="space-y-3">
-      {options.map((option) => (
-        <div key={option.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
-          <div className="flex-1 grid grid-cols-2 gap-3">
-            <input
-              type="text"
-              value={option.label}
-              onChange={(e) => updateOption(option.id, { label: e.target.value })}
-              placeholder="Option label (e.g., Small)"
-              className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              disabled={!!option.link}
-            />
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-              <input
-                type="number"
-                step="0.01"
-                value={option.price}
-                onChange={(e) => updateOption(option.id, { price: parseFloat(e.target.value) || 0 })}
-                disabled={!!option.link}
-                placeholder="0.00"
-                className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
-              />
-              {option.link && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">Linked</span>
-              )}
+    <div className="space-y-4">
+      {sortedOptions.map((option, index) => {
+        const hasIntegrationLink = !!option.integration_link;
+        const overrides = option.attribute_overrides || {};
+
+        return (
+          <div
+            key={option.id}
+            draggable
+            onDragStart={() => handleDragStart(index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragEnd={handleDragEnd}
+            className={`bg-white border-2 border-slate-200 rounded-xl p-5 transition-all ${
+              draggedIndex === index ? 'opacity-50' : 'opacity-100'
+            } hover:border-slate-300`}
+          >
+            <div className="flex gap-4">
+              <div className="flex items-start pt-2 cursor-grab active:cursor-grabbing">
+                <GripVertical className="w-5 h-5 text-slate-400" />
+              </div>
+
+              <div className="flex-1 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-slate-500">#{option.sort_order}</span>
+                    {hasIntegrationLink && (
+                      <div className="flex items-center gap-2">
+                        <StateBadge variant="api" text="Linked to API" />
+                        <button
+                          onClick={() => handleIntegrationUnlink(option.id)}
+                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Unlink from integration"
+                        >
+                          <Unlink className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                    {!hasIntegrationLink && integrationSourceId && (
+                      <button
+                        onClick={() => {
+                          setLinkingOptionId(option.id);
+                          setShowApiLinkModal(true);
+                        }}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors flex items-center gap-1"
+                      >
+                        <Link className="w-3 h-3" />
+                        Link to API
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-slate-600">Label</label>
+                      {hasIntegrationLink && (
+                        <select
+                          value={overrides.label ? 'custom' : 'api'}
+                          onChange={() => toggleAttributeOverride(option.id, 'label')}
+                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
+                        >
+                          <option value="api">Syncing</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={option.label}
+                      onChange={(e) => updateOption(option.id, { label: e.target.value })}
+                      disabled={hasIntegrationLink && !overrides.label}
+                      placeholder="e.g., Small, Medium, Large"
+                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-slate-600">Description</label>
+                      {hasIntegrationLink && (
+                        <select
+                          value={overrides.description ? 'custom' : 'api'}
+                          onChange={() => toggleAttributeOverride(option.id, 'description')}
+                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
+                        >
+                          <option value="api">Syncing</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={option.description || ''}
+                      onChange={(e) => updateOption(option.id, { description: e.target.value })}
+                      disabled={hasIntegrationLink && !overrides.description}
+                      placeholder="Optional description"
+                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-slate-600">Price</label>
+                      {hasIntegrationLink && (
+                        <select
+                          value={overrides.price ? 'custom' : 'api'}
+                          onChange={() => toggleAttributeOverride(option.id, 'price')}
+                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
+                        >
+                          <option value="api">Syncing</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={option.price}
+                        onChange={(e) => updateOption(option.id, { price: parseFloat(e.target.value) || 0 })}
+                        disabled={(hasIntegrationLink && !overrides.price) || !!option.price_calculation}
+                        placeholder="0.00"
+                        className="w-full pl-7 pr-10 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                      />
+                      {integrationSourceId && (
+                        <button
+                          onClick={() => {
+                            setLinkingOptionId(option.id);
+                            setShowPriceCalcModal(true);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Add price calculation"
+                        >
+                          <Calculator className={`w-4 h-4 ${option.price_calculation ? 'text-blue-600' : ''}`} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-slate-600">Calories</label>
+                      {hasIntegrationLink && (
+                        <select
+                          value={overrides.calories ? 'custom' : 'api'}
+                          onChange={() => toggleAttributeOverride(option.id, 'calories')}
+                          className="text-xs px-2 py-0.5 border border-slate-300 rounded bg-white text-slate-700"
+                        >
+                          <option value="api">Syncing</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={option.calories || 0}
+                        onChange={(e) => updateOption(option.id, { calories: parseInt(e.target.value) || 0 })}
+                        disabled={(hasIntegrationLink && !overrides.calories) || !!option.calories_calculation}
+                        placeholder="0"
+                        className="w-full pl-3 pr-10 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                      />
+                      {integrationSourceId && (
+                        <button
+                          onClick={() => {
+                            setLinkingOptionId(option.id);
+                            setShowCaloriesCalcModal(true);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Add calories calculation"
+                        >
+                          <Calculator className={`w-4 h-4 ${option.calories_calculation ? 'text-blue-600' : ''}`} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start pt-2">
+                <button
+                  onClick={() => removeOption(option.id)}
+                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete option"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-xs text-slate-500">Active</span>
-              <button
-                onClick={() => updateOption(option.id, { is_active: !option.is_active })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  option.is_active ? 'bg-blue-600' : 'bg-slate-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
-                    option.is_active ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-xs text-slate-500">Out of Stock</span>
-              <button
-                onClick={() => updateOption(option.id, { is_out_of_stock: !option.is_out_of_stock })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  option.is_out_of_stock ? 'bg-amber-500' : 'bg-slate-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
-                    option.is_out_of_stock ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {option.link ? (
-              <button
-                onClick={() => handleUnlink(option.id)}
-                className="p-2 rounded-lg transition-colors bg-green-100 text-green-700 hover:bg-green-200"
-                title="Linked to integration product"
-              >
-                <Unlink className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={() => openLinkModal(option.id)}
-                className="p-2 rounded-lg transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
-                title="Link to integration product"
-              >
-                <Link className="w-4 h-4" />
-              </button>
-            )}
-
-            <button
-              onClick={() => removeOption(option.id)}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         onClick={addOption}
-        className="w-full py-2.5 px-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 px-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className="w-5 h-5" />
         Add Option
       </button>
 
-      <FieldLinkModal
-        isOpen={showLinkModal}
-        onClose={() => {
-          setShowLinkModal(false);
-          setLinkingOptionId(null);
-          setCurrentLink(null);
-        }}
-        onLink={handleLink}
-        fieldName="price"
-        fieldLabel="Option Price"
-        currentLink={currentLink}
-      />
+      {showApiLinkModal && (
+        <ApiLinkModal
+          isOpen={showApiLinkModal}
+          onClose={() => {
+            setShowApiLinkModal(false);
+            setLinkingOptionId(null);
+          }}
+          onLink={handleIntegrationLink}
+          integrationSourceId={integrationSourceId || ''}
+        />
+      )}
+
+      {showPriceCalcModal && linkingOptionId && (
+        <FieldLinkModal
+          isOpen={showPriceCalcModal}
+          onClose={() => {
+            setShowPriceCalcModal(false);
+            setLinkingOptionId(null);
+          }}
+          onLink={(linkData) => {
+            if (linkingOptionId) {
+              updateOption(linkingOptionId, { price_calculation: linkData });
+            }
+            setShowPriceCalcModal(false);
+            setLinkingOptionId(null);
+          }}
+          fieldName="price"
+          fieldLabel="Option Price"
+          currentLink={options.find(o => o.id === linkingOptionId)?.price_calculation || null}
+        />
+      )}
+
+      {showCaloriesCalcModal && linkingOptionId && (
+        <FieldLinkModal
+          isOpen={showCaloriesCalcModal}
+          onClose={() => {
+            setShowCaloriesCalcModal(false);
+            setLinkingOptionId(null);
+          }}
+          onLink={(linkData) => {
+            if (linkingOptionId) {
+              updateOption(linkingOptionId, { calories_calculation: linkData });
+            }
+            setShowCaloriesCalcModal(false);
+            setLinkingOptionId(null);
+          }}
+          fieldName="calories"
+          fieldLabel="Option Calories"
+          currentLink={options.find(o => o.id === linkingOptionId)?.calories_calculation || null}
+        />
+      )}
     </div>
   );
 });
@@ -1025,6 +1230,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               lockOverride(key);
             }
           }}
+          integrationSourceId={currentProduct?.integration_source_id}
         />
       );
     }
