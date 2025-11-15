@@ -1661,7 +1661,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                       onSuccess();
                                     }
                                   }}
-                                  className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
                                 >
                                   <option value="custom">Custom</option>
                                   <option value="api">
@@ -1728,7 +1728,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                         onSuccess();
                                       }
                                     }}
-                                    className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
                                   >
                                     <option value="custom">Custom</option>
                                     <option value="api">
@@ -1870,7 +1870,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                             onSuccess();
                                           }
                                         }}
-                                        className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
                                       >
                                         <option value="custom">Custom</option>
                                         <option value="api">
@@ -2047,7 +2047,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                             onSuccess();
                                           }
                                         }}
-                                        className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
                                       >
                                         <option value="custom">Custom</option>
                                         <option value="api">
