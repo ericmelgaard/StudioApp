@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders } from 'lucide-react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, FileCode } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
@@ -16,6 +16,7 @@ const WandTemplateManager = lazy(() => import('./WandTemplateManager'));
 const WandIntegrationMapper = lazy(() => import('./WandIntegrationMapper'));
 const WandIntegrationLibrary = lazy(() => import('./WandIntegrationLibrary'));
 const CoreAttributes = lazy(() => import('./CoreAttributes'));
+const AttributeTemplates = lazy(() => import('./AttributeTemplates'));
 const WandProducts = lazy(() => import('./WandProducts'));
 const UserManagement = lazy(() => import('./UserManagement'));
 const SiteConfiguration = lazy(() => import('./SiteConfiguration'));
@@ -59,7 +60,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'attribute-templates' | 'wand-products' | 'users' | 'sites';
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay } = useLocation();
@@ -99,6 +100,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       { id: 'wand-products' as ViewType, label: 'Product Library', icon: Package },
       { id: 'integration-sources' as ViewType, label: 'Integration Sources', icon: Database },
       { id: 'core-attributes' as ViewType, label: 'Core Attributes', icon: Sliders },
+      { id: 'attribute-templates' as ViewType, label: 'Attribute Templates', icon: FileCode },
       { id: 'wand-templates' as ViewType, label: 'Manage Templates', icon: Layers },
       { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
     ],
@@ -239,7 +241,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'wand' ? null : 'wand')}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeMenu === 'wand' || ['wand-products', 'integration-sources', 'core-attributes', 'wand-templates', 'wand-mapper'].includes(currentView)
+                activeMenu === 'wand' || ['wand-products', 'integration-sources', 'core-attributes', 'attribute-templates', 'wand-templates', 'wand-mapper'].includes(currentView)
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-slate-700 hover:text-slate-900'
               }`}
@@ -348,6 +350,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {currentView === 'wand-products' && <WandProducts />}
           {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'attribute-templates' && <AttributeTemplates onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'integration-dashboard' && (

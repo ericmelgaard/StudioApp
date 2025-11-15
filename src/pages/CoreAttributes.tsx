@@ -6,6 +6,17 @@ interface CoreAttributesProps {
   onBack: () => void;
 }
 
+interface AttributeSection {
+  id: string;
+  name: string;
+  label: string;
+  description: string | null;
+  icon: string | null;
+  display_order: number;
+  is_system: boolean;
+  section_type: string;
+}
+
 interface Attribute {
   id: string;
   name: string;
@@ -14,8 +25,10 @@ interface Attribute {
   default_required: boolean;
   description: string | null;
   category: string | null;
+  section_id: string | null;
   is_system: boolean;
   created_at: string;
+  attribute_sections?: AttributeSection;
 }
 
 const ATTRIBUTE_TYPES = [
@@ -27,38 +40,50 @@ const ATTRIBUTE_TYPES = [
   { value: 'sizes', label: 'Sizes' }
 ];
 
-const CATEGORIES = [
-  { value: 'basic', label: 'Basic Information' },
-  { value: 'pricing', label: 'Pricing' },
-  { value: 'nutrition', label: 'Nutrition' },
-  { value: 'dietary', label: 'Dietary' },
-  { value: 'media', label: 'Media' },
-  { value: 'organization', label: 'Organization' },
-  { value: 'inventory', label: 'Inventory' },
-  { value: 'operations', label: 'Operations' },
-  { value: 'configuration', label: 'Configuration' },
-  { value: 'taste', label: 'Taste Profile' }
-];
+const getIconForSection = (icon: string | null) => {
+  switch (icon) {
+    case 'layers': return '📋';
+    case 'sliders': return '⚙️';
+    case 'image': return '🖼️';
+    case 'list': return '📝';
+    case 'activity': return '🍎';
+    default: return '📁';
+  }
+};
 
 export default function CoreAttributes({ onBack }: CoreAttributesProps) {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [sections, setSections] = useState<AttributeSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedAttribute, setSelectedAttribute] = useState<Attribute | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sectionFilter, setSectionFilter] = useState<string>('all');
 
   useEffect(() => {
+    loadSections();
     loadAttributes();
   }, []);
+
+  const loadSections = async () => {
+    const { data, error } = await supabase
+      .from('attribute_sections')
+      .select('*')
+      .order('display_order');
+
+    if (error) {
+      console.error('Error loading sections:', error);
+    } else if (data) {
+      setSections(data);
+    }
+  };
 
   const loadAttributes = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('available_attributes')
-      .select('*')
-      .order('category')
+      .select('*, attribute_sections(*)')
       .order('name');
 
     if (error) {
@@ -95,22 +120,28 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
       attr.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
       attr.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory = categoryFilter === 'all' || attr.category === categoryFilter;
+    const matchesSection = sectionFilter === 'all' || attr.section_id === sectionFilter;
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesSection;
   });
 
   const groupedAttributes = filteredAttributes.reduce((acc, attr) => {
-    const category = attr.category || 'uncategorized';
-    if (!acc[category]) {
-      acc[category] = [];
+    const sectionId = attr.section_id || 'uncategorized';
+    if (!acc[sectionId]) {
+      acc[sectionId] = [];
     }
-    acc[category].push(attr);
+    acc[sectionId].push(attr);
     return acc;
   }, {} as Record<string, Attribute[]>);
 
-  const getCategoryLabel = (category: string) => {
-    return CATEGORIES.find(c => c.value === category)?.label || category;
+  const getSectionById = (sectionId: string) => {
+    return sections.find(s => s.id === sectionId);
+  };
+
+  const getSectionLabel = (sectionId: string) => {
+    if (sectionId === 'uncategorized') return 'Uncategorized';
+    const section = getSectionById(sectionId);
+    return section?.label || 'Unknown Section';
   };
 
   return (
@@ -143,13 +174,13 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
           />
         </div>
         <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
+          value={sectionFilter}
+          onChange={(e) => setSectionFilter(e.target.value)}
           className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
-          <option value="all">All Categories</option>
-          {CATEGORIES.map(cat => (
-            <option key={cat.value} value={cat.value}>{cat.label}</option>
+          <option value="all">All Sections</option>
+          {sections.map(section => (
+            <option key={section.id} value={section.id}>{section.label}</option>
           ))}
         </select>
       </div>
@@ -165,75 +196,96 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
         </div>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedAttributes).map(([category, attrs]) => (
-            <div key={category} className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  {getCategoryLabel(category)}
-                  <span className="ml-2 text-sm font-normal text-slate-500">
-                    ({attrs.length} {attrs.length === 1 ? 'attribute' : 'attributes'})
-                  </span>
-                </h2>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {attrs.map(attr => (
-                    <div
-                      key={attr.id}
-                      className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 hover:shadow-sm transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-slate-900">{attr.label}</h3>
-                            {attr.is_system && (
-                              <Shield className="w-4 h-4 text-blue-600" title="System attribute" />
-                            )}
-                            {attr.default_required && (
-                              <span className="text-red-500 text-sm">*</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">
-                            {attr.name}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setSelectedAttribute(attr);
-                              setShowEditModal(true);
-                            }}
-                            className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                            disabled={attr.is_system}
-                          >
-                            <Edit2 className={`w-3.5 h-3.5 ${attr.is_system ? 'text-slate-300' : 'text-slate-600'}`} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(attr)}
-                            className="p-1.5 hover:bg-red-50 rounded transition-colors"
-                            disabled={attr.is_system}
-                          >
-                            <Trash2 className={`w-3.5 h-3.5 ${attr.is_system ? 'text-slate-300' : 'text-red-600'}`} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-slate-500">Type:</span>
-                          <span className="font-medium text-slate-700">
-                            {ATTRIBUTE_TYPES.find(t => t.value === attr.type)?.label || attr.type}
+          {Object.entries(groupedAttributes)
+            .sort(([aId], [bId]) => {
+              if (aId === 'uncategorized') return 1;
+              if (bId === 'uncategorized') return -1;
+              const aSection = getSectionById(aId);
+              const bSection = getSectionById(bId);
+              return (aSection?.display_order || 999) - (bSection?.display_order || 999);
+            })
+            .map(([sectionId, attrs]) => {
+              const section = getSectionById(sectionId);
+              return (
+                <div key={sectionId} className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                  <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+                    <div className="flex items-center gap-3">
+                      {section && (
+                        <span className="text-2xl">{getIconForSection(section.icon)}</span>
+                      )}
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900">
+                          {getSectionLabel(sectionId)}
+                          <span className="ml-2 text-sm font-normal text-slate-500">
+                            ({attrs.length} {attrs.length === 1 ? 'attribute' : 'attributes'})
                           </span>
-                        </div>
-                        {attr.description && (
-                          <p className="text-xs text-slate-600 mt-2">{attr.description}</p>
+                        </h2>
+                        {section?.description && (
+                          <p className="text-sm text-slate-600 mt-1">{section.description}</p>
                         )}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {attrs.map(attr => (
+                        <div
+                          key={attr.id}
+                          className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 hover:shadow-sm transition-all"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-slate-900">{attr.label}</h3>
+                                {attr.is_system && (
+                                  <Shield className="w-4 h-4 text-blue-600" title="System attribute" />
+                                )}
+                                {attr.default_required && (
+                                  <span className="text-red-500 text-sm">*</span>
+                                )}
+                              </div>
+                              <div className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">
+                                {attr.name}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedAttribute(attr);
+                                  setShowEditModal(true);
+                                }}
+                                className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                                disabled={attr.is_system}
+                              >
+                                <Edit2 className={`w-3.5 h-3.5 ${attr.is_system ? 'text-slate-300' : 'text-slate-600'}`} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(attr)}
+                                className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                                disabled={attr.is_system}
+                              >
+                                <Trash2 className={`w-3.5 h-3.5 ${attr.is_system ? 'text-slate-300' : 'text-red-600'}`} />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-slate-500">Type:</span>
+                              <span className="font-medium text-slate-700">
+                                {ATTRIBUTE_TYPES.find(t => t.value === attr.type)?.label || attr.type}
+                              </span>
+                            </div>
+                            {attr.description && (
+                              <p className="text-xs text-slate-600 mt-2">{attr.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
         </div>
       )}
 
@@ -247,12 +299,13 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
           <li>System attributes (marked with shield icon) cannot be modified or deleted</li>
           <li>Custom attributes can be created to extend the available fields</li>
           <li>Attributes marked with * are required by default in templates</li>
-          <li>Categories help organize attributes by their purpose and usage</li>
+          <li>Sections help organize attributes by their purpose and usage</li>
         </ul>
       </div>
 
       {showAddModal && (
         <AddAttributeModal
+          sections={sections}
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             setShowAddModal(false);
@@ -264,6 +317,7 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
       {showEditModal && selectedAttribute && (
         <EditAttributeModal
           attribute={selectedAttribute}
+          sections={sections}
           onClose={() => {
             setShowEditModal(false);
             setSelectedAttribute(null);
@@ -279,14 +333,14 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
   );
 }
 
-function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function AddAttributeModal({ sections, onClose, onSuccess }: { sections: AttributeSection[]; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     name: '',
     label: '',
     type: 'text',
     default_required: false,
     description: '',
-    category: 'basic'
+    section_id: sections[0]?.id || ''
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -304,7 +358,7 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
         type: formData.type,
         default_required: formData.default_required,
         description: formData.description || null,
-        category: formData.category,
+        section_id: formData.section_id,
         is_system: false
       });
 
@@ -384,15 +438,15 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Category <span className="text-red-500">*</span>
+                Section <span className="text-red-500">*</span>
               </label>
               <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                value={formData.section_id}
+                onChange={(e) => setFormData({ ...formData, section_id: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {CATEGORIES.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                {sections.map(section => (
+                  <option key={section.id} value={section.id}>{section.label}</option>
                 ))}
               </select>
             </div>
@@ -444,13 +498,13 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
   );
 }
 
-function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attribute; onClose: () => void; onSuccess: () => void }) {
+function EditAttributeModal({ attribute, sections, onClose, onSuccess }: { attribute: Attribute; sections: AttributeSection[]; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     label: attribute.label,
     type: attribute.type,
     default_required: attribute.default_required,
     description: attribute.description || '',
-    category: attribute.category || 'basic'
+    section_id: attribute.section_id || sections[0]?.id || ''
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -467,7 +521,7 @@ function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attr
         type: formData.type,
         default_required: formData.default_required,
         description: formData.description || null,
-        category: formData.category
+        section_id: formData.section_id
       })
       .eq('id', attribute.id);
 
@@ -540,15 +594,15 @@ function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attr
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Category <span className="text-red-500">*</span>
+                Section <span className="text-red-500">*</span>
               </label>
               <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                value={formData.section_id}
+                onChange={(e) => setFormData({ ...formData, section_id: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {CATEGORIES.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                {sections.map(section => (
+                  <option key={section.id} value={section.id}>{section.label}</option>
                 ))}
               </select>
             </div>
