@@ -554,7 +554,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   const wrappedOnClose = () => {
     console.log('onClose called from modal');
     console.trace('onClose call stack');
-    wrappedOnClose();
+    onClose();
   };
 
   const { location } = useLocation();
