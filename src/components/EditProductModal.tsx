@@ -40,6 +40,7 @@ interface EditProductModalProps {
   onClose: () => void;
   product: Product | null;
   onSuccess: () => void;
+  mode?: 'create' | 'edit';
 }
 
 interface SyncStatus {
@@ -547,11 +548,13 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   );
 });
 
-export default function EditProductModal({ isOpen, onClose, product, onSuccess }: EditProductModalProps) {
+export default function EditProductModal({ isOpen, onClose, product, onSuccess, mode = 'edit' }: EditProductModalProps) {
   const { location } = useLocation();
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [name, setName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
   const [attributeOverrides, setAttributeOverrides] = useState<Record<string, boolean>>({});
   const [attributeMappings, setAttributeMappings] = useState<Record<string, string>>({});
   const [fieldLinks, setFieldLinks] = useState<Record<string, FieldLinkData>>({});
@@ -580,6 +583,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [syncStateManager, setSyncStateManager] = useState<SyncStateManager | null>(null);
   const [disabledSyncFields, setDisabledSyncFields] = useState<string[]>([]);
   const [expandedRichTextFields, setExpandedRichTextFields] = useState<Set<string>>(new Set());
+  const [showProductApiLinkModal, setShowProductApiLinkModal] = useState(false);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -638,7 +642,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   };
 
   useEffect(() => {
-    if (product) {
+    if (isOpen && mode === 'create') {
+      // Load available templates for create mode
+      loadAvailableTemplates();
+      resetForm();
+    } else if (product && mode === 'edit') {
       setCurrentProduct(product);
       setName(product.name);
       loadTemplateAttributes();
@@ -669,7 +677,77 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
       // Calculate any computed fields
       calculateComputedFields(mappings, product.attributes);
     }
-  }, [product]);
+  }, [product, isOpen, mode]);
+
+  async function loadAvailableTemplates() {
+    const [templatesResult, orgSettingsResult] = await Promise.all([
+      supabase.from('product_attribute_templates').select('*').order('name'),
+      supabase.from('organization_settings').select('*').limit(1).maybeSingle()
+    ]);
+
+    if (templatesResult.data) {
+      setAvailableTemplates(templatesResult.data);
+    }
+
+    if (orgSettingsResult.data?.default_product_attribute_template_id) {
+      setSelectedTemplateId(orgSettingsResult.data.default_product_attribute_template_id);
+      loadTemplateForCreate(orgSettingsResult.data.default_product_attribute_template_id);
+    }
+  }
+
+  async function loadTemplateForCreate(templateId: string) {
+    const { data: templateData } = await supabase
+      .from('product_attribute_templates')
+      .select('*')
+      .eq('id', templateId)
+      .maybeSingle();
+
+    if (templateData?.attribute_schema) {
+      setTemplate(templateData);
+      const schema = templateData.attribute_schema as any;
+      setTemplateSchema(schema);
+
+      const coreAttrs = schema.core_attributes || [];
+      const extendedAttrs = schema.extended_attributes || [];
+      const allTemplateAttrs = [...coreAttrs, ...extendedAttrs];
+
+      setTemplateAttributes(allTemplateAttrs.map((attr: any) => attr.name));
+
+      // Initialize default attributes for template
+      const defaultAttrs: Record<string, any> = {};
+      allTemplateAttrs.forEach((attr: any) => {
+        if (attr.type === 'sizes') {
+          defaultAttrs[attr.name] = [];
+        } else if (attr.type === 'boolean') {
+          defaultAttrs[attr.name] = false;
+        } else if (attr.type === 'number') {
+          defaultAttrs[attr.name] = 0;
+        } else if (attr.type === 'text' || attr.type === 'richtext') {
+          defaultAttrs[attr.name] = '';
+        }
+      });
+
+      setAttributes(defaultAttrs);
+    }
+  }
+
+  function resetForm() {
+    setName('');
+    setAttributes({});
+    setAttributeOverrides({});
+    setAttributeMappings({});
+    setFieldLinks({});
+    setTranslations({});
+    setDisabledSyncFields([]);
+    setTranslationData({});
+    setSyncStatus(null);
+    setIntegrationData(null);
+    setPendingPublication(null);
+    setPolicyViolations([]);
+    setCurrentLanguage('en');
+    setExpandedRichTextFields(new Set());
+    setCurrentProduct(null);
+  }
 
   function calculateComputedFields(mappings: Record<string, FieldLinkData>, attrs: Record<string, any>) {
     const updatedAttrs = { ...attrs };
@@ -1001,7 +1079,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   }
 
   async function handlePublish(publishAt?: string) {
-    if (!product) return;
+    if (mode === 'edit' && !product) return;
 
     setLoading(true);
     try {
@@ -1022,6 +1100,31 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         disabled_sync_fields: disabledSyncFields,
       };
 
+      // CREATE MODE
+      if (mode === 'create') {
+        const { error, data } = await supabase
+          .from('products')
+          .insert({
+            name: productName,
+            attributes: updatedAttributes,
+            attribute_template_id: selectedTemplateId || null,
+            attribute_mappings: fieldLinks,
+            mapping_id: currentProduct?.mapping_id || null,
+            integration_source_id: currentProduct?.integration_source_id || null,
+            integration_type: currentProduct?.integration_type || null,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        alert('Product created successfully');
+        onSuccess();
+        onClose();
+        return;
+      }
+
+      // EDIT MODE
       if (editMode === 'scheduled' && pendingPublication) {
         // Editing existing scheduled publication
         const { error } = await supabase
@@ -1572,8 +1675,8 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-slate-900">Edit Product</h2>
-              {policyViolations.length > 0 && (
+              <h2 className="text-xl font-bold text-slate-900">{mode === 'create' ? 'Create Product' : 'Edit Product'}</h2>
+              {mode === 'edit' && policyViolations.length > 0 && (
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-lg shadow-sm text-xs font-medium text-amber-800">
                   <AlertCircle className="w-4 h-4" />
                   {policyViolations.length} Policy Violation{policyViolations.length > 1 ? 's' : ''}
@@ -1679,6 +1782,32 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         )}
 
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
+          {/* Template Selection (Create Mode Only) */}
+          {mode === 'create' && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">Product Attribute Template *</h3>
+              <select
+                required
+                value={selectedTemplateId}
+                onChange={(e) => {
+                  setSelectedTemplateId(e.target.value);
+                  loadTemplateForCreate(e.target.value);
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select a template...</option>
+                {availableTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} - {template.description}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                Defines the shape and attributes of your product
+              </p>
+            </div>
+          )}
+
           {/* API Integration Section */}
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
@@ -1686,25 +1815,26 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               API Integration
             </h3>
 
-            {product.mapping_id && product.integration_source_id ? (
+            {((mode === 'create' && currentProduct?.mapping_id) || (mode === 'edit' && product?.mapping_id && product?.integration_source_id)) ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <StateBadge variant="api" text="Linked to API" />
-                  {product.local_fields && product.local_fields.length > 0 && (
+                  {mode === 'edit' && product?.local_fields && product.local_fields.length > 0 && (
                     <StateBadge variant="local" text={`${product.local_fields.length} override(s)`} />
                   )}
-                  {product.price_calculations && Object.keys(product.price_calculations).length > 0 && (
+                  {mode === 'edit' && product?.price_calculations && Object.keys(product.price_calculations).length > 0 && (
                     <StateBadge variant="calculated" text="Has calculations" />
                   )}
                 </div>
                 <div className="text-sm text-slate-600">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">Mapping ID:</span>
-                    <span>{product.mapping_id}</span>
+                    <span>{mode === 'create' ? currentProduct?.mapping_id : product?.mapping_id}</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigator.clipboard.writeText(product.mapping_id!);
+                        const id = mode === 'create' ? currentProduct?.mapping_id : product?.mapping_id;
+                        if (id) navigator.clipboard.writeText(id);
                       }}
                       className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
                       title="Copy Mapping ID"
@@ -1712,20 +1842,24 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       <Copy className="w-3 h-3" />
                     </button>
                   </div>
-                  <div><span className="font-medium">Type:</span> {product.integration_type}</div>
-                  {product.last_synced_at && (
+                  <div><span className="font-medium">Type:</span> {mode === 'create' ? currentProduct?.integration_type : product?.integration_type}</div>
+                  {mode === 'edit' && product?.last_synced_at && (
                     <div><span className="font-medium">Last synced:</span> {new Date(product.last_synced_at).toLocaleString()}</div>
                   )}
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={async () => {
-                      try {
-                        await integrationLinkService.unlinkProduct(product.id);
-                        alert('Product unlinked from API');
-                        onSuccess();
-                      } catch (error: any) {
-                        alert(error.message);
+                      if (mode === 'create') {
+                        setCurrentProduct(null);
+                      } else {
+                        try {
+                          await integrationLinkService.unlinkProduct(product!.id);
+                          alert('Product unlinked from API');
+                          onSuccess();
+                        } catch (error: any) {
+                          alert(error.message);
+                        }
                       }
                     }}
                     className="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -1741,9 +1875,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   This product is not linked to any API source. Link it to sync data automatically.
                 </p>
                 <button
-                  onClick={() => {
-                    alert('API linking modal coming soon. For now, use the Integration Catalog page to link products.');
-                  }}
+                  onClick={() => setShowProductApiLinkModal(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                 >
                   <Link className="w-4 h-4 inline mr-2" />
@@ -2273,13 +2405,13 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
         </div>
 
         <div className="border-t border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
-          {product.integration_product_id && (
+          {mode === 'edit' && product?.integration_product_id && (
             <div className="text-xs text-slate-500">
               <Link className="w-3 h-3 inline mr-1" />
               Synced from integration
             </div>
           )}
-          {!product.integration_product_id && <div></div>}
+          {(mode === 'create' || !product?.integration_product_id) && <div></div>}
           <div className="flex gap-3">
             <button
               onClick={onClose}
@@ -2288,7 +2420,16 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               Cancel
             </button>
 
-            {editMode === 'scheduled' && pendingPublication ? (
+            {mode === 'create' ? (
+              <button
+                onClick={() => handlePublish()}
+                disabled={loading || !selectedTemplateId}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {loading ? 'Creating...' : 'Create Product'}
+              </button>
+            ) : editMode === 'scheduled' && pendingPublication ? (
               <button
                 onClick={() => handlePublish()}
                 disabled={loading}
@@ -2376,6 +2517,33 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
           </div>
         </div>
       </div>
+
+      {/* Product API Link Modal */}
+      {showProductApiLinkModal && (
+        <ApiLinkModal
+          isOpen={showProductApiLinkModal}
+          onClose={() => setShowProductApiLinkModal(false)}
+          onLink={(mapping_id, integration_type) => {
+            // In create mode, we just store the mapping info in currentProduct state
+            // The actual link will be created when the product is saved
+            setCurrentProduct({
+              id: '',
+              name: name,
+              attributes: attributes,
+              attribute_template_id: selectedTemplateId,
+              display_template_id: null,
+              integration_product_id: null,
+              mapping_id: mapping_id,
+              integration_source_id: location?.active_integration_source_id || null,
+              integration_type: integration_type,
+            });
+            setShowProductApiLinkModal(false);
+          }}
+          integrationSourceId={location?.active_integration_source_id || null}
+          title="Link Product to API"
+          searchType="all"
+        />
+      )}
 
       {/* Price/Calories Field Link Modal */}
       {showPriceCaloriesLinkModal && linkingFieldKey && (

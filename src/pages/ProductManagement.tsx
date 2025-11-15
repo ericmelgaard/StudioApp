@@ -7,7 +7,6 @@ import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
 import { LocationProductService } from '../lib/locationProductService';
 import ProductTile from '../components/ProductTile';
-import CreateProductModal from '../components/CreateProductModal';
 import EditProductModal from '../components/EditProductModal';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
 import IntegrationProductMapper from '../components/IntegrationProductMapper';
@@ -562,9 +561,11 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         </div>
       </main>
 
-      <CreateProductModal
+      <EditProductModal
+        mode="create"
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
+        product={null}
         onSuccess={loadProducts}
       />
 
