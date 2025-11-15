@@ -677,7 +677,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
       // Calculate any computed fields
       calculateComputedFields(mappings, product.attributes);
     }
-  }, [product, isOpen, mode]);
+  }, [product?.id, isOpen, mode]);
 
   async function loadAvailableTemplates() {
     const [templatesResult, orgSettingsResult] = await Promise.all([
