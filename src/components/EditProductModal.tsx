@@ -1912,7 +1912,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
               <label className="block text-sm font-medium text-slate-700">
                 Product Attributes
               </label>
-              {!product.integration_product_id && (
+              {(!product || !product.integration_product_id) && (
                 <button
                   onClick={addAttribute}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
