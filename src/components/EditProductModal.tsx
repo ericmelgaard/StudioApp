@@ -223,20 +223,18 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('label') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
+                            <button
+                              onClick={() => {
+                                if (confirm('Switch back to syncing from API? Your custom value will be replaced.')) {
                                   clearLocalOverride(option.id, 'label');
                                 }
                               }}
-                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="text-xs px-1.5 py-0.5 text-slate-600 hover:text-slate-900 font-medium"
                             >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                              Custom
+                            </button>
                           ) : (
-                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                            <span className="text-xs px-1.5 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
                         </div>
                       )}
@@ -261,20 +259,18 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('description') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
+                            <button
+                              onClick={() => {
+                                if (confirm('Switch back to syncing from API? Your custom value will be replaced.')) {
                                   clearLocalOverride(option.id, 'description');
                                 }
                               }}
-                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="text-xs px-1.5 py-0.5 text-slate-600 hover:text-slate-900 font-medium"
                             >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                              Custom
+                            </button>
                           ) : (
-                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                            <span className="text-xs px-1.5 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
                         </div>
                       )}
@@ -301,20 +297,18 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('price') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
+                            <button
+                              onClick={() => {
+                                if (confirm('Switch back to syncing from API? Your custom value will be replaced.')) {
                                   clearLocalOverride(option.id, 'price');
                                 }
                               }}
-                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="text-xs px-1.5 py-0.5 text-slate-600 hover:text-slate-900 font-medium"
                             >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                              Custom
+                            </button>
                           ) : (
-                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                            <span className="text-xs px-1.5 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
                         </div>
                       )}
@@ -359,20 +353,18 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('calories') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
+                            <button
+                              onClick={() => {
+                                if (confirm('Switch back to syncing from API? Your custom value will be replaced.')) {
                                   clearLocalOverride(option.id, 'calories');
                                 }
                               }}
-                              className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="text-xs px-1.5 py-0.5 text-slate-600 hover:text-slate-900 font-medium"
                             >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                              Custom
+                            </button>
                           ) : (
-                            <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                            <span className="text-xs px-1.5 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
                         </div>
                       )}
