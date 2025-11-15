@@ -49,9 +49,11 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const [filterState, setFilterState] = useState<FilterState>({});
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editModalState, setEditModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; product: Product | null }>({
+    isOpen: false,
+    mode: 'edit',
+    product: null
+  });
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showMapper, setShowMapper] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -371,7 +373,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => setEditModalState({ isOpen: true, mode: 'create', product: null })}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
               >
                 <Plus className="w-5 h-5" />
@@ -500,8 +502,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                 <ProductListView
                   products={filteredProducts}
                   onProductClick={(product) => {
-                    setSelectedProduct(product);
-                    setShowEditModal(true);
+                    setEditModalState({ isOpen: true, mode: 'edit', product });
                   }}
                   selectedProductIds={selectedProductIds}
                   onSelectionChange={setSelectedProductIds}
@@ -542,8 +543,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                         }
                       }
 
-                      setSelectedProduct(productToEdit);
-                      setShowEditModal(true);
+                      setEditModalState({ isOpen: true, mode: 'edit', product: productToEdit });
                     }}
                   />
                 ))}
@@ -562,20 +562,10 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       </main>
 
       <EditProductModal
-        mode="create"
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        product={null}
-        onSuccess={loadProducts}
-      />
-
-      <EditProductModal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
+        mode={editModalState.mode}
+        isOpen={editModalState.isOpen}
+        onClose={() => setEditModalState({ isOpen: false, mode: 'edit', product: null })}
+        product={editModalState.product}
         onSuccess={loadProducts}
       />
 
