@@ -216,7 +216,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-medium text-slate-600">Label</label>
@@ -241,18 +241,63 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                         </div>
                       )}
                     </div>
-                    <input
-                      type="text"
-                      value={option.label}
-                      onChange={(e) => {
-                        if (hasIntegrationLink && !localFields.includes('label')) {
-                          enableLocalOverride(option.id, 'label');
-                        }
-                        updateOption(option.id, { label: e.target.value });
-                      }}
-                      placeholder="e.g., Small, Medium, Large"
-                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
+                    <div className="relative">
+                      {!expandedRichTextFields.has(`option-${option.id}-label`) ? (
+                        <>
+                          <input
+                            type="text"
+                            value={option.label ? option.label.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
+                            readOnly
+                            onClick={() => {
+                              const newExpanded = new Set(expandedRichTextFields);
+                              newExpanded.add(`option-${option.id}-label`);
+                              setExpandedRichTextFields(newExpanded);
+                            }}
+                            placeholder="e.g., Small, Medium, Large"
+                            className="w-full px-3 py-2 pr-10 border border-slate-300 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm cursor-pointer"
+                          />
+                          <button
+                            onClick={() => {
+                              const newExpanded = new Set(expandedRichTextFields);
+                              newExpanded.add(`option-${option.id}-label`);
+                              setExpandedRichTextFields(newExpanded);
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                            title="Expand rich text editor"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="border border-blue-500 rounded-lg p-3 bg-blue-50/30">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-slate-700">Editing Label</span>
+                            <button
+                              onClick={() => {
+                                const newExpanded = new Set(expandedRichTextFields);
+                                newExpanded.delete(`option-${option.id}-label`);
+                                setExpandedRichTextFields(newExpanded);
+                              }}
+                              className="text-slate-400 hover:text-slate-600 transition-colors"
+                              title="Collapse editor"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <RichTextEditor
+                            value={option.label || ''}
+                            onChange={(value) => {
+                              if (hasIntegrationLink && !localFields.includes('label')) {
+                                enableLocalOverride(option.id, 'label');
+                              }
+                              updateOption(option.id, { label: value });
+                            }}
+                            placeholder="e.g., Small, Medium, Large"
+                            minHeight="120px"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -279,18 +324,63 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                         </div>
                       )}
                     </div>
-                    <input
-                      type="text"
-                      value={option.description || ''}
-                      onChange={(e) => {
-                        if (hasIntegrationLink && !localFields.includes('description')) {
-                          enableLocalOverride(option.id, 'description');
-                        }
-                        updateOption(option.id, { description: e.target.value });
-                      }}
-                      placeholder="Optional description"
-                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
+                    <div className="relative">
+                      {!expandedRichTextFields.has(`option-${option.id}-description`) ? (
+                        <>
+                          <input
+                            type="text"
+                            value={option.description ? option.description.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
+                            readOnly
+                            onClick={() => {
+                              const newExpanded = new Set(expandedRichTextFields);
+                              newExpanded.add(`option-${option.id}-description`);
+                              setExpandedRichTextFields(newExpanded);
+                            }}
+                            placeholder="Optional description"
+                            className="w-full px-3 py-2 pr-10 border border-slate-300 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm cursor-pointer"
+                          />
+                          <button
+                            onClick={() => {
+                              const newExpanded = new Set(expandedRichTextFields);
+                              newExpanded.add(`option-${option.id}-description`);
+                              setExpandedRichTextFields(newExpanded);
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                            title="Expand rich text editor"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="border border-blue-500 rounded-lg p-3 bg-blue-50/30">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-slate-700">Editing Description</span>
+                            <button
+                              onClick={() => {
+                                const newExpanded = new Set(expandedRichTextFields);
+                                newExpanded.delete(`option-${option.id}-description`);
+                                setExpandedRichTextFields(newExpanded);
+                              }}
+                              className="text-slate-400 hover:text-slate-600 transition-colors"
+                              title="Collapse editor"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <RichTextEditor
+                            value={option.description || ''}
+                            onChange={(value) => {
+                              if (hasIntegrationLink && !localFields.includes('description')) {
+                                enableLocalOverride(option.id, 'description');
+                              }
+                              updateOption(option.id, { description: value });
+                            }}
+                            placeholder="Optional description"
+                            minHeight="120px"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
