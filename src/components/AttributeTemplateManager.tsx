@@ -16,6 +16,7 @@ interface AttributeTemplate {
   attribute_schema: {
     core_attributes: AttributeField[];
     extended_attributes: AttributeField[];
+    option_attributes?: AttributeField[];
   };
   translations?: TranslationConfig[];
 }
@@ -65,7 +66,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     label: '',
     type: 'text',
     required: false,
-    attributeGroup: 'extended' as 'core' | 'extended'
+    attributeGroup: 'extended' as 'core' | 'extended' | 'option'
   });
 
   const [newTranslation, setNewTranslation] = useState({
@@ -197,7 +198,10 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
           : selectedTemplate.attribute_schema.core_attributes,
         extended_attributes: newAttribute.attributeGroup === 'extended'
           ? [...selectedTemplate.attribute_schema.extended_attributes, attributeToAdd]
-          : selectedTemplate.attribute_schema.extended_attributes
+          : selectedTemplate.attribute_schema.extended_attributes,
+        option_attributes: newAttribute.attributeGroup === 'option'
+          ? [...(selectedTemplate.attribute_schema.option_attributes || []), attributeToAdd]
+          : selectedTemplate.attribute_schema.option_attributes
       };
 
       await supabase
@@ -217,7 +221,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     }
   }
 
-  async function removeAttribute(attributeName: string, attributeGroup: 'core' | 'extended') {
+  async function removeAttribute(attributeName: string, attributeGroup: 'core' | 'extended' | 'option') {
     if (!selectedTemplate) return;
 
     if (!confirm(`Remove attribute "${attributeName}"? This will affect all products using this template.`)) {
@@ -233,7 +237,10 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
           : selectedTemplate.attribute_schema.core_attributes,
         extended_attributes: attributeGroup === 'extended'
           ? selectedTemplate.attribute_schema.extended_attributes.filter(a => a.name !== attributeName)
-          : selectedTemplate.attribute_schema.extended_attributes
+          : selectedTemplate.attribute_schema.extended_attributes,
+        option_attributes: attributeGroup === 'option'
+          ? (selectedTemplate.attribute_schema.option_attributes || []).filter(a => a.name !== attributeName)
+          : selectedTemplate.attribute_schema.option_attributes
       };
 
       await supabase
@@ -268,7 +275,8 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
     // Get all translatable fields
     const translatableFields = [
       ...selectedTemplate.attribute_schema.core_attributes,
-      ...selectedTemplate.attribute_schema.extended_attributes
+      ...selectedTemplate.attribute_schema.extended_attributes,
+      ...(selectedTemplate.attribute_schema.option_attributes || [])
     ].filter(attr => attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
 
     // Initialize with default labels (same as original)
@@ -387,6 +395,8 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
         ...selectedTemplate.attribute_schema.core_attributes,
         ...selectedTemplate.attribute_schema.extended_attributes
       ];
+
+      // Note: option_attributes are not pushed to products as they define the schema for options within products
 
       let updatedCount = 0;
       const updateDetails: string[] = [];
@@ -530,7 +540,8 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                         <p className="text-sm text-slate-600 mt-1">{template.description}</p>
                         <div className="mt-2 text-xs text-slate-500">
                           {template.attribute_schema.core_attributes.length} core + {' '}
-                          {template.attribute_schema.extended_attributes.length} extended attributes
+                          {template.attribute_schema.extended_attributes.length} extended + {' '}
+                          {(template.attribute_schema.option_attributes || []).length} option attributes
                         </div>
                       </div>
                       {defaultTemplateId !== template.id && (
@@ -786,7 +797,7 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                   : 'bg-white text-slate-600 hover:bg-slate-50'
                               }`}
                             >
-                              Core Attribute
+                              Core
                             </button>
                             <button
                               type="button"
@@ -797,7 +808,18 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                   : 'bg-white text-slate-600 hover:bg-slate-50'
                               }`}
                             >
-                              Extended Attribute
+                              Extended
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setNewAttribute({ ...newAttribute, attributeGroup: 'option' })}
+                              className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-colors ${
+                                newAttribute.attributeGroup === 'option'
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-white text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              Option
                             </button>
                           </div>
                           <input
@@ -881,6 +903,75 @@ export default function AttributeTemplateManager({ isOpen, onClose }: AttributeT
                                     )}
                                     <button
                                       onClick={() => removeAttribute(attr.name, 'extended')}
+                                      className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                      title="Remove attribute"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {isTranslatable && translatableFields.length > 0 && (
+                                  <div className="mt-2 space-y-1.5">
+                                    {translatableFields.map((translation) => (
+                                      <div key={translation.locale} className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-600 w-20 flex-shrink-0">{translation.locale_name}:</span>
+                                        <input
+                                          type="text"
+                                          value={translation.field_labels[attr.name] || attr.label}
+                                          onChange={(e) => updateTranslationLabel(translation.locale, attr.name, e.target.value)}
+                                          className="flex-1 px-2 py-1 text-xs bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                          placeholder={`${translation.locale_name} label`}
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                          <Tag className="w-4 h-4" />
+                          Option Attributes
+                        </h4>
+                        <button
+                          onClick={() => {
+                            setNewAttribute({ ...newAttribute, attributeGroup: 'option' });
+                            setShowAddAttribute(!showAddAttribute);
+                          }}
+                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 rounded transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add Option Attribute
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {(!selectedTemplate.attribute_schema.option_attributes || selectedTemplate.attribute_schema.option_attributes.length === 0) ? (
+                          <p className="text-sm text-slate-500 italic p-3 bg-slate-50 rounded-lg">
+                            No option attributes yet. Add one above to define what fields are available in product options.
+                          </p>
+                        ) : (
+                          selectedTemplate.attribute_schema.option_attributes.map((attr) => {
+                            const translatableFields = selectedTemplate.translations || [];
+                            const isTranslatable = attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext';
+
+                            return (
+                              <div key={attr.name} className="p-3 bg-slate-50 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-sm text-slate-900">{attr.label}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500">{attr.type}</span>
+                                    {attr.required && (
+                                      <span className="text-xs font-medium text-red-600">Required</span>
+                                    )}
+                                    <button
+                                      onClick={() => removeAttribute(attr.name, 'option')}
                                       className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                                       title="Remove attribute"
                                     >
