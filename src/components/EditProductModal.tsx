@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -1580,7 +1580,37 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                 </span>
               )}
             </div>
-            <p className="text-sm text-slate-500 mt-1">ID: {product.id}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-slate-500">ID: {product.id}</p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(product.id);
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                title="Copy ID"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+              {product.integration_product_id && (
+                <>
+                  <span className="text-slate-300">|</span>
+                  <p className="text-sm text-slate-500">Mapping ID: {currentProduct?.mapping_id || 'N/A'}</p>
+                  {currentProduct?.mapping_id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(currentProduct.mapping_id!);
+                      }}
+                      className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                      title="Copy Mapping ID"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {/* Language Selector */}
