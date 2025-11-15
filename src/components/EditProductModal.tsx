@@ -62,7 +62,6 @@ interface Option {
   };
   local_fields?: string[];
   price_calculation?: any;
-  calories_calculation?: any;
 }
 
 interface OptionsEditorProps {
@@ -73,7 +72,6 @@ interface OptionsEditorProps {
 
 const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrationSourceId }: OptionsEditorProps) {
   const [showPriceCalcModal, setShowPriceCalcModal] = useState(false);
-  const [showCaloriesCalcModal, setShowCaloriesCalcModal] = useState(false);
   const [linkingOptionId, setLinkingOptionId] = useState<string | null>(null);
   const [showApiLinkModal, setShowApiLinkModal] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -324,14 +322,17 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
                       <input
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         value={option.price}
                         onChange={(e) => {
                           if (hasIntegrationLink && !localFields.includes('price')) {
                             enableLocalOverride(option.id, 'price');
                           }
-                          updateOption(option.id, { price: parseFloat(e.target.value) || 0 });
+                          const value = e.target.value;
+                          if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                            updateOption(option.id, { price: parseFloat(value) || 0 });
+                          }
                         }}
                         disabled={!!option.price_calculation}
                         placeholder="0.00"
@@ -376,33 +377,22 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                         </div>
                       )}
                     </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={option.calories || 0}
-                        onChange={(e) => {
-                          if (hasIntegrationLink && !localFields.includes('calories')) {
-                            enableLocalOverride(option.id, 'calories');
-                          }
-                          updateOption(option.id, { calories: parseInt(e.target.value) || 0 });
-                        }}
-                        disabled={!!option.calories_calculation}
-                        placeholder="0"
-                        className="w-full pl-3 pr-10 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
-                      />
-                      {integrationSourceId && (
-                        <button
-                          onClick={() => {
-                            setLinkingOptionId(option.id);
-                            setShowCaloriesCalcModal(true);
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          title="Add calories calculation"
-                        >
-                          <Calculator className={`w-4 h-4 ${option.calories_calculation ? 'text-blue-600' : ''}`} />
-                        </button>
-                      )}
-                    </div>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={option.calories || ''}
+                      onChange={(e) => {
+                        if (hasIntegrationLink && !localFields.includes('calories')) {
+                          enableLocalOverride(option.id, 'calories');
+                        }
+                        const value = e.target.value;
+                        if (value === '' || /^\d*$/.test(value)) {
+                          updateOption(option.id, { calories: parseInt(value) || 0 });
+                        }
+                      }}
+                      placeholder="0"
+                      className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
                   </div>
                 </div>
               </div>
@@ -461,25 +451,6 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
         />
       )}
 
-      {showCaloriesCalcModal && linkingOptionId && (
-        <FieldLinkModal
-          isOpen={showCaloriesCalcModal}
-          onClose={() => {
-            setShowCaloriesCalcModal(false);
-            setLinkingOptionId(null);
-          }}
-          onLink={(linkData) => {
-            if (linkingOptionId) {
-              updateOption(linkingOptionId, { calories_calculation: linkData });
-            }
-            setShowCaloriesCalcModal(false);
-            setLinkingOptionId(null);
-          }}
-          fieldName="calories"
-          fieldLabel="Option Calories"
-          currentLink={options.find(o => o.id === linkingOptionId)?.calories_calculation || null}
-        />
-      )}
     </div>
   );
 });
