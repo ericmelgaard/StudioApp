@@ -703,38 +703,51 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   }
 
   async function loadTemplateForCreate(templateId: string) {
-    const { data: templateData } = await supabase
-      .from('product_attribute_templates')
-      .select('*')
-      .eq('id', templateId)
-      .maybeSingle();
+    try {
+      console.log('loadTemplateForCreate called with:', templateId);
+      const { data: templateData, error } = await supabase
+        .from('product_attribute_templates')
+        .select('*')
+        .eq('id', templateId)
+        .maybeSingle();
 
-    if (templateData?.attribute_schema) {
-      setTemplate(templateData);
-      const schema = templateData.attribute_schema as any;
-      setTemplateSchema(schema);
+      if (error) {
+        console.error('Error loading template:', error);
+        return;
+      }
 
-      const coreAttrs = schema.core_attributes || [];
-      const extendedAttrs = schema.extended_attributes || [];
-      const allTemplateAttrs = [...coreAttrs, ...extendedAttrs];
+      console.log('Template data loaded:', templateData);
 
-      setTemplateAttributes(allTemplateAttrs.map((attr: any) => attr.name));
+      if (templateData?.attribute_schema) {
+        setTemplate(templateData);
+        const schema = templateData.attribute_schema as any;
+        setTemplateSchema(schema);
 
-      // Initialize default attributes for template
-      const defaultAttrs: Record<string, any> = {};
-      allTemplateAttrs.forEach((attr: any) => {
-        if (attr.type === 'sizes') {
-          defaultAttrs[attr.name] = [];
-        } else if (attr.type === 'boolean') {
-          defaultAttrs[attr.name] = false;
-        } else if (attr.type === 'number') {
-          defaultAttrs[attr.name] = 0;
-        } else if (attr.type === 'text' || attr.type === 'richtext') {
-          defaultAttrs[attr.name] = '';
-        }
-      });
+        const coreAttrs = schema.core_attributes || [];
+        const extendedAttrs = schema.extended_attributes || [];
+        const allTemplateAttrs = [...coreAttrs, ...extendedAttrs];
 
-      setAttributes(defaultAttrs);
+        setTemplateAttributes(allTemplateAttrs.map((attr: any) => attr.name));
+
+        // Initialize default attributes for template
+        const defaultAttrs: Record<string, any> = {};
+        allTemplateAttrs.forEach((attr: any) => {
+          if (attr.type === 'sizes') {
+            defaultAttrs[attr.name] = [];
+          } else if (attr.type === 'boolean') {
+            defaultAttrs[attr.name] = false;
+          } else if (attr.type === 'number') {
+            defaultAttrs[attr.name] = 0;
+          } else if (attr.type === 'text' || attr.type === 'richtext') {
+            defaultAttrs[attr.name] = '';
+          }
+        });
+
+        console.log('Default attributes initialized:', defaultAttrs);
+        setAttributes(defaultAttrs);
+      }
+    } catch (err) {
+      console.error('Exception in loadTemplateForCreate:', err);
     }
   }
 
