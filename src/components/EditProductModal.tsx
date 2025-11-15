@@ -1592,24 +1592,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
-              {product.integration_product_id && (
-                <>
-                  <span className="text-slate-300">|</span>
-                  <p className="text-sm text-slate-500">Mapping ID: {currentProduct?.mapping_id || 'N/A'}</p>
-                  {currentProduct?.mapping_id && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(currentProduct.mapping_id!);
-                      }}
-                      className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                      title="Copy Mapping ID"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -1716,7 +1698,20 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   )}
                 </div>
                 <div className="text-sm text-slate-600">
-                  <div><span className="font-medium">Mapping ID:</span> {product.mapping_id}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Mapping ID:</span>
+                    <span>{product.mapping_id}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(product.mapping_id!);
+                      }}
+                      className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                      title="Copy Mapping ID"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
                   <div><span className="font-medium">Type:</span> {product.integration_type}</div>
                   {product.last_synced_at && (
                     <div><span className="font-medium">Last synced:</span> {new Date(product.last_synced_at).toLocaleString()}</div>
