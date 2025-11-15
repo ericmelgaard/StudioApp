@@ -1564,96 +1564,56 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                       const fieldLink = fieldLinks[key];
                       const hasCalculation = fieldLink?.type === 'calculation';
                       const actualValue = value ?? '';
+                      const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                      const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+                      const hasCalculatedValue = currentProduct?.price_calculations?.[key];
 
-                      const syncState = syncStateManager?.getSyncState(key) || 'none';
-                      const syncConfig = syncStateManager?.getSyncConfig(key);
-                      const canRevert = syncStateManager?.canRevertToSync(key) || false;
-                      const isDropdownOpen = openDropdown === key;
+                      // Determine the source
+                      let source = 'manual';
+                      if (hasCalculatedValue) {
+                        source = 'calculated';
+                      } else if (hasApiLink && !isLocalOverride) {
+                        source = 'api';
+                      } else if (isLocalOverride) {
+                        source = 'custom';
+                      }
 
                       return (
                         <div key={key}>
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">{getFieldLabel(key)}</label>
-                            {syncState !== 'none' && (
+                            {hasApiLink && (
                               <div className="relative">
-                                <SyncBadge
-                                  state={syncState}
-                                  mappedTo={syncConfig?.mappedTo}
-                                  apiSource={syncConfig?.apiSourceName}
-                                  isActive={syncConfig?.isActive}
-                                  canSync={syncStateManager?.canSync(key)}
-                                  onClick={() => setOpenDropdown(isDropdownOpen ? null : key)}
-                                  onRevert={canRevert ? () => handleRevertToSync(key) : undefined}
-                                />
-                                {isDropdownOpen && (
-                                  <div className="dropdown-menu absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-xl z-[70] overflow-hidden">
-                                    {syncState === 'linked-active' && (
-                                      <>
-                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
-                                          <p className="text-xs font-medium text-slate-700">Currently syncing from:</p>
-                                          <p className="text-xs text-slate-600 mt-0.5">{syncConfig?.apiSourceName} → {syncConfig?.mappedTo}</p>
-                                        </div>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDisableSync(key);
-                                            setOpenDropdown(null);
-                                          }}
-                                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors flex items-start gap-2"
-                                        >
-                                          <Unlink className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1">
-                                            <div className="font-medium text-slate-900">Disable Sync</div>
-                                            <div className="text-xs text-slate-500 mt-0.5">Keep current value, stop syncing</div>
-                                          </div>
-                                        </button>
-                                      </>
-                                    )}
-                                    {syncState === 'linked-inactive' && (
-                                      <>
-                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
-                                          <p className="text-xs font-medium text-slate-700">Sync available from:</p>
-                                          <p className="text-xs text-slate-600 mt-0.5">{syncConfig?.apiSourceName} → {syncConfig?.mappedTo}</p>
-                                        </div>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleToggleSync(key);
-                                            setOpenDropdown(null);
-                                          }}
-                                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors flex items-start gap-2"
-                                        >
-                                          <Link className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1">
-                                            <div className="font-medium text-slate-900">Enable Sync</div>
-                                            <div className="text-xs text-slate-500 mt-0.5">Sync value from integration</div>
-                                          </div>
-                                        </button>
-                                      </>
-                                    )}
-                                    {syncState === 'locally-applied' && canRevert && (
-                                      <>
-                                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
-                                          <p className="text-xs font-medium text-slate-700">Local override active</p>
-                                          <p className="text-xs text-slate-500 mt-0.5">Sync is disabled for this field</p>
-                                        </div>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRevertToSync(key);
-                                            setOpenDropdown(null);
-                                          }}
-                                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors flex items-start gap-2"
-                                        >
-                                          <RotateCcw className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1">
-                                            <div className="font-medium text-slate-900">Revert to Sync</div>
-                                            <div className="text-xs text-slate-500 mt-0.5">Restore synced value</div>
-                                          </div>
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
+                                {isLocalOverride ? (
+                                  <select
+                                    value="custom"
+                                    onChange={async (e) => {
+                                      if (e.target.value === 'api' && currentProduct) {
+                                        if (currentProduct.parent_product_id) {
+                                          await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                        } else {
+                                          await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                        }
+                                        const updatedProduct = await LocationProductService.getProductForLocation(
+                                          currentProduct.parent_product_id || currentProduct.id,
+                                          location
+                                        );
+                                        if (updatedProduct) {
+                                          setCurrentProduct(updatedProduct);
+                                          setAttributes(updatedProduct.attributes || {});
+                                        }
+                                        onSuccess();
+                                      }
+                                    }}
+                                    className="text-xs px-2 py-1 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  >
+                                    <option value="custom">Custom</option>
+                                    <option value="api">
+                                      {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                    </option>
+                                  </select>
+                                ) : (
+                                  <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
                                 )}
                               </div>
                             )}
