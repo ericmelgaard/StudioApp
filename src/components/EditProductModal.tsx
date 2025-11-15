@@ -487,7 +487,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
   const [policyViolations, setPolicyViolations] = useState<any[]>([]);
   const [syncStateManager, setSyncStateManager] = useState<SyncStateManager | null>(null);
   const [disabledSyncFields, setDisabledSyncFields] = useState<string[]>([]);
-  const [richTextModal, setRichTextModal] = useState<{ key: string; value: string } | null>(null);
+  const [expandedRichTextFields, setExpandedRichTextFields] = useState<Set<string>>(new Set());
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -1229,27 +1229,71 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
     }
 
     if (meta?.type === 'richtext') {
+      const isExpanded = expandedRichTextFields.has(key);
+
       return (
         <div className="relative">
-          <input
-            type="text"
-            value={displayValue ? displayValue.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
-            readOnly
-            placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${getFieldLabel(key)}`}
-            className="w-full px-3 py-2 pr-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 cursor-pointer"
-            onClick={() => setRichTextModal({ key, value: displayValue || '' })}
-          />
-          <button
-            onClick={() => setRichTextModal({ key, value: displayValue || '' })}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
-            title="Open rich text editor"
-          >
-            <FileText className="w-4 h-4" />
-          </button>
-          {isDisabled && (
-            <div className="absolute top-2 right-12 flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-xs text-slate-600">
-              <Lock className="w-3 h-3" />
-              Uses default
+          {!isExpanded ? (
+            <>
+              <input
+                type="text"
+                value={displayValue ? displayValue.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
+                readOnly
+                placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${getFieldLabel(key)}`}
+                className="w-full px-3 py-2 pr-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 cursor-pointer"
+                onClick={() => {
+                  const newExpanded = new Set(expandedRichTextFields);
+                  newExpanded.add(key);
+                  setExpandedRichTextFields(newExpanded);
+                }}
+              />
+              <button
+                onClick={() => {
+                  const newExpanded = new Set(expandedRichTextFields);
+                  newExpanded.add(key);
+                  setExpandedRichTextFields(newExpanded);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                title="Expand rich text editor"
+              >
+                <FileText className="w-4 h-4" />
+              </button>
+              {isDisabled && (
+                <div className="absolute top-2 right-12 flex items-center gap-1 px-2 py-1 bg-slate-100 border border-slate-300 rounded text-xs text-slate-600">
+                  <Lock className="w-3 h-3" />
+                  Uses default
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="border border-blue-500 rounded-lg p-3 bg-blue-50/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-slate-700">Editing {getFieldLabel(key)}</span>
+                <button
+                  onClick={() => {
+                    const newExpanded = new Set(expandedRichTextFields);
+                    newExpanded.delete(key);
+                    setExpandedRichTextFields(newExpanded);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                  title="Collapse editor"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <RichTextEditor
+                value={displayValue || ''}
+                onChange={(newValue) => {
+                  if (!isDisabled) {
+                    updateAttribute(key, newValue);
+                    if (syncStatus && !isLocalOnly && !isOverridden) {
+                      lockOverride(key);
+                    }
+                  }
+                }}
+                placeholder={isTranslationView && isTranslatable ? `Enter ${currentLanguage} translation` : `Enter ${getFieldLabel(key)}`}
+                minHeight={meta.minHeight || '200px'}
+              />
             </div>
           )}
         </div>
@@ -2294,55 +2338,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Rich Text Editor Modal */}
-      {richTextModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h3 className="text-xl font-bold text-slate-800">Edit {getFieldLabel(richTextModal.key)}</h3>
-              <button
-                onClick={() => setRichTextModal(null)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <RichTextEditor
-                value={richTextModal.value}
-                onChange={(newValue) => {
-                  setRichTextModal({ ...richTextModal, value: newValue });
-                }}
-                placeholder={`Enter ${getFieldLabel(richTextModal.key)}`}
-                minHeight="400px"
-              />
-            </div>
-            <div className="border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
-              <button
-                onClick={() => setRichTextModal(null)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (richTextModal) {
-                    updateAttribute(richTextModal.key, richTextModal.value);
-                    if (syncStatus && !currentProduct?.local_fields?.includes(richTextModal.key)) {
-                      lockOverride(richTextModal.key);
-                    }
-                  }
-                  setRichTextModal(null);
-                }}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
-              >
-                Save
-              </button>
             </div>
           </div>
         </div>
