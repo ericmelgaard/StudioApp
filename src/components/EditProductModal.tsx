@@ -230,7 +230,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                                   clearLocalOverride(option.id, 'label');
                                 }
                               }}
-                              className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                             >
                               <option value="custom">Custom</option>
                               <option value="api">Inherit from API</option>
@@ -268,7 +268,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                                   clearLocalOverride(option.id, 'description');
                                 }
                               }}
-                              className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                             >
                               <option value="custom">Custom</option>
                               <option value="api">Inherit from API</option>
@@ -308,7 +308,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                                   clearLocalOverride(option.id, 'price');
                                 }
                               }}
-                              className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                             >
                               <option value="custom">Custom</option>
                               <option value="api">Inherit from API</option>
@@ -366,7 +366,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                                   clearLocalOverride(option.id, 'calories');
                                 }
                               }}
-                              className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                             >
                               <option value="custom">Custom</option>
                               <option value="api">Inherit from API</option>
@@ -1661,7 +1661,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                       onSuccess();
                                     }
                                   }}
-                                  className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                                  className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                                 >
                                   <option value="custom">Custom</option>
                                   <option value="api">
@@ -1728,7 +1728,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                         onSuccess();
                                       }
                                     }}
-                                    className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                                    className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                                   >
                                     <option value="custom">Custom</option>
                                     <option value="api">
@@ -1870,7 +1870,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                             onSuccess();
                                           }
                                         }}
-                                        className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                                        className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                                       >
                                         <option value="custom">Custom</option>
                                         <option value="api">
@@ -2047,7 +2047,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess }
                                             onSuccess();
                                           }
                                         }}
-                                        className="text-xs px-1 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer"
+                                        className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
                                       >
                                         <option value="custom">Custom</option>
                                         <option value="api">
