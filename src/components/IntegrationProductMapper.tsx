@@ -745,10 +745,12 @@ export default function IntegrationProductMapper({ isOpen, onClose, onSuccess, c
                             </div>
                           ) : (
                             <select
+                              value={getMappedIntegrationField(field.name) || ''}
                               onChange={(e) => {
                                 if (e.target.value) {
                                   addMapping(e.target.value, field.name);
-                                  e.target.value = '';
+                                } else {
+                                  removeMapping(field.name);
                                 }
                               }}
                               className="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
