@@ -168,8 +168,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               onClick={() => setActiveMenu(activeMenu === 'organization' ? null : 'organization')}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'organization' || ['sites', 'users'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
+                  ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
+                  : 'text-[#002e5e] hover:text-slate-900'
               }`}
             >
               Organization
@@ -204,8 +204,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               onClick={() => setActiveMenu(activeMenu === 'content' ? null : 'content')}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'content' || ['signage', 'labels', 'products', 'resources'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
+                  ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
+                  : 'text-[#002e5e] hover:text-slate-900'
               }`}
             >
               Content
@@ -240,8 +240,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               onClick={() => setActiveMenu(activeMenu === 'wand' ? null : 'wand')}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'wand' || ['wand-products', 'integration-sources', 'core-attributes', 'wand-templates', 'wand-mapper'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
+                  ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
+                  : 'text-[#002e5e] hover:text-slate-900'
               }`}
             >
               Wand
@@ -276,8 +276,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               onClick={() => setActiveMenu(activeMenu === 'integration' ? null : 'integration')}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'integration' || ['integration-dashboard', 'integration-access', 'integration'].includes(currentView)
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
+                  ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
+                  : 'text-[#002e5e] hover:text-slate-900'
               }`}
             >
               Integration
@@ -312,8 +312,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               onClick={() => setActiveMenu(activeMenu === 'system' ? null : 'system')}
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'system'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-700 hover:text-slate-900'
+                  ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
+                  : 'text-[#002e5e] hover:text-slate-900'
               }`}
             >
               System
