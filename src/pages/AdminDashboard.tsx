@@ -169,7 +169,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'organization' || ['sites', 'users'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
-                  : 'text-[#002e5e] hover:text-slate-900'
+                  : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
             >
               Organization
@@ -205,7 +205,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'content' || ['signage', 'labels', 'products', 'resources'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
-                  : 'text-[#002e5e] hover:text-slate-900'
+                  : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
             >
               Content
@@ -241,7 +241,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'wand' || ['wand-products', 'integration-sources', 'core-attributes', 'wand-templates', 'wand-mapper'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
-                  : 'text-[#002e5e] hover:text-slate-900'
+                  : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
             >
               Wand
@@ -277,7 +277,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'integration' || ['integration-dashboard', 'integration-access', 'integration'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
-                  : 'text-[#002e5e] hover:text-slate-900'
+                  : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
             >
               Integration
@@ -313,7 +313,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               className={`px-4 py-3 text-sm font-medium transition-colors ${
                 activeMenu === 'system'
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
-                  : 'text-[#002e5e] hover:text-slate-900'
+                  : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
             >
               System
