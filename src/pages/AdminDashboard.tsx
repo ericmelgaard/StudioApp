@@ -121,14 +121,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
               <img
-                src="/WandLogoNoText.png"
+                src="https://cdn11.bigcommerce.com/s-o1xg0nrulj/images/stencil/175x50/wand-logo_horizontal_transp_full-color_navy_1711647134__61951.original.png"
                 alt="WAND"
-                className="h-8 w-8"
+                className="h-8"
               />
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-slate-900">WAND Digital</span>
                 <span className="text-slate-400">|</span>
-                <span className="text-base font-semibold text-slate-700">Admin</span>
+                <span className="text-base font-semibold text-[#002e5e]" style={{ fontFamily: 'Rubik, Arial, Helvetica, sans-serif' }}>Admin</span>
               </div>
             </div>
             <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
