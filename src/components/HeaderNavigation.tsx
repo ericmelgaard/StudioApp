@@ -218,10 +218,15 @@ export default function HeaderNavigation({
   const filteredCompanies = companies.filter(c => c.name.toLowerCase().includes(filterLower));
   const filteredStores = stores.filter(s => s.name.toLowerCase().includes(filterLower));
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   return (
     <div className="flex items-center gap-2">
-      <div className="relative group">
-        <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+      <div className="relative">
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg transition-colors border border-slate-200"
+        >
           {getCurrentIcon()}
           <span className="text-sm font-medium text-slate-900 max-w-[360px] truncate">
             {loading ? 'Loading...' : getCurrentDisplayName()}
@@ -229,15 +234,18 @@ export default function HeaderNavigation({
           {hasDropdownContent && <ChevronDown className="w-4 h-4 text-slate-500" />}
         </button>
 
-        {hasDropdownContent && (
-          <div className="absolute top-full left-0 mt-1 w-[960px] bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-[32rem] overflow-hidden z-50">
+        {hasDropdownContent && isDropdownOpen && (
+          <div className="absolute top-full left-0 mt-1 w-[960px] bg-white rounded-lg shadow-lg border border-slate-200 transition-all max-h-[32rem] overflow-hidden z-50">
             {/* Parent Navigation Options */}
             {parentNavOptions.length > 0 && (
               <div className="p-2 border-b border-slate-200 bg-slate-50">
                 {parentNavOptions.map((option) => (
                   <button
                     key={option.type}
-                    onClick={option.onClick}
+                    onClick={() => {
+                      option.onClick();
+                      setIsDropdownOpen(false);
+                    }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-white rounded transition-colors flex items-center gap-2 text-blue-600 font-medium"
                   >
                     <ArrowUp className="w-4 h-4 flex-shrink-0" />
@@ -271,7 +279,10 @@ export default function HeaderNavigation({
                 {showConcepts && filteredConcepts.map((concept) => (
                   <button
                     key={concept.id}
-                    onClick={() => setLocation({ concept })}
+                    onClick={() => {
+                      setLocation({ concept });
+                      setIsDropdownOpen(false);
+                    }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
                       location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                     }`}
@@ -284,10 +295,13 @@ export default function HeaderNavigation({
                 {showCompanies && filteredCompanies.map((company) => (
                   <button
                     key={company.id}
-                    onClick={() => setLocation({
-                      concept: location.concept,
-                      company
-                    })}
+                    onClick={() => {
+                      setLocation({
+                        concept: location.concept,
+                        company
+                      });
+                      setIsDropdownOpen(false);
+                    }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
                       location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                     }`}
@@ -300,11 +314,14 @@ export default function HeaderNavigation({
                 {showStores && filteredStores.map((store) => (
                   <button
                     key={store.id}
-                    onClick={() => setLocation({
-                      concept: location.concept,
-                      company: location.company,
-                      store
-                    })}
+                    onClick={() => {
+                      setLocation({
+                        concept: location.concept,
+                        company: location.company,
+                        store
+                      });
+                      setIsDropdownOpen(false);
+                    }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
                       location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                     }`}
