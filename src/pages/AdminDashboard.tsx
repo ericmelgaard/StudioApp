@@ -137,16 +137,16 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
           <div className="flex items-center gap-1">
             <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               title="Help"
             >
-              <HelpCircle className="w-5 h-5" />
+              <HelpCircle className="w-5 h-5 text-[#00adf0]" />
             </button>
             <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               title="Documentation"
             >
-              <FileText className="w-5 h-5" />
+              <FileText className="w-5 h-5 text-[#00adf0]" />
             </button>
             <NotificationPanel />
             <UserMenu role="admin" onBackToRoles={onBack} />

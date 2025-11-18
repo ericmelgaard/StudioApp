@@ -26,6 +26,15 @@ export default function UserMenu({ role, onBackToRoles }: UserMenuProps) {
     }
   };
 
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'rgba(222, 56, 222, 1)';
+      default:
+        return 'linear-gradient(to bottom right, #10b981, #059669)';
+    }
+  };
+
   const roleDisplay = getRoleDisplay(role);
   const email = 'demo.user@wanddigital.com';
 
@@ -35,7 +44,10 @@ export default function UserMenu({ role, onBackToRoles }: UserMenuProps) {
         onClick={() => setShowMenu(!showMenu)}
         className="flex items-center gap-2 p-1 hover:bg-slate-100 rounded-lg transition-colors"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-semibold text-sm">
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+          style={{ background: getRoleColor(role) }}
+        >
           {getInitials(roleDisplay)}
         </div>
         <svg
@@ -57,7 +69,10 @@ export default function UserMenu({ role, onBackToRoles }: UserMenuProps) {
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 z-50">
             <div className="p-4 border-b border-slate-200">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold text-lg">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                  style={{ background: getRoleColor(role) }}
+                >
                   {getInitials(roleDisplay)}
                 </div>
                 <div className="flex-1 min-w-0">
