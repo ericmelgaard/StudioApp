@@ -278,7 +278,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
             >
-              Wand
+              Admin
               <ChevronDown className="w-4 h-4" />
             </button>
             {activeMenu === 'wand' && (
