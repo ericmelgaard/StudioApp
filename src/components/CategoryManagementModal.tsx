@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 interface Category {
   id: string;
   name: string;
+  display_name: string | null;
   description: string | null;
   parent_category_id: string | null;
   sort_order: number;
@@ -29,6 +30,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editDisplayName, setEditDisplayName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editTranslations, setEditTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -107,6 +109,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       setCategories([...categories, data]);
       setEditingId(data.id);
       setEditName(data.name);
+      setEditDisplayName(data.display_name || '');
       setEditDescription(data.description || '');
       setEditTranslations([]);
     }
@@ -120,6 +123,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       .from('product_categories')
       .update({
         name: editName,
+        display_name: editDisplayName || null,
         description: editDescription || null,
         translations: editTranslations,
         updated_at: new Date().toISOString(),
@@ -130,6 +134,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       await loadCategories();
       setEditingId(null);
       setEditName('');
+      setEditDisplayName('');
       setEditDescription('');
       setEditTranslations([]);
       setShowTranslations(false);
@@ -150,6 +155,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       if (editingId === id) {
         setEditingId(null);
         setEditName('');
+        setEditDisplayName('');
         setEditDescription('');
         setEditTranslations([]);
       }
@@ -159,6 +165,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   function handleEdit(category: Category) {
     setEditingId(category.id);
     setEditName(category.name);
+    setEditDisplayName(category.display_name || '');
     setEditDescription(category.description || '');
     setEditTranslations(category.translations || []);
     setShowTranslations(false);
@@ -167,6 +174,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   function handleCancel() {
     setEditingId(null);
     setEditName('');
+    setEditDisplayName('');
     setEditDescription('');
     setEditTranslations([]);
     setShowTranslations(false);
@@ -242,7 +250,29 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                         onChange={(e) => setEditName(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Enter category name"
+                        disabled={!!categories.find(c => c.id === editingId)?.integration_source_id}
                       />
+                      {categories.find(c => c.id === editingId)?.integration_source_id && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Original name from integration (cannot be changed)
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Display Name (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={editDisplayName}
+                        onChange={(e) => setEditDisplayName(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter display name to override the category name"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Leave blank to use the category name
+                      </p>
                     </div>
 
                     <div>
@@ -364,7 +394,14 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                 ) : (
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-slate-900">{category.name}</h3>
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {category.display_name || category.name}
+                      </h3>
+                      {category.display_name && category.name !== category.display_name && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Original: {category.name}
+                        </p>
+                      )}
                       {category.description && (
                         <p className="text-sm text-slate-600 mt-1">{category.description}</p>
                       )}

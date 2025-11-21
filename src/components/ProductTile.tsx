@@ -29,13 +29,31 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
   const [isHovered, setIsHovered] = useState(false);
   const [pendingPublication, setPendingPublication] = useState<any>(null);
   const [policyViolations, setPolicyViolations] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Array<{name: string; display_name: string | null}>>([]);
 
   useEffect(() => {
     checkPendingPublication();
+    loadCategories();
     if (product.policy_status === 'violation') {
       loadPolicyViolations();
     }
   }, [product.id, product.policy_status]);
+
+  async function loadCategories() {
+    const { data } = await supabase
+      .from('product_category_assignments')
+      .select(`
+        product_categories (
+          name,
+          display_name
+        )
+      `)
+      .eq('product_id', product.id);
+
+    if (data) {
+      setCategories(data.map((d: any) => d.product_categories).filter(Boolean));
+    }
+  }
 
   async function checkPendingPublication() {
     const { data } = await supabase
@@ -254,6 +272,24 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
               {sizes.length > 3 && (
                 <span className="text-xs text-slate-500">
                   +{sizes.length - 3}
+                </span>
+              )}
+            </div>
+          )}
+
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-2 border-t border-slate-200">
+              {categories.slice(0, 2).map((category, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+                >
+                  {category.display_name || category.name}
+                </span>
+              ))}
+              {categories.length > 2 && (
+                <span className="text-xs text-slate-500">
+                  +{categories.length - 2}
                 </span>
               )}
             </div>

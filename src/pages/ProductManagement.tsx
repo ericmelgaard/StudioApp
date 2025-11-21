@@ -58,6 +58,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [showBulkCategoryAssign, setShowBulkCategoryAssign] = useState(false);
   const [showHierarchyModal, setShowHierarchyModal] = useState(false);
+  const [productCategoryMap, setProductCategoryMap] = useState<Map<string, string[]>>(new Map());
 
   useEffect(() => {
     checkAndApplyPendingPublications().then(() => {
@@ -170,12 +171,26 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       })
     );
 
+    const { data: categoryAssignments } = await supabase
+      .from('product_category_assignments')
+      .select('product_id, category_id');
+
+    const categoryMap = new Map<string, string[]>();
+    if (categoryAssignments) {
+      categoryAssignments.forEach(assignment => {
+        const existing = categoryMap.get(assignment.product_id) || [];
+        existing.push(assignment.category_id);
+        categoryMap.set(assignment.product_id, existing);
+      });
+    }
+    setProductCategoryMap(categoryMap);
+
     setProducts(resolvedProducts);
     extractFilters(resolvedProducts);
     setLoading(false);
   };
 
-  const extractFilters = (products: Product[]) => {
+  const extractFilters = async (products: Product[]) => {
     const periods = new Set<string>();
     const stations = new Set<string>();
     const typeCounts = { custom: 0, imported: 0, linked: 0 };
@@ -196,6 +211,11 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       typeCounts[productType]++;
     });
 
+    const { data: categoriesData } = await supabase
+      .from('product_categories')
+      .select('id, name, display_name')
+      .order('name');
+
     const sections: FilterSection[] = [];
 
     sections.push({
@@ -207,6 +227,17 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         { value: 'linked', label: `Linked (${typeCounts.linked})` }
       ]
     });
+
+    if (categoriesData && categoriesData.length > 0) {
+      sections.push({
+        id: 'categories',
+        label: 'Categories',
+        options: categoriesData.map(c => ({
+          value: c.id,
+          label: c.display_name || c.name
+        }))
+      });
+    }
 
     if (periods.size > 0) {
       sections.push({
@@ -227,6 +258,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     setFilterSections(sections);
     setFilterState({
       productTypes: ['custom', 'imported', 'linked'],
+      categories: [],
       periods: [],
       stations: []
     });
@@ -242,12 +274,17 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     const selectedTypes = filterState.productTypes || [];
     const selectedPeriods = filterState.periods || [];
     const selectedStations = filterState.stations || [];
+    const selectedCategories = filterState.categories || [];
 
     const productType = getProductType(product);
     const mealPeriods = product.attributes?.meal_periods;
     const mealStations = product.attributes?.meal_stations;
+    const productCategories = productCategoryMap.get(product.id) || [];
 
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(productType);
+
+    const matchesCategory = selectedCategories.length === 0 ||
+      selectedCategories.some(catId => productCategories.includes(catId));
 
     const matchesPeriod = selectedPeriods.length === 0 ||
       (Array.isArray(mealPeriods) && mealPeriods.some((mp: any) => selectedPeriods.includes(mp.period)));
@@ -255,7 +292,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     const matchesStation = selectedStations.length === 0 ||
       (Array.isArray(mealStations) && mealStations.some((ms: any) => selectedStations.includes(ms.station)));
 
-    return matchesSearch && matchesType && matchesPeriod && matchesStation;
+    return matchesSearch && matchesType && matchesCategory && matchesPeriod && matchesStation;
   });
 
   return (
