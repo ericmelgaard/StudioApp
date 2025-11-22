@@ -785,7 +785,11 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         currentConfig={currentPriceConfig}
         entityType="category"
         categoryId={editingId || undefined}
-        integrationSourceId={linkedSources.find(s => s.isActive)?.id}
+        integrationSourceId={
+          linkedSources.find(s => s.isActive)?.id ||
+          categories.find(c => c.id === editingId)?.integration_source_id ||
+          undefined
+        }
       />
     </div>
   );
