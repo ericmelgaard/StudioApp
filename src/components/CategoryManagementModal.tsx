@@ -233,6 +233,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         setEditLocalFields([]);
       }
       await loadLinkedSources(editingId);
+      await loadCategories();
       setShowApiLinkModal(false);
     } else {
       alert('Failed to link category: ' + error.message);
@@ -260,6 +261,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
 
     setLinkedSources([]);
     setEditLocalFields(['name', 'description']);
+    await loadCategories();
   }
 
   async function handleViewSource(sourceId: string) {
@@ -305,7 +307,17 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
 
   const currentCategory = editingId ? categories.find(c => c.id === editingId) : null;
   const isNameLocal = editLocalFields.includes('name');
-  const hasApiLink = currentCategory?.mapping_id && currentCategory?.active_integration_source_id;
+
+  const activeLink = linkedSources.find(s => s.isActive);
+  const currentCategoryItem = activeLink ? {
+    mapping_id: activeLink.mapping_id,
+    integration_source_id: activeLink.id,
+    integration_type: activeLink.integration_type,
+    last_synced_at: activeLink.last_synced_at,
+    local_fields: editLocalFields
+  } : null;
+
+  const hasApiLink = linkedSources.length > 0;
 
   if (!isOpen) return null;
 
@@ -352,7 +364,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                       mode="edit"
                       linkedSources={linkedSources}
                       viewingSourceId={viewingSourceId}
-                      currentItem={currentCategory}
+                      currentItem={currentCategoryItem}
                       onViewSource={handleViewSource}
                       onChangeLink={handleChangeLink}
                       onUnlink={handleUnlinkCategory}
