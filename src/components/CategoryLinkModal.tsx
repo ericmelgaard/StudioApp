@@ -7,6 +7,9 @@ interface CategoryLinkModalProps {
   onClose: () => void;
   onLink: (data: { sourceId: string; categoryName: string; integrationType: string }) => void;
   currentSourceId?: string;
+  currentCategoryId?: string;
+  currentMappingId?: string;
+  isChangingLink?: boolean;
 }
 
 interface IntegrationSource {
@@ -24,7 +27,10 @@ export default function CategoryLinkModal({
   isOpen,
   onClose,
   onLink,
-  currentSourceId
+  currentSourceId,
+  currentCategoryId,
+  currentMappingId,
+  isChangingLink = false
 }: CategoryLinkModalProps) {
   const [integrationSources, setIntegrationSources] = useState<IntegrationSource[]>([]);
   const [selectedSource, setSelectedSource] = useState<string>('');
@@ -64,14 +70,24 @@ export default function CategoryLinkModal({
   async function loadCategories(sourceId: string) {
     setLoading(true);
 
-    const { data } = await supabase
+    const { data: productsData } = await supabase
       .from('integration_products')
       .select('category_name')
       .eq('integration_source_id', sourceId)
       .not('category_name', 'is', null);
 
-    if (data) {
-      const categoryCounts = data.reduce((acc: Record<string, number>, item) => {
+    const { data: linksData } = await supabase
+      .from('product_categories_links')
+      .select('mapping_id, category_id')
+      .eq('integration_source_id', sourceId);
+
+    const { data: categoriesData } = await supabase
+      .from('product_categories')
+      .select('id, integration_category_id')
+      .eq('integration_source_id', sourceId);
+
+    if (productsData) {
+      const categoryCounts = productsData.reduce((acc: Record<string, number>, item) => {
         const name = item.category_name || '';
         if (name) {
           acc[name] = (acc[name] || 0) + 1;
@@ -79,7 +95,35 @@ export default function CategoryLinkModal({
         return acc;
       }, {});
 
+      const linkedCategoryNames = new Set<string>();
+
+      if (linksData) {
+        linksData.forEach(link => {
+          if (isChangingLink && link.category_id === currentCategoryId) {
+            return;
+          }
+          linkedCategoryNames.add(link.mapping_id);
+        });
+      }
+
+      if (categoriesData) {
+        categoriesData.forEach(cat => {
+          if (isChangingLink && cat.id === currentCategoryId) {
+            return;
+          }
+          if (cat.integration_category_id) {
+            linkedCategoryNames.add(cat.integration_category_id);
+          }
+        });
+      }
+
       const categoryOptions: CategoryOption[] = Object.entries(categoryCounts)
+        .filter(([category_name]) => {
+          if (isChangingLink && category_name === currentMappingId) {
+            return true;
+          }
+          return !linkedCategoryNames.has(category_name);
+        })
         .map(([category_name, product_count]) => ({
           category_name,
           product_count: product_count as number

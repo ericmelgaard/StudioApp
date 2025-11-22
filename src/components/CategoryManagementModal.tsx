@@ -594,6 +594,9 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
           }}
           onLink={handleLinkCategory}
           currentSourceId={selectedSourceForLinking?.id}
+          currentCategoryId={editingId || undefined}
+          currentMappingId={activeLink?.mapping_id}
+          isChangingLink={!!selectedSourceForLinking}
         />
       )}
     </div>
