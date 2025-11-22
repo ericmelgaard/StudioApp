@@ -1100,13 +1100,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   }
 
   async function loadLinkedSources() {
-    if (!location || !product) return;
+    if (!product) return;
 
     try {
       const { data: sources } = await supabase
         .from('wand_integration_sources')
-        .select('*')
-        .eq('site_id', location.site_id);
+        .select('*');
 
       if (!sources) {
         setLinkedSources([]);
@@ -1119,7 +1118,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
         .map(s => ({
           ...s,
           ...linkedApis[s.id],
-          isActive: s.id === location.active_integration_source_id,
+          isActive: s.id === product.integration_source_id,
           overrideCount: product.local_fields?.length || 0
         }));
 
