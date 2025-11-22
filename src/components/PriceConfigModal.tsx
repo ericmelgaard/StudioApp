@@ -80,15 +80,25 @@ export default function PriceConfigModal({
       return;
     }
 
+    const { data: assignments } = await supabase
+      .from('product_category_assignments')
+      .select('product_id')
+      .eq('category_id', categoryId);
+
+    if (!assignments || assignments.length === 0) {
+      setRangeLow(0);
+      setRangeHigh(0);
+      setRangeCalculated(true);
+      setCalculatingRange(false);
+      return;
+    }
+
+    const productIds = assignments.map(a => a.product_id);
+
     const { data: products } = await supabase
       .from('products')
-      .select(`
-        id,
-        name,
-        attributes,
-        product_category_assignments!inner(category_id)
-      `)
-      .eq('product_category_assignments.category_id', categoryId);
+      .select('id, name, attributes')
+      .in('id', productIds);
 
     if (!products || products.length === 0) {
       setRangeLow(0);
