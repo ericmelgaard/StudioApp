@@ -54,6 +54,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   const [linkedSources, setLinkedSources] = useState<LinkedSource[]>([]);
   const [viewingSourceId, setViewingSourceId] = useState<string | null>(null);
   const [showApiLinkModal, setShowApiLinkModal] = useState(false);
+  const [selectedSourceForLinking, setSelectedSourceForLinking] = useState<LinkedSource | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -262,10 +263,15 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   }
 
   async function handleViewSource(sourceId: string) {
-    setViewingSourceId(sourceId);
+    if (viewingSourceId === sourceId) {
+      setViewingSourceId(null);
+    } else {
+      setViewingSourceId(sourceId);
+    }
   }
 
   async function handleChangeLink(source: LinkedSource) {
+    setSelectedSourceForLinking(source);
     setShowApiLinkModal(true);
   }
 
@@ -342,6 +348,17 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
               >
                 {editingId === category.id ? (
                   <div className="space-y-4">
+                    <ApiIntegrationSection
+                      mode="edit"
+                      linkedSources={linkedSources}
+                      viewingSourceId={viewingSourceId}
+                      currentItem={currentCategory}
+                      onViewSource={handleViewSource}
+                      onChangeLink={handleChangeLink}
+                      onUnlink={handleUnlinkCategory}
+                      onLinkNew={() => setShowApiLinkModal(true)}
+                    />
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         Category Name
@@ -461,17 +478,6 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                         </div>
                       )}
                     </div>
-
-                    <ApiIntegrationSection
-                      mode="edit"
-                      linkedSources={linkedSources}
-                      viewingSourceId={viewingSourceId}
-                      currentItem={currentCategory}
-                      onViewSource={handleViewSource}
-                      onChangeLink={handleChangeLink}
-                      onUnlink={handleUnlinkCategory}
-                      onLinkNew={() => setShowApiLinkModal(true)}
-                    />
 
                     <div className="flex items-center gap-3 pt-2">
                       <button
