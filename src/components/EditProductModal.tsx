@@ -13,6 +13,7 @@ import { productValueResolver } from '../lib/productValueResolver';
 import { integrationLinkService } from '../lib/integrationLinkService';
 import { LocationProductService } from '../lib/locationProductService';
 import { useLocation } from '../hooks/useLocation';
+import { ApiIntegrationSection } from './ApiIntegrationSection';
 
 interface Product {
   id: string;
@@ -1976,183 +1977,25 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
             </div>
           )}
 
-          {/* API Integration Section */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-              <Link className="w-4 h-4" />
-              API Integration
-            </h3>
-
-            {mode === 'edit' && linkedSources.length > 0 ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  {linkedSources.map(source => {
-                    const isPreviewing = viewingSourceId === source.id;
-                    const badgeText = source.isActive ? 'ACTIVE'
-                      : isPreviewing ? 'PREVIEWING'
-                      : 'INACTIVE';
-                    const badgeVariant = source.isActive ? 'active'
-                      : isPreviewing ? 'previewing'
-                      : 'inactive';
-
-                    return (
-                      <div
-                        key={source.id}
-                        onClick={() => handleViewSource(source.id)}
-                        className="rounded-lg border-2 border-slate-200 bg-white p-3 cursor-pointer hover:border-slate-300 hover:shadow transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-sm text-slate-900 truncate">
-                            {source.name}
-                          </h4>
-                          <StateBadge variant={badgeVariant} text={badgeText} />
-                        </div>
-
-                        <div className="space-y-1 text-xs text-slate-600 mb-3">
-                          <div className="flex items-center gap-2">
-                            <StateBadge variant="api" text="Linked" />
-                            {source.isActive && source.overrideCount > 0 && (
-                              <span>{source.overrideCount} override{source.overrideCount > 1 ? 's' : ''}</span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">ID:</span>
-                            <span className="truncate">{source.mapping_id}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigator.clipboard.writeText(source.mapping_id);
-                              }}
-                              className="p-0.5 hover:bg-slate-100 rounded"
-                              title="Copy Mapping ID"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </button>
-                          </div>
-
-                          <div>
-                            <span className="font-medium">Type:</span> {source.integration_type}
-                          </div>
-
-                          {source.isActive && source.last_synced_at && (
-                            <div className="text-xs text-slate-500">
-                              Last synced: {new Date(source.last_synced_at).toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleChangeLink(source);
-                          }}
-                          className="w-full px-2 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors"
-                        >
-                          <Link className="w-3 h-3 inline mr-1" />
-                          Change Link
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : mode === 'edit' && (product?.mapping_id && product?.integration_source_id) ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <StateBadge variant="api" text="Linked to API" />
-                  {product?.local_fields && product.local_fields.length > 0 && (
-                    <StateBadge variant="local" text={`${product.local_fields.length} override(s)`} />
-                  )}
-                  {product?.price_calculations && Object.keys(product.price_calculations).length > 0 && (
-                    <StateBadge variant="calculated" text="Has calculations" />
-                  )}
-                </div>
-                <div className="text-sm text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Mapping ID:</span>
-                    <span>{product?.mapping_id}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (product?.mapping_id) navigator.clipboard.writeText(product.mapping_id);
-                      }}
-                      className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                      title="Copy Mapping ID"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div><span className="font-medium">Type:</span> {product?.integration_type}</div>
-                  {product?.last_synced_at && (
-                    <div><span className="font-medium">Last synced:</span> {new Date(product.last_synced_at).toLocaleString()}</div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={async () => {
-                      try {
-                        await integrationLinkService.unlinkProduct(product!.id);
-                        alert('Product unlinked from API');
-                        onSuccess();
-                      } catch (error: any) {
-                        alert(error.message);
-                      }
-                    }}
-                    className="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <Unlink className="w-3 h-3 inline mr-1" />
-                    Unlink
-                  </button>
-                </div>
-              </div>
-            ) : mode === 'create' && currentProduct?.mapping_id ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <StateBadge variant="api" text="Linked to API" />
-                </div>
-                <div className="text-sm text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Mapping ID:</span>
-                    <span>{currentProduct?.mapping_id}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (currentProduct?.mapping_id) navigator.clipboard.writeText(currentProduct.mapping_id);
-                      }}
-                      className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                      title="Copy Mapping ID"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div><span className="font-medium">Type:</span> {currentProduct?.integration_type}</div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentProduct(null)}
-                    className="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <Unlink className="w-3 h-3 inline mr-1" />
-                    Unlink
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">
-                  This product is not linked to any API source. Link it to sync data automatically.
-                </p>
-                <button
-                  onClick={() => setShowProductApiLinkModal(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                >
-                  <Link className="w-4 h-4 inline mr-2" />
-                  Link to API Source
-                </button>
-              </div>
-            )}
-          </div>
+          <ApiIntegrationSection
+            mode={mode}
+            linkedSources={linkedSources}
+            viewingSourceId={viewingSourceId}
+            currentItem={mode === 'create' ? currentProduct : product}
+            onViewSource={handleViewSource}
+            onChangeLink={handleChangeLink}
+            onUnlink={async () => {
+              try {
+                await integrationLinkService.unlinkProduct(product!.id);
+                alert('Product unlinked from API');
+                onSuccess();
+              } catch (error: any) {
+                alert(error.message);
+              }
+            }}
+            onClearCurrent={() => setCurrentProduct(null)}
+            onLinkNew={() => setShowProductApiLinkModal(true)}
+          />
 
           {/* Attributes Section */}
           <div id="attributes-section">
