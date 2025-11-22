@@ -72,9 +72,8 @@ export default function CategoryLinkModal({
 
     const { data: productsData } = await supabase
       .from('integration_products')
-      .select('category_name')
-      .eq('integration_source_id', sourceId)
-      .not('category_name', 'is', null);
+      .select('data')
+      .eq('wand_source_id', sourceId);
 
     const { data: linksData } = await supabase
       .from('product_categories_links')
@@ -84,11 +83,11 @@ export default function CategoryLinkModal({
     const { data: categoriesData } = await supabase
       .from('product_categories')
       .select('id, integration_category_id')
-      .eq('integration_source_id', sourceId);
+      .eq('active_integration_source_id', sourceId);
 
     if (productsData) {
-      const categoryCounts = productsData.reduce((acc: Record<string, number>, item) => {
-        const name = item.category_name || '';
+      const categoryCounts = productsData.reduce((acc: Record<string, number>, item: any) => {
+        const name = item.data?.category || '';
         if (name) {
           acc[name] = (acc[name] || 0) + 1;
         }
