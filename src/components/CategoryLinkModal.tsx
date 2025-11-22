@@ -32,38 +32,29 @@ export default function CategoryLinkModal({
   currentMappingId,
   isChangingLink = false
 }: CategoryLinkModalProps) {
-  const [integrationSources, setIntegrationSources] = useState<IntegrationSource[]>([]);
-  const [selectedSource, setSelectedSource] = useState<string>('');
+  const [integrationSource, setIntegrationSource] = useState<IntegrationSource | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      loadIntegrationSources();
+    if (isOpen && currentSourceId) {
+      loadIntegrationSource();
+      loadCategories(currentSourceId);
     }
-  }, [isOpen]);
+  }, [isOpen, currentSourceId]);
 
-  useEffect(() => {
-    if (selectedSource) {
-      loadCategories(selectedSource);
-    } else {
-      setCategories([]);
-    }
-  }, [selectedSource]);
+  async function loadIntegrationSource() {
+    if (!currentSourceId) return;
 
-  async function loadIntegrationSources() {
     const { data } = await supabase
       .from('wand_integration_sources')
       .select('id, name, integration_type')
-      .eq('status', 'active')
-      .order('name');
+      .eq('id', currentSourceId)
+      .single();
 
     if (data) {
-      setIntegrationSources(data);
-      if (currentSourceId) {
-        setSelectedSource(currentSourceId);
-      }
+      setIntegrationSource(data);
     }
   }
 
@@ -136,13 +127,12 @@ export default function CategoryLinkModal({
   }
 
   function handleLinkCategory(categoryName: string) {
-    const source = integrationSources.find(s => s.id === selectedSource);
-    if (!source) return;
+    if (!integrationSource) return;
 
     onLink({
-      sourceId: selectedSource,
+      sourceId: integrationSource.id,
       categoryName,
-      integrationType: source.integration_type
+      integrationType: integrationSource.integration_type
     });
   }
 
@@ -171,71 +161,81 @@ export default function CategoryLinkModal({
         </div>
 
         <div className="p-6 space-y-4 overflow-y-auto flex-1">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Integration Source
-            </label>
-            <select
-              value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select a source...</option>
-              {integrationSources.map((source) => (
-                <option key={source.id} value={source.id}>
-                  {source.name} ({source.integration_type})
-                </option>
-              ))}
-            </select>
+          {integrationSource && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-blue-900">
+                Linking from: <span className="font-bold">{integrationSource.name}</span> ({integrationSource.integration_type.toUpperCase()})
+              </p>
+            </div>
+          )}
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search categories..."
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
-          {selectedSource && (
-            <>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search categories..."
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {loading ? (
-                <div className="text-center py-8 text-slate-500">
-                  Loading categories...
-                </div>
-              ) : filteredCategories.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  {searchTerm
-                    ? 'No categories found matching your search'
-                    : 'No categories found in this integration source'}
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {filteredCategories.map((category) => (
-                    <button
-                      key={category.category_name}
-                      onClick={() => handleLinkCategory(category.category_name)}
-                      className="w-full p-4 border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left group"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-slate-900 group-hover:text-blue-700">
+          {loading ? (
+            <div className="text-center py-8 text-slate-500">
+              Loading categories...
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              {searchTerm
+                ? 'No categories found matching your search'
+                : 'No categories found in this integration source'}
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {filteredCategories.map((category) => {
+                const isCurrentlyLinked = category.category_name === currentMappingId;
+                return (
+                  <button
+                    key={category.category_name}
+                    onClick={() => handleLinkCategory(category.category_name)}
+                    className={`w-full p-4 border rounded-lg transition-all text-left group ${
+                      isCurrentlyLinked
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-slate-200 hover:border-blue-500 hover:bg-blue-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className={`font-semibold ${
+                            isCurrentlyLinked
+                              ? 'text-green-900'
+                              : 'text-slate-900 group-hover:text-blue-700'
+                          }`}>
                             {category.category_name}
                           </h3>
-                          <p className="text-sm text-slate-500 mt-1">
-                            {category.product_count} product{category.product_count !== 1 ? 's' : ''} in this category
-                          </p>
+                          {isCurrentlyLinked && (
+                            <span className="text-xs font-medium px-2 py-1 bg-green-600 text-white rounded">
+                              Currently Linked
+                            </span>
+                          )}
                         </div>
-                        <LinkIcon className="w-5 h-5 text-slate-400 group-hover:text-blue-600" />
+                        <p className={`text-sm mt-1 ${
+                          isCurrentlyLinked ? 'text-green-700' : 'text-slate-500'
+                        }`}>
+                          {category.product_count} product{category.product_count !== 1 ? 's' : ''} in this category
+                        </p>
                       </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
+                      <LinkIcon className={`w-5 h-5 ${
+                        isCurrentlyLinked
+                          ? 'text-green-600'
+                          : 'text-slate-400 group-hover:text-blue-600'
+                      }`} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
