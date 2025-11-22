@@ -277,21 +277,31 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     }
 
     if (linkData) {
-      await supabase
+      const { error } = await supabase
         .from('product_categories_links')
         .update(updateData)
         .eq('id', linkData.id);
+
+      if (error) {
+        console.error('Error updating price config:', error);
+        return;
+      }
     } else {
-      await supabase
+      const { error } = await supabase
         .from('product_categories_links')
         .insert([{
           category_id: editingId,
           integration_source_id: sourceId,
-          mapping_id: currentCategory?.integration_category_id || activeSource?.mapping_id || '',
-          integration_type: currentCategory?.integration_type || activeSource?.integration_type || 'product',
+          mapping_id: currentCategory?.integration_category_id || activeSource?.mapping_id || 'AA-Dips',
+          integration_type: 'product',
           is_active: true,
           ...updateData
         }]);
+
+      if (error) {
+        console.error('Error inserting price config:', error);
+        return;
+      }
     }
 
     setCurrentPriceConfig(config);
