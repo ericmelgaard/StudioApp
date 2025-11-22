@@ -688,8 +688,13 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
 
                     {hasApiLink && (
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                           Price
+                          {currentPriceConfig && currentPriceConfig.mode !== 'manual' && (
+                            <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">
+                              Syncing
+                            </span>
+                          )}
                         </label>
                         <div className="relative">
                           <input
