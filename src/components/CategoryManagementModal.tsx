@@ -218,16 +218,20 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     if (!editingId) return;
 
     const activeSource = linkedSources.find(s => s.isActive);
-    if (!activeSource) return;
+    const currentCategory = categories.find(c => c.id === editingId);
+
+    const sourceId = activeSource?.id || currentCategory?.integration_source_id;
+    if (!sourceId) {
+      console.error('No integration source found');
+      return;
+    }
 
     const { data: linkData } = await supabase
       .from('product_categories_links')
       .select('id')
       .eq('category_id', editingId)
-      .eq('integration_source_id', activeSource.id)
-      .single();
-
-    if (!linkData) return;
+      .eq('integration_source_id', sourceId)
+      .maybeSingle();
 
     const updateData: any = {
       price_mode: config.mode
@@ -259,10 +263,23 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       updateData.price_calculation = null;
     }
 
-    await supabase
-      .from('product_categories_links')
-      .update(updateData)
-      .eq('id', linkData.id);
+    if (linkData) {
+      await supabase
+        .from('product_categories_links')
+        .update(updateData)
+        .eq('id', linkData.id);
+    } else {
+      await supabase
+        .from('product_categories_links')
+        .insert([{
+          category_id: editingId,
+          integration_source_id: sourceId,
+          mapping_id: currentCategory?.integration_category_id || activeSource?.mapping_id || '',
+          integration_type: currentCategory?.integration_type || activeSource?.integration_type || 'product',
+          is_active: true,
+          ...updateData
+        }]);
+    }
 
     setCurrentPriceConfig(config);
     await loadLinkedSources(editingId);
