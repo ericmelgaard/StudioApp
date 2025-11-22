@@ -1114,7 +1114,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
       }
 
       const linkedApis = (product as any).linked_apis || {};
-      const linked = sources
+      let linked = sources
         .filter(s => linkedApis[s.id])
         .map(s => ({
           ...s,
@@ -1122,6 +1122,20 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
           isActive: s.id === location.active_integration_source_id,
           overrideCount: product.local_fields?.length || 0
         }));
+
+      if (linked.length === 0 && product.mapping_id && product.integration_source_id) {
+        const currentSource = sources.find(s => s.id === product.integration_source_id);
+        if (currentSource) {
+          linked = [{
+            ...currentSource,
+            mapping_id: product.mapping_id,
+            integration_type: product.integration_type,
+            last_synced_at: product.last_synced_at,
+            isActive: true,
+            overrideCount: product.local_fields?.length || 0
+          }];
+        }
+      }
 
       setLinkedSources(linked);
 
