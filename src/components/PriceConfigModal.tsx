@@ -72,7 +72,7 @@ export default function PriceConfigModal({
   async function calculatePriceRange() {
     setCalculatingRange(true);
 
-    if (!categoryId || !integrationSourceId) {
+    if (!categoryId) {
       setRangeLow(0);
       setRangeHigh(0);
       setRangeCalculated(true);
@@ -80,40 +80,41 @@ export default function PriceConfigModal({
       return;
     }
 
-    const { data: linkData } = await supabase
-      .from('product_categories_links')
-      .select('mapping_id')
-      .eq('category_id', categoryId)
-      .eq('integration_source_id', integrationSourceId)
-      .single();
-
-    if (!linkData?.mapping_id) {
-      setRangeLow(0);
-      setRangeHigh(0);
-      setCalculatingRange(false);
-      return;
-    }
-
     const { data: products } = await supabase
-      .from('integration_products')
-      .select('data')
-      .eq('integration_source_id', integrationSourceId)
-      .eq('item_type', 'product');
+      .from('products')
+      .select(`
+        id,
+        name,
+        attributes,
+        product_category_assignments!inner(category_id)
+      `)
+      .eq('product_category_assignments.category_id', categoryId);
 
     if (!products || products.length === 0) {
       setRangeLow(0);
       setRangeHigh(0);
+      setRangeCalculated(true);
       setCalculatingRange(false);
       return;
     }
 
-    const categoryName = linkData.mapping_id;
     const prices: number[] = [];
 
     products.forEach(product => {
-      const data = product.data as any;
-      if (data?.category === categoryName && typeof data?.price === 'number' && data.price > 0) {
-        prices.push(data.price);
+      const priceValue = product.attributes?.price;
+      let price: number | null = null;
+
+      if (typeof priceValue === 'number') {
+        price = priceValue;
+      } else if (typeof priceValue === 'string') {
+        const parsed = parseFloat(priceValue);
+        if (!isNaN(parsed) && parsed > 0) {
+          price = parsed;
+        }
+      }
+
+      if (price !== null && price > 0) {
+        prices.push(price);
       }
     });
 
@@ -211,17 +212,12 @@ export default function PriceConfigModal({
                 {entityType === 'category' && (
                   <button
                     onClick={() => handleSelectMode('range')}
-                    disabled={!categoryId || !integrationSourceId}
+                    disabled={!categoryId}
                     className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:bg-white"
                   >
                     <h3 className="font-semibold text-slate-900 mb-1">Price Range</h3>
                     <p className="text-sm text-slate-600">
-                      Calculate price range from products in this category
-                      {(!categoryId || !integrationSourceId) && (
-                        <span className="block mt-1 text-amber-600 font-medium">
-                          Requires integration source link
-                        </span>
-                      )}
+                      Calculate price range from products assigned to this category
                     </p>
                   </button>
                 )}
