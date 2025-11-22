@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save, Edit2, Languages, Calculator } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit2, Calculator, Globe, ChevronDown, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ApiIntegrationSection } from './ApiIntegrationSection';
 import CategoryLinkModal from './CategoryLinkModal';
@@ -55,7 +55,6 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   const [editTranslations, setEditTranslations] = useState<Translation[]>([]);
   const [editLocalFields, setEditLocalFields] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showTranslations, setShowTranslations] = useState(false);
   const [availableLocales, setAvailableLocales] = useState<{code: string, name: string}[]>([]);
   const [linkedSources, setLinkedSources] = useState<LinkedSource[]>([]);
   const [viewingSourceId, setViewingSourceId] = useState<string | null>(null);
@@ -63,6 +62,8 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   const [selectedSourceForLinking, setSelectedSourceForLinking] = useState<LinkedSource | null>(null);
   const [showPriceConfigModal, setShowPriceConfigModal] = useState(false);
   const [currentPriceConfig, setCurrentPriceConfig] = useState<PriceConfig | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState<string>('en');
+  const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -226,6 +227,66 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       setCurrentPriceConfig(null);
     }
   }
+
+  const availableLanguages = () => {
+    const langs = [{ code: 'en', name: 'English' }];
+    langs.push(...availableLocales);
+    return langs;
+  };
+
+  const getCurrentName = () => {
+    if (currentLanguage === 'en') return editName;
+    const translation = editTranslations.find(t => t.locale === currentLanguage);
+    return translation?.name || '';
+  };
+
+  const getCurrentDescription = () => {
+    if (currentLanguage === 'en') return editDescription;
+    const translation = editTranslations.find(t => t.locale === currentLanguage);
+    return translation?.description || '';
+  };
+
+  const updateCurrentName = (value: string) => {
+    if (currentLanguage === 'en') {
+      setEditName(value);
+    } else {
+      const existing = editTranslations.find(t => t.locale === currentLanguage);
+      if (existing) {
+        setEditTranslations(editTranslations.map(t =>
+          t.locale === currentLanguage ? { ...t, name: value } : t
+        ));
+      } else {
+        const localeName = availableLocales.find(l => l.code === currentLanguage)?.name || currentLanguage;
+        setEditTranslations([...editTranslations, {
+          locale: currentLanguage,
+          locale_name: localeName,
+          name: value,
+          description: ''
+        }]);
+      }
+    }
+  };
+
+  const updateCurrentDescription = (value: string) => {
+    if (currentLanguage === 'en') {
+      setEditDescription(value);
+    } else {
+      const existing = editTranslations.find(t => t.locale === currentLanguage);
+      if (existing) {
+        setEditTranslations(editTranslations.map(t =>
+          t.locale === currentLanguage ? { ...t, description: value } : t
+        ));
+      } else {
+        const localeName = availableLocales.find(l => l.code === currentLanguage)?.name || currentLanguage;
+        setEditTranslations([...editTranslations, {
+          locale: currentLanguage,
+          locale_name: localeName,
+          name: '',
+          description: value
+        }]);
+      }
+    }
+  };
 
   async function handleSavePriceConfig(config: PriceConfig) {
     if (!editingId) return;
@@ -481,25 +542,6 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     }
   }
 
-  function addTranslationLocale(locale: string, localeName: string) {
-    if (!editTranslations.find(t => t.locale === locale)) {
-      setEditTranslations([
-        ...editTranslations,
-        { locale, locale_name: localeName, name: '', description: '' }
-      ]);
-    }
-  }
-
-  function removeTranslationLocale(locale: string) {
-    setEditTranslations(editTranslations.filter(t => t.locale !== locale));
-  }
-
-  function updateTranslation(locale: string, field: 'name' | 'description', value: string) {
-    setEditTranslations(editTranslations.map(t =>
-      t.locale === locale ? { ...t, [field]: value } : t
-    ));
-  }
-
   const currentCategory = editingId ? categories.find(c => c.id === editingId) : null;
   const isNameLocal = editLocalFields.includes('name');
 
@@ -566,10 +608,51 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                       onLinkNew={() => setShowApiLinkModal(true)}
                     />
 
+                    {availableLanguages().length > 1 && (
+                      <div className="flex items-center justify-between pb-2 mb-4 border-b border-slate-200">
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm font-medium text-slate-700">
+                            Editing {availableLanguages().find(l => l.code === currentLanguage)?.name} translation
+                          </span>
+                        </div>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowLocaleDropdown(!showLocaleDropdown)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors"
+                          >
+                            <span className="text-sm font-medium text-slate-700">
+                              {availableLanguages().find(l => l.code === currentLanguage)?.name || 'English'}
+                            </span>
+                            <ChevronDown className="w-4 h-4 text-slate-600" />
+                          </button>
+                          {showLocaleDropdown && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-[80] overflow-hidden">
+                              {availableLanguages().map((lang) => (
+                                <button
+                                  key={lang.code}
+                                  onClick={() => {
+                                    setCurrentLanguage(lang.code);
+                                    setShowLocaleDropdown(false);
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50 transition-colors flex items-center justify-between ${
+                                    currentLanguage === lang.code ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                                  }`}
+                                >
+                                  <span>{lang.name}</span>
+                                  {currentLanguage === lang.code && <Check className="w-4 h-4" />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         Category Name
-                        {hasApiLink && (
+                        {currentLanguage === 'en' && hasApiLink && (
                           <button
                             onClick={() => handleToggleLocalField('name')}
                             className="ml-2 text-xs text-blue-600 hover:text-blue-700"
@@ -580,8 +663,8 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                       </label>
                       <input
                         type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
+                        value={getCurrentName()}
+                        onChange={(e) => updateCurrentName(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Enter category name"
                       />
@@ -592,8 +675,8 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                         Description (Optional)
                       </label>
                       <textarea
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
+                        value={getCurrentDescription()}
+                        onChange={(e) => updateCurrentDescription(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Enter description"
                         rows={2}
@@ -649,92 +732,6 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                       </div>
                     )}
 
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <label className="block text-sm font-medium text-slate-700">
-                          Translations
-                        </label>
-                        <button
-                          onClick={() => setShowTranslations(!showTranslations)}
-                          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
-                        >
-                          <Languages className="w-4 h-4" />
-                          {showTranslations ? 'Hide' : 'Show'} Translations
-                        </button>
-                      </div>
-
-                      {showTranslations && (
-                        <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                          {availableLocales.length === 0 ? (
-                            <p className="text-sm text-slate-500 text-center py-4">
-                              No translation locales enabled. Add translations to your Product Attribute Templates first.
-                            </p>
-                          ) : (
-                            <>
-                              <div className="flex flex-wrap gap-2">
-                                {availableLocales.map((locale) => {
-                                  const hasLocale = editTranslations.find(t => t.locale === locale.code);
-                                  return (
-                                    <button
-                                      key={locale.code}
-                                      onClick={() => {
-                                        if (hasLocale) {
-                                          removeTranslationLocale(locale.code);
-                                        } else {
-                                          addTranslationLocale(locale.code, locale.name);
-                                        }
-                                      }}
-                                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                                        hasLocale
-                                          ? 'bg-blue-600 text-white'
-                                          : 'bg-white border border-slate-300 text-slate-700 hover:border-blue-500'
-                                      }`}
-                                    >
-                                      {locale.name}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              {editTranslations.map((translation) => (
-                                <div key={translation.locale} className="p-4 bg-white rounded-lg border border-slate-200">
-                                  <h4 className="text-sm font-bold text-slate-900 mb-3">
-                                    {translation.locale_name}
-                                  </h4>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                                        Translated Name
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={translation.name}
-                                        onChange={(e) => updateTranslation(translation.locale, 'name', e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        placeholder={`Enter ${translation.locale_name} name`}
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                                        Translated Description
-                                      </label>
-                                      <textarea
-                                        value={translation.description}
-                                        onChange={(e) => updateTranslation(translation.locale, 'description', e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        placeholder={`Enter ${translation.locale_name} description`}
-                                        rows={2}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
                     <div className="flex items-center gap-3 pt-2">
                       <button
                         onClick={handleSave}
@@ -763,7 +760,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                       )}
                       {category.translations && category.translations.length > 0 && (
                         <div className="flex items-center gap-2 mt-2">
-                          <Languages className="w-4 h-4 text-slate-400" />
+                          <Globe className="w-4 h-4 text-slate-400" />
                           <span className="text-xs text-slate-500">
                             {category.translations.length} translation(s)
                           </span>
