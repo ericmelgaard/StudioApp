@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, DollarSign } from 'lucide-react';
+import { X, DollarSign, RefreshCw } from 'lucide-react';
 import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
+import { supabase } from '../lib/supabase';
 
 interface PriceConfigModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface PriceConfigModalProps {
   currentConfig?: PriceConfig | null;
   entityType: 'product' | 'category';
   currentValue?: number;
+  categoryId?: string;
+  integrationSourceId?: string;
 }
 
 export interface PriceConfig {
@@ -25,13 +28,17 @@ export default function PriceConfigModal({
   onSave,
   currentConfig,
   entityType,
-  currentValue
+  currentValue,
+  categoryId,
+  integrationSourceId
 }: PriceConfigModalProps) {
   const [selectedMode, setSelectedMode] = useState<'direct' | 'calculation' | 'range' | null>(null);
   const [showFieldLinkModal, setShowFieldLinkModal] = useState(false);
   const [rangeLow, setRangeLow] = useState<number>(0);
   const [rangeHigh, setRangeHigh] = useState<number>(0);
   const [pendingFieldLink, setPendingFieldLink] = useState<FieldLinkData | null>(null);
+  const [calculatingRange, setCalculatingRange] = useState(false);
+  const [rangeCalculated, setRangeCalculated] = useState(false);
 
   useEffect(() => {
     if (isOpen && currentConfig) {
@@ -51,11 +58,73 @@ export default function PriceConfigModal({
     }
   }, [isOpen, currentConfig, entityType]);
 
-  function handleSelectMode(mode: 'direct' | 'calculation' | 'range') {
+  async function handleSelectMode(mode: 'direct' | 'calculation' | 'range') {
     setSelectedMode(mode);
     if (mode === 'direct' || mode === 'calculation') {
       setShowFieldLinkModal(true);
+    } else if (mode === 'range') {
+      await calculatePriceRange();
     }
+  }
+
+  async function calculatePriceRange() {
+    if (!categoryId || !integrationSourceId) {
+      setRangeLow(0);
+      setRangeHigh(0);
+      return;
+    }
+
+    setCalculatingRange(true);
+
+    const { data: linkData } = await supabase
+      .from('product_categories_links')
+      .select('mapping_id')
+      .eq('category_id', categoryId)
+      .eq('integration_source_id', integrationSourceId)
+      .single();
+
+    if (!linkData?.mapping_id) {
+      setRangeLow(0);
+      setRangeHigh(0);
+      setCalculatingRange(false);
+      return;
+    }
+
+    const { data: products } = await supabase
+      .from('integration_products')
+      .select('data')
+      .eq('integration_source_id', integrationSourceId)
+      .eq('item_type', 'product');
+
+    if (!products || products.length === 0) {
+      setRangeLow(0);
+      setRangeHigh(0);
+      setCalculatingRange(false);
+      return;
+    }
+
+    const categoryName = linkData.mapping_id;
+    const prices: number[] = [];
+
+    products.forEach(product => {
+      const data = product.data as any;
+      if (data?.category === categoryName && typeof data?.price === 'number' && data.price > 0) {
+        prices.push(data.price);
+      }
+    });
+
+    if (prices.length === 0) {
+      setRangeLow(0);
+      setRangeHigh(0);
+    } else {
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      setRangeLow(minPrice);
+      setRangeHigh(maxPrice);
+    }
+
+    setRangeCalculated(true);
+    setCalculatingRange(false);
   }
 
   function handleFieldLinkSave(linkData: FieldLinkData) {
@@ -142,7 +211,7 @@ export default function PriceConfigModal({
                   >
                     <h3 className="font-semibold text-slate-900 mb-1">Price Range</h3>
                     <p className="text-sm text-slate-600">
-                      Set a price range for products in this category
+                      Calculate price range from products in this category
                     </p>
                   </button>
                 )}
@@ -151,61 +220,47 @@ export default function PriceConfigModal({
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-900">
-                    Set the price range for products in this category. This represents the minimum and maximum prices.
+                    Price range is calculated from products linked to this category in the integration source.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Low Price
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={rangeLow}
-                        onChange={(e) => setRangeLow(parseFloat(e.target.value) || 0)}
-                        className="w-full pl-8 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0.00"
-                      />
-                    </div>
+                {calculatingRange ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-6 h-6 text-blue-600 animate-spin" />
+                    <span className="ml-3 text-slate-600">Calculating price range...</span>
                   </div>
+                ) : rangeCalculated ? (
+                  <div className="space-y-4">
+                    {rangeLow === 0 && rangeHigh === 0 ? (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-sm text-yellow-900">
+                          No products found in this category with valid prices.
+                        </p>
+                      </div>
+                    ) : rangeLow === rangeHigh ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-sm font-medium text-green-900 mb-1">Calculated Price:</p>
+                        <p className="text-2xl font-bold text-green-900">${rangeLow.toFixed(2)}</p>
+                        <p className="text-xs text-green-700 mt-1">All products have the same price</p>
+                      </div>
+                    ) : (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-sm font-medium text-green-900 mb-1">Calculated Price Range:</p>
+                        <p className="text-2xl font-bold text-green-900">
+                          ${rangeLow.toFixed(2)} - ${rangeHigh.toFixed(2)}
+                        </p>
+                      </div>
+                    )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      High Price
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={rangeHigh}
-                        onChange={(e) => setRangeHigh(parseFloat(e.target.value) || 0)}
-                        className="w-full pl-8 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0.00"
-                      />
-                    </div>
+                    <button
+                      onClick={calculatePriceRange}
+                      className="w-full px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Recalculate Range
+                    </button>
                   </div>
-                </div>
-
-                {rangeLow > 0 && rangeHigh > 0 && rangeLow < rangeHigh && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-sm text-green-900">
-                      Price range: ${rangeLow.toFixed(2)} - ${rangeHigh.toFixed(2)}
-                    </p>
-                  </div>
-                )}
-
-                {rangeLow > 0 && rangeHigh > 0 && rangeLow >= rangeHigh && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-sm text-red-900">
-                      Low price must be less than high price
-                    </p>
-                  </div>
-                )}
+                ) : null}
               </div>
             ) : (
               <div className="space-y-4">
@@ -264,7 +319,7 @@ export default function PriceConfigModal({
                 onClick={handleSave}
                 disabled={
                   !selectedMode ||
-                  (selectedMode === 'range' && (rangeLow <= 0 || rangeHigh <= 0 || rangeLow >= rangeHigh)) ||
+                  (selectedMode === 'range' && (!rangeCalculated || (rangeLow === 0 && rangeHigh === 0))) ||
                   ((selectedMode === 'direct' || selectedMode === 'calculation') && !pendingFieldLink)
                 }
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"

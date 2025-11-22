@@ -570,7 +570,9 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                             type="text"
                             value={currentPriceConfig
                               ? currentPriceConfig.mode === 'range'
-                                ? `$${currentPriceConfig.rangeLow} - $${currentPriceConfig.rangeHigh}`
+                                ? currentPriceConfig.rangeLow === currentPriceConfig.rangeHigh
+                                  ? `$${currentPriceConfig.rangeLow?.toFixed(2) || '0.00'}`
+                                  : `$${currentPriceConfig.rangeLow?.toFixed(2) || '0.00'} - $${currentPriceConfig.rangeHigh?.toFixed(2) || '0.00'}`
                                 : currentPriceConfig.mode === 'direct'
                                 ? 'Direct Link'
                                 : currentPriceConfig.mode === 'calculation'
@@ -782,6 +784,8 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         onSave={handleSavePriceConfig}
         currentConfig={currentPriceConfig}
         entityType="category"
+        categoryId={editingId || undefined}
+        integrationSourceId={linkedSources.find(s => s.isActive)?.id}
       />
     </div>
   );
