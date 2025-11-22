@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save, Edit2, Languages } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit2, Languages, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { ApiIntegrationSection } from './ApiIntegrationSection';
+import ApiLinkModal from './ApiLinkModal';
 
 interface Category {
   id: string;
@@ -12,6 +14,20 @@ interface Category {
   translations: Translation[];
   integration_source_id: string | null;
   integration_category_id: string | null;
+}
+
+interface LinkedSource {
+  id: string;
+  name: string;
+  mapping_id: string;
+  integration_type: string;
+  last_synced_at?: string;
+  isActive: boolean;
+  overrideCount?: number;
+  price_mode?: string;
+  price_value?: number;
+  price_range_low?: number;
+  price_range_high?: number;
 }
 
 interface Translation {
@@ -36,6 +52,12 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   const [loading, setLoading] = useState(false);
   const [showTranslations, setShowTranslations] = useState(false);
   const [availableLocales, setAvailableLocales] = useState<{code: string, name: string}[]>([]);
+  const [linkedSources, setLinkedSources] = useState<LinkedSource[]>([]);
+  const [showApiLinkModal, setShowApiLinkModal] = useState(false);
+  const [priceMode, setPriceMode] = useState<string>('range');
+  const [priceValue, setPriceValue] = useState<string>('');
+  const [priceRangeLow, setPriceRangeLow] = useState<string>('');
+  const [priceRangeHigh, setPriceRangeHigh] = useState<string>('');
 
   const commonLocales = [
     { code: 'fr-FR', name: 'French (France)' },
@@ -162,13 +184,57 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     }
   }
 
-  function handleEdit(category: Category) {
+  async function handleEdit(category: Category) {
     setEditingId(category.id);
     setEditName(category.name);
     setEditDisplayName(category.display_name || '');
     setEditDescription(category.description || '');
     setEditTranslations(category.translations || []);
     setShowTranslations(false);
+    await loadLinkedSources(category.id);
+  }
+
+  async function loadLinkedSources(categoryId: string) {
+    const { data } = await supabase
+      .from('product_categories_links')
+      .select(`
+        id,
+        mapping_id,
+        integration_type,
+        is_active,
+        last_synced_at,
+        price_mode,
+        price_value,
+        price_range_low,
+        price_range_high,
+        integration_source_id,
+        wand_integration_sources!inner(name)
+      `)
+      .eq('category_id', categoryId);
+
+    if (data) {
+      const sources: LinkedSource[] = data.map((link: any) => ({
+        id: link.integration_source_id,
+        name: link.wand_integration_sources.name,
+        mapping_id: link.mapping_id,
+        integration_type: link.integration_type,
+        last_synced_at: link.last_synced_at,
+        isActive: link.is_active,
+        price_mode: link.price_mode,
+        price_value: link.price_value,
+        price_range_low: link.price_range_low,
+        price_range_high: link.price_range_high,
+      }));
+      setLinkedSources(sources);
+
+      const activeSource = sources.find(s => s.isActive);
+      if (activeSource) {
+        setPriceMode(activeSource.price_mode || 'range');
+        setPriceValue(activeSource.price_value?.toString() || '');
+        setPriceRangeLow(activeSource.price_range_low?.toString() || '');
+        setPriceRangeHigh(activeSource.price_range_high?.toString() || '');
+      }
+    }
   }
 
   function handleCancel() {
@@ -178,6 +244,74 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setEditDescription('');
     setEditTranslations([]);
     setShowTranslations(false);
+    setLinkedSources([]);
+    setPriceMode('range');
+    setPriceValue('');
+    setPriceRangeLow('');
+    setPriceRangeHigh('');
+  }
+
+  async function handleLinkCategory(integrationData: any) {
+    if (!editingId) return;
+
+    const { error } = await supabase
+      .from('product_categories_links')
+      .insert({
+        category_id: editingId,
+        integration_source_id: integrationData.sourceId,
+        mapping_id: integrationData.mappingId,
+        integration_type: integrationData.integrationType,
+        is_active: linkedSources.length === 0,
+        price_mode: 'range',
+      });
+
+    if (!error) {
+      await loadLinkedSources(editingId);
+      setShowApiLinkModal(false);
+    } else {
+      alert('Failed to link category: ' + error.message);
+    }
+  }
+
+  async function handleUnlinkCategory() {
+    if (!editingId) return;
+    if (!confirm('Are you sure you want to unlink this API source?')) return;
+
+    const { error } = await supabase
+      .from('product_categories_links')
+      .delete()
+      .eq('category_id', editingId);
+
+    if (!error) {
+      setLinkedSources([]);
+      setPriceMode('range');
+      setPriceValue('');
+      setPriceRangeLow('');
+      setPriceRangeHigh('');
+    }
+  }
+
+  async function handleSavePricing() {
+    if (!editingId || linkedSources.length === 0) return;
+
+    const activeSource = linkedSources.find(s => s.isActive);
+    if (!activeSource) return;
+
+    const { error } = await supabase
+      .from('product_categories_links')
+      .update({
+        price_mode: priceMode,
+        price_value: priceMode === 'manual' ? parseFloat(priceValue) || null : null,
+        price_range_low: priceMode === 'range' ? parseFloat(priceRangeLow) || null : null,
+        price_range_high: priceMode === 'range' ? parseFloat(priceRangeHigh) || null : null,
+      })
+      .eq('category_id', editingId)
+      .eq('integration_source_id', activeSource.id);
+
+    if (!error) {
+      alert('Pricing saved successfully');
+      await loadLinkedSources(editingId);
+    }
   }
 
   function addTranslationLocale(locale: string, localeName: string) {
@@ -374,6 +508,114 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                       )}
                     </div>
 
+                    <ApiIntegrationSection
+                      mode="edit"
+                      linkedSources={linkedSources}
+                      currentItem={{
+                        mapping_id: linkedSources.find(s => s.isActive)?.mapping_id,
+                        integration_type: linkedSources.find(s => s.isActive)?.integration_type,
+                        integration_source_id: linkedSources.find(s => s.isActive)?.id,
+                        last_synced_at: linkedSources.find(s => s.isActive)?.last_synced_at,
+                      }}
+                      onUnlink={handleUnlinkCategory}
+                      onLinkNew={() => setShowApiLinkModal(true)}
+                    />
+
+                    {linkedSources.length > 0 && (
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                          <Calculator className="w-4 h-4" />
+                          Price Configuration
+                        </h3>
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              Price Mode
+                            </label>
+                            <select
+                              value={priceMode}
+                              onChange={(e) => setPriceMode(e.target.value)}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="range">Price Range (Low - High)</option>
+                              <option value="manual">Manual Price</option>
+                              <option value="direct">Direct Product Link</option>
+                              <option value="calculation">Calculation</option>
+                            </select>
+                          </div>
+
+                          {priceMode === 'range' && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                  Low Price
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={priceRangeLow}
+                                  onChange={(e) => setPriceRangeLow(e.target.value)}
+                                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="0.00"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                  High Price
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={priceRangeHigh}
+                                  onChange={(e) => setPriceRangeHigh(e.target.value)}
+                                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {priceMode === 'manual' && (
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">
+                                Price
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={priceValue}
+                                onChange={(e) => setPriceValue(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          )}
+
+                          {priceMode === 'direct' && (
+                            <p className="text-sm text-slate-600">
+                              Direct product linking will be available soon. This allows you to link the category price directly to a specific product.
+                            </p>
+                          )}
+
+                          {priceMode === 'calculation' && (
+                            <p className="text-sm text-slate-600">
+                              Price calculations will be available soon. This allows you to create custom formulas for category pricing.
+                            </p>
+                          )}
+
+                          {(priceMode === 'range' || priceMode === 'manual') && (
+                            <button
+                              onClick={handleSavePricing}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                            >
+                              Save Pricing
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-3 pt-2">
                       <button
                         onClick={handleSave}
@@ -446,6 +688,15 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
           </div>
         </div>
       </div>
+
+      {showApiLinkModal && (
+        <ApiLinkModal
+          isOpen={showApiLinkModal}
+          onClose={() => setShowApiLinkModal(false)}
+          onLink={handleLinkCategory}
+          entityType="category"
+        />
+      )}
     </div>
   );
 }

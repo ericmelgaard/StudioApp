@@ -5,10 +5,11 @@ import { supabase } from '../lib/supabase';
 interface ApiLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLink: (mapping_id: string, integration_type: 'product' | 'modifier' | 'discount') => void;
-  integrationSourceId: string | null;
+  onLink: (data: any) => void;
+  integrationSourceId?: string | null;
   title?: string;
   searchType?: 'product' | 'modifier' | 'discount' | 'all';
+  entityType?: 'product' | 'category';
 }
 
 interface IntegrationItem {
@@ -25,7 +26,8 @@ export default function ApiLinkModal({
   onLink,
   integrationSourceId,
   title = 'Link to API',
-  searchType = 'all'
+  searchType = 'all',
+  entityType = 'product'
 }: ApiLinkModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [items, setItems] = useState<IntegrationItem[]>([]);
@@ -33,12 +35,66 @@ export default function ApiLinkModal({
   const [selectedType, setSelectedType] = useState<'product' | 'modifier' | 'discount'>(
     searchType === 'all' ? 'product' : searchType
   );
+  const [categoryMappings, setCategoryMappings] = useState<any[]>([]);
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen && integrationSourceId) {
-      loadItems();
+    if (isOpen) {
+      if (entityType === 'category') {
+        loadCategoryMappings();
+      } else if (integrationSourceId) {
+        loadItems();
+      }
     }
-  }, [isOpen, integrationSourceId, selectedType]);
+  }, [isOpen, integrationSourceId, selectedType, entityType]);
+
+  const loadCategoryMappings = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('integration_attribute_mappings')
+        .select(`
+          id,
+          wand_integration_source_id,
+          attribute_mappings,
+          wand_integration_sources!inner(
+            id,
+            name,
+            integration_type
+          )
+        `)
+        .not('attribute_mappings', 'is', null);
+
+      if (error) throw error;
+
+      const mappings: any[] = [];
+      data?.forEach((mapping: any) => {
+        const attrMappings = mapping.attribute_mappings;
+        const categories = attrMappings?.categories || attrMappings?.groups || [];
+
+        if (Array.isArray(categories) && categories.length > 0) {
+          categories.forEach((cat: any) => {
+            mappings.push({
+              id: `${mapping.id}-${cat.id || cat.name}`,
+              sourceId: mapping.wand_integration_source_id,
+              sourceName: mapping.wand_integration_sources.name,
+              integrationType: mapping.wand_integration_sources.integration_type,
+              mappingId: cat.id || cat.externalId || cat.name,
+              categoryName: cat.name || cat.displayName || 'Unnamed Category',
+              categoryData: cat
+            });
+          });
+        }
+      });
+
+      setCategoryMappings(mappings);
+    } catch (error) {
+      console.error('Failed to load category mappings:', error);
+      setCategoryMappings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadItems = async () => {
     if (!integrationSourceId) return;
@@ -74,13 +130,31 @@ export default function ApiLinkModal({
     }
   };
 
-  const filteredItems = items.filter(item =>
-    item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.mapping_id?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = entityType === 'category'
+    ? categoryMappings.filter(item =>
+        item.categoryName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.mappingId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.sourceName?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : items.filter(item =>
+        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.mapping_id?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
-  const handleLink = (item: IntegrationItem) => {
-    onLink(item.mapping_id, item.type);
+  const handleLink = (item: any) => {
+    if (entityType === 'category') {
+      onLink({
+        sourceId: item.sourceId,
+        mappingId: item.mappingId,
+        integrationType: item.integrationType,
+        categoryName: item.categoryName
+      });
+    } else {
+      onLink({
+        mapping_id: item.mapping_id,
+        integration_type: item.type
+      });
+    }
     onClose();
   };
 
@@ -100,7 +174,7 @@ export default function ApiLinkModal({
         </div>
 
         <div className="p-6 space-y-4 flex-1 overflow-auto">
-          {!integrationSourceId ? (
+          {entityType === 'product' && !integrationSourceId ? (
             <div className="text-center py-8 text-slate-500">
               <p>Product must be linked to an integration source first.</p>
               <p className="text-sm mt-2">Link the product to an API before linking options.</p>
@@ -163,7 +237,7 @@ export default function ApiLinkModal({
                 </div>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {filteredItems.map((item) => (
+                  {filteredItems.map((item: any) => (
                     <button
                       key={item.id}
                       onClick={() => handleLink(item)}
@@ -171,16 +245,32 @@ export default function ApiLinkModal({
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="font-medium text-slate-900 group-hover:text-blue-700">
-                            {item.name}
-                          </div>
-                          <div className="text-sm text-slate-500 mt-1">
-                            ID: {item.mapping_id}
-                          </div>
-                          {item.data?.price !== undefined && (
-                            <div className="text-sm text-slate-600 mt-1">
-                              Price: ${item.data.price.toFixed(2)}
-                            </div>
+                          {entityType === 'category' ? (
+                            <>
+                              <div className="font-medium text-slate-900 group-hover:text-blue-700">
+                                {item.categoryName}
+                              </div>
+                              <div className="text-sm text-slate-500 mt-1">
+                                Source: {item.sourceName}
+                              </div>
+                              <div className="text-sm text-slate-500">
+                                ID: {item.mappingId}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="font-medium text-slate-900 group-hover:text-blue-700">
+                                {item.name}
+                              </div>
+                              <div className="text-sm text-slate-500 mt-1">
+                                ID: {item.mapping_id}
+                              </div>
+                              {item.data?.price !== undefined && (
+                                <div className="text-sm text-slate-600 mt-1">
+                                  Price: ${item.data.price.toFixed(2)}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                         <Link2 className="w-5 h-5 text-slate-400 group-hover:text-blue-600" />
