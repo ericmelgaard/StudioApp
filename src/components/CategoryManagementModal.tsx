@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save, Edit2, Languages } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit2, Languages, Calculator } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ApiIntegrationSection } from './ApiIntegrationSection';
 import CategoryLinkModal from './CategoryLinkModal';
+import PriceConfigModal, { PriceConfig } from './PriceConfigModal';
 
 interface Category {
   id: string;
@@ -60,6 +61,8 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   const [viewingSourceId, setViewingSourceId] = useState<string | null>(null);
   const [showApiLinkModal, setShowApiLinkModal] = useState(false);
   const [selectedSourceForLinking, setSelectedSourceForLinking] = useState<LinkedSource | null>(null);
+  const [showPriceConfigModal, setShowPriceConfigModal] = useState(false);
+  const [currentPriceConfig, setCurrentPriceConfig] = useState<PriceConfig | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -163,6 +166,106 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     }
 
     setLinkedSources(sources);
+
+    const activeSource = sources.find(s => s.isActive);
+    loadPriceConfigFromSource(activeSource);
+  }
+
+  function loadPriceConfigFromSource(activeSource?: LinkedSource) {
+    if (!activeSource) {
+      setCurrentPriceConfig(null);
+      return;
+    }
+
+    if (activeSource.price_mode === 'range') {
+      setCurrentPriceConfig({
+        mode: 'range',
+        rangeLow: activeSource.price_range_low || 0,
+        rangeHigh: activeSource.price_range_high || 0
+      });
+    } else if (activeSource.price_mode === 'direct' && activeSource.linked_product_id) {
+      setCurrentPriceConfig({
+        mode: 'direct',
+        fieldLink: {
+          type: 'direct',
+          directLink: {
+            productId: activeSource.linked_product_id,
+            productName: 'Linked Product',
+            field: 'price',
+            linkType: 'product'
+          }
+        }
+      });
+    } else if (activeSource.price_mode === 'calculation' && activeSource.price_calculation) {
+      setCurrentPriceConfig({
+        mode: 'calculation',
+        fieldLink: {
+          type: 'calculation',
+          calculation: activeSource.price_calculation
+        }
+      });
+    } else if (activeSource.price_mode === 'manual' && activeSource.price_value !== undefined) {
+      setCurrentPriceConfig({
+        mode: 'manual',
+        manualValue: activeSource.price_value
+      });
+    } else {
+      setCurrentPriceConfig(null);
+    }
+  }
+
+  async function handleSavePriceConfig(config: PriceConfig) {
+    if (!editingId) return;
+
+    const activeSource = linkedSources.find(s => s.isActive);
+    if (!activeSource) return;
+
+    const { data: linkData } = await supabase
+      .from('product_categories_links')
+      .select('id')
+      .eq('category_id', editingId)
+      .eq('integration_source_id', activeSource.id)
+      .single();
+
+    if (!linkData) return;
+
+    const updateData: any = {
+      price_mode: config.mode
+    };
+
+    if (config.mode === 'range') {
+      updateData.price_range_low = config.rangeLow;
+      updateData.price_range_high = config.rangeHigh;
+      updateData.price_value = null;
+      updateData.linked_product_id = null;
+      updateData.price_calculation = null;
+    } else if (config.mode === 'direct' && config.fieldLink?.directLink) {
+      updateData.linked_product_id = config.fieldLink.directLink.productId;
+      updateData.price_range_low = null;
+      updateData.price_range_high = null;
+      updateData.price_value = null;
+      updateData.price_calculation = null;
+    } else if (config.mode === 'calculation' && config.fieldLink?.calculation) {
+      updateData.price_calculation = config.fieldLink.calculation;
+      updateData.price_range_low = null;
+      updateData.price_range_high = null;
+      updateData.price_value = null;
+      updateData.linked_product_id = null;
+    } else if (config.mode === 'manual') {
+      updateData.price_value = config.manualValue;
+      updateData.price_range_low = null;
+      updateData.price_range_high = null;
+      updateData.linked_product_id = null;
+      updateData.price_calculation = null;
+    }
+
+    await supabase
+      .from('product_categories_links')
+      .update(updateData)
+      .eq('id', linkData.id);
+
+    setCurrentPriceConfig(config);
+    await loadLinkedSources(editingId);
   }
 
   async function handleAddCategory() {
@@ -231,6 +334,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setEditTranslations(category.translations || []);
     setEditLocalFields(category.local_fields || []);
     setShowTranslations(false);
+    setCurrentPriceConfig(null);
     await loadLinkedSources(category.id);
   }
 
@@ -245,15 +349,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setViewingSourceId(null);
   }
 
-  async function handleLinkCategory(integrationData: {
-    sourceId: string;
-    categoryName: string;
-    integrationType: string;
-    priceMode: string;
-    priceValue?: number;
-    priceRangeLow?: number;
-    priceRangeHigh?: number;
-  } | null) {
+  async function handleLinkCategory(integrationData: { sourceId: string; categoryName: string; integrationType: string } | null) {
     if (!editingId) return;
 
     if (integrationData === null) {
@@ -272,10 +368,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         mapping_id: integrationData.categoryName,
         integration_type: integrationData.integrationType,
         is_active: isFirstLink,
-        price_mode: integrationData.priceMode,
-        price_value: integrationData.priceValue,
-        price_range_low: integrationData.priceRangeLow,
-        price_range_high: integrationData.priceRangeHigh,
+        price_mode: 'range',
       });
 
     if (!error) {
@@ -467,6 +560,53 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                       />
                     </div>
 
+                    {hasApiLink && (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Price
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={currentPriceConfig
+                              ? currentPriceConfig.mode === 'range'
+                                ? `$${currentPriceConfig.rangeLow} - $${currentPriceConfig.rangeHigh}`
+                                : currentPriceConfig.mode === 'direct'
+                                ? 'Direct Link'
+                                : currentPriceConfig.mode === 'calculation'
+                                ? 'Calculated'
+                                : `$${currentPriceConfig.manualValue || 0}`
+                              : 'Not set'}
+                            disabled
+                            className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg bg-slate-50 text-slate-700"
+                            placeholder="Configure price"
+                          />
+                          <button
+                            onClick={() => setShowPriceConfigModal(true)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Configure price"
+                          >
+                            <Calculator className={`w-4 h-4 ${currentPriceConfig ? 'text-blue-600' : ''}`} />
+                          </button>
+                        </div>
+                        {currentPriceConfig && currentPriceConfig.mode === 'range' && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Price range based on products in this category
+                          </p>
+                        )}
+                        {currentPriceConfig && currentPriceConfig.mode === 'calculation' && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Price calculated from linked items
+                          </p>
+                        )}
+                        {currentPriceConfig && currentPriceConfig.mode === 'direct' && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Price linked to another product
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <label className="block text-sm font-medium text-slate-700">
@@ -632,13 +772,17 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
           currentSourceId={selectedSourceForLinking?.id}
           currentCategoryId={editingId || undefined}
           currentMappingId={activeLink?.mapping_id}
-          currentPriceMode={selectedSourceForLinking?.price_mode}
-          currentPriceValue={selectedSourceForLinking?.price_value}
-          currentPriceRangeLow={selectedSourceForLinking?.price_range_low}
-          currentPriceRangeHigh={selectedSourceForLinking?.price_range_high}
           isChangingLink={!!selectedSourceForLinking}
         />
       )}
+
+      <PriceConfigModal
+        isOpen={showPriceConfigModal}
+        onClose={() => setShowPriceConfigModal(false)}
+        onSave={handleSavePriceConfig}
+        currentConfig={currentPriceConfig}
+        entityType="category"
+      />
     </div>
   );
 }

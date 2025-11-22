@@ -5,22 +5,10 @@ import { supabase } from '../lib/supabase';
 interface CategoryLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLink: (data: {
-    sourceId: string;
-    categoryName: string;
-    integrationType: string;
-    priceMode: string;
-    priceValue?: number;
-    priceRangeLow?: number;
-    priceRangeHigh?: number;
-  } | null) => void;
+  onLink: (data: { sourceId: string; categoryName: string; integrationType: string } | null) => void;
   currentSourceId?: string;
   currentCategoryId?: string;
   currentMappingId?: string;
-  currentPriceMode?: string;
-  currentPriceValue?: number;
-  currentPriceRangeLow?: number;
-  currentPriceRangeHigh?: number;
   isChangingLink?: boolean;
 }
 
@@ -42,21 +30,12 @@ export default function CategoryLinkModal({
   currentSourceId,
   currentCategoryId,
   currentMappingId,
-  currentPriceMode,
-  currentPriceValue,
-  currentPriceRangeLow,
-  currentPriceRangeHigh,
   isChangingLink = false
 }: CategoryLinkModalProps) {
   const [integrationSource, setIntegrationSource] = useState<IntegrationSource | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [priceMode, setPriceMode] = useState<string>(currentPriceMode || 'range');
-  const [priceValue, setPriceValue] = useState<number>(currentPriceValue || 0);
-  const [priceRangeLow, setPriceRangeLow] = useState<number>(currentPriceRangeLow || 0);
-  const [priceRangeHigh, setPriceRangeHigh] = useState<number>(currentPriceRangeHigh || 0);
 
   useEffect(() => {
     if (isOpen && currentSourceId) {
@@ -145,21 +124,13 @@ export default function CategoryLinkModal({
     setLoading(false);
   }
 
-  function handleSelectCategory(categoryName: string) {
-    setSelectedCategory(categoryName);
-  }
-
-  function handleConfirmLink() {
-    if (!integrationSource || !selectedCategory) return;
+  function handleLinkCategory(categoryName: string) {
+    if (!integrationSource) return;
 
     onLink({
       sourceId: integrationSource.id,
-      categoryName: selectedCategory,
-      integrationType: integrationSource.integration_type,
-      priceMode,
-      priceValue: priceMode === 'manual' ? priceValue : undefined,
-      priceRangeLow: priceMode === 'range' ? priceRangeLow : undefined,
-      priceRangeHigh: priceMode === 'range' ? priceRangeHigh : undefined
+      categoryName,
+      integrationType: integrationSource.integration_type
     });
   }
 
@@ -225,15 +196,12 @@ export default function CategoryLinkModal({
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {filteredCategories.map((category) => {
                 const isCurrentlyLinked = category.category_name === currentMappingId;
-                const isSelected = category.category_name === selectedCategory;
                 return (
                   <button
                     key={category.category_name}
-                    onClick={() => handleSelectCategory(category.category_name)}
+                    onClick={() => handleLinkCategory(category.category_name)}
                     className={`w-full p-4 border rounded-lg transition-all text-left group ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50'
-                        : isCurrentlyLinked
+                      isCurrentlyLinked
                         ? 'border-green-500 bg-green-50'
                         : 'border-slate-200 hover:border-blue-500 hover:bg-blue-50'
                     }`}
@@ -271,87 +239,6 @@ export default function CategoryLinkModal({
               })}
             </div>
           )}
-
-          {selectedCategory && (
-            <div className="border-t border-slate-200 pt-4 space-y-4">
-              <h4 className="font-semibold text-slate-900">Price Configuration</h4>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Price Mode
-                </label>
-                <select
-                  value={priceMode}
-                  onChange={(e) => setPriceMode(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="range">Price Range</option>
-                  <option value="manual">Manual Price</option>
-                  <option value="direct">Direct Link to Product</option>
-                  <option value="calculation">Calculation</option>
-                </select>
-              </div>
-
-              {priceMode === 'range' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Low Price
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={priceRangeLow}
-                      onChange={(e) => setPriceRangeLow(parseFloat(e.target.value))}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      High Price
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={priceRangeHigh}
-                      onChange={(e) => setPriceRangeHigh(parseFloat(e.target.value))}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {priceMode === 'manual' && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Price
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={priceValue}
-                    onChange={(e) => setPriceValue(parseFloat(e.target.value))}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-              )}
-
-              {priceMode === 'direct' && (
-                <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                  Price will be linked directly to a product. Configure this after linking.
-                </div>
-              )}
-
-              {priceMode === 'calculation' && (
-                <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                  Price will be calculated. Configure this after linking.
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="flex items-center justify-between gap-3 p-6 border-t border-slate-200 bg-slate-50">
@@ -371,14 +258,6 @@ export default function CategoryLinkModal({
             >
               Cancel
             </button>
-            {selectedCategory && (
-              <button
-                onClick={handleConfirmLink}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Confirm Link
-              </button>
-            )}
           </div>
         </div>
       </div>
