@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Link as LinkIcon } from 'lucide-react';
+import { X, Search, Link as LinkIcon, Unlink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface CategoryLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLink: (data: { sourceId: string; categoryName: string; integrationType: string }) => void;
+  onLink: (data: { sourceId: string; categoryName: string; integrationType: string } | null) => void;
   currentSourceId?: string;
   currentCategoryId?: string;
   currentMappingId?: string;
@@ -91,9 +91,8 @@ export default function CategoryLinkModal({
         }
         const hasActiveSource = cat.active_integration_source_id === sourceId;
         const hasOldSource = cat.integration_source_id === sourceId;
-        const isCustom = !cat.active_integration_source_id && !cat.integration_source_id;
 
-        return hasActiveSource || hasOldSource || isCustom;
+        return hasActiveSource || hasOldSource;
       });
 
       const categoryOptions: CategoryOption[] = await Promise.all(
@@ -133,6 +132,10 @@ export default function CategoryLinkModal({
       categoryName,
       integrationType: integrationSource.integration_type
     });
+  }
+
+  function handleUnlink() {
+    onLink(null);
   }
 
   const filteredCategories = categories.filter(cat =>
@@ -238,13 +241,24 @@ export default function CategoryLinkModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
+        <div className="flex items-center justify-between gap-3 p-6 border-t border-slate-200 bg-slate-50">
+          {isChangingLink && currentMappingId && (
+            <button
+              onClick={handleUnlink}
+              className="flex items-center gap-2 px-4 py-2 text-red-700 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <Unlink className="w-4 h-4" />
+              Unlink from API
+            </button>
+          )}
+          <div className="flex items-center gap-3 ml-auto">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>

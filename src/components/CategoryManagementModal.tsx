@@ -227,8 +227,14 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setViewingSourceId(null);
   }
 
-  async function handleLinkCategory(integrationData: { sourceId: string; categoryName: string; integrationType: string }) {
+  async function handleLinkCategory(integrationData: { sourceId: string; categoryName: string; integrationType: string } | null) {
     if (!editingId) return;
+
+    if (integrationData === null) {
+      await handleUnlinkCategory();
+      setShowApiLinkModal(false);
+      return;
+    }
 
     const isFirstLink = linkedSources.length === 0;
 
