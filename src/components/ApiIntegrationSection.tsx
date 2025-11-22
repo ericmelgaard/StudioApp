@@ -9,6 +9,12 @@ interface LinkedSource {
   last_synced_at?: string;
   isActive: boolean;
   overrideCount?: number;
+  price_mode?: string;
+  price_value?: number;
+  price_range_low?: number;
+  price_range_high?: number;
+  linked_product_id?: string;
+  price_calculation?: any;
 }
 
 interface ApiIntegrationSectionProps {
@@ -102,6 +108,21 @@ export function ApiIntegrationSection({
                     <div>
                       <span className="font-medium">Type:</span> {source.integration_type}
                     </div>
+
+                    {source.price_mode && (
+                      <div>
+                        <span className="font-medium">Price:</span>{' '}
+                        {source.price_mode === 'range' && source.price_range_low !== undefined && source.price_range_high !== undefined
+                          ? `$${source.price_range_low} - $${source.price_range_high}`
+                          : source.price_mode === 'manual' && source.price_value !== undefined
+                          ? `$${source.price_value}`
+                          : source.price_mode === 'direct'
+                          ? 'Direct link'
+                          : source.price_mode === 'calculation'
+                          ? 'Calculated'
+                          : 'Not set'}
+                      </div>
+                    )}
 
                     {source.isActive && source.last_synced_at && (
                       <div className="text-xs text-slate-500">

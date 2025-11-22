@@ -26,6 +26,12 @@ interface LinkedSource {
   last_synced_at?: string;
   isActive: boolean;
   overrideCount?: number;
+  price_mode?: string;
+  price_value?: number;
+  price_range_low?: number;
+  price_range_high?: number;
+  linked_product_id?: string;
+  price_calculation?: any;
 }
 
 interface Translation {
@@ -108,6 +114,12 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         is_active,
         last_synced_at,
         integration_source_id,
+        price_mode,
+        price_value,
+        price_range_low,
+        price_range_high,
+        linked_product_id,
+        price_calculation,
         wand_integration_sources!inner(name)
       `)
       .eq('category_id', categoryId);
@@ -122,7 +134,13 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         integration_type: link.integration_type,
         last_synced_at: link.last_synced_at,
         isActive: link.is_active,
-        overrideCount: 0
+        overrideCount: 0,
+        price_mode: link.price_mode,
+        price_value: link.price_value,
+        price_range_low: link.price_range_low,
+        price_range_high: link.price_range_high,
+        linked_product_id: link.linked_product_id,
+        price_calculation: link.price_calculation
       })));
     } else if (category?.integration_source_id) {
       const { data: sourceData } = await supabase
@@ -227,7 +245,15 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setViewingSourceId(null);
   }
 
-  async function handleLinkCategory(integrationData: { sourceId: string; categoryName: string; integrationType: string } | null) {
+  async function handleLinkCategory(integrationData: {
+    sourceId: string;
+    categoryName: string;
+    integrationType: string;
+    priceMode: string;
+    priceValue?: number;
+    priceRangeLow?: number;
+    priceRangeHigh?: number;
+  } | null) {
     if (!editingId) return;
 
     if (integrationData === null) {
@@ -246,6 +272,10 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         mapping_id: integrationData.categoryName,
         integration_type: integrationData.integrationType,
         is_active: isFirstLink,
+        price_mode: integrationData.priceMode,
+        price_value: integrationData.priceValue,
+        price_range_low: integrationData.priceRangeLow,
+        price_range_high: integrationData.priceRangeHigh,
       });
 
     if (!error) {
@@ -602,6 +632,10 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
           currentSourceId={selectedSourceForLinking?.id}
           currentCategoryId={editingId || undefined}
           currentMappingId={activeLink?.mapping_id}
+          currentPriceMode={selectedSourceForLinking?.price_mode}
+          currentPriceValue={selectedSourceForLinking?.price_value}
+          currentPriceRangeLow={selectedSourceForLinking?.price_range_low}
+          currentPriceRangeHigh={selectedSourceForLinking?.price_range_high}
           isChangingLink={!!selectedSourceForLinking}
         />
       )}
