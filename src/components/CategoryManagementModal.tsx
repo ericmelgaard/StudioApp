@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { ApiIntegrationSection } from './ApiIntegrationSection';
 import CategoryLinkModal from './CategoryLinkModal';
 import PriceConfigModal, { PriceConfig } from './PriceConfigModal';
+import { FieldBadgeGroup } from './StateBadge';
 
 interface Category {
   id: string;
@@ -653,21 +654,27 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Category Name
-                        {currentLanguage === 'en' && hasApiLink && (
-                          <button
-                            onClick={() => handleToggleLocalField('name')}
-                            className="ml-2 text-xs text-blue-600 hover:text-blue-700"
-                          >
-                            {isNameLocal ? '(Custom - click to sync)' : '(Syncing - click to customize)'}
-                          </button>
-                        )}
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-slate-700">
+                          Category Name
+                        </label>
+                        <FieldBadgeGroup badges={[
+                          isNameLocal
+                            ? { variant: 'local' as const, text: 'Custom' }
+                            : hasApiLink
+                            ? { variant: 'api' as const, text: 'Syncing' }
+                            : { variant: 'local' as const, text: 'Custom' }
+                        ]} />
+                      </div>
                       <input
                         type="text"
                         value={getCurrentName()}
-                        onChange={(e) => updateCurrentName(e.target.value)}
+                        onChange={(e) => {
+                          updateCurrentName(e.target.value);
+                          if (hasApiLink && !isNameLocal) {
+                            setEditLocalFields([...editLocalFields, 'name']);
+                          }
+                        }}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Enter category name"
                       />
@@ -688,14 +695,22 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
 
                     {hasApiLink && (
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                          Price
-                          {currentPriceConfig && currentPriceConfig.mode !== 'manual' && (
-                            <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">
-                              Syncing
-                            </span>
-                          )}
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-slate-700">
+                            Price
+                          </label>
+                          <FieldBadgeGroup badges={[
+                            currentPriceConfig?.mode === 'manual'
+                              ? { variant: 'local' as const, text: 'Custom' }
+                              : currentPriceConfig?.mode === 'range'
+                              ? { variant: 'api' as const, text: 'Syncing' }
+                              : currentPriceConfig?.mode === 'calculation'
+                              ? { variant: 'calculated' as const, text: 'Calculated' }
+                              : currentPriceConfig?.mode === 'direct'
+                              ? { variant: 'api' as const, text: 'Syncing' }
+                              : { variant: 'local' as const, text: 'Not set' }
+                          ]} />
+                        </div>
                         <div className="relative">
                           <input
                             type="text"
