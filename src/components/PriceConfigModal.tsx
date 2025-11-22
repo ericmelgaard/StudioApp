@@ -211,11 +211,17 @@ export default function PriceConfigModal({
                 {entityType === 'category' && (
                   <button
                     onClick={() => handleSelectMode('range')}
-                    className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                    disabled={!categoryId || !integrationSourceId}
+                    className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:bg-white"
                   >
                     <h3 className="font-semibold text-slate-900 mb-1">Price Range</h3>
                     <p className="text-sm text-slate-600">
                       Calculate price range from products in this category
+                      {(!categoryId || !integrationSourceId) && (
+                        <span className="block mt-1 text-amber-600 font-medium">
+                          Requires integration source link
+                        </span>
+                      )}
                     </p>
                   </button>
                 )}
