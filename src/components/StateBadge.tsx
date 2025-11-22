@@ -10,7 +10,10 @@ export type BadgeVariant =
   | 'error'
   | 'inactive'
   | 'out-of-stock'
-  | 'synced';
+  | 'synced'
+  | 'caution'
+  | 'active'
+  | 'previewing';
 
 interface StateBadgeProps {
   variant: BadgeVariant;
@@ -70,6 +73,21 @@ export function StateBadge({ variant, text, tooltip, className = '' }: StateBadg
       icon: CheckCircle,
       color: 'bg-green-100 text-green-700 border-green-300',
       defaultText: 'Synced'
+    },
+    caution: {
+      icon: AlertTriangle,
+      color: 'bg-amber-100 text-amber-700 border-amber-300',
+      defaultText: 'Caution'
+    },
+    active: {
+      icon: CheckCircle,
+      color: 'bg-green-100 text-green-700 border-green-300',
+      defaultText: 'Active'
+    },
+    previewing: {
+      icon: Link2,
+      color: 'bg-blue-100 text-blue-700 border-blue-300',
+      defaultText: 'Previewing'
     }
   };
 

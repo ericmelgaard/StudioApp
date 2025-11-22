@@ -584,6 +584,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   const [disabledSyncFields, setDisabledSyncFields] = useState<string[]>([]);
   const [expandedRichTextFields, setExpandedRichTextFields] = useState<Set<string>>(new Set());
   const [showProductApiLinkModal, setShowProductApiLinkModal] = useState(false);
+  const [linkedSources, setLinkedSources] = useState<any[]>([]);
+  const [viewingSourceId, setViewingSourceId] = useState<string | null>(null);
+  const [sourcesData, setSourcesData] = useState<Record<string, any>>({});
+  const [selectedSourceForLinking, setSelectedSourceForLinking] = useState<any | null>(null);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -671,6 +675,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
       initializeSyncStateManager();
 
       loadIntegrationData();
+      loadLinkedSources();
       checkPendingPublication();
       loadPolicyViolations();
 
@@ -1094,6 +1099,81 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
     }
   }
 
+  async function loadLinkedSources() {
+    if (!location || !product) return;
+
+    try {
+      const { data: sources } = await supabase
+        .from('wand_integration_sources')
+        .select('*')
+        .eq('site_id', location.site_id);
+
+      if (!sources) {
+        setLinkedSources([]);
+        return;
+      }
+
+      const linkedApis = (product as any).linked_apis || {};
+      const linked = sources
+        .filter(s => linkedApis[s.id])
+        .map(s => ({
+          ...s,
+          ...linkedApis[s.id],
+          isActive: s.id === location.active_integration_source_id,
+          overrideCount: product.local_fields?.length || 0
+        }));
+
+      setLinkedSources(linked);
+
+      const active = linked.find(s => s.isActive);
+      setViewingSourceId(active?.id || linked[0]?.id);
+
+      if (active) {
+        loadSourceData(active.id, active.mapping_id, active.integration_type);
+      }
+    } catch (error) {
+      console.error('Error loading linked sources:', error);
+    }
+  }
+
+  async function loadSourceData(sourceId: string, mappingId: string, integrationType: string) {
+    if (sourcesData[sourceId]) return;
+
+    try {
+      const tableName = integrationType === 'product'
+        ? 'integration_products'
+        : integrationType === 'modifier'
+        ? 'integration_modifiers'
+        : 'integration_discounts';
+
+      const { data } = await supabase
+        .from(tableName)
+        .select('data')
+        .eq('mapping_id', mappingId)
+        .eq('wand_source_id', sourceId)
+        .maybeSingle();
+
+      if (data) {
+        setSourcesData(prev => ({ ...prev, [sourceId]: data.data }));
+      }
+    } catch (error) {
+      console.error('Error loading source data:', error);
+    }
+  }
+
+  function handleViewSource(sourceId: string) {
+    setViewingSourceId(sourceId);
+    const source = linkedSources.find(s => s.id === sourceId);
+    if (source && !sourcesData[sourceId]) {
+      loadSourceData(sourceId, source.mapping_id, source.integration_type);
+    }
+  }
+
+  function handleChangeLink(source: any) {
+    setSelectedSourceForLinking(source);
+    setShowProductApiLinkModal(true);
+  }
+
   async function handlePublish(publishAt?: string) {
     if (mode === 'edit' && !product) return;
 
@@ -1271,6 +1351,60 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
       const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
       return translationData[translationKey]?.[key];
     }
+  }
+
+  function getAttributeDisplayForPreview(attributeName: string) {
+    const isCustomField = currentProduct?.local_fields?.includes(attributeName);
+
+    if (isCustomField) {
+      return {
+        value: attributes[attributeName],
+        badge: 'Custom',
+        badgeVariant: 'local' as const,
+        isPreview: false,
+        isCustom: true
+      };
+    }
+
+    const viewingSource = linkedSources.find(s => s.id === viewingSourceId);
+
+    if (!viewingSource || viewingSource.isActive) {
+      return {
+        value: attributes[attributeName],
+        badge: 'Syncing',
+        badgeVariant: 'api' as const,
+        isPreview: false
+      };
+    }
+
+    const sourceData = sourcesData[viewingSource.id];
+    if (!sourceData) {
+      return {
+        value: attributes[attributeName],
+        badge: 'Syncing',
+        badgeVariant: 'api' as const,
+        isPreview: true
+      };
+    }
+
+    const mappingValue = getNestedValue(sourceData, attributeName);
+
+    if (mappingValue === undefined || mappingValue === null) {
+      return {
+        value: '',
+        badge: 'Not mapped',
+        badgeVariant: 'caution' as const,
+        isPreview: true,
+        isEmpty: true
+      };
+    }
+
+    return {
+      value: mappingValue,
+      badge: 'Syncing',
+      badgeVariant: 'api' as const,
+      isPreview: true
+    };
   }
 
   function addAttribute() {
@@ -1836,26 +1970,109 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
               API Integration
             </h3>
 
-            {((mode === 'create' && currentProduct?.mapping_id) || (mode === 'edit' && product?.mapping_id && product?.integration_source_id)) ? (
+            {mode === 'edit' && linkedSources.length > 0 ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  {linkedSources.map(source => {
+                    const isPreviewing = viewingSourceId === source.id;
+                    const badgeText = source.isActive ? 'ACTIVE'
+                      : isPreviewing ? 'PREVIEWING'
+                      : 'INACTIVE';
+                    const badgeVariant = source.isActive ? 'active'
+                      : isPreviewing ? 'previewing'
+                      : 'inactive';
+
+                    return (
+                      <div
+                        key={source.id}
+                        onClick={() => handleViewSource(source.id)}
+                        className="rounded-lg border-2 border-slate-200 bg-white p-3 cursor-pointer hover:border-slate-300 hover:shadow transition-all"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-sm text-slate-900 truncate">
+                            {source.name}
+                          </h4>
+                          <StateBadge variant={badgeVariant} text={badgeText} />
+                        </div>
+
+                        <div className="space-y-1 text-xs text-slate-600 mb-3">
+                          <div className="flex items-center gap-2">
+                            <StateBadge variant="api" text="Linked" />
+                            {source.isActive && source.overrideCount > 0 && (
+                              <span>{source.overrideCount} override{source.overrideCount > 1 ? 's' : ''}</span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">ID:</span>
+                            <span className="truncate">{source.mapping_id}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(source.mapping_id);
+                              }}
+                              className="p-0.5 hover:bg-slate-100 rounded"
+                              title="Copy Mapping ID"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          <div>
+                            <span className="font-medium">Type:</span> {source.integration_type}
+                          </div>
+
+                          {source.isActive && source.last_synced_at && (
+                            <div className="text-xs text-slate-500">
+                              Last synced: {new Date(source.last_synced_at).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChangeLink(source);
+                          }}
+                          className="w-full px-2 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors"
+                        >
+                          <Link className="w-3 h-3 inline mr-1" />
+                          Change Link
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedSourceForLinking(null);
+                    setShowProductApiLinkModal(true);
+                  }}
+                  className="w-full mt-3 py-2.5 border-2 border-dashed border-slate-300 rounded-lg text-sm text-slate-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                >
+                  <Link className="w-4 h-4 inline mr-2" />
+                  Link Another Source
+                </button>
+              </div>
+            ) : mode === 'edit' && (product?.mapping_id && product?.integration_source_id) ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <StateBadge variant="api" text="Linked to API" />
-                  {mode === 'edit' && product?.local_fields && product.local_fields.length > 0 && (
+                  {product?.local_fields && product.local_fields.length > 0 && (
                     <StateBadge variant="local" text={`${product.local_fields.length} override(s)`} />
                   )}
-                  {mode === 'edit' && product?.price_calculations && Object.keys(product.price_calculations).length > 0 && (
+                  {product?.price_calculations && Object.keys(product.price_calculations).length > 0 && (
                     <StateBadge variant="calculated" text="Has calculations" />
                   )}
                 </div>
                 <div className="text-sm text-slate-600">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">Mapping ID:</span>
-                    <span>{mode === 'create' ? currentProduct?.mapping_id : product?.mapping_id}</span>
+                    <span>{product?.mapping_id}</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const id = mode === 'create' ? currentProduct?.mapping_id : product?.mapping_id;
-                        if (id) navigator.clipboard.writeText(id);
+                        if (product?.mapping_id) navigator.clipboard.writeText(product.mapping_id);
                       }}
                       className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
                       title="Copy Mapping ID"
@@ -1863,26 +2080,54 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                       <Copy className="w-3 h-3" />
                     </button>
                   </div>
-                  <div><span className="font-medium">Type:</span> {mode === 'create' ? currentProduct?.integration_type : product?.integration_type}</div>
-                  {mode === 'edit' && product?.last_synced_at && (
+                  <div><span className="font-medium">Type:</span> {product?.integration_type}</div>
+                  {product?.last_synced_at && (
                     <div><span className="font-medium">Last synced:</span> {new Date(product.last_synced_at).toLocaleString()}</div>
                   )}
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={async () => {
-                      if (mode === 'create') {
-                        setCurrentProduct(null);
-                      } else {
-                        try {
-                          await integrationLinkService.unlinkProduct(product!.id);
-                          alert('Product unlinked from API');
-                          onSuccess();
-                        } catch (error: any) {
-                          alert(error.message);
-                        }
+                      try {
+                        await integrationLinkService.unlinkProduct(product!.id);
+                        alert('Product unlinked from API');
+                        onSuccess();
+                      } catch (error: any) {
+                        alert(error.message);
                       }
                     }}
+                    className="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    <Unlink className="w-3 h-3 inline mr-1" />
+                    Unlink
+                  </button>
+                </div>
+              </div>
+            ) : mode === 'create' && currentProduct?.mapping_id ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <StateBadge variant="api" text="Linked to API" />
+                </div>
+                <div className="text-sm text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Mapping ID:</span>
+                    <span>{currentProduct?.mapping_id}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (currentProduct?.mapping_id) navigator.clipboard.writeText(currentProduct.mapping_id);
+                      }}
+                      className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                      title="Copy Mapping ID"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div><span className="font-medium">Type:</span> {currentProduct?.integration_type}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentProduct(null)}
                     className="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
                   >
                     <Unlink className="w-3 h-3 inline mr-1" />
