@@ -98,7 +98,9 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   }
 
   async function loadLinkedSources(categoryId: string) {
-    const { data } = await supabase
+    const category = categories.find(c => c.id === categoryId);
+
+    const { data: linksData } = await supabase
       .from('product_categories_links')
       .select(`
         id,
@@ -111,8 +113,10 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       `)
       .eq('category_id', categoryId);
 
-    if (data) {
-      const sources: LinkedSource[] = data.map((link: any) => ({
+    const sources: LinkedSource[] = [];
+
+    if (linksData && linksData.length > 0) {
+      sources.push(...linksData.map((link: any) => ({
         id: link.integration_source_id,
         name: link.wand_integration_sources.name,
         mapping_id: link.mapping_id,
@@ -120,9 +124,28 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         last_synced_at: link.last_synced_at,
         isActive: link.is_active,
         overrideCount: 0
-      }));
-      setLinkedSources(sources);
+      })));
+    } else if (category?.integration_source_id) {
+      const { data: sourceData } = await supabase
+        .from('wand_integration_sources')
+        .select('name')
+        .eq('id', category.integration_source_id)
+        .single();
+
+      if (sourceData) {
+        sources.push({
+          id: category.integration_source_id,
+          name: sourceData.name,
+          mapping_id: category.integration_category_id || '',
+          integration_type: 'product',
+          last_synced_at: undefined,
+          isActive: true,
+          overrideCount: (category.local_fields || []).length
+        });
+      }
     }
+
+    setLinkedSources(sources);
   }
 
   async function handleAddCategory() {
