@@ -46,6 +46,7 @@ export default function PriceConfigModal({
         setSelectedMode('range');
         setRangeLow(currentConfig.rangeLow || 0);
         setRangeHigh(currentConfig.rangeHigh || 0);
+        setRangeCalculated(true);
       } else if (currentConfig.mode === 'direct' || currentConfig.mode === 'calculation') {
         setSelectedMode(currentConfig.mode);
         setPendingFieldLink(currentConfig.fieldLink || null);
@@ -55,6 +56,7 @@ export default function PriceConfigModal({
       setRangeLow(0);
       setRangeHigh(0);
       setPendingFieldLink(null);
+      setRangeCalculated(false);
     }
   }, [isOpen, currentConfig, entityType]);
 
@@ -68,13 +70,15 @@ export default function PriceConfigModal({
   }
 
   async function calculatePriceRange() {
+    setCalculatingRange(true);
+
     if (!categoryId || !integrationSourceId) {
       setRangeLow(0);
       setRangeHigh(0);
+      setRangeCalculated(true);
+      setCalculatingRange(false);
       return;
     }
-
-    setCalculatingRange(true);
 
     const { data: linkData } = await supabase
       .from('product_categories_links')
