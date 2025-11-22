@@ -61,66 +61,65 @@ export default function CategoryLinkModal({
   async function loadCategories(sourceId: string) {
     setLoading(true);
 
-    const { data: productsData } = await supabase
-      .from('integration_products')
-      .select('data')
-      .eq('wand_source_id', sourceId);
+    const { data: categoriesData } = await supabase
+      .from('product_categories')
+      .select('id, name, integration_category_id, integration_source_id, active_integration_source_id');
 
     const { data: linksData } = await supabase
       .from('product_categories_links')
       .select('mapping_id, category_id')
       .eq('integration_source_id', sourceId);
 
-    const { data: categoriesData } = await supabase
-      .from('product_categories')
-      .select('id, integration_category_id')
-      .eq('active_integration_source_id', sourceId);
-
-    if (productsData) {
-      const categoryCounts = productsData.reduce((acc: Record<string, number>, item: any) => {
-        const name = item.data?.category || '';
-        if (name) {
-          acc[name] = (acc[name] || 0) + 1;
-        }
-        return acc;
-      }, {});
-
-      const linkedCategoryNames = new Set<string>();
+    if (categoriesData) {
+      const linkedCategoryIds = new Set<string>();
 
       if (linksData) {
         linksData.forEach(link => {
           if (isChangingLink && link.category_id === currentCategoryId) {
             return;
           }
-          linkedCategoryNames.add(link.mapping_id);
+          linkedCategoryIds.add(link.category_id);
         });
       }
 
-      if (categoriesData) {
-        categoriesData.forEach(cat => {
-          if (isChangingLink && cat.id === currentCategoryId) {
-            return;
-          }
-          if (cat.integration_category_id) {
-            linkedCategoryNames.add(cat.integration_category_id);
-          }
-        });
-      }
+      const filteredCategories = categoriesData.filter(cat => {
+        if (isChangingLink && cat.id === currentCategoryId) {
+          return true;
+        }
+        if (linkedCategoryIds.has(cat.id)) {
+          return false;
+        }
+        const hasActiveSource = cat.active_integration_source_id === sourceId;
+        const hasOldSource = cat.integration_source_id === sourceId;
+        const isCustom = !cat.active_integration_source_id && !cat.integration_source_id;
 
-      const categoryOptions: CategoryOption[] = Object.entries(categoryCounts)
-        .filter(([category_name]) => {
-          if (isChangingLink && category_name === currentMappingId) {
-            return true;
+        return hasActiveSource || hasOldSource || isCustom;
+      });
+
+      const categoryOptions: CategoryOption[] = await Promise.all(
+        filteredCategories.map(async (cat) => {
+          const sourceIdToUse = cat.active_integration_source_id || cat.integration_source_id;
+          const categoryId = cat.integration_category_id || cat.name;
+
+          let productCount = 0;
+          if (sourceIdToUse) {
+            const { count } = await supabase
+              .from('integration_products')
+              .select('*', { count: 'exact', head: true })
+              .eq('wand_source_id', sourceIdToUse)
+              .eq('data->>category', categoryId);
+
+            productCount = count || 0;
           }
-          return !linkedCategoryNames.has(category_name);
+
+          return {
+            category_name: cat.name,
+            product_count: productCount
+          };
         })
-        .map(([category_name, product_count]) => ({
-          category_name,
-          product_count: product_count as number
-        }))
-        .sort((a, b) => a.category_name.localeCompare(b.category_name));
+      );
 
-      setCategories(categoryOptions);
+      setCategories(categoryOptions.sort((a, b) => a.category_name.localeCompare(b.category_name)));
     }
 
     setLoading(false);
