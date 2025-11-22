@@ -2056,16 +2056,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                     );
                   })}
                 </div>
-                <button
-                  onClick={() => {
-                    setSelectedSourceForLinking(null);
-                    setShowProductApiLinkModal(true);
-                  }}
-                  className="w-full mt-3 py-2.5 border-2 border-dashed border-slate-300 rounded-lg text-sm text-slate-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
-                >
-                  <Link className="w-4 h-4 inline mr-2" />
-                  Link Another Source
-                </button>
               </div>
             ) : mode === 'edit' && (product?.mapping_id && product?.integration_source_id) ? (
               <div className="space-y-3">
