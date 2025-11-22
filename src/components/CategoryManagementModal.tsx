@@ -434,7 +434,8 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setEditDescription(category.description || '');
     setEditTranslations(category.translations || []);
     setEditLocalFields(category.local_fields || []);
-    setShowTranslations(false);
+    setCurrentLanguage('en');
+    setShowLocaleDropdown(false);
     setCurrentPriceConfig(null);
     await loadLinkedSources(category.id);
   }
@@ -445,9 +446,11 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setEditDescription('');
     setEditTranslations([]);
     setEditLocalFields([]);
-    setShowTranslations(false);
+    setCurrentLanguage('en');
+    setShowLocaleDropdown(false);
     setLinkedSources([]);
     setViewingSourceId(null);
+    setCurrentPriceConfig(null);
   }
 
   async function handleLinkCategory(integrationData: { sourceId: string; categoryName: string; integrationType: string } | null) {
