@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, Edit2, Languages } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ApiIntegrationSection } from './ApiIntegrationSection';
-import ApiLinkModal from './ApiLinkModal';
-import { integrationLinkService } from '../lib/integrationLinkService';
+import CategoryLinkModal from './CategoryLinkModal';
 
 interface Category {
   id: string;
@@ -228,26 +227,30 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
     setViewingSourceId(null);
   }
 
-  async function handleLinkCategory(integrationData: any) {
+  async function handleLinkCategory(integrationData: { sourceId: string; categoryName: string; integrationType: string }) {
     if (!editingId) return;
+
+    const isFirstLink = linkedSources.length === 0;
 
     const { error } = await supabase
       .from('product_categories_links')
       .insert({
         category_id: editingId,
         integration_source_id: integrationData.sourceId,
-        mapping_id: integrationData.mappingId,
+        mapping_id: integrationData.categoryName,
         integration_type: integrationData.integrationType,
-        is_active: linkedSources.length === 0,
+        is_active: isFirstLink,
       });
 
     if (!error) {
-      if (linkedSources.length === 0) {
+      if (isFirstLink) {
         await supabase
           .from('product_categories')
           .update({
             active_integration_source_id: integrationData.sourceId,
-            mapping_id: integrationData.mappingId,
+            integration_source_id: integrationData.sourceId,
+            integration_category_id: integrationData.categoryName,
+            mapping_id: integrationData.categoryName,
             integration_type: integrationData.integrationType,
             local_fields: [],
           })
@@ -583,11 +586,14 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
       </div>
 
       {showApiLinkModal && (
-        <ApiLinkModal
+        <CategoryLinkModal
           isOpen={showApiLinkModal}
-          onClose={() => setShowApiLinkModal(false)}
+          onClose={() => {
+            setShowApiLinkModal(false);
+            setSelectedSourceForLinking(null);
+          }}
           onLink={handleLinkCategory}
-          entityType="category"
+          currentSourceId={selectedSourceForLinking?.id}
         />
       )}
     </div>
