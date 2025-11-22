@@ -152,6 +152,13 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
         .eq('id', category.integration_source_id)
         .single();
 
+      const { data: linkData } = await supabase
+        .from('product_categories_links')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('integration_source_id', category.integration_source_id)
+        .maybeSingle();
+
       if (sourceData) {
         sources.push({
           id: category.integration_source_id,
@@ -160,7 +167,13 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
           integration_type: 'product',
           last_synced_at: undefined,
           isActive: true,
-          overrideCount: (category.local_fields || []).length
+          overrideCount: (category.local_fields || []).length,
+          price_mode: linkData?.price_mode,
+          price_value: linkData?.price_value,
+          price_range_low: linkData?.price_range_low,
+          price_range_high: linkData?.price_range_high,
+          linked_product_id: linkData?.linked_product_id,
+          price_calculation: linkData?.price_calculation
         });
       }
     }
