@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Link2, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText, Copy } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Link2, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText, Copy, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -231,8 +231,9 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-label` ? null : `${option.id}-label`)}
-                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                               >
+                                <Pencil className="w-3 h-3" />
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
                               </button>
@@ -333,8 +334,9 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-description` ? null : `${option.id}-description`)}
-                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                               >
+                                <Pencil className="w-3 h-3" />
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
                               </button>
@@ -437,8 +439,9 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-price` ? null : `${option.id}-price`)}
-                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                               >
+                                <Pencil className="w-3 h-3" />
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
                               </button>
@@ -514,8 +517,9 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-calories` ? null : `${option.id}-calories`)}
-                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                               >
+                                <Pencil className="w-3 h-3" />
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
                               </button>
@@ -2131,8 +2135,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                 <>
                                   <button
                                     onClick={() => setOpenDropdown(openDropdown === `attr-${key}` ? null : `attr-${key}`)}
-                                    className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
+                                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                                   >
+                                    <Pencil className="w-3 h-3" />
                                     Custom
                                     <ChevronDown className="w-3 h-3" />
                                   </button>
@@ -2217,8 +2222,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                   <>
                                     <button
                                       onClick={() => setOpenDropdown(openDropdown === `price-cal-${key}` ? null : `price-cal-${key}`)}
-                                      className="flex items-center gap-0.5 text-xs px-2 py-1 text-slate-600 font-medium hover:text-slate-800"
+                                      className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                                     >
+                                      <Pencil className="w-3 h-3" />
                                       Custom
                                       <ChevronDown className="w-3 h-3" />
                                     </button>
@@ -2378,8 +2384,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                       <>
                                         <button
                                           onClick={() => setOpenDropdown(openDropdown === `other-${key}` ? null : `other-${key}`)}
-                                          className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
+                                          className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                                         >
+                                          <Pencil className="w-3 h-3" />
                                           Custom
                                           <ChevronDown className="w-3 h-3" />
                                         </button>
@@ -2574,8 +2581,9 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                       <>
                                         <button
                                           onClick={() => setOpenDropdown(openDropdown === `extended-${key}` ? null : `extended-${key}`)}
-                                          className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
+                                          className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
                                         >
+                                          <Pencil className="w-3 h-3" />
                                           Custom
                                           <ChevronDown className="w-3 h-3" />
                                         </button>
