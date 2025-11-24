@@ -231,7 +231,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-label` ? null : `${option.id}-label`)}
-                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                               >
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
@@ -257,7 +257,10 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                               )}
                             </>
                           ) : (
-                            <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                              <Link2 className="w-3 h-3" />
+                              Syncing
+                            </div>
                           )}
                         </div>
                       )}
@@ -330,7 +333,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-description` ? null : `${option.id}-description`)}
-                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                               >
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
@@ -356,7 +359,10 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                               )}
                             </>
                           ) : (
-                            <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                              <Link2 className="w-3 h-3" />
+                              Syncing
+                            </div>
                           )}
                         </div>
                       )}
@@ -431,7 +437,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-price` ? null : `${option.id}-price`)}
-                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                               >
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
@@ -457,7 +463,10 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                               )}
                             </>
                           ) : (
-                            <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                              <Link2 className="w-3 h-3" />
+                              Syncing
+                            </div>
                           )}
                         </div>
                       )}
@@ -505,7 +514,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                             <>
                               <button
                                 onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-calories` ? null : `${option.id}-calories`)}
-                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                               >
                                 Custom
                                 <ChevronDown className="w-3 h-3" />
@@ -531,7 +540,10 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                               )}
                             </>
                           ) : (
-                            <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                              <Link2 className="w-3 h-3" />
+                              Syncing
+                            </div>
                           )}
                         </div>
                       )}
@@ -2119,7 +2131,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                 <>
                                   <button
                                     onClick={() => setOpenDropdown(openDropdown === `attr-${key}` ? null : `attr-${key}`)}
-                                    className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                    className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                                   >
                                     Custom
                                     <ChevronDown className="w-3 h-3" />
@@ -2160,7 +2172,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                   )}
                                 </>
                               ) : (
-                                <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                                <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                  <Link2 className="w-3 h-3" />
+                                  Syncing
+                                </div>
                               )}
                             </div>
                           )}
@@ -2243,7 +2258,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                     )}
                                   </>
                                 ) : (
-                                  <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                  <Link2 className="w-3 h-3" />
+                                  Syncing
+                                </div>
                                 )}
                               </div>
                             )}
@@ -2360,7 +2378,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                       <>
                                         <button
                                           onClick={() => setOpenDropdown(openDropdown === `other-${key}` ? null : `other-${key}`)}
-                                          className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                          className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                                         >
                                           Custom
                                           <ChevronDown className="w-3 h-3" />
@@ -2401,7 +2419,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                         )}
                                       </>
                                     ) : (
-                                      <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                  <Link2 className="w-3 h-3" />
+                                  Syncing
+                                </div>
                                     )}
                                   </div>
                                 )}
@@ -2553,7 +2574,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                       <>
                                         <button
                                           onClick={() => setOpenDropdown(openDropdown === `extended-${key}` ? null : `extended-${key}`)}
-                                          className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                          className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                                         >
                                           Custom
                                           <ChevronDown className="w-3 h-3" />
@@ -2594,7 +2615,10 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                         )}
                                       </>
                                     ) : (
-                                      <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                  <Link2 className="w-3 h-3" />
+                                  Syncing
+                                </div>
                                     )}
                                   </div>
                                 )}

@@ -665,8 +665,9 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                               <>
                                 <button
                                   onClick={() => setOpenFieldDropdown(openFieldDropdown === 'name' ? null : 'name')}
-                                  className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                  className="flex items-center gap-1 text-xs text-slate-600 font-medium hover:text-slate-800 transition-colors"
                                 >
+                                  <Edit3 className="w-3 h-3" />
                                   Custom
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
@@ -691,7 +692,10 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                                 )}
                               </>
                             ) : (
-                              <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                <Link2 className="w-3 h-3" />
+                                Syncing
+                              </div>
                             )}
                           </div>
                         ) : (
