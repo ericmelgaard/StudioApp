@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText, Copy } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Link2, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';

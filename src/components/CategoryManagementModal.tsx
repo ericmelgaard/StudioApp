@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save, Edit2, Calculator, Globe, ChevronDown, Check } from 'lucide-react';
+import { X, Plus, Trash2, Save, Edit2, Edit3, Calculator, Globe, ChevronDown, Check, Link2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ApiIntegrationSection } from './ApiIntegrationSection';
 import CategoryLinkModal from './CategoryLinkModal';
