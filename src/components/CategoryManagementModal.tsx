@@ -65,6 +65,7 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
   const [currentPriceConfig, setCurrentPriceConfig] = useState<PriceConfig | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState<string>('en');
   const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
+  const [openFieldDropdown, setOpenFieldDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -658,13 +659,46 @@ export default function CategoryManagementModal({ isOpen, onClose }: CategoryMan
                         <label className="block text-sm font-medium text-slate-700">
                           Category Name
                         </label>
-                        <FieldBadgeGroup badges={[
-                          isNameLocal
-                            ? { variant: 'local' as const, text: 'Custom' }
-                            : hasApiLink
-                            ? { variant: 'api' as const, text: 'Syncing' }
-                            : { variant: 'local' as const, text: 'Custom' }
-                        ]} />
+                        {hasApiLink ? (
+                          <div className="relative">
+                            {isNameLocal ? (
+                              <>
+                                <button
+                                  onClick={() => setOpenFieldDropdown(openFieldDropdown === 'name' ? null : 'name')}
+                                  className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                >
+                                  Custom
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+                                {openFieldDropdown === 'name' && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-10"
+                                      onClick={() => setOpenFieldDropdown(null)}
+                                    />
+                                    <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                      <button
+                                        onClick={() => {
+                                          handleToggleLocalField('name');
+                                          setOpenFieldDropdown(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                      >
+                                        Inherit from API
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
+                            )}
+                          </div>
+                        ) : (
+                          <FieldBadgeGroup badges={[
+                            { variant: 'local' as const, text: 'Custom' }
+                          ]} />
+                        )}
                       </div>
                       <input
                         type="text"

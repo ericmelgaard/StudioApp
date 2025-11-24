@@ -79,6 +79,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   const [linkingOptionId, setLinkingOptionId] = useState<string | null>(null);
   const [showApiLinkModal, setShowApiLinkModal] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [openOptionDropdown, setOpenOptionDropdown] = useState<string | null>(null);
 
   const addOption = () => {
     const maxSortOrder = options.length > 0 ? Math.max(...options.map(o => o.sort_order)) : 0;
@@ -227,18 +228,34 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('label') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
-                                  clearLocalOverride(option.id, 'label');
-                                }
-                              }}
-                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
-                            >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                            <>
+                              <button
+                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-label` ? null : `${option.id}-label`)}
+                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                              >
+                                Custom
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                              {openOptionDropdown === `${option.id}-label` && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenOptionDropdown(null)}
+                                  />
+                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                    <button
+                                      onClick={() => {
+                                        clearLocalOverride(option.id, 'label');
+                                        setOpenOptionDropdown(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                    >
+                                      Inherit from API
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </>
                           ) : (
                             <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
@@ -310,18 +327,34 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('description') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
-                                  clearLocalOverride(option.id, 'description');
-                                }
-                              }}
-                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
-                            >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                            <>
+                              <button
+                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-description` ? null : `${option.id}-description`)}
+                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                              >
+                                Custom
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                              {openOptionDropdown === `${option.id}-description` && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenOptionDropdown(null)}
+                                  />
+                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                    <button
+                                      onClick={() => {
+                                        clearLocalOverride(option.id, 'description');
+                                        setOpenOptionDropdown(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                    >
+                                      Inherit from API
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </>
                           ) : (
                             <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
@@ -395,18 +428,34 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('price') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
-                                  clearLocalOverride(option.id, 'price');
-                                }
-                              }}
-                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
-                            >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                            <>
+                              <button
+                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-price` ? null : `${option.id}-price`)}
+                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                              >
+                                Custom
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                              {openOptionDropdown === `${option.id}-price` && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenOptionDropdown(null)}
+                                  />
+                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                    <button
+                                      onClick={() => {
+                                        clearLocalOverride(option.id, 'price');
+                                        setOpenOptionDropdown(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                    >
+                                      Inherit from API
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </>
                           ) : (
                             <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
@@ -453,18 +502,34 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                       {hasIntegrationLink && (
                         <div className="relative">
                           {localFields.includes('calories') ? (
-                            <select
-                              value="custom"
-                              onChange={(e) => {
-                                if (e.target.value === 'api') {
-                                  clearLocalOverride(option.id, 'calories');
-                                }
-                              }}
-                              className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
-                            >
-                              <option value="custom">Custom</option>
-                              <option value="api">Inherit from API</option>
-                            </select>
+                            <>
+                              <button
+                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-calories` ? null : `${option.id}-calories`)}
+                                className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                              >
+                                Custom
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                              {openOptionDropdown === `${option.id}-calories` && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenOptionDropdown(null)}
+                                  />
+                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                    <button
+                                      onClick={() => {
+                                        clearLocalOverride(option.id, 'calories');
+                                        setOpenOptionDropdown(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                    >
+                                      Inherit from API
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </>
                           ) : (
                             <span className="text-xs px-1 py-0.5 text-blue-600 font-medium">Syncing</span>
                           )}
@@ -2292,33 +2357,49 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                 {hasApiLink && (
                                   <div className="relative">
                                     {isLocalOverride ? (
-                                      <select
-                                        value="custom"
-                                        onChange={async (e) => {
-                                          if (e.target.value === 'api' && currentProduct) {
-                                            if (currentProduct.parent_product_id) {
-                                              await LocationProductService.clearLocationOverride(currentProduct.id, key);
-                                            } else {
-                                              await integrationLinkService.clearLocalOverride(currentProduct.id, key);
-                                            }
-                                            const updatedProduct = await LocationProductService.getProductForLocation(
-                                              currentProduct.parent_product_id || currentProduct.id,
-                                              location
-                                            );
-                                            if (updatedProduct) {
-                                              setCurrentProduct(updatedProduct);
-                                              setAttributes(updatedProduct.attributes || {});
-                                            }
-                                            onSuccess();
-                                          }
-                                        }}
-                                        className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
-                                      >
-                                        <option value="custom">Custom</option>
-                                        <option value="api">
-                                          {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
-                                        </option>
-                                      </select>
+                                      <>
+                                        <button
+                                          onClick={() => setOpenDropdown(openDropdown === `other-${key}` ? null : `other-${key}`)}
+                                          className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                        >
+                                          Custom
+                                          <ChevronDown className="w-3 h-3" />
+                                        </button>
+                                        {openDropdown === `other-${key}` && (
+                                          <>
+                                            <div
+                                              className="fixed inset-0 z-10"
+                                              onClick={() => setOpenDropdown(null)}
+                                            />
+                                            <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                              <button
+                                                onClick={async () => {
+                                                  setOpenDropdown(null);
+                                                  if (currentProduct) {
+                                                    if (currentProduct.parent_product_id) {
+                                                      await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                                    } else {
+                                                      await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                                    }
+                                                    const updatedProduct = await LocationProductService.getProductForLocation(
+                                                      currentProduct.parent_product_id || currentProduct.id,
+                                                      location
+                                                    );
+                                                    if (updatedProduct) {
+                                                      setCurrentProduct(updatedProduct);
+                                                      setAttributes(updatedProduct.attributes || {});
+                                                    }
+                                                    onSuccess();
+                                                  }
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                              >
+                                                {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                              </button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </>
                                     ) : (
                                       <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
                                     )}
@@ -2469,33 +2550,49 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                                 {showBadge && (
                                   <div className="relative">
                                     {isLocalOverride ? (
-                                      <select
-                                        value="custom"
-                                        onChange={async (e) => {
-                                          if (e.target.value === 'api' && currentProduct) {
-                                            if (currentProduct.parent_product_id) {
-                                              await LocationProductService.clearLocationOverride(currentProduct.id, key);
-                                            } else {
-                                              await integrationLinkService.clearLocalOverride(currentProduct.id, key);
-                                            }
-                                            const updatedProduct = await LocationProductService.getProductForLocation(
-                                              currentProduct.parent_product_id || currentProduct.id,
-                                              location
-                                            );
-                                            if (updatedProduct) {
-                                              setCurrentProduct(updatedProduct);
-                                              setAttributes(updatedProduct.attributes || {});
-                                            }
-                                            onSuccess();
-                                          }
-                                        }}
-                                        className="text-xs pl-1 pr-0 py-0.5 border-0 bg-transparent text-slate-600 font-medium focus:ring-0 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27%23475569%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[right_0px_center] bg-no-repeat"
-                                      >
-                                        <option value="custom">Custom</option>
-                                        <option value="api">
-                                          {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
-                                        </option>
-                                      </select>
+                                      <>
+                                        <button
+                                          onClick={() => setOpenDropdown(openDropdown === `extended-${key}` ? null : `extended-${key}`)}
+                                          className="flex items-center gap-0.5 text-xs text-slate-600 font-medium hover:text-slate-800"
+                                        >
+                                          Custom
+                                          <ChevronDown className="w-3 h-3" />
+                                        </button>
+                                        {openDropdown === `extended-${key}` && (
+                                          <>
+                                            <div
+                                              className="fixed inset-0 z-10"
+                                              onClick={() => setOpenDropdown(null)}
+                                            />
+                                            <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                              <button
+                                                onClick={async () => {
+                                                  setOpenDropdown(null);
+                                                  if (currentProduct) {
+                                                    if (currentProduct.parent_product_id) {
+                                                      await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                                    } else {
+                                                      await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                                    }
+                                                    const updatedProduct = await LocationProductService.getProductForLocation(
+                                                      currentProduct.parent_product_id || currentProduct.id,
+                                                      location
+                                                    );
+                                                    if (updatedProduct) {
+                                                      setCurrentProduct(updatedProduct);
+                                                      setAttributes(updatedProduct.attributes || {});
+                                                    }
+                                                    onSuccess();
+                                                  }
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                              >
+                                                {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                              </button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </>
                                     ) : (
                                       <span className="text-xs px-2 py-1 text-blue-600 font-medium">Syncing</span>
                                     )}
