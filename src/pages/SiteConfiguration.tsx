@@ -10,6 +10,7 @@ import StoresGrid from '../components/StoresGrid';
 import ConceptModal from '../components/ConceptModal';
 import CompanyModal from '../components/CompanyModal';
 import StoreModal from '../components/StoreModal';
+import CycleSettingsCard from '../components/CycleSettingsCard';
 import * as Icons from 'lucide-react';
 
 interface PlacementGroup {
@@ -552,6 +553,10 @@ export default function SiteConfiguration() {
               { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
             ]}
           />
+
+          <div className="mb-6">
+            <CycleSettingsCard conceptId={selectedConcept.id} />
+          </div>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">

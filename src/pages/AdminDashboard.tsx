@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown } from 'lucide-react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown, Palette } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
@@ -8,6 +8,7 @@ import { useLocation } from '../hooks/useLocation';
 const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
 const ProductManagement = lazy(() => import('./ProductManagement'));
+const ThemeManagement = lazy(() => import('./ThemeManagement'));
 const IntegrationCatalog = lazy(() => import('./IntegrationCatalog'));
 const IntegrationDashboard = lazy(() => import('./IntegrationDashboard'));
 const IntegrationAccess = lazy(() => import('./IntegrationAccess'));
@@ -59,7 +60,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites';
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay } = useLocation();
@@ -94,6 +95,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       { id: 'labels' as ViewType, label: 'Labels', icon: Tag },
       { id: 'products' as ViewType, label: 'Products', icon: Package },
       { id: 'resources' as ViewType, label: 'Resources', icon: ImageIcon },
+      { id: 'themes' as ViewType, label: 'Display Themes', icon: Palette },
     ],
     access: [
       { id: 'integration-dashboard' as ViewType, label: 'Dashboard', icon: BarChart3 },
@@ -199,7 +201,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'control' ? null : 'control')}
               className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
-                activeMenu === 'control' || ['signage', 'labels', 'products', 'resources'].includes(currentView)
+                activeMenu === 'control' || ['signage', 'labels', 'products', 'resources', 'themes'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
@@ -314,6 +316,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'products' && <ProductManagement showBackButton={false} />}
           {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'themes' && <ThemeManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-products' && <WandProducts />}
           {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
