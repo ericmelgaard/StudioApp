@@ -233,96 +233,103 @@ export default function ThemeManagement({ onBack }: ThemeManagementProps) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-3">
           {filteredThemes.map((theme) => (
             <div
               key={theme.id}
-              className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
             >
               <div className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-slate-900 text-lg mb-1">{theme.name}</h3>
-                    <span className={`inline-block px-2 py-1 text-xs font-medium rounded border ${getStatusColor(theme.status)}`}>
-                      {theme.status}
-                    </span>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => handleToggleStatus(theme)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      theme.status === 'active' ? 'bg-blue-600' : 'bg-slate-300'
+                    }`}
+                    title={theme.status === 'active' ? 'Deactivate theme' : 'Activate theme'}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        theme.status === 'active' ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="font-semibold text-slate-900 text-lg">{theme.name}</h3>
+                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded border ${getStatusColor(theme.status)}`}>
+                        {theme.status}
+                      </span>
+                    </div>
+                    {theme.description && (
+                      <p className="text-sm text-slate-600 line-clamp-1">{theme.description}</p>
+                    )}
                   </div>
-                  <div className="flex gap-1">
+
+                  <div className="flex items-center gap-6 text-sm">
+                    <div className="text-center">
+                      <div className="text-slate-500 text-xs">Deployments</div>
+                      <div className="font-semibold text-slate-900 text-lg">{theme.deployment_count || 0}</div>
+                    </div>
+
+                    {theme.display_types && theme.display_types.length > 0 && (
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">Display Types</div>
+                        <div className="flex flex-wrap gap-1">
+                          {theme.display_types.slice(0, 3).map((dt) => (
+                            <span
+                              key={dt.id}
+                              className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded"
+                            >
+                              {dt.name}
+                            </span>
+                          ))}
+                          {theme.display_types.length > 3 && (
+                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded">
+                              +{theme.display_types.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => handleToggleStatus(theme)}
-                      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                      title={theme.status === 'active' ? 'Pause theme' : 'Activate theme'}
+                      onClick={() => {
+                        alert('Theme editor coming soon!');
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                     >
-                      {theme.status === 'active' ? (
-                        <Pause className="w-4 h-4 text-slate-600" />
-                      ) : (
-                        <Play className="w-4 h-4 text-slate-600" />
-                      )}
+                      <Edit2 className="w-4 h-4" />
+                      Edit Content
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRoutineTheme({ id: theme.id, name: theme.name });
+                        setShowRoutineModal(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Routines
                     </button>
                     <button
                       onClick={() => handleEditTheme(theme)}
-                      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                       title="Edit theme"
                     >
                       <Edit2 className="w-4 h-4 text-slate-600" />
                     </button>
                     <button
                       onClick={() => handleDeleteTheme(theme)}
-                      className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                      className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete theme"
                     >
                       <Trash2 className="w-4 h-4 text-red-600" />
                     </button>
                   </div>
-                </div>
-
-                {theme.description && (
-                  <p className="text-sm text-slate-600 mb-4 line-clamp-2">{theme.description}</p>
-                )}
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Deployments:</span>
-                    <span className="font-semibold text-slate-900">{theme.deployment_count || 0}</span>
-                  </div>
-
-                  {theme.display_types && theme.display_types.length > 0 && (
-                    <div>
-                      <div className="text-xs text-slate-500 mb-2">Display Types:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {theme.display_types.map((dt) => (
-                          <span
-                            key={dt.id}
-                            className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded"
-                          >
-                            {dt.name}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                  <button
-                    onClick={() => {
-                      alert('Theme editor coming soon!');
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    Edit Content
-                  </button>
-                  <button
-                    onClick={() => {
-                      setRoutineTheme({ id: theme.id, name: theme.name });
-                      setShowRoutineModal(true);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Routines
-                  </button>
                 </div>
               </div>
             </div>

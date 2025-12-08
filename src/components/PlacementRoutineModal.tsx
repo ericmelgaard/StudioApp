@@ -7,7 +7,7 @@ interface PlacementRoutine {
   theme_id: string;
   placement_id: string;
   cycle_week: number;
-  day_of_week: number;
+  days_of_week: number[];
   start_time: string;
   status: 'active' | 'inactive' | 'paused';
   priority?: number;
@@ -51,7 +51,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
   const [newRoutine, setNewRoutine] = useState({
     placement_id: '',
     cycle_week: 1,
-    day_of_week: 1,
+    days_of_week: [] as number[],
     start_time: '06:00',
     status: 'active' as const
   });
@@ -111,6 +111,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       return;
     }
 
+    if (newRoutine.days_of_week.length === 0) {
+      alert('Please select at least one day');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -120,7 +125,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
           theme_id: themeId,
           placement_id: newRoutine.placement_id,
           cycle_week: newRoutine.cycle_week,
-          day_of_week: newRoutine.day_of_week,
+          days_of_week: newRoutine.days_of_week,
           start_time: newRoutine.start_time,
           status: newRoutine.status
         });
@@ -130,7 +135,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       setNewRoutine({
         placement_id: '',
         cycle_week: 1,
-        day_of_week: 1,
+        days_of_week: [],
         start_time: '06:00',
         status: 'active'
       });
@@ -142,6 +147,15 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
     } finally {
       setSaving(false);
     }
+  };
+
+  const toggleDay = (day: number) => {
+    setNewRoutine(prev => ({
+      ...prev,
+      days_of_week: prev.days_of_week.includes(day)
+        ? prev.days_of_week.filter(d => d !== day)
+        : [...prev.days_of_week, day].sort()
+    }));
   };
 
   const handleDeleteRoutine = async (routineId: string) => {
@@ -275,21 +289,26 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                       <p className="text-xs text-slate-500 mt-1">Week 1-{maxCycleWeek} of cycle</p>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Day of Week
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-3">
+                        Days of Week
                       </label>
-                      <select
-                        value={newRoutine.day_of_week}
-                        onChange={(e) => setNewRoutine({ ...newRoutine, day_of_week: parseInt(e.target.value) })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
+                      <div className="flex flex-wrap gap-2">
                         {DAYS_OF_WEEK.map((day) => (
-                          <option key={day.value} value={day.value}>
-                            {day.label}
-                          </option>
+                          <button
+                            key={day.value}
+                            type="button"
+                            onClick={() => toggleDay(day.value)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              newRoutine.days_of_week.includes(day.value)
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            }`}
+                          >
+                            {day.label.slice(0, 3)}
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </div>
 
                     <div>
@@ -323,7 +342,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={handleAddRoutine}
-                      disabled={saving || !newRoutine.placement_id}
+                      disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
                       {saving ? 'Adding...' : 'Add Routine'}
@@ -364,24 +383,33 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                               {routine.status}
                             </span>
                           </div>
-                          <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <span className="text-slate-500">Week:</span>
-                              <span className="ml-2 font-medium text-slate-900">
-                                Week {routine.cycle_week}
-                              </span>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex gap-6">
+                              <div>
+                                <span className="text-slate-500">Week:</span>
+                                <span className="ml-2 font-medium text-slate-900">
+                                  Week {routine.cycle_week}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500">Time:</span>
+                                <span className="ml-2 font-medium text-slate-900">
+                                  {routine.start_time}
+                                </span>
+                              </div>
                             </div>
                             <div>
-                              <span className="text-slate-500">Day:</span>
-                              <span className="ml-2 font-medium text-slate-900">
-                                {DAYS_OF_WEEK.find(d => d.value === routine.day_of_week)?.label}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-slate-500">Time:</span>
-                              <span className="ml-2 font-medium text-slate-900">
-                                {routine.start_time}
-                              </span>
+                              <span className="text-slate-500">Days:</span>
+                              <div className="inline-flex flex-wrap gap-1 ml-2">
+                                {routine.days_of_week?.map(day => (
+                                  <span
+                                    key={day}
+                                    className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded"
+                                  >
+                                    {DAYS_OF_WEEK.find(d => d.value === day)?.label}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </div>
