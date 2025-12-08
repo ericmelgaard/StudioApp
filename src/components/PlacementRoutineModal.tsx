@@ -158,6 +158,20 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
     }));
   };
 
+  const selectAllDays = () => {
+    setNewRoutine(prev => ({
+      ...prev,
+      days_of_week: [0, 1, 2, 3, 4, 5, 6]
+    }));
+  };
+
+  const clearAllDays = () => {
+    setNewRoutine(prev => ({
+      ...prev,
+      days_of_week: []
+    }));
+  };
+
   const handleDeleteRoutine = async (routineId: string) => {
     if (!confirm('Are you sure you want to delete this routine?')) {
       return;
@@ -250,18 +264,23 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
               )}
 
               {showAddForm && (
-                <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <h3 className="font-semibold text-slate-900 mb-4">New Routine</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        <MapPin className="w-4 h-4 inline mr-1" />
-                        Placement
-                      </label>
+                <div className="mb-6 bg-white rounded-lg border border-slate-200">
+                  <div className="p-4 border-b border-slate-200">
+                    <h3 className="font-semibold text-slate-900">New Routine</h3>
+                  </div>
+
+                  <div className="divide-y divide-slate-200">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-slate-700">
+                          Placement
+                        </label>
+                        <span className="text-xs text-slate-500">Required</span>
+                      </div>
                       <select
                         value={newRoutine.placement_id}
                         onChange={(e) => setNewRoutine({ ...newRoutine, placement_id: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
                       >
                         <option value="">Select a placement...</option>
                         {placements.map((p) => (
@@ -273,83 +292,75 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        <Calendar className="w-4 h-4 inline mr-1" />
-                        Cycle Week
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max={maxCycleWeek}
-                        value={newRoutine.cycle_week}
-                        onChange={(e) => setNewRoutine({ ...newRoutine, cycle_week: parseInt(e.target.value) || 1 })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">Week 1-{maxCycleWeek} of cycle</p>
+                    <div className="p-4">
+                      <div className="text-sm font-medium text-slate-700 mb-2">Schedule Time</div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Cycle Week</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max={maxCycleWeek}
+                            value={newRoutine.cycle_week}
+                            onChange={(e) => setNewRoutine({ ...newRoutine, cycle_week: parseInt(e.target.value) || 1 })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                          <p className="text-xs text-slate-500 mt-1">Week 1-{maxCycleWeek}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Start Time</label>
+                          <input
+                            type="time"
+                            value={newRoutine.start_time}
+                            onChange={(e) => setNewRoutine({ ...newRoutine, start_time: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-700 mb-3">
-                        Days of Week
-                      </label>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-sm font-medium text-slate-700">Days Of The Week</label>
+                        <button
+                          type="button"
+                          onClick={newRoutine.days_of_week.length === 7 ? clearAllDays : selectAllDays}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          {newRoutine.days_of_week.length === 7 ? 'Clear All' : 'Select All'}
+                        </button>
+                      </div>
+                      <div className="text-xs text-slate-500 mb-3">Enabled On</div>
+                      <div className="flex justify-between gap-3">
                         {DAYS_OF_WEEK.map((day) => (
                           <button
                             key={day.value}
                             type="button"
                             onClick={() => toggleDay(day.value)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            className={`w-12 h-12 rounded-full text-sm font-medium transition-all ${
                               newRoutine.days_of_week.includes(day.value)
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                ? 'bg-slate-800 text-white shadow-md'
+                                : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                             }`}
                           >
-                            {day.label.slice(0, 3)}
+                            {day.label.charAt(0)}
                           </button>
                         ))}
                       </div>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        <Clock className="w-4 h-4 inline mr-1" />
-                        Start Time
-                      </label>
-                      <input
-                        type="time"
-                        value={newRoutine.start_time}
-                        onChange={(e) => setNewRoutine({ ...newRoutine, start_time: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Status
-                      </label>
-                      <select
-                        value={newRoutine.status}
-                        onChange={(e) => setNewRoutine({ ...newRoutine, status: e.target.value as any })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="active">Active</option>
-                        <option value="paused">Paused</option>
-                      </select>
-                    </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4">
+                  <div className="p-4 bg-slate-50 flex gap-2">
                     <button
                       onClick={handleAddRoutine}
                       disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
                       {saving ? 'Adding...' : 'Add Routine'}
                     </button>
                     <button
                       onClick={() => setShowAddForm(false)}
-                      className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                      className="px-4 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                     >
                       Cancel
                     </button>
