@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Calendar, Monitor, Edit2, Eye, Trash2, Play, Pause } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ThemeModal from '../components/ThemeModal';
+import PlacementRoutineModal from '../components/PlacementRoutineModal';
 
 interface Theme {
   id: string;
@@ -36,6 +37,8 @@ export default function ThemeManagement({ onBack }: ThemeManagementProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+  const [showRoutineModal, setShowRoutineModal] = useState(false);
+  const [routineTheme, setRoutineTheme] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -312,7 +315,8 @@ export default function ThemeManagement({ onBack }: ThemeManagementProps) {
                   </button>
                   <button
                     onClick={() => {
-                      alert('Deployment view coming soon!');
+                      setRoutineTheme({ id: theme.id, name: theme.name });
+                      setShowRoutineModal(true);
                     }}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
                   >
@@ -336,6 +340,22 @@ export default function ThemeManagement({ onBack }: ThemeManagementProps) {
           onSave={() => {
             setShowThemeModal(false);
             setSelectedTheme(null);
+            loadData();
+          }}
+        />
+      )}
+
+      {showRoutineModal && routineTheme && (
+        <PlacementRoutineModal
+          themeId={routineTheme.id}
+          themeName={routineTheme.name}
+          onClose={() => {
+            setShowRoutineModal(false);
+            setRoutineTheme(null);
+          }}
+          onSave={() => {
+            setShowRoutineModal(false);
+            setRoutineTheme(null);
             loadData();
           }}
         />
