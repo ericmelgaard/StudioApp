@@ -233,7 +233,11 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             This placement inherits all daypart hours from the site configuration
           </p>
           <button
-            onClick={handleAddNew}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddNew();
+            }}
             className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
           >
             <Plus className="w-4 h-4" />
@@ -252,7 +256,11 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                   </h4>
                   {!showForm && (
                     <button
-                      onClick={() => handleAddNew(daypartName)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAddNew(daypartName);
+                      }}
                       className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-white/50 rounded-lg transition-colors"
                       title={`Add another ${DAYPART_LABELS[daypartName]} routine`}
                     >
@@ -287,14 +295,22 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                       </div>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => handleEdit(routine)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleEdit(routine);
+                          }}
                           className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                           title="Edit routine"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(routine.id!)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(routine.id!);
+                          }}
                           className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete routine"
                         >
@@ -309,7 +325,11 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           ))}
           {!showForm && (
             <button
-              onClick={() => handleAddNew()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddNew();
+              }}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-amber-600 hover:text-amber-600 hover:bg-amber-50 transition-colors font-medium"
             >
               <Plus className="w-4 h-4" />
