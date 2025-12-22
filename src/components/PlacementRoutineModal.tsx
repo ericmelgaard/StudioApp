@@ -65,12 +65,14 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
   }, [themeId]);
 
   useEffect(() => {
+    console.log('State changed - showAddForm:', showAddForm, 'editingRoutineId:', editingRoutineId);
     if (showAddForm && formRef.current) {
       formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [showAddForm]);
+  }, [showAddForm, editingRoutineId]);
 
   const loadData = async () => {
+    console.log('loadData called');
     setLoading(true);
 
     const [routinesResult, placementsResult, settingsResult] = await Promise.all([
@@ -120,6 +122,10 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       e.preventDefault();
       e.stopPropagation();
     }
+
+    console.log('Starting edit for routine:', routine.id);
+
+    setShowAddForm(true);
     setEditingRoutineId(routine.id!);
     setNewRoutine({
       placement_id: routine.placement_id,
@@ -128,7 +134,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       start_time: routine.start_time,
       status: routine.status
     });
-    setShowAddForm(true);
+
+    console.log('Edit state set - showAddForm: true, editingRoutineId:', routine.id);
   };
 
   const handleCancelEdit = () => {
@@ -264,7 +271,10 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Placement Routines</h2>
@@ -480,7 +490,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                         </div>
                         <div className="flex gap-2">
                           <button
-                            onClick={(e) => handleStartEdit(routine, e)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleStartEdit(routine, e);
+                            }}
                             disabled={showAddForm && editingRoutineId !== routine.id}
                             className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Edit routine"
@@ -488,7 +502,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                             {editingRoutineId === routine.id ? 'Editing...' : 'Edit'}
                           </button>
                           <button
-                            onClick={() => handleToggleStatus(routine)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleStatus(routine);
+                            }}
                             disabled={showAddForm}
                             className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                               routine.status === 'active'
@@ -500,7 +518,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                             {routine.status === 'active' ? 'Pause' : 'Activate'}
                           </button>
                           <button
-                            onClick={() => handleDeleteRoutine(routine.id!)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteRoutine(routine.id!);
+                            }}
                             disabled={showAddForm}
                             className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Delete routine"
