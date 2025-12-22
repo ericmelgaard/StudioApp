@@ -116,13 +116,26 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         .update(routine)
         .eq('id', editingOverride.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
     } else {
-      const { error } = await supabase
-        .from('placement_daypart_overrides')
-        .insert([routine]);
+      const { data: session } = await supabase.auth.getSession();
+      console.log('Session status:', session?.session ? 'Active' : 'No session');
+      console.log('Inserting routine:', routine);
 
-      if (error) throw error;
+      const { error, data } = await supabase
+        .from('placement_daypart_overrides')
+        .insert([routine])
+        .select();
+
+      if (error) {
+        console.error('Insert error details:', error);
+        throw new Error(`Failed to create override: ${error.message}`);
+      }
+
+      console.log('Insert successful:', data);
     }
 
     setShowForm(false);
