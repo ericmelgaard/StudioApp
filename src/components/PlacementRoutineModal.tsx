@@ -65,9 +65,21 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
   }, [themeId]);
 
   useEffect(() => {
+    console.log('🔍 STATE MONITOR - showAddForm changed to:', showAddForm);
+    console.trace('showAddForm change stack trace');
+  }, [showAddForm]);
+
+  useEffect(() => {
+    console.log('🔍 STATE MONITOR - editingRoutineId changed to:', editingRoutineId);
+    console.trace('editingRoutineId change stack trace');
+  }, [editingRoutineId]);
+
+  useEffect(() => {
     console.log('State changed - showAddForm:', showAddForm, 'editingRoutineId:', editingRoutineId);
     if (showAddForm && formRef.current) {
-      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
     }
   }, [showAddForm, editingRoutineId]);
 
@@ -123,7 +135,10 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       e.stopPropagation();
     }
 
-    console.log('Starting edit for routine:', routine.id);
+    console.log('=== STARTING EDIT ===');
+    console.log('Routine ID:', routine.id);
+    console.log('Current showAddForm:', showAddForm);
+    console.log('Current editingRoutineId:', editingRoutineId);
 
     setShowAddForm(true);
     setEditingRoutineId(routine.id!);
@@ -135,10 +150,14 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       status: routine.status
     });
 
-    console.log('Edit state set - showAddForm: true, editingRoutineId:', routine.id);
+    console.log('=== EDIT STATE SET ===');
+    console.log('New showAddForm: true');
+    console.log('New editingRoutineId:', routine.id);
   };
 
   const handleCancelEdit = () => {
+    console.log('=== CANCEL EDIT CALLED ===');
+    console.trace('Cancel edit stack trace');
     setEditingRoutineId(null);
     setShowAddForm(false);
     setNewRoutine({
@@ -273,8 +292,9 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
-        console.log('Backdrop clicked!');
-        alert('You clicked the backdrop!');
+        console.log('Backdrop clicked - DISABLED TEMPORARILY');
+        // Temporarily disabled to debug
+        // alert('You clicked the backdrop!');
       }}
     >
       <div
