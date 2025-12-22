@@ -55,6 +55,10 @@ export default function DaypartRoutineForm({
   const [error, setError] = useState<string | null>(null);
 
   const checkCollision = (daypartName: string, selectedDays: number[]): string | null => {
+    if (!daypartName || selectedDays.length === 0) {
+      return null;
+    }
+
     const conflictingRoutines = existingRoutines.filter(routine => {
       if (editingRoutine && routine.id === editingRoutine.id) return false;
       if (routine.daypart_name !== daypartName) return false;
@@ -80,19 +84,15 @@ export default function DaypartRoutineForm({
 
     setFormData({ ...formData, days_of_week: newDays });
 
-    if (formData.daypart_name) {
-      const collision = checkCollision(formData.daypart_name, newDays);
-      setError(collision);
-    }
+    const collision = checkCollision(formData.daypart_name, newDays);
+    setError(collision);
   };
 
   const selectAllDays = () => {
     const allDays = [0, 1, 2, 3, 4, 5, 6];
     setFormData({ ...formData, days_of_week: allDays });
-    if (formData.daypart_name) {
-      const collision = checkCollision(formData.daypart_name, allDays);
-      setError(collision);
-    }
+    const collision = checkCollision(formData.daypart_name, allDays);
+    setError(collision);
   };
 
   const clearAllDays = () => {
@@ -102,14 +102,12 @@ export default function DaypartRoutineForm({
 
   const handleDaypartChange = (daypartName: string) => {
     setFormData({ ...formData, daypart_name: daypartName });
-    if (formData.days_of_week.length > 0) {
-      const collision = checkCollision(daypartName, formData.days_of_week);
-      setError(collision);
-    }
+    const collision = checkCollision(daypartName, formData.days_of_week);
+    setError(collision);
   };
 
   const getDayCollisionStatus = (day: number): boolean => {
-    if (!formData.daypart_name) return false;
+    if (!formData.daypart_name || formData.days_of_week.includes(day)) return false;
     return existingRoutines.some(routine => {
       if (editingRoutine && routine.id === editingRoutine.id) return false;
       return routine.daypart_name === formData.daypart_name && routine.days_of_week.includes(day);
@@ -259,7 +257,7 @@ export default function DaypartRoutineForm({
         <div className="flex gap-2 pt-2">
           <button
             type="submit"
-            disabled={saving || !!error}
+            disabled={saving || !!error || !formData.daypart_name || formData.days_of_week.length === 0}
             className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             {saving ? 'Saving...' : editingRoutine ? 'Update Routine' : 'Add Routine'}
