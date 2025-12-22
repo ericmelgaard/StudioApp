@@ -11,6 +11,12 @@ interface SiteRoutine extends DaypartRoutine {
   is_inherited: boolean;
 }
 
+interface DaypartDefinition {
+  daypart_name: string;
+  display_label: string;
+  color: string;
+}
+
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Sunday', short: 'Sun' },
   { value: 1, label: 'Monday', short: 'Mon' },
@@ -21,25 +27,10 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Saturday', short: 'Sat' }
 ];
 
-const DAYPART_LABELS: Record<string, string> = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  dinner: 'Dinner',
-  late_night: 'Late Night',
-  dark_hours: 'Dark Hours'
-};
-
-const DAYPART_COLORS: Record<string, string> = {
-  breakfast: 'bg-amber-100 text-amber-800 border-amber-300',
-  lunch: 'bg-green-100 text-green-800 border-green-300',
-  dinner: 'bg-blue-100 text-blue-800 border-blue-300',
-  late_night: 'bg-purple-100 text-purple-800 border-purple-300',
-  dark_hours: 'bg-slate-100 text-slate-800 border-slate-300'
-};
-
 export default function PlacementDaypartOverrides({ placementGroupId }: PlacementDaypartOverridesProps) {
   const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
   const [siteRoutines, setSiteRoutines] = useState<SiteRoutine[]>([]);
+  const [daypartDefinitions, setDaypartDefinitions] = useState<Record<string, DaypartDefinition>>({});
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<DaypartRoutine | null>(null);
@@ -47,8 +38,24 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [storeRootId, setStoreRootId] = useState<string | null>(null);
 
   useEffect(() => {
+    loadDaypartDefinitions();
     loadData();
   }, [placementGroupId]);
+
+  const loadDaypartDefinitions = async () => {
+    const { data, error } = await supabase
+      .from('daypart_definitions')
+      .select('daypart_name, display_label, color')
+      .eq('is_active', true);
+
+    if (!error && data) {
+      const definitionsMap = data.reduce((acc, def) => {
+        acc[def.daypart_name] = def;
+        return acc;
+      }, {} as Record<string, DaypartDefinition>);
+      setDaypartDefinitions(definitionsMap);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -246,29 +253,34 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </div>
       ) : routines.length > 0 ? (
         <div className="space-y-4">
-          {Object.entries(groupedRoutines).map(([daypartName, daypartRoutines]) => (
-            <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-              <div className={`px-4 py-3 border-b border-slate-200 ${DAYPART_COLORS[daypartName]}`}>
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    {DAYPART_LABELS[daypartName] || daypartName}
-                  </h4>
-                  {!showForm && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleAddNew(daypartName);
-                      }}
-                      className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-white/50 rounded-lg transition-colors"
-                      title={`Add another ${DAYPART_LABELS[daypartName]} routine`}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  )}
+          {Object.entries(groupedRoutines).map(([daypartName, daypartRoutines]) => {
+            const definition = daypartDefinitions[daypartName];
+            const displayLabel = definition?.display_label || daypartName;
+            const colorClass = definition?.color || 'bg-slate-100 text-slate-800 border-slate-300';
+
+            return (
+              <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      {displayLabel}
+                    </h4>
+                    {!showForm && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAddNew(daypartName);
+                        }}
+                        className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-white/50 rounded-lg transition-colors"
+                        title={`Add another ${displayLabel} routine`}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
               <div className="divide-y divide-slate-200">
                 {daypartRoutines.map((routine) => (
                   <div key={routine.id} className="p-4 hover:bg-slate-50 transition-colors group">
@@ -322,7 +334,8 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 ))}
               </div>
             </div>
-          ))}
+            );
+          })}
           {!showForm && (
             <button
               onClick={(e) => {

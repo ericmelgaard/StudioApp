@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import TimeSelector from './TimeSelector';
+import { supabase } from '../lib/supabase';
 
 interface DaypartRoutineFormProps {
   placementGroupId: string;
@@ -22,13 +23,13 @@ export interface DaypartRoutine {
   updated_at?: string;
 }
 
-const DAYPART_TYPES = [
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'late_night', label: 'Late Night' },
-  { value: 'dark_hours', label: 'Dark Hours' }
-];
+interface DaypartDefinition {
+  daypart_name: string;
+  display_label: string;
+  default_start_time: string;
+  default_end_time: string;
+  default_days: number[];
+}
 
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Sunday', short: 'S' },
@@ -48,6 +49,7 @@ export default function DaypartRoutineForm({
   editingRoutine,
   preFillDaypart
 }: DaypartRoutineFormProps) {
+  const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [formData, setFormData] = useState({
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
     days_of_week: editingRoutine?.days_of_week || [] as number[],
@@ -56,6 +58,24 @@ export default function DaypartRoutineForm({
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadDaypartTypes();
+  }, []);
+
+  const loadDaypartTypes = async () => {
+    const { data, error } = await supabase
+      .from('daypart_definitions')
+      .select('daypart_name, display_label, default_start_time, default_end_time, default_days')
+      .eq('is_active', true)
+      .order('sort_order');
+
+    if (error) {
+      console.error('Error loading daypart types:', error);
+    } else {
+      setDaypartTypes(data || []);
+    }
+  };
 
   const checkCollision = (daypartName: string, selectedDays: number[]): string | null => {
     if (!daypartName || selectedDays.length === 0) {
@@ -104,7 +124,20 @@ export default function DaypartRoutineForm({
   };
 
   const handleDaypartChange = (daypartName: string) => {
-    setFormData({ ...formData, daypart_name: daypartName });
+    const selectedDaypart = daypartTypes.find(d => d.daypart_name === daypartName);
+
+    if (selectedDaypart && !editingRoutine) {
+      setFormData({
+        ...formData,
+        daypart_name: daypartName,
+        start_time: selectedDaypart.default_start_time.substring(0, 5),
+        end_time: selectedDaypart.default_end_time.substring(0, 5),
+        days_of_week: selectedDaypart.default_days
+      });
+    } else {
+      setFormData({ ...formData, daypart_name: daypartName });
+    }
+
     const collision = checkCollision(daypartName, formData.days_of_week);
     setError(collision);
   };
@@ -180,9 +213,9 @@ export default function DaypartRoutineForm({
             required
           >
             <option value="">Select a daypart...</option>
-            {DAYPART_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
+            {daypartTypes.map((type) => (
+              <option key={type.daypart_name} value={type.daypart_name}>
+                {type.display_label}
               </option>
             ))}
           </select>

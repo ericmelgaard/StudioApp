@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown, Palette } from 'lucide-react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown, Palette, Clock } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
@@ -20,6 +20,7 @@ const CoreAttributes = lazy(() => import('./CoreAttributes'));
 const WandProducts = lazy(() => import('./WandProducts'));
 const UserManagement = lazy(() => import('./UserManagement'));
 const SiteConfiguration = lazy(() => import('./SiteConfiguration'));
+const DaypartManagement = lazy(() => import('./DaypartManagement'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
 const AddUserModal = lazy(() => import('../components/AddUserModal'));
@@ -60,7 +61,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites' | 'dayparts';
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay } = useLocation();
@@ -105,6 +106,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     wand: [
       { id: 'wand-products' as ViewType, label: 'Product Library', icon: Package },
       { id: 'integration-sources' as ViewType, label: 'Integration Sources', icon: Database },
+      { id: 'dayparts' as ViewType, label: 'Daypart Definitions', icon: Clock },
       { id: 'core-attributes' as ViewType, label: 'Core Attributes', icon: Sliders },
       { id: 'wand-templates' as ViewType, label: 'Manage Templates', icon: Layers },
       { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
@@ -275,7 +277,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'wand' ? null : 'wand')}
               className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
-                activeMenu === 'wand' || ['wand-products', 'integration-sources', 'core-attributes', 'wand-templates', 'wand-mapper'].includes(currentView)
+                activeMenu === 'wand' || ['wand-products', 'integration-sources', 'dayparts', 'core-attributes', 'wand-templates', 'wand-mapper'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
@@ -319,6 +321,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           {currentView === 'themes' && <ThemeManagement onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-products' && <WandProducts />}
           {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}
+          {currentView === 'dayparts' && <DaypartManagement />}
           {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
           {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
