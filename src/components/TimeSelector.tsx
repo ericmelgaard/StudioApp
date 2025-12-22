@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Clock, Keyboard } from 'lucide-react';
+import { Clock, Keyboard, ChevronDown } from 'lucide-react';
 
 interface TimeSelectorProps {
   value: string;
@@ -19,7 +19,9 @@ const formatDisplayTime = (time: string) => {
 export default function TimeSelector({ value, onChange, label }: TimeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [manualMode, setManualMode] = useState(false);
-  const [manualInput, setManualInput] = useState('');
+  const [manualHour, setManualHour] = useState('');
+  const [manualMinute, setManualMinute] = useState('');
+  const [manualPeriod, setManualPeriod] = useState<'AM' | 'PM'>('AM');
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('hour');
 
   const [hours, minutes] = value.split(':').map(Number);
@@ -37,7 +39,11 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
       setIsPM(h >= 12);
       setSelectionMode('hour');
       setManualMode(false);
-      setManualInput('');
+
+      const display12Hour = h % 12 || 12;
+      setManualHour(String(display12Hour));
+      setManualMinute(String(m).padStart(2, '0'));
+      setManualPeriod(h >= 12 ? 'PM' : 'AM');
     }
   }, [isOpen, value]);
 
@@ -72,10 +78,23 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
   };
 
   const handleManualSubmit = () => {
-    if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(manualInput)) {
-      onChange(manualInput);
-      setIsOpen(false);
+    const hourNum = parseInt(manualHour, 10);
+    const minuteNum = parseInt(manualMinute, 10);
+
+    if (isNaN(hourNum) || isNaN(minuteNum) || hourNum < 1 || hourNum > 12 || minuteNum < 0 || minuteNum > 59) {
+      return;
     }
+
+    let hour24 = hourNum;
+    if (manualPeriod === 'PM' && hourNum !== 12) {
+      hour24 = hourNum + 12;
+    } else if (manualPeriod === 'AM' && hourNum === 12) {
+      hour24 = 0;
+    }
+
+    const timeStr = `${String(hour24).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')}`;
+    onChange(timeStr);
+    setIsOpen(false);
   };
 
   const togglePeriod = (pm: boolean) => {
@@ -249,20 +268,77 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
               </>
             ) : (
               <>
-                <div className="bg-amber-600 p-6 text-white">
-                  <div className="text-2xl font-medium">Enter Time</div>
+                <div className="bg-slate-700 p-6">
+                  <div className="text-xl font-medium text-white">Set time</div>
                 </div>
 
-                <div className="p-6">
-                  <input
-                    type="text"
-                    value={manualInput}
-                    onChange={(e) => setManualInput(e.target.value)}
-                    placeholder="HH:MM (24-hour)"
-                    className="w-full px-4 py-3 bg-slate-700 text-white text-2xl font-mono rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                    autoFocus
-                  />
-                  <p className="text-slate-400 text-sm mt-2">Format: 14:30 for 2:30 PM</p>
+                <div className="p-6 bg-slate-700">
+                  <div className="text-sm text-slate-400 mb-3">Type in time</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={manualHour}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          if (val === '' || (parseInt(val) >= 1 && parseInt(val) <= 12)) {
+                            setManualHour(val);
+                          }
+                        }}
+                        placeholder="1"
+                        className="w-full px-4 py-3 bg-slate-600 text-white text-4xl font-light text-center rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none border-b-2 border-transparent focus:border-cyan-500"
+                        maxLength={2}
+                        autoFocus
+                      />
+                      <div className="text-xs text-slate-400 text-center mt-1">hour</div>
+                    </div>
+
+                    <div className="text-4xl text-white font-light pb-5">:</div>
+
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={manualMinute}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          if (val === '') {
+                            setManualMinute('');
+                          } else if (val.length === 1) {
+                            const num = parseInt(val);
+                            if (num >= 0 && num <= 9) {
+                              setManualMinute(val);
+                            }
+                          } else if (val.length === 2) {
+                            const num = parseInt(val);
+                            if (num >= 0 && num <= 59) {
+                              setManualMinute(val);
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value && e.target.value.length === 1) {
+                            setManualMinute(e.target.value.padStart(2, '0'));
+                          }
+                        }}
+                        placeholder="00"
+                        className="w-full px-4 py-3 bg-slate-600 text-white text-4xl font-light text-center rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        maxLength={2}
+                      />
+                      <div className="text-xs text-slate-400 text-center mt-1">minute</div>
+                    </div>
+
+                    <div className="flex-1 relative">
+                      <select
+                        value={manualPeriod}
+                        onChange={(e) => setManualPeriod(e.target.value as 'AM' | 'PM')}
+                        className="w-full px-2 py-3 pr-8 bg-slate-600 text-white text-2xl font-light text-center rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none appearance-none cursor-pointer"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none pb-5" />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 border-t border-slate-700">
@@ -282,7 +358,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                     <button
                       onClick={handleManualSubmit}
                       className="px-6 py-2 text-cyan-400 hover:bg-slate-700 rounded-lg transition-colors font-medium disabled:opacity-50"
-                      disabled={!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(manualInput)}
+                      disabled={!manualHour || !manualMinute}
                     >
                       OK
                     </button>
