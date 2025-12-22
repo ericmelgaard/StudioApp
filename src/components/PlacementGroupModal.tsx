@@ -1,6 +1,8 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { X, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import SiteDaypartManager from './SiteDaypartManager';
+import PlacementDaypartOverrides from './PlacementDaypartOverrides';
 
 interface PlacementGroup {
   id?: string;
@@ -335,51 +337,17 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
             </>
           )}
 
-          <div className="border-t border-slate-200 pt-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-5 h-5 text-amber-600" />
-              <h3 className="text-lg font-semibold text-slate-900">Daypart Hours</h3>
+          {isStoreRoot && group?.id && (
+            <div className="border-t border-slate-200 pt-6">
+              <SiteDaypartManager placementGroupId={group.id} />
             </div>
-            <div className="space-y-3">
-              {DAYPART_TYPES.map(daypart => (
-                <div key={daypart} className="flex items-center gap-3">
-                  <div className="flex-1 grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1 capitalize">
-                        {daypart.replace('_', ' ')} Start
-                      </label>
-                      <input
-                        type="time"
-                        value={daypartHours[daypart]?.start || ''}
-                        onChange={(e) => handleDaypartChange(daypart, 'start', e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1 capitalize">
-                        {daypart.replace('_', ' ')} End
-                      </label>
-                      <input
-                        type="time"
-                        value={daypartHours[daypart]?.end || ''}
-                        onChange={(e) => handleDaypartChange(daypart, 'end', e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
-                      />
-                    </div>
-                  </div>
-                  {daypartHours[daypart] && (
-                    <button
-                      type="button"
-                      onClick={() => removeDaypart(daypart)}
-                      className="mt-5 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
+          )}
+
+          {!isStoreRoot && group?.id && (
+            <div className="border-t border-slate-200 pt-6">
+              <PlacementDaypartOverrides placementGroupId={group.id} />
             </div>
-          </div>
+          )}
 
           <div className="border-t border-slate-200 pt-6">
             <div className="flex items-center gap-2 mb-4">
