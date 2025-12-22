@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import TimeSelector from './TimeSelector';
@@ -47,7 +47,10 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [cycleSettings, setCycleSettings] = useState<{ cycle_duration_weeks: number } | null>(null);
+
+  const formRef = useRef<HTMLDivElement>(null);
 
   const [newRoutine, setNewRoutine] = useState({
     placement_id: '',
@@ -60,6 +63,12 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
   useEffect(() => {
     loadData();
   }, [themeId]);
+
+  useEffect(() => {
+    if (showAddForm && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showAddForm]);
 
   const loadData = async () => {
     setLoading(true);
@@ -106,7 +115,31 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
     setLoading(false);
   };
 
-  const handleAddRoutine = async () => {
+  const handleStartEdit = (routine: PlacementRoutine) => {
+    setEditingRoutineId(routine.id!);
+    setNewRoutine({
+      placement_id: routine.placement_id,
+      cycle_week: routine.cycle_week,
+      days_of_week: [...routine.days_of_week],
+      start_time: routine.start_time,
+      status: routine.status
+    });
+    setShowAddForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoutineId(null);
+    setShowAddForm(false);
+    setNewRoutine({
+      placement_id: '',
+      cycle_week: 1,
+      days_of_week: [],
+      start_time: '06:00',
+      status: 'active'
+    });
+  };
+
+  const handleSaveRoutine = async () => {
     if (!newRoutine.placement_id) {
       alert('Please select a placement');
       return;
@@ -120,18 +153,33 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('placement_routines')
-        .insert({
-          theme_id: themeId,
-          placement_id: newRoutine.placement_id,
-          cycle_week: newRoutine.cycle_week,
-          days_of_week: newRoutine.days_of_week,
-          start_time: newRoutine.start_time,
-          status: newRoutine.status
-        });
+      if (editingRoutineId) {
+        const { error } = await supabase
+          .from('placement_routines')
+          .update({
+            placement_id: newRoutine.placement_id,
+            cycle_week: newRoutine.cycle_week,
+            days_of_week: newRoutine.days_of_week,
+            start_time: newRoutine.start_time,
+            status: newRoutine.status
+          })
+          .eq('id', editingRoutineId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('placement_routines')
+          .insert({
+            theme_id: themeId,
+            placement_id: newRoutine.placement_id,
+            cycle_week: newRoutine.cycle_week,
+            days_of_week: newRoutine.days_of_week,
+            start_time: newRoutine.start_time,
+            status: newRoutine.status
+          });
+
+        if (error) throw error;
+      }
 
       setNewRoutine({
         placement_id: '',
@@ -140,11 +188,12 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
         start_time: '06:00',
         status: 'active'
       });
+      setEditingRoutineId(null);
       setShowAddForm(false);
       await loadData();
     } catch (error: any) {
-      console.error('Error adding routine:', error);
-      alert(`Failed to add routine: ${error.message}`);
+      console.error('Error saving routine:', error);
+      alert(`Failed to save routine: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -252,7 +301,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
             </div>
           ) : (
             <>
-              {!showAddForm && (
+              {!showAddForm && !editingRoutineId && (
                 <div className="mb-4">
                   <button
                     onClick={() => setShowAddForm(true)}
@@ -265,9 +314,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
               )}
 
               {showAddForm && (
-                <div className="mb-6 bg-white rounded-lg border border-slate-200">
+                <div ref={formRef} className="mb-6 bg-white rounded-lg border border-slate-200">
                   <div className="p-4 border-b border-slate-200">
-                    <h3 className="font-semibold text-slate-900">New Routine</h3>
+                    <h3 className="font-semibold text-slate-900">
+                      {editingRoutineId ? 'Edit Routine' : 'New Routine'}
+                    </h3>
                   </div>
 
                   <div className="divide-y divide-slate-200">
@@ -351,14 +402,14 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
 
                   <div className="p-4 bg-slate-50 flex gap-2">
                     <button
-                      onClick={handleAddRoutine}
+                      onClick={handleSaveRoutine}
                       disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
                       className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
-                      {saving ? 'Adding...' : 'Add Routine'}
+                      {saving ? (editingRoutineId ? 'Updating...' : 'Adding...') : (editingRoutineId ? 'Update Routine' : 'Add Routine')}
                     </button>
                     <button
-                      onClick={() => setShowAddForm(false)}
+                      onClick={handleCancelEdit}
                       className="px-4 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                     >
                       Cancel
@@ -425,8 +476,17 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                         </div>
                         <div className="flex gap-2">
                           <button
+                            onClick={() => handleStartEdit(routine)}
+                            disabled={showAddForm && editingRoutineId !== routine.id}
+                            className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Edit routine"
+                          >
+                            {editingRoutineId === routine.id ? 'Editing...' : 'Edit'}
+                          </button>
+                          <button
                             onClick={() => handleToggleStatus(routine)}
-                            className={`p-2 rounded-lg transition-colors ${
+                            disabled={showAddForm}
+                            className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                               routine.status === 'active'
                                 ? 'hover:bg-amber-50 text-amber-600'
                                 : 'hover:bg-green-50 text-green-600'
@@ -437,7 +497,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                           </button>
                           <button
                             onClick={() => handleDeleteRoutine(routine.id!)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            disabled={showAddForm}
+                            className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Delete routine"
                           >
                             <Trash2 className="w-4 h-4 text-red-600" />
