@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Calendar, Clock, MapPin } from 'lucide-react';
+import { X, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import TimeSelector from './TimeSelector';
 
 interface PlacementRoutine {
   id?: string;
@@ -308,12 +309,10 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                           <p className="text-xs text-slate-500 mt-1">Week 1-{maxCycleWeek}</p>
                         </div>
                         <div>
-                          <label className="text-xs text-slate-500 mb-1 block">Start Time</label>
-                          <input
-                            type="time"
+                          <TimeSelector
+                            label="Start Time"
                             value={newRoutine.start_time}
-                            onChange={(e) => setNewRoutine({ ...newRoutine, start_time: e.target.value })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            onChange={(time) => setNewRoutine({ ...newRoutine, start_time: time })}
                           />
                         </div>
                       </div>

@@ -3,6 +3,7 @@ import { X, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe } f
 import { supabase } from '../lib/supabase';
 import SiteDaypartManager from './SiteDaypartManager';
 import PlacementDaypartOverrides from './PlacementDaypartOverrides';
+import TimeSelector from './TimeSelector';
 
 interface PlacementGroup {
   id?: string;
@@ -306,30 +307,28 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                   <Clock className="w-5 h-5 text-amber-600" />
                   <h3 className="text-lg font-semibold text-slate-900">Operating Hours</h3>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                    <div key={day} className="grid grid-cols-3 gap-3 items-center">
-                      <label className="text-sm font-medium text-slate-700">{day}</label>
-                      <input
-                        type="time"
-                        value={operatingHours[day]?.open || ''}
-                        onChange={(e) => setOperatingHours({
-                          ...operatingHours,
-                          [day]: { ...operatingHours[day], open: e.target.value, close: operatingHours[day]?.close || '' }
-                        })}
-                        className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
-                        placeholder="Open"
-                      />
-                      <input
-                        type="time"
-                        value={operatingHours[day]?.close || ''}
-                        onChange={(e) => setOperatingHours({
-                          ...operatingHours,
-                          [day]: { ...operatingHours[day], open: operatingHours[day]?.open || '', close: e.target.value }
-                        })}
-                        className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
-                        placeholder="Close"
-                      />
+                    <div key={day}>
+                      <div className="text-sm font-medium text-slate-700 mb-2">{day}</div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <TimeSelector
+                          label="Open"
+                          value={operatingHours[day]?.open || '08:00'}
+                          onChange={(time) => setOperatingHours({
+                            ...operatingHours,
+                            [day]: { ...operatingHours[day], open: time, close: operatingHours[day]?.close || '17:00' }
+                          })}
+                        />
+                        <TimeSelector
+                          label="Close"
+                          value={operatingHours[day]?.close || '17:00'}
+                          onChange={(time) => setOperatingHours({
+                            ...operatingHours,
+                            [day]: { ...operatingHours[day], open: operatingHours[day]?.open || '08:00', close: time }
+                          })}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

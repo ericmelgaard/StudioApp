@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, Clock, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import TimeSelector from './TimeSelector';
 
 interface DaypartRoutineFormProps {
   placementGroupId: string;
@@ -226,32 +227,16 @@ export default function DaypartRoutineForm({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              <Clock className="w-4 h-4 inline mr-1" />
-              Start Time *
-            </label>
-            <input
-              type="time"
-              value={formData.start_time}
-              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              <Clock className="w-4 h-4 inline mr-1" />
-              End Time *
-            </label>
-            <input
-              type="time"
-              value={formData.end_time}
-              onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              required
-            />
-          </div>
+          <TimeSelector
+            label="Start Time *"
+            value={formData.start_time}
+            onChange={(time) => setFormData({ ...formData, start_time: time })}
+          />
+          <TimeSelector
+            label="End Time *"
+            value={formData.end_time}
+            onChange={(time) => setFormData({ ...formData, end_time: time })}
+          />
         </div>
 
         <div className="flex gap-2 pt-2">
