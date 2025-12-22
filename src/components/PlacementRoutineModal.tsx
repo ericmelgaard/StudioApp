@@ -490,7 +490,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                         </div>
                         <div className="flex gap-2">
                           <button
+                            type="button"
                             onClick={(e) => {
+                              alert('BUTTON CLICKED! Routine ID: ' + routine.id);
+                              console.log('BUTTON CLICKED!!!', routine.id);
+                              console.log('showAddForm:', showAddForm, 'editingRoutineId:', editingRoutineId);
                               e.preventDefault();
                               e.stopPropagation();
                               handleStartEdit(routine, e);
