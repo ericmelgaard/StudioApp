@@ -43,6 +43,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<DaypartRoutine | null>(null);
+  const [preFillDaypart, setPreFillDaypart] = useState<string | undefined>(undefined);
   const [storeRootId, setStoreRootId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -165,10 +166,12 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const handleCancel = () => {
     setShowForm(false);
     setEditingRoutine(null);
+    setPreFillDaypart(undefined);
   };
 
-  const handleAddNew = () => {
+  const handleAddNew = (daypartName?: string) => {
     setEditingRoutine(null);
+    setPreFillDaypart(daypartName);
     setShowForm(true);
   };
 
@@ -218,6 +221,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           onSave={handleSave}
           onCancel={handleCancel}
           editingRoutine={editingRoutine}
+          preFillDaypart={preFillDaypart}
         />
       )}
 
@@ -241,10 +245,21 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           {Object.entries(groupedRoutines).map(([daypartName, daypartRoutines]) => (
             <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
               <div className={`px-4 py-3 border-b border-slate-200 ${DAYPART_COLORS[daypartName]}`}>
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  {DAYPART_LABELS[daypartName] || daypartName}
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {DAYPART_LABELS[daypartName] || daypartName}
+                  </h4>
+                  {!showForm && (
+                    <button
+                      onClick={() => handleAddNew(daypartName)}
+                      className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-white/50 rounded-lg transition-colors"
+                      title={`Add another ${DAYPART_LABELS[daypartName]} routine`}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="divide-y divide-slate-200">
                 {daypartRoutines.map((routine) => (
@@ -294,11 +309,11 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           ))}
           {!showForm && (
             <button
-              onClick={handleAddNew}
+              onClick={() => handleAddNew()}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-amber-600 hover:text-amber-600 hover:bg-amber-50 transition-colors font-medium"
             >
               <Plus className="w-4 h-4" />
-              Add Another Routine
+              Add Daypart Routine
             </button>
           )}
         </div>

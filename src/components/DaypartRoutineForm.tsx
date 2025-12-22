@@ -7,6 +7,7 @@ interface DaypartRoutineFormProps {
   onSave: (routine: Omit<DaypartRoutine, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onCancel: () => void;
   editingRoutine?: DaypartRoutine | null;
+  preFillDaypart?: string;
 }
 
 export interface DaypartRoutine {
@@ -43,10 +44,11 @@ export default function DaypartRoutineForm({
   existingRoutines,
   onSave,
   onCancel,
-  editingRoutine
+  editingRoutine,
+  preFillDaypart
 }: DaypartRoutineFormProps) {
   const [formData, setFormData] = useState({
-    daypart_name: editingRoutine?.daypart_name || '',
+    daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
     days_of_week: editingRoutine?.days_of_week || [] as number[],
     start_time: editingRoutine?.start_time || '06:00',
     end_time: editingRoutine?.end_time || '11:00'
