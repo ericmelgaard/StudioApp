@@ -38,11 +38,11 @@ const DAYPART_COLORS: Record<string, string> = {
 };
 
 export default function PlacementDaypartOverrides({ placementGroupId }: PlacementDaypartOverridesProps) {
-  const [overrides, setOverrides] = useState<DaypartRoutine[]>([]);
+  const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
   const [siteRoutines, setSiteRoutines] = useState<SiteRoutine[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingOverride, setEditingOverride] = useState<DaypartRoutine | null>(null);
+  const [editingRoutine, setEditingRoutine] = useState<DaypartRoutine | null>(null);
   const [storeRootId, setStoreRootId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
     setStoreRootId(rootResult.data.id);
 
-    const [overridesResult, siteRoutinesResult] = await Promise.all([
+    const [routinesResult, siteRoutinesResult] = await Promise.all([
       supabase
         .from('placement_daypart_overrides')
         .select('*')
@@ -94,10 +94,10 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         .order('created_at')
     ]);
 
-    if (overridesResult.error) {
-      console.error('Error loading overrides:', overridesResult.error);
+    if (routinesResult.error) {
+      console.error('Error loading routines:', routinesResult.error);
     } else {
-      setOverrides(overridesResult.data || []);
+      setRoutines(routinesResult.data || []);
     }
 
     if (siteRoutinesResult.error) {
@@ -110,21 +110,17 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   };
 
   const handleSave = async (routine: Omit<DaypartRoutine, 'id' | 'created_at' | 'updated_at'>) => {
-    if (editingOverride) {
+    if (editingRoutine) {
       const { error } = await supabase
         .from('placement_daypart_overrides')
         .update(routine)
-        .eq('id', editingOverride.id);
+        .eq('id', editingRoutine.id);
 
       if (error) {
         console.error('Update error:', error);
         throw error;
       }
     } else {
-      const { data: session } = await supabase.auth.getSession();
-      console.log('Session status:', session?.session ? 'Active' : 'No session');
-      console.log('Inserting routine:', routine);
-
       const { error, data } = await supabase
         .from('placement_daypart_overrides')
         .insert([routine])
@@ -132,35 +128,35 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
       if (error) {
         console.error('Insert error details:', error);
-        throw new Error(`Failed to create override: ${error.message}`);
+        throw new Error(`Failed to create routine: ${error.message}`);
       }
 
       console.log('Insert successful:', data);
     }
 
     setShowForm(false);
-    setEditingOverride(null);
+    setEditingRoutine(null);
     await loadData();
   };
 
-  const handleEdit = (override: DaypartRoutine) => {
-    setEditingOverride(override);
+  const handleEdit = (routine: DaypartRoutine) => {
+    setEditingRoutine(routine);
     setShowForm(true);
   };
 
-  const handleDelete = async (overrideId: string) => {
-    if (!confirm('Are you sure you want to delete this override? The site default will be used instead.')) {
+  const handleDelete = async (routineId: string) => {
+    if (!confirm('Are you sure you want to delete this routine?')) {
       return;
     }
 
     const { error } = await supabase
       .from('placement_daypart_overrides')
       .delete()
-      .eq('id', overrideId);
+      .eq('id', routineId);
 
     if (error) {
-      console.error('Error deleting override:', error);
-      alert(`Failed to delete override: ${error.message}`);
+      console.error('Error deleting routine:', error);
+      alert(`Failed to delete routine: ${error.message}`);
     } else {
       await loadData();
     }
@@ -168,19 +164,19 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
   const handleCancel = () => {
     setShowForm(false);
-    setEditingOverride(null);
+    setEditingRoutine(null);
   };
 
   const handleAddNew = () => {
-    setEditingOverride(null);
+    setEditingRoutine(null);
     setShowForm(true);
   };
 
-  const groupedOverrides = overrides.reduce((acc, override) => {
-    if (!acc[override.daypart_name]) {
-      acc[override.daypart_name] = [];
+  const groupedRoutines = routines.reduce((acc, routine) => {
+    if (!acc[routine.daypart_name]) {
+      acc[routine.daypart_name] = [];
     }
-    acc[override.daypart_name].push(override);
+    acc[routine.daypart_name].push(routine);
     return acc;
   }, {} as Record<string, DaypartRoutine[]>);
 
@@ -194,48 +190,22 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-600" />
-            Daypart Overrides
-          </h3>
-          <p className="text-sm text-slate-600 mt-1">
-            Customize daypart hours for this placement. Only overridden dayparts are shown here.
-          </p>
-        </div>
-        {!showForm && (
-          <button
-            onClick={handleAddNew}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Override
-          </button>
-        )}
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-amber-600" />
+          Placement Daypart Routines
+        </h3>
+        <p className="text-sm text-slate-600 mt-1">
+          Configure specific daypart hours for this placement. If not set, inherits from site configuration.
+        </p>
       </div>
 
-      {siteRoutines.length === 0 && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-amber-900">No Site Dayparts Configured</h4>
-              <p className="text-sm text-amber-800 mt-1">
-                The site hasn't configured any daypart routines yet. Configure them at the site level first.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showForm && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-sm text-blue-800 flex items-start gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>
-              <strong>Creating Override:</strong> This will override the site-level daypart for the selected days.
-              The site default will still apply to days not included in your override.
+              This routine will apply to the selected days for this placement.
             </span>
           </p>
         </div>
@@ -244,76 +214,50 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       {showForm && (
         <DaypartRoutineForm
           placementGroupId={placementGroupId}
-          existingRoutines={overrides}
+          existingRoutines={routines}
           onSave={handleSave}
           onCancel={handleCancel}
-          editingRoutine={editingOverride}
+          editingRoutine={editingRoutine}
         />
       )}
 
-      {overrides.length === 0 && !showForm ? (
+      {routines.length === 0 && !showForm ? (
         <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
           <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-900 mb-2">No Overrides</h3>
+          <h3 className="text-base font-semibold text-slate-900 mb-2">No Placement Routines</h3>
           <p className="text-slate-600 mb-2 text-sm">
             This placement inherits all daypart hours from the site configuration
           </p>
-          {siteRoutines.length > 0 && (
-            <div className="mt-4 text-left max-w-md mx-auto">
-              <p className="text-xs text-slate-500 mb-2 font-medium">Inherited from Site:</p>
-              <div className="space-y-2">
-                {Object.entries(
-                  siteRoutines.reduce((acc, r) => {
-                    if (!acc[r.daypart_name]) acc[r.daypart_name] = [];
-                    acc[r.daypart_name].push(r);
-                    return acc;
-                  }, {} as Record<string, SiteRoutine[]>)
-                ).map(([daypartName, routines]) => (
-                  <div key={daypartName} className="text-xs text-slate-600 bg-white rounded p-2 border border-slate-200">
-                    <span className="font-medium">{DAYPART_LABELS[daypartName]}:</span>{' '}
-                    {routines.length} routine{routines.length !== 1 ? 's' : ''}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {siteRoutines.length > 0 && (
-            <button
-              onClick={handleAddNew}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Create First Override
-            </button>
-          )}
+          <button
+            onClick={handleAddNew}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Placement Routine
+          </button>
         </div>
-      ) : overrides.length > 0 ? (
+      ) : routines.length > 0 ? (
         <div className="space-y-4">
-          {Object.entries(groupedOverrides).map(([daypartName, daypartOverrides]) => (
+          {Object.entries(groupedRoutines).map(([daypartName, daypartRoutines]) => (
             <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
               <div className={`px-4 py-3 border-b border-slate-200 ${DAYPART_COLORS[daypartName]}`}>
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    {DAYPART_LABELS[daypartName] || daypartName}
-                  </h4>
-                  <span className="text-xs font-medium px-2 py-1 bg-white rounded">
-                    Override Active
-                  </span>
-                </div>
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  {DAYPART_LABELS[daypartName] || daypartName}
+                </h4>
               </div>
               <div className="divide-y divide-slate-200">
-                {daypartOverrides.map((override) => (
-                  <div key={override.id} className="p-4 hover:bg-slate-50 transition-colors group">
+                {daypartRoutines.map((routine) => (
+                  <div key={routine.id} className="p-4 hover:bg-slate-50 transition-colors group">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-slate-900">
-                            {override.start_time} - {override.end_time}
+                            {routine.start_time} - {routine.end_time}
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {override.days_of_week.sort().map(day => {
+                          {routine.days_of_week.sort().map(day => {
                             const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
                             return (
                               <span
@@ -328,18 +272,18 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                       </div>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => handleEdit(override)}
+                          onClick={() => handleEdit(routine)}
                           className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                          title="Edit override"
+                          title="Edit routine"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(override.id!)}
+                          onClick={() => handleDelete(routine.id!)}
                           className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Remove override"
+                          title="Delete routine"
                         >
-                          <RotateCcw className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -348,6 +292,15 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
               </div>
             </div>
           ))}
+          {!showForm && (
+            <button
+              onClick={handleAddNew}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-amber-600 hover:text-amber-600 hover:bg-amber-50 transition-colors font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Add Another Routine
+            </button>
+          )}
         </div>
       ) : null}
     </div>
