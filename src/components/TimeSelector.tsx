@@ -136,7 +136,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono text-base text-left bg-white hover:bg-slate-50 transition-colors"
+        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-transparent font-mono text-base text-left bg-white hover:bg-slate-50 transition-colors"
       >
         {formatDisplayTime(value)}
       </button>
@@ -151,7 +151,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-800 rounded-2xl shadow-2xl w-80 overflow-hidden">
             {!manualMode ? (
               <>
-                <div className="bg-amber-600 p-6 text-white">
+                <div className="bg-slate-600 p-6 text-white">
                   <div className="text-6xl font-light tracking-tight flex items-baseline justify-center gap-1">
                     <button
                       onClick={() => setSelectionMode('hour')}
@@ -171,7 +171,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                     <button
                       onClick={() => togglePeriod(false)}
                       className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                        !isPM ? 'bg-white text-amber-600' : 'bg-amber-700 text-white hover:bg-amber-800'
+                        !isPM ? 'bg-white text-slate-800' : 'bg-slate-700 text-white hover:bg-slate-500'
                       }`}
                     >
                       AM
@@ -179,7 +179,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                     <button
                       onClick={() => togglePeriod(true)}
                       className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                        isPM ? 'bg-white text-amber-600' : 'bg-amber-700 text-white hover:bg-amber-800'
+                        isPM ? 'bg-white text-slate-800' : 'bg-slate-700 text-white hover:bg-slate-500'
                       }`}
                     >
                       PM
@@ -210,13 +210,14 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                             key={num}
                             className={`absolute w-10 h-10 flex items-center justify-center rounded-full text-lg transition-colors ${
                               isSelected
-                                ? 'bg-cyan-500 text-white font-semibold'
+                                ? 'text-white font-semibold'
                                 : 'text-slate-300 hover:bg-slate-600'
                             }`}
                             style={{
                               left: `${x}%`,
                               top: `${y}%`,
-                              transform: 'translate(-50%, -50%)'
+                              transform: 'translate(-50%, -50%)',
+                              backgroundColor: isSelected ? 'rgb(0, 173, 240)' : ''
                             }}
                           >
                             {selectionMode === 'minute' ? String(num).padStart(2, '0') : num}
@@ -224,17 +225,24 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                         );
                       })}
 
-                      <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-cyan-500 rounded-full -translate-x-1/2 -translate-y-1/2 z-10" />
+                      <div
+                        className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full -translate-x-1/2 -translate-y-1/2 z-10"
+                        style={{ backgroundColor: 'rgb(0, 173, 240)' }}
+                      />
 
                       <div
-                        className="absolute top-1/2 left-1/2 origin-left h-0.5 bg-cyan-500 pointer-events-none"
+                        className="absolute top-1/2 left-1/2 origin-left h-0.5 pointer-events-none"
                         style={{
                           width: '35%',
                           transform: `rotate(${getSelectedAngle()}rad)`,
-                          transformOrigin: 'left center'
+                          transformOrigin: 'left center',
+                          backgroundColor: 'rgb(0, 173, 240)'
                         }}
                       >
-                        <div className="absolute right-0 top-1/2 w-10 h-10 bg-cyan-500 rounded-full -translate-y-1/2 translate-x-1/2 border-4 border-slate-800" />
+                        <div
+                          className="absolute right-0 top-1/2 w-10 h-10 rounded-full -translate-y-1/2 translate-x-1/2 border-4 border-slate-800"
+                          style={{ backgroundColor: 'rgb(0, 173, 240)' }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -244,7 +252,6 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                   <button
                     onClick={() => {
                       setManualMode(true);
-                      setManualInput(value);
                     }}
                     className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
                   >
@@ -253,13 +260,15 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                   <div className="flex gap-2">
                     <button
                       onClick={() => setIsOpen(false)}
-                      className="px-6 py-2 text-cyan-400 hover:bg-slate-700 rounded-lg transition-colors font-medium"
+                      className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium"
+                      style={{ color: 'rgb(0, 173, 240)' }}
                     >
                       CANCEL
                     </button>
                     <button
                       onClick={handleOK}
-                      className="px-6 py-2 text-cyan-400 hover:bg-slate-700 rounded-lg transition-colors font-medium"
+                      className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium"
+                      style={{ color: 'rgb(0, 173, 240)' }}
                     >
                       OK
                     </button>
@@ -286,7 +295,18 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                           }
                         }}
                         placeholder="1"
-                        className="w-full px-4 py-3 bg-slate-600 text-white text-4xl font-light text-center rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none border-b-2 border-transparent focus:border-cyan-500"
+                        className="w-full px-4 py-3 bg-slate-600 text-white text-4xl font-light text-center rounded-lg focus:ring-2 focus:outline-none border-b-2 border-transparent"
+                        style={{
+                          boxShadow: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderBottomColor = 'rgb(0, 173, 240)';
+                          e.target.style.boxShadow = '0 0 0 2px rgb(0, 173, 240)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderBottomColor = 'transparent';
+                          e.target.style.boxShadow = 'none';
+                        }}
                         maxLength={2}
                         autoFocus
                       />
@@ -319,9 +339,16 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                           if (e.target.value && e.target.value.length === 1) {
                             setManualMinute(e.target.value.padStart(2, '0'));
                           }
+                          e.target.style.boxShadow = 'none';
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.boxShadow = '0 0 0 2px rgb(0, 173, 240)';
                         }}
                         placeholder="00"
-                        className="w-full px-4 py-3 bg-slate-600 text-white text-4xl font-light text-center rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        className="w-full px-4 py-3 bg-slate-600 text-white text-4xl font-light text-center rounded-lg focus:ring-2 focus:outline-none"
+                        style={{
+                          boxShadow: 'none'
+                        }}
                         maxLength={2}
                       />
                       <div className="text-xs text-slate-400 text-center mt-1">minute</div>
@@ -331,7 +358,16 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                       <select
                         value={manualPeriod}
                         onChange={(e) => setManualPeriod(e.target.value as 'AM' | 'PM')}
-                        className="w-full px-2 py-3 pr-8 bg-slate-600 text-white text-2xl font-light text-center rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none appearance-none cursor-pointer"
+                        className="w-full px-2 py-3 pr-8 bg-slate-600 text-white text-2xl font-light text-center rounded-lg focus:ring-2 focus:outline-none appearance-none cursor-pointer"
+                        style={{
+                          boxShadow: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.boxShadow = '0 0 0 2px rgb(0, 173, 240)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.boxShadow = 'none';
+                        }}
                       >
                         <option value="AM">AM</option>
                         <option value="PM">PM</option>
@@ -351,13 +387,15 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                   <div className="flex gap-2">
                     <button
                       onClick={() => setIsOpen(false)}
-                      className="px-6 py-2 text-cyan-400 hover:bg-slate-700 rounded-lg transition-colors font-medium"
+                      className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium"
+                      style={{ color: 'rgb(0, 173, 240)' }}
                     >
                       CANCEL
                     </button>
                     <button
                       onClick={handleManualSubmit}
-                      className="px-6 py-2 text-cyan-400 hover:bg-slate-700 rounded-lg transition-colors font-medium disabled:opacity-50"
+                      className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium disabled:opacity-50"
+                      style={{ color: !manualHour || !manualMinute ? '' : 'rgb(0, 173, 240)' }}
                       disabled={!manualHour || !manualMinute}
                     >
                       OK
