@@ -115,7 +115,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
     setLoading(false);
   };
 
-  const handleStartEdit = (routine: PlacementRoutine) => {
+  const handleStartEdit = (routine: PlacementRoutine, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setEditingRoutineId(routine.id!);
     setNewRoutine({
       placement_id: routine.placement_id,
@@ -476,7 +480,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                         </div>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleStartEdit(routine)}
+                            onClick={(e) => handleStartEdit(routine, e)}
                             disabled={showAddForm && editingRoutineId !== routine.id}
                             className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Edit routine"
