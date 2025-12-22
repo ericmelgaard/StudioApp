@@ -114,9 +114,7 @@ export default function DaypartRoutineForm({
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     if (!formData.daypart_name) {
       setError('Please select a daypart type');
       return;
@@ -160,7 +158,7 @@ export default function DaypartRoutineForm({
         </h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+      <div className="p-4 space-y-4">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -256,7 +254,8 @@ export default function DaypartRoutineForm({
 
         <div className="flex gap-2 pt-2">
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             disabled={saving || !!error || !formData.daypart_name || formData.days_of_week.length === 0}
             className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
@@ -270,7 +269,7 @@ export default function DaypartRoutineForm({
             Cancel
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
