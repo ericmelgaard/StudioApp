@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
 import ScheduleGroupForm from './ScheduleGroupForm';
@@ -16,6 +16,7 @@ interface DaypartDefinition {
   concept_id: number | null;
   source_level: 'store' | 'concept' | 'global';
   is_customized: boolean;
+  in_use?: boolean;
 }
 
 interface DaypartSchedule extends Schedule {
@@ -46,6 +47,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [editingSchedule, setEditingSchedule] = useState<DaypartSchedule | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showUnused, setShowUnused] = useState(false);
+  const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -71,6 +74,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
       const defs = defsResult.data || [];
       setDefinitions(defs);
+
+      const initialInUseStatus: Record<string, boolean> = {};
+      defs.forEach((def, index) => {
+        initialInUseStatus[def.id] = index < 3;
+      });
+      setInUseStatus(initialInUseStatus);
 
       if (defs.length > 0) {
         const defIds = defs.map(d => d.id);
@@ -266,6 +275,17 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     }
   };
 
+  const toggleInUseStatus = (defId: string) => {
+    setInUseStatus(prev => ({
+      ...prev,
+      [defId]: !prev[defId]
+    }));
+  };
+
+  const filteredDefinitions = definitions.filter(def =>
+    showUnused || inUseStatus[def.id]
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -276,9 +296,27 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
-        <Clock className="w-5 h-5 text-blue-600" />
-        <h3 className="text-lg font-semibold text-slate-900">Daypart Schedules</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-slate-900">Daypart Schedules</h3>
+        </div>
+        <button
+          onClick={() => setShowUnused(!showUnused)}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors"
+        >
+          {showUnused ? (
+            <>
+              <Eye className="w-4 h-4" />
+              <span>Showing All</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="w-4 h-4" />
+              <span>Showing In-Use Only</span>
+            </>
+          )}
+        </button>
       </div>
 
       {error && (
@@ -296,15 +334,18 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       )}
 
       <div className="space-y-4 mb-6">
-        {definitions.map((definition) => {
+        {filteredDefinitions.map((definition) => {
           const defSchedules = schedules
             .filter(s => s.daypart_definition_id === definition.id)
             .map(s => ({ ...s, daypart_name: definition.daypart_name }));
+          const isInUse = inUseStatus[definition.id];
 
           return (
             <div
               key={definition.id}
-              className="bg-white rounded-lg border border-slate-200 overflow-hidden"
+              className={`bg-white rounded-lg border overflow-hidden transition-opacity ${
+                isInUse ? 'border-slate-200' : 'border-slate-300 opacity-60'
+              }`}
             >
               <div className={`px-4 py-3 ${definition.color}`}>
                 <div className="flex items-center justify-between">
@@ -326,6 +367,17 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         ? 'Concept'
                         : 'Global'}
                     </span>
+                    <button
+                      onClick={() => toggleInUseStatus(definition.id)}
+                      className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
+                        isInUse
+                          ? 'bg-green-600/20 text-green-900 hover:bg-green-600/30'
+                          : 'bg-slate-600/20 text-slate-900 hover:bg-slate-600/30'
+                      }`}
+                      title={isInUse ? 'Mark as not in use' : 'Mark as in use'}
+                    >
+                      {isInUse ? 'In Use' : 'Not In Use'}
+                    </button>
                   </div>
                   <div className="flex items-center gap-1">
                     {definition.is_customized && (
@@ -470,6 +522,19 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           <div className="text-center py-8 text-slate-500">
             <Clock className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm">No daypart schedules yet.</p>
+          </div>
+        )}
+
+        {definitions.length > 0 && filteredDefinitions.length === 0 && (
+          <div className="text-center py-8 text-slate-500">
+            <EyeOff className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+            <p className="text-sm mb-2">All dayparts are marked as not in use.</p>
+            <button
+              onClick={() => setShowUnused(true)}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Show all dayparts
+            </button>
           </div>
         )}
 
