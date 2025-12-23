@@ -229,7 +229,10 @@ export default function DaypartRoutineForm({
         recurrence_config: template.recurrence_config || {}
       };
 
-      if (template.suggested_hours) {
+      if (template.is_closed) {
+        updates.start_time = '00:00';
+        updates.end_time = '00:00';
+      } else if (template.suggested_hours) {
         updates.start_time = template.suggested_hours.start_time;
         updates.end_time = template.suggested_hours.end_time;
       }

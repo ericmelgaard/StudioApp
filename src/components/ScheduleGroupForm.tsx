@@ -72,7 +72,10 @@ export default function ScheduleGroupForm({
       setEventName(template.name);
       setRecurrenceType(template.recurrence_type);
       setRecurrenceConfig(template.recurrence_config);
-      if (template.suggested_hours) {
+      if (template.is_closed) {
+        handleTimeChange('start_time', '00:00');
+        handleTimeChange('end_time', '00:00');
+      } else if (template.suggested_hours) {
         handleTimeChange('start_time', template.suggested_hours.start_time);
         handleTimeChange('end_time', template.suggested_hours.end_time);
       }
