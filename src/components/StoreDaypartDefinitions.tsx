@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
-import ScheduleGroupCard from './ScheduleGroupCard';
 import ScheduleGroupForm from './ScheduleGroupForm';
 import { Schedule } from '../hooks/useScheduleCollisionDetection';
 
@@ -40,7 +39,6 @@ interface StoreDaypartDefinitionsProps {
 export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinitionsProps) {
   const [definitions, setDefinitions] = useState<DaypartDefinition[]>([]);
   const [schedules, setSchedules] = useState<DaypartSchedule[]>([]);
-  const [expandedDefinitions, setExpandedDefinitions] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [showDefinitionForm, setShowDefinitionForm] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<DaypartDefinition | null>(null);
@@ -83,16 +81,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleExpanded = (defId: string) => {
-    const newExpanded = new Set(expandedDefinitions);
-    if (newExpanded.has(defId)) {
-      newExpanded.delete(defId);
-    } else {
-      newExpanded.add(defId);
-    }
-    setExpandedDefinitions(newExpanded);
   };
 
   const handleAddDefinition = () => {
@@ -160,7 +148,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         setSuccess('Daypart definition created successfully');
 
         if (newDef) {
-          setExpandedDefinitions(new Set([newDef.id]));
           setAddingScheduleForDef(newDef.id);
         }
       }
@@ -207,7 +194,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const handleAddSchedule = (defId: string) => {
     setAddingScheduleForDef(defId);
     setEditingSchedule(null);
-    setExpandedDefinitions(new Set([...expandedDefinitions, defId]));
   };
 
   const handleEditSchedule = (schedule: DaypartSchedule) => {
@@ -312,7 +298,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       <div className="space-y-4 mb-6">
         {definitions.map((definition) => {
           const defSchedules = schedules.filter(s => s.daypart_definition_id === definition.id);
-          const isExpanded = expandedDefinitions.has(definition.id);
 
           return (
             <div
@@ -368,32 +353,24 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         <Plus className="w-4 h-4" />
                       </button>
                     )}
-                    <button
-                      onClick={() => toggleExpanded(definition.id)}
-                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                    >
-                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
                   </div>
                 </div>
               </div>
 
-              {isExpanded && (
-                <>
-                  {defSchedules.length === 0 && !addingScheduleForDef ? (
-                    <div className="p-6 text-center">
-                      <p className="text-slate-600 text-sm mb-4">
-                        No schedules yet. Add a schedule to define when this daypart is active.
-                      </p>
-                      <button
-                        onClick={() => handleAddSchedule(definition.id)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Schedule
-                      </button>
-                    </div>
-                  ) : (
+              {defSchedules.length === 0 && !addingScheduleForDef ? (
+                <div className="p-6 text-center">
+                  <p className="text-slate-600 text-sm mb-4">
+                    No schedules yet. Add a schedule to define when this daypart is active.
+                  </p>
+                  <button
+                    onClick={() => handleAddSchedule(definition.id)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Schedule
+                  </button>
+                </div>
+              ) : (
                     <div className="divide-y divide-slate-200">
                       {defSchedules.map((schedule) => (
                         <div key={schedule.id}>
@@ -480,8 +457,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         </div>
                       )}
                     </div>
-                  )}
-                </>
               )}
             </div>
           );
