@@ -1,5 +1,5 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { ArrowLeft, Save, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe, X } from 'lucide-react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
+import { ArrowLeft, Save, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe, X, Info, Copy, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import SiteDaypartManager from '../components/SiteDaypartManager';
 import PlacementDaypartOverrides from '../components/PlacementDaypartOverrides';
@@ -54,10 +54,42 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
   const [operatingHours, setOperatingHours] = useState<Record<string, { open: string; close: string }>>({});
   const [newMealStation, setNewMealStation] = useState('');
   const [isStoreRoot, setIsStoreRoot] = useState(false);
+  const [activeSection, setActiveSection] = useState('basic-info');
+  const [idCopied, setIdCopied] = useState(false);
+
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     loadData();
   }, [placementId, storeId]);
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px',
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    Object.values(sectionRefs.current).forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      Object.values(sectionRefs.current).forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, [isStoreRoot, placementId]);
 
   const loadData = async () => {
     setLoading(true);
@@ -170,6 +202,61 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
     }));
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const element = sectionRefs.current[sectionId];
+    if (element) {
+      const offset = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const copyIdToClipboard = async () => {
+    if (placementId) {
+      try {
+        await navigator.clipboard.writeText(placementId);
+        setIdCopied(true);
+        setTimeout(() => setIdCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
+
+  const getSections = () => {
+    const sections = [
+      { id: 'basic-info', label: 'Basic Information', icon: Info },
+    ];
+
+    if (isStoreRoot) {
+      sections.push(
+        { id: 'store-location', label: 'Store Location', icon: MapPin },
+        { id: 'operating-hours', label: 'Operating Hours', icon: Clock }
+      );
+    }
+
+    if (isStoreRoot && placementId) {
+      sections.push({ id: 'daypart-config', label: 'Daypart Configuration', icon: Clock });
+    }
+
+    if (!isStoreRoot && placementId) {
+      sections.push({ id: 'daypart-overrides', label: 'Daypart Overrides', icon: Clock });
+    }
+
+    sections.push(
+      { id: 'meal-stations', label: 'Meal Stations', icon: Utensils },
+      { id: 'device-templates', label: 'Device Templates', icon: Palette },
+      { id: 'nfc-settings', label: 'NFC Settings', icon: Nfc }
+    );
+
+    return sections;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -180,27 +267,50 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Site Configuration
           </button>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            {placementId
-              ? (isStoreRoot ? 'Edit Store Configuration' : 'Edit Placement')
-              : 'Create Placement'}
-          </h1>
-          <p className="text-slate-600">
-            {isStoreRoot
-              ? 'Update store details, operating hours, and configuration'
-              : placementId
-                ? 'Update placement information and configuration'
-                : 'Create a new placement for your store'}
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                {placementId
+                  ? (isStoreRoot ? 'Edit Store Configuration' : 'Edit Placement')
+                  : 'Create Placement'}
+              </h1>
+              <p className="text-slate-600">
+                {isStoreRoot
+                  ? 'Update store details, operating hours, and configuration'
+                  : placementId
+                    ? 'Update placement information and configuration'
+                    : 'Create a new placement for your store'}
+              </p>
+            </div>
+            {placementId && (
+              <button
+                onClick={copyIdToClipboard}
+                className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-mono border border-slate-300"
+                title="Click to copy ID"
+              >
+                {idCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>ID: {placementId.slice(0, 8)}...</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -210,9 +320,44 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white rounded-lg border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h2>
+        <div className="flex gap-8">
+          {/* Sidebar Navigation */}
+          <aside className="w-64 flex-shrink-0">
+            <div className="sticky top-8 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wide">
+                Sections
+              </h3>
+              <nav className="space-y-1">
+                {getSections().map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => scrollToSection(section.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeSection === section.id
+                          ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px pl-2.5'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-left">{section.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <form onSubmit={handleSubmit} className="flex-1 space-y-8">
+            <div
+              id="basic-info"
+              ref={(el) => (sectionRefs.current['basic-info'] = el)}
+              className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+            >
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h2>
 
             <div className="space-y-4">
               <div>
@@ -264,13 +409,17 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
             </div>
           </div>
 
-          {isStoreRoot && (
-            <>
-              <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-slate-900">Store Location</h3>
-                </div>
+            {isStoreRoot && (
+              <>
+                <div
+                  id="store-location"
+                  ref={(el) => (sectionRefs.current['store-location'] = el)}
+                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-slate-900">Store Location</h3>
+                  </div>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -321,11 +470,15 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-slate-900">Operating Hours</h3>
-                </div>
+                <div
+                  id="operating-hours"
+                  ref={(el) => (sectionRefs.current['operating-hours'] = el)}
+                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-slate-900">Operating Hours</h3>
+                  </div>
                 <div className="space-y-4">
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
                     <div key={day}>
@@ -355,23 +508,35 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
             </>
           )}
 
-          {isStoreRoot && placementId && (
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <SiteDaypartManager placementGroupId={placementId} />
-            </div>
-          )}
+            {isStoreRoot && placementId && (
+              <div
+                id="daypart-config"
+                ref={(el) => (sectionRefs.current['daypart-config'] = el)}
+                className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+              >
+                <SiteDaypartManager placementGroupId={placementId} />
+              </div>
+            )}
 
-          {!isStoreRoot && placementId && (
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <PlacementDaypartOverrides placementGroupId={placementId} />
-            </div>
-          )}
+            {!isStoreRoot && placementId && (
+              <div
+                id="daypart-overrides"
+                ref={(el) => (sectionRefs.current['daypart-overrides'] = el)}
+                className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+              >
+                <PlacementDaypartOverrides placementGroupId={placementId} />
+              </div>
+            )}
 
-          <div className="bg-white rounded-lg border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Utensils className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-slate-900">Meal Stations</h3>
-            </div>
+            <div
+              id="meal-stations"
+              ref={(el) => (sectionRefs.current['meal-stations'] = el)}
+              className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Utensils className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-slate-900">Meal Stations</h3>
+              </div>
             <div className="flex gap-2 mb-3">
               <input
                 type="text"
@@ -410,11 +575,15 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
             )}
           </div>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Palette className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-slate-900">Templates by Device Size</h3>
-            </div>
+            <div
+              id="device-templates"
+              ref={(el) => (sectionRefs.current['device-templates'] = el)}
+              className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Palette className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-slate-900">Templates by Device Size</h3>
+              </div>
             <p className="text-sm text-slate-600 mb-4">
               Assign templates for different device sizes.
             </p>
@@ -436,11 +605,15 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Nfc className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-slate-900">NFC URL</h3>
-            </div>
+            <div
+              id="nfc-settings"
+              ref={(el) => (sectionRefs.current['nfc-settings'] = el)}
+              className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Nfc className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-slate-900">NFC URL</h3>
+              </div>
             <input
               type="url"
               value={formData.nfc_url}
@@ -450,33 +623,36 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
             />
           </div>
 
-          <div className="flex gap-3 bg-white rounded-lg border border-slate-200 p-6">
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  {placementId ? 'Update Placement' : 'Create Placement'}
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            <div className="sticky bottom-0 bg-white rounded-lg border border-slate-200 p-6 shadow-lg">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 font-medium"
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      {placementId ? 'Update Placement' : 'Create Placement'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
