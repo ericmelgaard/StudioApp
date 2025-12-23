@@ -267,18 +267,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-slate-900">Daypart Definitions</h3>
-        </div>
-        <button
-          onClick={handleAddDefinition}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Definition
-        </button>
+      <div className="flex items-center gap-2 mb-4">
+        <Clock className="w-5 h-5 text-blue-600" />
+        <h3 className="text-lg font-semibold text-slate-900">Daypart Schedules</h3>
       </div>
 
       {error && (
@@ -465,9 +456,17 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         {definitions.length === 0 && (
           <div className="text-center py-8 text-slate-500">
             <Clock className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm">No daypart definitions yet.</p>
+            <p className="text-sm">No daypart schedules yet.</p>
           </div>
         )}
+
+        <button
+          onClick={handleAddDefinition}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+        >
+          <Plus className="w-4 h-4" />
+          Add Daypart
+        </button>
       </div>
 
       {showDefinitionForm && (
