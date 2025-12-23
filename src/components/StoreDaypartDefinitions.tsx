@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
 import ScheduleGroupForm from './ScheduleGroupForm';
@@ -49,6 +49,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [success, setSuccess] = useState<string | null>(null);
   const [showUnused, setShowUnused] = useState(false);
   const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -282,6 +283,13 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     }));
   };
 
+  const toggleEventsExpanded = (defId: string) => {
+    setExpandedEvents(prev => ({
+      ...prev,
+      [defId]: !prev[defId]
+    }));
+  };
+
   const filteredDefinitions = definitions.filter(def =>
     showUnused || inUseStatus[def.id]
   );
@@ -339,7 +347,11 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           const defSchedules = schedules
             .filter(s => s.daypart_definition_id === definition.id)
             .map(s => ({ ...s, daypart_name: definition.daypart_name }));
+          const regularSchedules = defSchedules.filter(s => s.schedule_type !== 'event_holiday');
+          const eventSchedules = defSchedules.filter(s => s.schedule_type === 'event_holiday');
           const isInUse = inUseStatus[definition.id];
+          const hasEvents = eventSchedules.length > 0;
+          const eventsExpanded = expandedEvents[definition.id];
 
           return (
             <div
@@ -368,6 +380,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         ? 'Concept'
                         : 'Global'}
                     </span>
+                    {hasEvents && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900 font-medium">
+                        <Calendar className="w-3 h-3" />
+                        {eventSchedules.length} {eventSchedules.length === 1 ? 'Event' : 'Events'}
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() => toggleInUseStatus(definition.id)}
@@ -402,7 +420,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         </button>
                       </>
                     )}
-                    {defSchedules.length > 0 && !addingScheduleForDef && !editingSchedule && (
+                    {regularSchedules.length > 0 && !addingScheduleForDef && !editingSchedule && (
                       <button
                         type="button"
                         onClick={() => handleAddSchedule(definition.id)}
@@ -416,7 +434,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 </div>
               </div>
 
-              {defSchedules.length === 0 && !addingScheduleForDef ? (
+              {regularSchedules.length === 0 && !addingScheduleForDef && !hasEvents ? (
                 <div className="p-6 text-center">
                   <p className="text-slate-600 text-sm mb-4">
                     No schedules yet. Add a schedule to define when this daypart is active.
@@ -432,7 +450,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 </div>
               ) : (
                     <div className="divide-y divide-slate-200">
-                      {defSchedules.map((schedule) => (
+                      {regularSchedules.map((schedule) => (
                         <div key={schedule.id}>
                           {editingSchedule?.id === schedule.id ? (
                             <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
@@ -518,6 +536,100 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                               level="site"
                             />
                           </div>
+                        </div>
+                      )}
+
+                      {hasEvents && (
+                        <div className="border-t-2 border-violet-200">
+                          <button
+                            type="button"
+                            onClick={() => toggleEventsExpanded(definition.id)}
+                            className="w-full px-4 py-3 bg-violet-50 hover:bg-violet-100 transition-colors flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-violet-600" />
+                              <span className="font-medium text-violet-900">
+                                Event & Holiday Schedules
+                              </span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900">
+                                {eventSchedules.length}
+                              </span>
+                            </div>
+                            {eventsExpanded ? (
+                              <ChevronDown className="w-5 h-5 text-violet-600" />
+                            ) : (
+                              <ChevronRight className="w-5 h-5 text-violet-600" />
+                            )}
+                          </button>
+
+                          {eventsExpanded && (
+                            <div className="divide-y divide-violet-100 bg-violet-50/30">
+                              {eventSchedules.map((schedule) => (
+                                <div key={schedule.id}>
+                                  {editingSchedule?.id === schedule.id ? (
+                                    <div className="px-4 pb-4 bg-violet-50 border-t border-violet-200">
+                                      <div className="pt-4">
+                                        <ScheduleGroupForm
+                                          schedule={editingSchedule}
+                                          allSchedules={defSchedules}
+                                          onUpdate={setEditingSchedule}
+                                          onSave={() => handleSaveSchedule(editingSchedule)}
+                                          onCancel={() => setEditingSchedule(null)}
+                                          level="site"
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="p-4 hover:bg-violet-100/50 transition-colors group">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-3 mb-2">
+                                            <span className="font-medium text-violet-900">
+                                              {schedule.event_name}
+                                            </span>
+                                            <span className="text-sm text-violet-700">
+                                              {schedule.start_time} - {schedule.end_time}
+                                            </span>
+                                          </div>
+                                          {schedule.recurrence_type && schedule.recurrence_type !== 'none' && (
+                                            <div className="text-xs text-violet-600 mb-1">
+                                              {schedule.recurrence_type === 'annual_date' && 'Recurs annually'}
+                                              {schedule.recurrence_type === 'monthly_date' && 'Recurs monthly'}
+                                              {schedule.recurrence_type === 'annual_relative' && 'Recurs annually (relative)'}
+                                              {schedule.recurrence_type === 'annual_date_range' && 'Annual date range'}
+                                            </div>
+                                          )}
+                                          {schedule.event_date && (
+                                            <div className="text-xs text-violet-600">
+                                              Date: {new Date(schedule.event_date).toLocaleDateString()}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleEditSchedule(schedule)}
+                                            className="p-2 text-violet-600 hover:text-violet-700 hover:bg-violet-200/50 rounded-lg transition-colors"
+                                            title="Edit schedule"
+                                          >
+                                            <Edit2 className="w-4 h-4" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteSchedule(schedule.id!)}
+                                            className="p-2 text-violet-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Delete schedule"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
