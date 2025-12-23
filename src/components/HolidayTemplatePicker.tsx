@@ -25,16 +25,13 @@ export default function HolidayTemplatePicker({
     : HOLIDAY_TEMPLATES.filter(t => t.category === selectedCategory);
 
   const toggleTemplate = (templateId: string) => {
-    if (!allowMultiple) {
-      const templates = HOLIDAY_TEMPLATES.filter(t => t.id === templateId);
-      onSelect(templates);
-      return;
-    }
-
     const newSelected = new Set(selectedTemplates);
     if (newSelected.has(templateId)) {
       newSelected.delete(templateId);
     } else {
+      if (!allowMultiple) {
+        newSelected.clear();
+      }
       newSelected.add(templateId);
     }
     setSelectedTemplates(newSelected);
@@ -43,6 +40,7 @@ export default function HolidayTemplatePicker({
   const handleApply = () => {
     const templates = HOLIDAY_TEMPLATES.filter(t => selectedTemplates.has(t.id));
     onSelect(templates);
+    onClose();
   };
 
   const federalCount = HOLIDAY_TEMPLATES.filter(t => t.category === 'federal').length;
