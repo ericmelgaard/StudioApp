@@ -80,7 +80,6 @@ export default function ScheduleGroupForm({
         handleTimeChange('end_time', template.suggested_hours.end_time);
       }
     }
-    setShowTemplatePicker(false);
   };
 
   const handleRecurrenceConfigChange = (field: string, value: any) => {
