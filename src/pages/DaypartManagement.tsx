@@ -10,6 +10,7 @@ interface DaypartDefinition {
   id: string;
   daypart_name: string;
   display_label: string;
+  description: string;
   color: string;
   icon: string;
   sort_order: number;
@@ -35,7 +36,8 @@ export default function DaypartManagement() {
   const [formData, setFormData] = useState({
     daypart_name: '',
     display_label: '',
-    color: '#3b82f6',
+    description: '',
+    color: 'bg-blue-100 text-blue-800 border-blue-300',
     icon: 'Clock',
     sort_order: 0,
   });
@@ -86,7 +88,8 @@ export default function DaypartManagement() {
     setFormData({
       daypart_name: '',
       display_label: '',
-      color: '#3b82f6',
+      description: '',
+      color: 'bg-blue-100 text-blue-800 border-blue-300',
       icon: 'Clock',
       sort_order: definitions.length * 10,
     });
@@ -98,6 +101,7 @@ export default function DaypartManagement() {
     setFormData({
       daypart_name: definition.daypart_name,
       display_label: definition.display_label,
+      description: definition.description || '',
       color: definition.color,
       icon: definition.icon,
       sort_order: definition.sort_order,
@@ -117,6 +121,7 @@ export default function DaypartManagement() {
           .from('daypart_definitions')
           .update({
             display_label: formData.display_label,
+            description: formData.description,
             color: formData.color,
             icon: formData.icon,
             sort_order: formData.sort_order,
@@ -132,6 +137,7 @@ export default function DaypartManagement() {
           .insert([{
             daypart_name: formData.daypart_name,
             display_label: formData.display_label,
+            description: formData.description,
             color: formData.color,
             icon: formData.icon,
             sort_order: formData.sort_order,
@@ -307,8 +313,7 @@ export default function DaypartManagement() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1">
                     <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-                      style={{ backgroundColor: definition.color }}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${definition.color}`}
                     >
                       <Clock className="w-5 h-5" />
                     </div>
@@ -319,7 +324,10 @@ export default function DaypartManagement() {
                           Global
                         </span>
                       </div>
-                      <div className="text-sm text-slate-600">
+                      {definition.description && (
+                        <p className="text-sm text-slate-600 mb-1">{definition.description}</p>
+                      )}
+                      <div className="text-xs text-slate-500">
                         {defSchedules.length} {defSchedules.length === 1 ? 'schedule' : 'schedules'}
                       </div>
                     </div>
@@ -375,7 +383,7 @@ export default function DaypartManagement() {
                           <ScheduleGroupForm
                             key={schedule.id}
                             schedule={editingSchedule}
-                            allSchedules={defSchedules}
+                            allSchedules={schedules}
                             onUpdate={setEditingSchedule}
                             onSave={() => handleSaveSchedule(editingSchedule)}
                             onCancel={() => setEditingSchedule(null)}
@@ -400,7 +408,7 @@ export default function DaypartManagement() {
                             start_time: '06:00',
                             end_time: '11:00',
                           }}
-                          allSchedules={defSchedules}
+                          allSchedules={schedules}
                           onUpdate={() => {}}
                           onSave={() => handleSaveSchedule({
                             daypart_name: definition.daypart_name,
@@ -499,17 +507,46 @@ export default function DaypartManagement() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., Morning meal service period"
+                  rows={2}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Color
+                    Color Theme
                   </label>
-                  <input
-                    type="color"
+                  <select
                     value={formData.color}
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    className="w-full h-10 px-1 py-1 border border-slate-300 rounded-lg cursor-pointer"
-                  />
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="bg-amber-100 text-amber-800 border-amber-300">Amber (Breakfast)</option>
+                    <option value="bg-green-100 text-green-800 border-green-300">Green (Lunch)</option>
+                    <option value="bg-blue-100 text-blue-800 border-blue-300">Blue (Dinner)</option>
+                    <option value="bg-violet-100 text-violet-800 border-violet-300">Violet (Late Night)</option>
+                    <option value="bg-slate-100 text-slate-800 border-slate-300">Slate (Dark Hours)</option>
+                    <option value="bg-rose-100 text-rose-800 border-rose-300">Rose</option>
+                    <option value="bg-orange-100 text-orange-800 border-orange-300">Orange</option>
+                    <option value="bg-emerald-100 text-emerald-800 border-emerald-300">Emerald</option>
+                    <option value="bg-teal-100 text-teal-800 border-teal-300">Teal</option>
+                    <option value="bg-cyan-100 text-cyan-800 border-cyan-300">Cyan</option>
+                    <option value="bg-indigo-100 text-indigo-800 border-indigo-300">Indigo</option>
+                    <option value="bg-purple-100 text-purple-800 border-purple-300">Purple</option>
+                    <option value="bg-pink-100 text-pink-800 border-pink-300">Pink</option>
+                  </select>
+                  <div className={`mt-2 px-3 py-2 rounded-lg text-sm ${formData.color}`}>
+                    Preview
+                  </div>
                 </div>
 
                 <div>

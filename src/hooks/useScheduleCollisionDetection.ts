@@ -74,3 +74,24 @@ export function getDayCollisionStatus(
     return schedule.daypart_name === currentDaypartName && schedule.days_of_week.includes(day);
   });
 }
+
+export function getDayUsageInfo(
+  schedules: Schedule[],
+  currentDaypartName: string,
+  day: number,
+  editingScheduleId?: string
+): { usedBySameDaypart: boolean; usedByOtherDayparts: string[] } {
+  const sameDaypart = schedules
+    .filter(s => s.id !== editingScheduleId && s.daypart_name === currentDaypartName && s.days_of_week.includes(day))
+    .length > 0;
+
+  const otherDayparts = schedules
+    .filter(s => s.id !== editingScheduleId && s.daypart_name !== currentDaypartName && s.days_of_week.includes(day))
+    .map(s => s.daypart_name)
+    .filter((name, index, self) => self.indexOf(name) === index);
+
+  return {
+    usedBySameDaypart: sameDaypart,
+    usedByOtherDayparts: otherDayparts
+  };
+}

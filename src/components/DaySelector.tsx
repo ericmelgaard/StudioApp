@@ -1,4 +1,4 @@
-import { getDayCollisionStatus, Schedule } from '../hooks/useScheduleCollisionDetection';
+import { getDayCollisionStatus, getDayUsageInfo, Schedule } from '../hooks/useScheduleCollisionDetection';
 
 interface DaySelectorProps {
   selectedDays: number[];
@@ -92,8 +92,15 @@ export default function DaySelector({
       )}
 
       {schedules.length > 0 && currentDaypartName && (
-        <div className="text-xs text-slate-500 mb-3">
-          Red border indicates day already scheduled for this daypart
+        <div className="text-xs text-slate-500 mb-3 space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border-2 border-red-400"></div>
+            <span>Already scheduled in this daypart</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border-2 border-amber-400"></div>
+            <span>Used by other daypart(s)</span>
+          </div>
         </div>
       )}
 
@@ -104,6 +111,15 @@ export default function DaySelector({
             ? getDayCollisionStatus(schedules, currentDaypartName, day.value, selectedDays, editingScheduleId)
             : false;
 
+          const usageInfo = schedules.length > 0 && currentDaypartName
+            ? getDayUsageInfo(schedules, currentDaypartName, day.value, editingScheduleId)
+            : { usedBySameDaypart: false, usedByOtherDayparts: [] };
+
+          const hasOtherDaypartUsage = usageInfo.usedByOtherDayparts.length > 0;
+          const otherDaypartsText = hasOtherDaypartUsage
+            ? `Also used by: ${usageInfo.usedByOtherDayparts.join(', ')}`
+            : '';
+
           return (
             <button
               key={day.value}
@@ -113,10 +129,14 @@ export default function DaySelector({
                 isSelected
                   ? 'bg-slate-800 text-white shadow-md'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              } ${hasCollision && !isSelected ? 'ring-2 ring-red-400' : ''}`}
-              title={hasCollision && !isSelected
-                ? `${day.label} already scheduled for ${currentDaypartName}`
-                : day.label}
+              } ${hasCollision && !isSelected ? 'ring-2 ring-red-400' : ''} ${hasOtherDaypartUsage && !isSelected && !hasCollision ? 'ring-2 ring-amber-400' : ''}`}
+              title={
+                hasCollision && !isSelected
+                  ? `${day.label} already scheduled for ${currentDaypartName}`
+                  : hasOtherDaypartUsage
+                  ? `${day.label} - ${otherDaypartsText}`
+                  : day.label
+              }
             >
               <div className="text-xs">{day.short}</div>
             </button>
