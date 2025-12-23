@@ -1,7 +1,8 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { ArrowLeft, Save, AlertCircle, MapPin, Clock, Info, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, MapPin, Clock, Info, Copy, Check, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import StoreDaypartDefinitions from '../components/StoreDaypartDefinitions';
+import StoreOperationHours from '../components/StoreOperationHours';
 
 interface StoreData {
   id?: number;
@@ -235,6 +236,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     ];
 
     if (storeId) {
+      sections.push({ id: 'operation-hours', label: 'Operation Hours', icon: Calendar });
       sections.push({ id: 'daypart-definitions', label: 'Daypart Definitions', icon: Clock });
     }
 
@@ -310,7 +312,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
                 </h1>
                 <p className="text-slate-600">
                   {storeId
-                    ? 'Update store details and daypart definitions'
+                    ? 'Update store details, operation hours, and daypart definitions'
                     : 'Create a new store location'}
                 </p>
               </div>
@@ -506,13 +508,23 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
               </div>
 
               {storeId && (
-                <div
-                  id="daypart-definitions"
-                  ref={(el) => (sectionRefs.current['daypart-definitions'] = el)}
-                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
-                >
-                  <StoreDaypartDefinitions storeId={storeId} />
-                </div>
+                <>
+                  <div
+                    id="operation-hours"
+                    ref={(el) => (sectionRefs.current['operation-hours'] = el)}
+                    className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+                  >
+                    <StoreOperationHours storeId={storeId} />
+                  </div>
+
+                  <div
+                    id="daypart-definitions"
+                    ref={(el) => (sectionRefs.current['daypart-definitions'] = el)}
+                    className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+                  >
+                    <StoreDaypartDefinitions storeId={storeId} />
+                  </div>
+                </>
               )}
 
               {isDirty && (
