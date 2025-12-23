@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Save, AlertCircle, X, Check } from 'lucide-react';
+import { Calendar, Plus, Edit2, Trash2, AlertCircle, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ScheduleGroupForm from './ScheduleGroupForm';
+import { Schedule } from '../hooks/useScheduleCollisionDetection';
 
-interface OperationHour {
-  id: string;
+interface OperationSchedule extends Schedule {
+  id?: string;
   store_id: number;
-  day_of_week: number;
-  open_time: string | null;
-  close_time: string | null;
+  schedule_name?: string;
   is_closed: boolean;
 }
 
@@ -26,45 +26,51 @@ const DAYS_OF_WEEK = [
 ];
 
 export default function StoreOperationHours({ storeId }: StoreOperationHoursProps) {
-  const [hours, setHours] = useState<OperationHour[]>([]);
+  const [schedules, setSchedules] = useState<OperationSchedule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [addingSchedule, setAddingSchedule] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<OperationSchedule | null>(null);
+  const [newSchedule, setNewSchedule] = useState<OperationSchedule>({
+    store_id: storeId,
+    schedule_name: '',
+    days_of_week: [],
+    start_time: '09:00',
+    end_time: '17:00',
+    is_closed: false,
+    daypart_name: 'operation_hours'
+  });
 
   useEffect(() => {
-    loadHours();
+    loadSchedules();
   }, [storeId]);
 
-  const loadHours = async () => {
+  const loadSchedules = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const { data, error: fetchError } = await supabase
-        .from('store_operation_hours')
+        .from('store_operation_hours_schedules')
         .select('*')
         .eq('store_id', storeId)
-        .order('day_of_week');
+        .order('created_at');
 
       if (fetchError) throw fetchError;
 
-      const hoursMap = new Map(data?.map(h => [h.day_of_week, h]) || []);
+      const mappedSchedules: OperationSchedule[] = (data || []).map(s => ({
+        id: s.id,
+        store_id: s.store_id,
+        schedule_name: s.schedule_name,
+        days_of_week: s.days_of_week || [],
+        start_time: s.open_time || '09:00',
+        end_time: s.close_time || '17:00',
+        is_closed: s.is_closed || false,
+        daypart_name: 'operation_hours'
+      }));
 
-      const allHours = DAYS_OF_WEEK.map(day => {
-        const existing = hoursMap.get(day.value);
-        return existing || {
-          id: `temp-${day.value}`,
-          store_id: storeId,
-          day_of_week: day.value,
-          open_time: '09:00',
-          close_time: '17:00',
-          is_closed: false
-        };
-      });
-
-      setHours(allHours);
+      setSchedules(mappedSchedules);
     } catch (err: any) {
       console.error('Error loading operation hours:', err);
       setError(err.message || 'Failed to load operation hours');
@@ -73,70 +79,85 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
     }
   };
 
-  const updateHour = (dayOfWeek: number, field: keyof OperationHour, value: any) => {
-    setHours(prev => prev.map(h =>
-      h.day_of_week === dayOfWeek
-        ? { ...h, [field]: value }
-        : h
-    ));
-    setHasChanges(true);
+  const handleAddSchedule = () => {
+    setNewSchedule({
+      store_id: storeId,
+      schedule_name: '',
+      days_of_week: [],
+      start_time: '09:00',
+      end_time: '17:00',
+      is_closed: false,
+      daypart_name: 'operation_hours'
+    });
+    setAddingSchedule(true);
+    setEditingSchedule(null);
   };
 
-  const toggleClosed = (dayOfWeek: number) => {
-    setHours(prev => prev.map(h =>
-      h.day_of_week === dayOfWeek
-        ? { ...h, is_closed: !h.is_closed }
-        : h
-    ));
-    setHasChanges(true);
+  const handleEditSchedule = (schedule: OperationSchedule) => {
+    setEditingSchedule(schedule);
+    setAddingSchedule(false);
   };
 
-  const copyToAll = (sourceDay: number) => {
-    const sourceHour = hours.find(h => h.day_of_week === sourceDay);
-    if (!sourceHour) return;
+  const handleSaveSchedule = async (schedule: Schedule) => {
+    try {
+      const scheduleData = {
+        store_id: storeId,
+        schedule_name: (schedule as OperationSchedule).schedule_name || null,
+        days_of_week: schedule.days_of_week,
+        open_time: schedule.start_time,
+        close_time: schedule.end_time,
+        is_closed: (schedule as OperationSchedule).is_closed || false,
+        updated_at: new Date().toISOString()
+      };
 
-    setHours(prev => prev.map(h => ({
-      ...h,
-      open_time: sourceHour.open_time,
-      close_time: sourceHour.close_time,
-      is_closed: sourceHour.is_closed
-    })));
-    setHasChanges(true);
+      if (editingSchedule?.id) {
+        const { error: updateError } = await supabase
+          .from('store_operation_hours_schedules')
+          .update(scheduleData)
+          .eq('id', editingSchedule.id);
+
+        if (updateError) throw updateError;
+        setSuccess('Schedule updated successfully');
+      } else {
+        const { error: insertError } = await supabase
+          .from('store_operation_hours_schedules')
+          .insert([scheduleData]);
+
+        if (insertError) throw insertError;
+        setSuccess('Schedule created successfully');
+      }
+
+      setAddingSchedule(false);
+      setEditingSchedule(null);
+      await loadSchedules();
+
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('Error saving schedule:', err);
+      setError(err.message || 'Failed to save schedule');
+    }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    if (!confirm('Are you sure you want to delete this schedule?')) {
+      return;
+    }
 
     try {
-      const upsertData = hours.map(h => ({
-        store_id: storeId,
-        day_of_week: h.day_of_week,
-        open_time: h.is_closed ? null : h.open_time,
-        close_time: h.is_closed ? null : h.close_time,
-        is_closed: h.is_closed
-      }));
+      const { error: deleteError } = await supabase
+        .from('store_operation_hours_schedules')
+        .delete()
+        .eq('id', scheduleId);
 
-      const { error: upsertError } = await supabase
-        .from('store_operation_hours')
-        .upsert(upsertData, {
-          onConflict: 'store_id,day_of_week',
-          ignoreDuplicates: false
-        });
+      if (deleteError) throw deleteError;
 
-      if (upsertError) throw upsertError;
+      setSuccess('Schedule deleted successfully');
+      await loadSchedules();
 
-      setSuccess('Operation hours saved successfully');
-      setHasChanges(false);
       setTimeout(() => setSuccess(null), 3000);
-
-      await loadHours();
     } catch (err: any) {
-      console.error('Error saving operation hours:', err);
-      setError(err.message || 'Failed to save operation hours');
-    } finally {
-      setSaving(false);
+      console.error('Error deleting schedule:', err);
+      setError(err.message || 'Failed to delete schedule');
     }
   };
 
@@ -149,8 +170,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div>
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-blue-600" />
           <h3 className="text-lg font-semibold text-slate-900">Store Operation Hours</h3>
@@ -158,121 +179,168 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-start gap-2">
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-start gap-2">
           <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <span>{success}</span>
         </div>
       )}
 
-      <div className="space-y-2">
-        {hours.map((hour) => {
-          const day = DAYS_OF_WEEK.find(d => d.value === hour.day_of_week);
-          if (!day) return null;
-
-          return (
-            <div
-              key={hour.day_of_week}
-              className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
-                hour.is_closed
-                  ? 'bg-slate-50 border-slate-200'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <div className="w-28">
-                <span className="font-medium text-slate-900">{day.label}</span>
-              </div>
-
-              <div className="flex-1 flex items-center gap-4">
-                {hour.is_closed ? (
-                  <span className="text-slate-500 italic">Closed</span>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm text-slate-600">Open:</label>
-                      <input
-                        type="time"
-                        value={hour.open_time || '09:00'}
-                        onChange={(e) => updateHour(hour.day_of_week, 'open_time', e.target.value)}
-                        className="px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm text-slate-600">Close:</label>
-                      <input
-                        type="time"
-                        value={hour.close_time || '17:00'}
-                        onChange={(e) => updateHour(hour.day_of_week, 'close_time', e.target.value)}
-                        className="px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleClosed(hour.day_of_week)}
-                  className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                    hour.is_closed
-                      ? 'bg-slate-600/20 text-slate-900 hover:bg-slate-600/30'
-                      : 'bg-green-600/20 text-green-900 hover:bg-green-600/30'
-                  }`}
-                >
-                  {hour.is_closed ? 'Closed' : 'Open'}
-                </button>
-                {!hour.is_closed && (
+      <div className="space-y-4 mb-6">
+        {schedules.map((schedule) => (
+          <div
+            key={schedule.id}
+            className="bg-white rounded-lg border border-slate-200 overflow-hidden"
+          >
+            <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1">
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                  <h4 className="font-semibold text-slate-900">
+                    {schedule.schedule_name || 'Store Hours'}
+                  </h4>
+                  {schedule.is_closed && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
+                      Closed
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => copyToAll(hour.day_of_week)}
-                    className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-                    title="Copy these hours to all days"
+                    onClick={() => handleEditSchedule(schedule)}
+                    className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                    title="Edit schedule"
                   >
-                    Copy to All
+                    <Edit2 className="w-4 h-4 text-blue-600" />
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => schedule.id && handleDeleteSchedule(schedule.id)}
+                    className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                    title="Delete schedule"
+                  >
+                    <Trash2 className="w-4 h-4 text-blue-600" />
+                  </button>
+                </div>
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      {hasChanges && (
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={loadHours}
-            className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 font-medium"
-          >
-            {saving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Saving...
-              </>
+            {editingSchedule?.id === schedule.id ? (
+              <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
+                <div className="pt-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Schedule Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingSchedule.schedule_name || ''}
+                      onChange={(e) => setEditingSchedule({ ...editingSchedule, schedule_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Weekday Hours, Weekend Hours"
+                    />
+                  </div>
+                  <ScheduleGroupForm
+                    schedule={editingSchedule}
+                    allSchedules={schedules}
+                    onUpdate={setEditingSchedule}
+                    onSave={() => handleSaveSchedule(editingSchedule)}
+                    onCancel={() => setEditingSchedule(null)}
+                    level="site"
+                  />
+                </div>
+              </div>
             ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Hours
-              </>
+              <div className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm font-medium text-slate-900">
+                        {schedule.is_closed ? 'Closed' : `${schedule.start_time} - ${schedule.end_time}`}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {schedule.days_of_week.sort().map(day => {
+                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                        return (
+                          <span
+                            key={day}
+                            className="px-2 py-1 text-xs rounded font-medium bg-blue-100 text-blue-800 border border-blue-300"
+                          >
+                            {dayInfo?.short}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
+          </div>
+        ))}
+
+        {schedules.length === 0 && !addingSchedule && (
+          <div className="text-center py-8 bg-white rounded-lg border border-slate-200">
+            <Calendar className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+            <p className="text-sm text-slate-600 mb-4">
+              No operation hours set. Add a schedule to define when your store is open.
+            </p>
+          </div>
+        )}
+
+        {addingSchedule && (
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <h4 className="font-semibold text-slate-900">New Schedule</h4>
+              </div>
+            </div>
+            <div className="px-4 pb-4 bg-slate-50">
+              <div className="pt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Schedule Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newSchedule.schedule_name || ''}
+                    onChange={(e) => setNewSchedule({ ...newSchedule, schedule_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Weekday Hours, Weekend Hours"
+                  />
+                </div>
+                <ScheduleGroupForm
+                  schedule={newSchedule}
+                  allSchedules={schedules}
+                  onUpdate={setNewSchedule}
+                  onSave={() => handleSaveSchedule(newSchedule)}
+                  onCancel={() => setAddingSchedule(false)}
+                  level="site"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!addingSchedule && !editingSchedule && (
+          <button
+            type="button"
+            onClick={handleAddSchedule}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Schedule
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
