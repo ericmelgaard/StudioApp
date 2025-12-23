@@ -288,7 +288,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
       <div className="space-y-4 mb-6">
         {definitions.map((definition) => {
-          const defSchedules = schedules.filter(s => s.daypart_definition_id === definition.id);
+          const defSchedules = schedules
+            .filter(s => s.daypart_definition_id === definition.id)
+            .map(s => ({ ...s, daypart_name: definition.daypart_name }));
 
           return (
             <div
@@ -429,6 +431,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                             <ScheduleGroupForm
                               schedule={{
                                 daypart_name: definition.daypart_name,
+                                daypart_definition_id: definition.id,
                                 days_of_week: [],
                                 start_time: '06:00',
                                 end_time: '11:00',
@@ -437,6 +440,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                               onUpdate={() => {}}
                               onSave={() => handleSaveSchedule({
                                 daypart_name: definition.daypart_name,
+                                daypart_definition_id: definition.id,
                                 days_of_week: [],
                                 start_time: '06:00',
                                 end_time: '11:00',
