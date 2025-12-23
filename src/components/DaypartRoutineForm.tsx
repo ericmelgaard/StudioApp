@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar, Sparkles } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles, Info } from 'lucide-react';
 import TimeSelector from './TimeSelector';
+import DaySelector from './DaySelector';
 import { supabase } from '../lib/supabase';
 import HolidayTemplatePicker from './HolidayTemplatePicker';
+import { formatRecurrenceText, getPriorityLevel } from '../types/schedules';
 
 interface DaypartRoutineFormProps {
   placementGroupId: string;
@@ -95,6 +97,10 @@ export default function DaypartRoutineForm({
   };
 
   const checkCollision = (daypartName: string, selectedDays: number[]): string | null => {
+    if (formData.schedule_type === 'event_holiday') {
+      return null;
+    }
+
     if (!daypartName || selectedDays.length === 0) {
       return null;
     }
@@ -102,6 +108,7 @@ export default function DaypartRoutineForm({
     const conflictingRoutines = existingRoutines.filter(routine => {
       if (editingRoutine && routine.id === editingRoutine.id) return false;
       if (routine.daypart_name !== daypartName) return false;
+      if (routine.schedule_type === 'event_holiday') return false;
       return routine.days_of_week.some(day => selectedDays.includes(day));
     });
 
@@ -155,15 +162,16 @@ export default function DaypartRoutineForm({
     });
   };
 
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
   const calculatePriorityLevel = (): number => {
     if (formData.schedule_type === 'regular') return 10;
-    if (formData.recurrence_type === 'none') return 100;
-    if (formData.recurrence_type === 'annual_date_range') return 50;
-    return 100;
+    return getPriorityLevel(formData.recurrence_type);
   };
 
   const handleSubmit = async () => {
-    if (!formData.daypart_name) {
+    if (formData.schedule_type === 'regular' && !formData.daypart_name) {
       setError('Please select a daypart type');
       return;
     }
@@ -173,13 +181,9 @@ export default function DaypartRoutineForm({
         setError('Please enter an event name');
         return;
       }
-      if (!formData.event_date) {
-        setError('Please select an event date');
-        return;
-      }
     }
 
-    if (formData.days_of_week.length === 0) {
+    if (formData.schedule_type === 'regular' && formData.days_of_week.length === 0) {
       setError('Please select at least one day');
       return;
     }
@@ -189,10 +193,12 @@ export default function DaypartRoutineForm({
       return;
     }
 
-    const collision = checkCollision(formData.daypart_name, formData.days_of_week);
-    if (collision) {
-      setError(collision);
-      return;
+    if (formData.schedule_type === 'regular') {
+      const collision = checkCollision(formData.daypart_name, formData.days_of_week);
+      if (collision) {
+        setError(collision);
+        return;
+      }
     }
 
     setSaving(true);
@@ -241,46 +247,50 @@ export default function DaypartRoutineForm({
       </div>
 
       <div className="p-4 space-y-4">
-        {error && (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, schedule_type: 'regular' })}
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+              formData.schedule_type === 'regular'
+                ? 'bg-slate-700 text-white'
+                : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            Regular Schedule
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, schedule_type: 'event_holiday' })}
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+              formData.schedule_type === 'event_holiday'
+                ? 'bg-amber-600 text-white'
+                : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            Event / Holiday
+          </button>
+        </div>
+
+        {formData.schedule_type === 'event_holiday' && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
+            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <p className="font-medium mb-1">Event schedules override all regular schedules</p>
+              <p className="text-blue-700">No collision checking needed for events and holidays</p>
+            </div>
+          </div>
+        )}
+
+        {error && formData.schedule_type === 'regular' && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Schedule Type *
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, schedule_type: 'regular' })}
-              className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                formData.schedule_type === 'regular'
-                  ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              Regular Schedule
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, schedule_type: 'event_holiday' })}
-              className={`px-4 py-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                formData.schedule_type === 'event_holiday'
-                  ? 'border-purple-600 bg-purple-50 text-purple-900 font-semibold'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <Calendar className="w-4 h-4" />
-              Event/Holiday
-            </button>
-          </div>
-        </div>
-
         {formData.schedule_type === 'event_holiday' && (
-          <>
+          <div className="space-y-4">
             <button
               type="button"
               onClick={() => setShowTemplatePicker(true)}
@@ -291,116 +301,233 @@ export default function DaypartRoutineForm({
             </button>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Event Name *
               </label>
               <input
                 type="text"
                 value={formData.event_name}
                 onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-                placeholder="e.g., Christmas, New Year's Eve, Super Bowl Sunday"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                required
+                placeholder="e.g., Christmas Day, Holiday Season"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Event Date *
-              </label>
-              <input
-                type="date"
-                value={formData.event_date}
-                onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Recurrence *
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Recurrence Type
               </label>
               <select
                 value={formData.recurrence_type}
                 onChange={(e) => setFormData({ ...formData, recurrence_type: e.target.value as any })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
-                <option value="none">One-time event</option>
-                <option value="annual_date">Annual (same date every year)</option>
-                <option value="monthly_date">Monthly (same day each month)</option>
-                <option value="annual_relative">Annual (relative day, e.g., last Monday of May)</option>
-                <option value="annual_date_range">Annual date range (multi-week event)</option>
+                <option value="none">One-time Date</option>
+                <option value="annual_date">Annual (same date)</option>
+                <option value="monthly_date">Monthly (same day)</option>
+                <option value="annual_relative">Annual (relative day)</option>
+                <option value="annual_date_range">Annual Date Range</option>
               </select>
-              <p className="text-xs text-slate-500 mt-1">
-                {formData.recurrence_type === 'none' && 'Event occurs only once on the specified date'}
-                {formData.recurrence_type === 'annual_date' && 'Event repeats on the same date every year'}
-                {formData.recurrence_type === 'monthly_date' && 'Event repeats on the same day every month'}
-                {formData.recurrence_type === 'annual_relative' && 'Event repeats on a relative weekday (e.g., 3rd Thursday)'}
-                {formData.recurrence_type === 'annual_date_range' && 'Event spans multiple weeks, repeating annually'}
-              </p>
             </div>
+
+            {formData.recurrence_type === 'none' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Event Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.event_date}
+                  onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            )}
+
+            {formData.recurrence_type === 'annual_date' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Month
+                  </label>
+                  <select
+                    value={formData.recurrence_config.month || ''}
+                    onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, month: parseInt(e.target.value) } })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Select month</option>
+                    {MONTH_NAMES.map((name, idx) => (
+                      <option key={idx} value={idx + 1}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Day
+                  </label>
+                  <select
+                    value={formData.recurrence_config.day_of_month || ''}
+                    onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, day_of_month: parseInt(e.target.value) } })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Select day</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {formData.recurrence_type === 'monthly_date' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Day of Month
+                </label>
+                <select
+                  value={formData.recurrence_config.day_of_month || ''}
+                  onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, day_of_month: parseInt(e.target.value) } })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="">Select day</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {formData.recurrence_type === 'annual_relative' && (
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Position
+                  </label>
+                  <select
+                    value={formData.recurrence_config.position || ''}
+                    onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, position: e.target.value } })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Select</option>
+                    <option value="first">First</option>
+                    <option value="second">Second</option>
+                    <option value="third">Third</option>
+                    <option value="fourth">Fourth</option>
+                    <option value="last">Last</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Weekday
+                  </label>
+                  <select
+                    value={formData.recurrence_config.weekday !== undefined ? formData.recurrence_config.weekday : ''}
+                    onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, weekday: parseInt(e.target.value) } })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Select</option>
+                    {DAY_NAMES.map((name, idx) => (
+                      <option key={idx} value={idx}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Month
+                  </label>
+                  <select
+                    value={formData.recurrence_config.month || ''}
+                    onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, month: parseInt(e.target.value) } })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Select</option>
+                    {MONTH_NAMES.map((name, idx) => (
+                      <option key={idx} value={idx + 1}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {formData.recurrence_type === 'annual_date_range' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.recurrence_config.range_start_date || ''}
+                    onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, range_start_date: e.target.value } })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.recurrence_config.range_end_date || ''}
+                    onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, range_end_date: e.target.value } })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.recurrence_type && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-amber-600" />
+                  <span className="font-medium text-amber-900">
+                    {formatRecurrenceText(formData.recurrence_type, formData.recurrence_config, formData.event_date)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+              <span className="font-medium">
+                Priority: {getPriorityLevel(formData.recurrence_type) === 100 ? 'Single Day' : 'Date Range'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {formData.schedule_type === 'regular' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Daypart Type *
+              </label>
+              <select
+                value={formData.daypart_name}
+                onChange={(e) => handleDaypartChange(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select a daypart...</option>
+                {daypartTypes.map((type) => (
+                  <option key={type.daypart_name} value={type.daypart_name}>
+                    {type.display_label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <DaySelector
+              selectedDays={formData.days_of_week}
+              onToggleDay={toggleDay}
+              schedules={existingRoutines}
+              currentDaypartName={formData.daypart_name}
+              editingScheduleId={editingRoutine?.id}
+              showPresets={false}
+            />
           </>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Daypart Type *
-          </label>
-          <select
-            value={formData.daypart_name}
-            onChange={(e) => handleDaypartChange(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-            required
-          >
-            <option value="">Select a daypart...</option>
-            {daypartTypes.map((type) => (
-              <option key={type.daypart_name} value={type.daypart_name}>
-                {type.display_label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-sm font-medium text-slate-700">Days of the Week *</label>
-            <button
-              type="button"
-              onClick={formData.days_of_week.length === 7 ? clearAllDays : selectAllDays}
-              className="text-sm text-amber-600 hover:text-amber-700 font-medium"
-            >
-              {formData.days_of_week.length === 7 ? 'Clear All' : 'Select All'}
-            </button>
-          </div>
-          <div className="text-xs text-slate-500 mb-3">
-            Click days to enable. Red border indicates collision with existing routine.
-          </div>
-          <div className="flex justify-between gap-2">
-            {DAYS_OF_WEEK.map((day) => {
-              const isSelected = formData.days_of_week.includes(day.value);
-              const hasCollision = getDayCollisionStatus(day.value);
-
-              return (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => toggleDay(day.value)}
-                  className={`flex-1 h-12 rounded-lg text-sm font-medium transition-all ${
-                    isSelected
-                      ? 'bg-slate-800 text-white shadow-md'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  } ${hasCollision && !isSelected ? 'ring-2 ring-red-400' : ''}`}
-                  title={hasCollision && !isSelected ? `${day.label} already used by another ${formData.daypart_name} routine` : day.label}
-                >
-                  <div className="text-xs">{day.short}</div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <TimeSelector
             label="Start Time *"
             value={formData.start_time}
@@ -413,23 +540,19 @@ export default function DaypartRoutineForm({
           />
         </div>
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={saving || !!error || !formData.daypart_name || formData.days_of_week.length === 0}
-            className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ${
-              formData.schedule_type === 'event_holiday'
-                ? 'bg-purple-600 hover:bg-purple-700'
-                : 'bg-amber-600 hover:bg-amber-700'
-            }`}
+            disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
           >
-            {saving ? 'Saving...' : editingRoutine ? 'Update Schedule' : 'Add Schedule'}
+            {saving ? 'Saving...' : 'Save Schedule'}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
           >
             Cancel
           </button>
