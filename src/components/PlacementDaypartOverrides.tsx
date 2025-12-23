@@ -136,7 +136,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
       if (error) {
         console.error('Insert error details:', error);
-        throw new Error(`Failed to create routine: ${error.message}`);
+        throw new Error(`Failed to create schedule: ${error.message}`);
       }
 
       console.log('Insert successful:', data);
@@ -153,7 +153,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   };
 
   const handleDelete = async (routineId: string) => {
-    if (!confirm('Are you sure you want to delete this routine?')) {
+    if (!confirm('Are you sure you want to delete this schedule?')) {
       return;
     }
 
@@ -163,8 +163,8 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       .eq('id', routineId);
 
     if (error) {
-      console.error('Error deleting routine:', error);
-      alert(`Failed to delete routine: ${error.message}`);
+      console.error('Error deleting schedule:', error);
+      alert(`Failed to delete schedule: ${error.message}`);
     } else {
       await loadData();
     }
@@ -203,7 +203,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       <div>
         <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
           <Clock className="w-5 h-5 text-amber-600" />
-          Placement Daypart Routines
+          Placement Daypart Schedules
         </h3>
         <p className="text-sm text-slate-600 mt-1">
           Configure specific daypart hours for this placement. If not set, inherits from site configuration.
@@ -216,7 +216,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             <p className="text-sm text-blue-800 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>
-                This routine will apply to the selected days for this placement.
+                This schedule will apply to the selected days for this placement.
               </span>
             </p>
           </div>
@@ -234,7 +234,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       {routines.length === 0 && !showForm ? (
         <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
           <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-900 mb-2">No Placement Routines</h3>
+          <h3 className="text-base font-semibold text-slate-900 mb-2">No Placement Schedules</h3>
           <p className="text-slate-600 mb-2 text-sm">
             This placement inherits all daypart hours from the site configuration
           </p>
@@ -247,7 +247,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
           >
             <Plus className="w-4 h-4" />
-            Add Placement Routine
+            Add Placement Schedule
           </button>
         </div>
       ) : routines.length > 0 ? (
@@ -273,7 +273,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                           handleAddNew(daypartName);
                         }}
                         className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-white/50 rounded-lg transition-colors"
-                        title={`Add another ${displayLabel} routine`}
+                        title={`Add another ${displayLabel} schedule`}
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -313,7 +313,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                               handleEdit(routine);
                             }}
                             className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title="Edit routine"
+                            title="Edit schedule"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
@@ -324,7 +324,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                               handleDelete(routine.id!);
                             }}
                             className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete routine"
+                            title="Delete schedule"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -361,7 +361,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
               className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-amber-600 hover:text-amber-600 hover:bg-amber-50 transition-colors font-medium"
             >
               <Plus className="w-4 h-4" />
-              Add Daypart Routine
+              Add Daypart Schedule
             </button>
           )}
         </div>
