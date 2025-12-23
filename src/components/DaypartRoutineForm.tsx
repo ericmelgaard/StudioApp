@@ -251,22 +251,24 @@ export default function DaypartRoutineForm({
           <button
             type="button"
             onClick={() => setFormData({ ...formData, schedule_type: 'regular' })}
+            disabled={!!editingRoutine}
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
               formData.schedule_type === 'regular'
                 ? 'bg-slate-700 text-white'
                 : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-            }`}
+            } ${editingRoutine ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Regular Schedule
           </button>
           <button
             type="button"
             onClick={() => setFormData({ ...formData, schedule_type: 'event_holiday' })}
+            disabled={!!editingRoutine}
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
               formData.schedule_type === 'event_holiday'
                 ? 'bg-amber-600 text-white'
                 : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-            }`}
+            } ${editingRoutine ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Event / Holiday
           </button>

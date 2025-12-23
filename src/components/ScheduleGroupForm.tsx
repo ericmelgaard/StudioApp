@@ -139,22 +139,24 @@ export default function ScheduleGroupForm({
         <button
           type="button"
           onClick={() => handleScheduleTypeChange('regular')}
+          disabled={!!schedule.id}
           className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
             scheduleType === 'regular'
               ? 'bg-slate-700 text-white'
               : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-          }`}
+          } ${schedule.id ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Regular Schedule
         </button>
         <button
           type="button"
           onClick={() => handleScheduleTypeChange('event_holiday')}
+          disabled={!!schedule.id}
           className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
             scheduleType === 'event_holiday'
               ? 'bg-amber-600 text-white'
               : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-          }`}
+          } ${schedule.id ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Event / Holiday
         </button>
