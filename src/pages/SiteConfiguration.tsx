@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, ArrowLeft } from 'lucide-react';
+import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, ArrowLeft, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 import { useLocation } from '../hooks/useLocation';
@@ -11,6 +11,8 @@ import ConceptModal from '../components/ConceptModal';
 import CompanyModal from '../components/CompanyModal';
 import StoreModal from '../components/StoreModal';
 import CycleSettingsCard from '../components/CycleSettingsCard';
+import StoreEdit from './StoreEdit';
+import SiteDaypartConfiguration from './SiteDaypartConfiguration';
 import * as Icons from 'lucide-react';
 
 interface PlacementGroup {
@@ -70,7 +72,7 @@ export default function SiteConfiguration() {
   const { location, setLocation, canNavigateBack } = useLocation();
 
   // Navigation state
-  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store'>('wand');
+  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store' | 'store-edit' | 'site-dayparts'>('wand');
   const [selectedConcept, setSelectedConcept] = useState<ConceptData | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
@@ -764,7 +766,23 @@ export default function SiteConfiguration() {
           {renderBreadcrumbs()}
         </div>
 
-        {hasStoreContext ? (
+        {viewLevel === 'store-edit' && selectedStore && selectedCompany ? (
+          <StoreEdit
+            storeId={selectedStore.id}
+            companyId={selectedCompany.id}
+            onBack={() => setViewLevel('store')}
+            onSave={async () => {
+              setViewLevel('store');
+              await loadStoreLevelData();
+            }}
+          />
+        ) : viewLevel === 'site-dayparts' && storeRoot && selectedStore ? (
+          <SiteDaypartConfiguration
+            placementGroupId={storeRoot.id}
+            siteName={selectedStore.name}
+            onBack={() => setViewLevel('store')}
+          />
+        ) : hasStoreContext ? (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
@@ -775,14 +793,24 @@ export default function SiteConfiguration() {
                       Manage location details, hours, and store-level settings
                     </p>
                   </div>
-                  <button
-                    onClick={handleEditStore}
-                    disabled={!storeRoot}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    Edit Store
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setViewLevel('site-dayparts')}
+                      disabled={!storeRoot}
+                      className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Clock className="w-4 h-4" />
+                      Site Dayparts
+                    </button>
+                    <button
+                      onClick={() => setViewLevel('store-edit')}
+                      disabled={!storeRoot}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Edit Store
+                    </button>
+                  </div>
                 </div>
               </div>
 
