@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, Save, X, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, Save, X, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import TimeGroupManager from '../components/TimeGroupManager';
 
 interface DaypartDefinition {
   id: string;
@@ -19,12 +20,11 @@ interface DaypartDefinition {
   updated_at: string;
 }
 
-interface DayConfiguration {
+interface TimeGroup {
   id?: string;
-  daypart_definition_id: string;
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
+  days: number[];
+  startTime: string;
+  endTime: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -41,39 +41,40 @@ const COLOR_OPTIONS = [
   { value: 'bg-amber-100 text-amber-800 border-amber-300', label: 'Amber' },
   { value: 'bg-green-100 text-green-800 border-green-300', label: 'Green' },
   { value: 'bg-blue-100 text-blue-800 border-blue-300', label: 'Blue' },
-  { value: 'bg-violet-100 text-violet-800 border-violet-300', label: 'Violet' },
+  { value: 'bg-teal-100 text-teal-800 border-teal-300', label: 'Teal' },
   { value: 'bg-slate-100 text-slate-800 border-slate-300', label: 'Slate' },
   { value: 'bg-red-100 text-red-800 border-red-300', label: 'Red' },
   { value: 'bg-orange-100 text-orange-800 border-orange-300', label: 'Orange' },
-  { value: 'bg-teal-100 text-teal-800 border-teal-300', label: 'Teal' },
 ];
 
 interface EditFormProps {
   formData: Partial<DaypartDefinition>;
   setFormData: (data: Partial<DaypartDefinition>) => void;
-  dayConfigurations: DayConfiguration[];
-  showDayConfigs: boolean;
-  setShowDayConfigs: (show: boolean) => void;
+  timeGroups: TimeGroup[];
+  showTimeGroupManager: boolean;
+  setShowTimeGroupManager: (show: boolean) => void;
+  onSaveTimeGroups: (groups: TimeGroup[]) => void;
   toggleDay: (day: number) => void;
-  addDayConfiguration: (day: number) => void;
-  removeDayConfiguration: (day: number) => void;
-  updateDayConfiguration: (day: number, field: 'start_time' | 'end_time', value: string) => void;
-  getDayConfiguration: (day: number) => DayConfiguration | undefined;
   onSave: () => void;
   onCancel: () => void;
+}
+
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:${minutes} ${ampm}`;
 }
 
 function EditForm({
   formData,
   setFormData,
-  dayConfigurations,
-  showDayConfigs,
-  setShowDayConfigs,
+  timeGroups,
+  showTimeGroupManager,
+  setShowTimeGroupManager,
+  onSaveTimeGroups,
   toggleDay,
-  addDayConfiguration,
-  removeDayConfiguration,
-  updateDayConfiguration,
-  getDayConfiguration,
   onSave,
   onCancel
 }: EditFormProps) {
@@ -194,87 +195,55 @@ function EditForm({
           </div>
         </div>
 
-        <div className="col-span-2 border-t border-slate-200 pt-4">
-          <button
-            type="button"
-            onClick={() => setShowDayConfigs(!showDayConfigs)}
-            className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900"
-          >
-            {showDayConfigs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            Day-Specific Time Configurations (Optional)
-          </button>
-          <p className="text-xs text-slate-500 mt-1">
-            Override default times for specific days. Days without custom times will use the default times above.
-          </p>
-
-          {showDayConfigs && (
-            <div className="mt-4 space-y-3">
-              {DAYS_OF_WEEK.map((day) => {
-                const config = getDayConfiguration(day.value);
-                const hasConfig = !!config;
-
-                return (
-                  <div
-                    key={day.value}
-                    className={`p-3 rounded-lg border ${
-                      hasConfig ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-700">{day.label}</span>
-                      {hasConfig ? (
-                        <button
-                          type="button"
-                          onClick={() => removeDayConfiguration(day.value)}
-                          className="text-xs text-red-600 hover:text-red-700 font-medium"
-                        >
-                          Remove Override
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => addDayConfiguration(day.value)}
-                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          Add Custom Times
-                        </button>
-                      )}
+        {showTimeGroupManager ? (
+          <div className="col-span-2 border-t border-slate-200 pt-4">
+            <TimeGroupManager
+              defaultStartTime={formData.default_start_time || '06:00:00'}
+              defaultEndTime={formData.default_end_time || '11:00:00'}
+              existingGroups={timeGroups}
+              onSave={(groups) => {
+                onSaveTimeGroups(groups);
+                setShowTimeGroupManager(false);
+              }}
+              onCancel={() => setShowTimeGroupManager(false)}
+              color={formData.color}
+            />
+          </div>
+        ) : (
+          <div className="col-span-2 border-t border-slate-200 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowTimeGroupManager(true)}
+              className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              {timeGroups.length > 0 ? 'Edit Time Groups' : 'Add Time Groups'}
+            </button>
+            {timeGroups.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {timeGroups.map((group, index) => (
+                  <div key={index} className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg">
+                    <div className="flex flex-wrap gap-1">
+                      {group.days.sort().map((day) => {
+                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                        return (
+                          <span
+                            key={day}
+                            className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200"
+                          >
+                            {dayInfo?.short}
+                          </span>
+                        );
+                      })}
                     </div>
-
-                    {hasConfig && config && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs text-slate-600 mb-1">Start Time</label>
-                          <input
-                            type="time"
-                            value={config.start_time}
-                            onChange={(e) => updateDayConfiguration(day.value, 'start_time', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-slate-600 mb-1">End Time</label>
-                          <input
-                            type="time"
-                            value={config.end_time}
-                            onChange={(e) => updateDayConfiguration(day.value, 'end_time', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {!hasConfig && (
-                      <div className="text-xs text-slate-500">
-                        Using default: {formData.default_start_time} - {formData.default_end_time}
-                      </div>
-                    )}
+                    <span className="text-slate-600 ml-2">
+                      {formatTime(group.startTime)} - {formatTime(group.endTime)}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="col-span-2">
           <label className="flex items-center gap-2">
@@ -318,14 +287,11 @@ function DaypartCard({
   onCancel,
   formData,
   setFormData,
-  dayConfigurations,
-  showDayConfigs,
-  setShowDayConfigs,
-  toggleDay,
-  addDayConfiguration,
-  removeDayConfiguration,
-  updateDayConfiguration,
-  getDayConfiguration
+  timeGroups,
+  showTimeGroupManager,
+  setShowTimeGroupManager,
+  onSaveTimeGroups,
+  toggleDay
 }: {
   daypart: DaypartDefinition;
   onEdit: (daypart: DaypartDefinition) => void;
@@ -335,41 +301,42 @@ function DaypartCard({
   onCancel: () => void;
   formData?: Partial<DaypartDefinition>;
   setFormData?: (data: Partial<DaypartDefinition>) => void;
-  dayConfigurations?: DayConfiguration[];
-  showDayConfigs?: boolean;
-  setShowDayConfigs?: (show: boolean) => void;
+  timeGroups?: TimeGroup[];
+  showTimeGroupManager?: boolean;
+  setShowTimeGroupManager?: (show: boolean) => void;
+  onSaveTimeGroups?: (groups: TimeGroup[]) => void;
   toggleDay?: (day: number) => void;
-  addDayConfiguration?: (day: number) => void;
-  removeDayConfiguration?: (day: number) => void;
-  updateDayConfiguration?: (day: number, field: 'start_time' | 'end_time', value: string) => void;
-  getDayConfiguration?: (day: number) => DayConfiguration | undefined;
 }) {
-  const [dayConfigs, setDayConfigs] = useState<DayConfiguration[]>([]);
-  const [showConfigs, setShowConfigs] = useState(false);
+  const [loadedTimeGroups, setLoadedTimeGroups] = useState<TimeGroup[]>([]);
+  const [showGroups, setShowGroups] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const loadConfigs = async () => {
-    if (dayConfigs.length > 0) return;
+  const loadTimeGroups = async () => {
+    if (loadedTimeGroups.length > 0) return;
 
     setLoading(true);
     const { data } = await supabase
-      .from('daypart_day_configurations')
+      .from('daypart_time_groups')
       .select('*')
-      .eq('daypart_definition_id', daypart.id)
-      .order('day_of_week');
+      .eq('daypart_definition_id', daypart.id);
 
-    setDayConfigs(data || []);
+    const groups: TimeGroup[] = (data || []).map(group => ({
+      id: group.id,
+      days: group.days_of_week,
+      startTime: group.start_time,
+      endTime: group.end_time
+    }));
+
+    setLoadedTimeGroups(groups);
     setLoading(false);
   };
 
-  const toggleConfigs = () => {
-    if (!showConfigs && dayConfigs.length === 0) {
-      loadConfigs();
+  const toggleGroups = () => {
+    if (!showGroups && loadedTimeGroups.length === 0) {
+      loadTimeGroups();
     }
-    setShowConfigs(!showConfigs);
+    setShowGroups(!showGroups);
   };
-
-  const getDayConfig = (day: number) => dayConfigs.find(c => c.day_of_week === day);
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
@@ -409,18 +376,15 @@ function DaypartCard({
         </div>
       </div>
 
-      {isEditing && formData && setFormData && dayConfigurations && showDayConfigs !== undefined && setShowDayConfigs && toggleDay && addDayConfiguration && removeDayConfiguration && updateDayConfiguration && getDayConfiguration ? (
+      {isEditing && formData && setFormData && timeGroups && showTimeGroupManager !== undefined && setShowTimeGroupManager && onSaveTimeGroups && toggleDay ? (
         <EditForm
           formData={formData}
           setFormData={setFormData}
-          dayConfigurations={dayConfigurations}
-          showDayConfigs={showDayConfigs}
-          setShowDayConfigs={setShowDayConfigs}
+          timeGroups={timeGroups}
+          showTimeGroupManager={showTimeGroupManager}
+          setShowTimeGroupManager={setShowTimeGroupManager}
+          onSaveTimeGroups={onSaveTimeGroups}
           toggleDay={toggleDay}
-          addDayConfiguration={addDayConfiguration}
-          removeDayConfiguration={removeDayConfiguration}
-          updateDayConfiguration={updateDayConfiguration}
-          getDayConfiguration={getDayConfiguration}
           onSave={onSave}
           onCancel={onCancel}
         />
@@ -459,42 +423,33 @@ function DaypartCard({
             </div>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={toggleConfigs}
-              className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-900"
-            >
-              {showConfigs ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              Day-Specific Configurations
-            </button>
-
-            {showConfigs && (
-              <div className="mt-2">
-                {loading ? (
-                  <div className="text-xs text-slate-500">Loading...</div>
-                ) : dayConfigs.length > 0 ? (
-                  <div className="space-y-1">
-                    {DAYS_OF_WEEK.map((day) => {
-                      const config = getDayConfig(day.value);
-                      if (!config) return null;
-
-                      return (
-                        <div key={day.value} className="flex items-center justify-between text-xs py-1">
-                          <span className="font-medium text-slate-700">{day.label}:</span>
-                          <span className="text-slate-600">
-                            {config.start_time} - {config.end_time}
+          {loadedTimeGroups.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-200">
+              <h5 className="text-xs font-semibold text-slate-700 mb-2">Time Groups</h5>
+              <div className="space-y-2">
+                {loadedTimeGroups.map((group, index) => (
+                  <div key={index} className="flex items-center justify-between text-xs">
+                    <div className="flex flex-wrap gap-1">
+                      {group.days.sort().map((day) => {
+                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                        return (
+                          <span
+                            key={day}
+                            className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200"
+                          >
+                            {dayInfo?.short}
                           </span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+                    <span className="text-slate-600 ml-2">
+                      {formatTime(group.startTime)} - {formatTime(group.endTime)}
+                    </span>
                   </div>
-                ) : (
-                  <div className="text-xs text-slate-500">No day-specific configurations</div>
-                )}
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       ) : null}
     </div>
@@ -507,8 +462,8 @@ export default function DaypartManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDayConfigs, setShowDayConfigs] = useState(false);
-  const [dayConfigurations, setDayConfigurations] = useState<DayConfiguration[]>([]);
+  const [showTimeGroupManager, setShowTimeGroupManager] = useState(false);
+  const [timeGroups, setTimeGroups] = useState<TimeGroup[]>([]);
   const [formData, setFormData] = useState<Partial<DaypartDefinition>>({
     daypart_name: '',
     display_label: '',
@@ -543,18 +498,23 @@ export default function DaypartManagement() {
     setLoading(false);
   };
 
-  const loadDayConfigurations = async (daypartId: string) => {
+  const loadTimeGroups = async (daypartId: string) => {
     const { data, error } = await supabase
-      .from('daypart_day_configurations')
+      .from('daypart_time_groups')
       .select('*')
-      .eq('daypart_definition_id', daypartId)
-      .order('day_of_week');
+      .eq('daypart_definition_id', daypartId);
 
     if (error) {
-      console.error('Error loading day configurations:', error);
+      console.error('Error loading time groups:', error);
       return [];
     }
-    return data || [];
+
+    return (data || []).map(group => ({
+      id: group.id,
+      days: group.days_of_week,
+      startTime: group.start_time,
+      endTime: group.end_time
+    }));
   };
 
   const handleSave = async () => {
@@ -585,13 +545,13 @@ export default function DaypartManagement() {
       }
 
       if (daypartId) {
-        await saveDayConfigurations(daypartId);
+        await saveTimeGroups(daypartId);
       }
 
       setEditingId(null);
       setShowAddForm(false);
-      setShowDayConfigs(false);
-      setDayConfigurations([]);
+      setShowTimeGroupManager(false);
+      setTimeGroups([]);
       setFormData({
         daypart_name: '',
         display_label: '',
@@ -612,44 +572,25 @@ export default function DaypartManagement() {
     }
   };
 
-  const saveDayConfigurations = async (daypartId: string) => {
-    const existingConfigs = await loadDayConfigurations(daypartId);
-    const existingConfigIds = existingConfigs.map(c => c.id);
+  const saveTimeGroups = async (daypartId: string) => {
+    await supabase
+      .from('daypart_time_groups')
+      .delete()
+      .eq('daypart_definition_id', daypartId);
 
-    const configurationsToKeep = dayConfigurations.filter(dc => dc.id);
-    const configurationsToAdd = dayConfigurations.filter(dc => !dc.id);
+    if (timeGroups.length > 0) {
+      const groupsToInsert = timeGroups.map(group => ({
+        daypart_definition_id: daypartId,
+        days_of_week: group.days,
+        start_time: group.startTime,
+        end_time: group.endTime
+      }));
 
-    const configIdsToKeep = configurationsToKeep.map(c => c.id);
-    const configsToDelete = existingConfigIds.filter(id => !configIdsToKeep.includes(id));
+      const { error } = await supabase
+        .from('daypart_time_groups')
+        .insert(groupsToInsert);
 
-    if (configsToDelete.length > 0) {
-      await supabase
-        .from('daypart_day_configurations')
-        .delete()
-        .in('id', configsToDelete);
-    }
-
-    for (const config of configurationsToKeep) {
-      if (config.id) {
-        await supabase
-          .from('daypart_day_configurations')
-          .update({
-            start_time: config.start_time,
-            end_time: config.end_time
-          })
-          .eq('id', config.id);
-      }
-    }
-
-    if (configurationsToAdd.length > 0) {
-      await supabase
-        .from('daypart_day_configurations')
-        .insert(configurationsToAdd.map(c => ({
-          daypart_definition_id: daypartId,
-          day_of_week: c.day_of_week,
-          start_time: c.start_time,
-          end_time: c.end_time
-        })));
+      if (error) throw error;
     }
   };
 
@@ -657,40 +598,12 @@ export default function DaypartManagement() {
     setEditingId(daypart.id);
     setFormData(daypart);
     setShowAddForm(false);
-    const configs = await loadDayConfigurations(daypart.id);
-    setDayConfigurations(configs);
+    const groups = await loadTimeGroups(daypart.id);
+    setTimeGroups(groups);
   };
 
-  const addDayConfiguration = (day: number) => {
-    if (dayConfigurations.some(dc => dc.day_of_week === day)) {
-      return;
-    }
-
-    setDayConfigurations([
-      ...dayConfigurations,
-      {
-        daypart_definition_id: editingId || '',
-        day_of_week: day,
-        start_time: formData.default_start_time || '06:00:00',
-        end_time: formData.default_end_time || '11:00:00'
-      }
-    ]);
-  };
-
-  const removeDayConfiguration = (day: number) => {
-    setDayConfigurations(dayConfigurations.filter(dc => dc.day_of_week !== day));
-  };
-
-  const updateDayConfiguration = (day: number, field: 'start_time' | 'end_time', value: string) => {
-    setDayConfigurations(
-      dayConfigurations.map(dc =>
-        dc.day_of_week === day ? { ...dc, [field]: value } : dc
-      )
-    );
-  };
-
-  const getDayConfiguration = (day: number) => {
-    return dayConfigurations.find(dc => dc.day_of_week === day);
+  const handleSaveTimeGroups = (groups: TimeGroup[]) => {
+    setTimeGroups(groups);
   };
 
   const handleDelete = async (id: string) => {
@@ -713,8 +626,8 @@ export default function DaypartManagement() {
   const handleCancel = () => {
     setEditingId(null);
     setShowAddForm(false);
-    setShowDayConfigs(false);
-    setDayConfigurations([]);
+    setShowTimeGroupManager(false);
+    setTimeGroups([]);
     setFormData({
       daypart_name: '',
       display_label: '',
@@ -884,87 +797,55 @@ export default function DaypartManagement() {
               </div>
             </div>
 
-            <div className="col-span-2 border-t border-slate-200 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowDayConfigs(!showDayConfigs)}
-                className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900"
-              >
-                {showDayConfigs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                Day-Specific Time Configurations (Optional)
-              </button>
-              <p className="text-xs text-slate-500 mt-1">
-                Override default times for specific days. Days without custom times will use the default times above.
-              </p>
-
-              {showDayConfigs && (
-                <div className="mt-4 space-y-3">
-                  {DAYS_OF_WEEK.map((day) => {
-                    const config = getDayConfiguration(day.value);
-                    const hasConfig = !!config;
-
-                    return (
-                      <div
-                        key={day.value}
-                        className={`p-3 rounded-lg border ${
-                          hasConfig ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-slate-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-slate-700">{day.label}</span>
-                          {hasConfig ? (
-                            <button
-                              type="button"
-                              onClick={() => removeDayConfiguration(day.value)}
-                              className="text-xs text-red-600 hover:text-red-700 font-medium"
-                            >
-                              Remove Override
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => addDayConfiguration(day.value)}
-                              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                              Add Custom Times
-                            </button>
-                          )}
+            {showTimeGroupManager ? (
+              <div className="col-span-2 border-t border-slate-200 pt-4">
+                <TimeGroupManager
+                  defaultStartTime={formData.default_start_time || '06:00:00'}
+                  defaultEndTime={formData.default_end_time || '11:00:00'}
+                  existingGroups={timeGroups}
+                  onSave={(groups) => {
+                    setTimeGroups(groups);
+                    setShowTimeGroupManager(false);
+                  }}
+                  onCancel={() => setShowTimeGroupManager(false)}
+                  color={formData.color}
+                />
+              </div>
+            ) : (
+              <div className="col-span-2 border-t border-slate-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowTimeGroupManager(true)}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  {timeGroups.length > 0 ? 'Edit Time Groups' : 'Add Time Groups'}
+                </button>
+                {timeGroups.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {timeGroups.map((group, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg">
+                        <div className="flex flex-wrap gap-1">
+                          {group.days.sort().map((day) => {
+                            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                            return (
+                              <span
+                                key={day}
+                                className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200"
+                              >
+                                {dayInfo?.short}
+                              </span>
+                            );
+                          })}
                         </div>
-
-                        {hasConfig && config && (
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="block text-xs text-slate-600 mb-1">Start Time</label>
-                              <input
-                                type="time"
-                                value={config.start_time}
-                                onChange={(e) => updateDayConfiguration(day.value, 'start_time', e.target.value)}
-                                className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs text-slate-600 mb-1">End Time</label>
-                              <input
-                                type="time"
-                                value={config.end_time}
-                                onChange={(e) => updateDayConfiguration(day.value, 'end_time', e.target.value)}
-                                className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {!hasConfig && (
-                          <div className="text-xs text-slate-500">
-                            Using default: {formData.default_start_time} - {formData.default_end_time}
-                          </div>
-                        )}
+                        <span className="text-slate-600 ml-2">
+                          {formatTime(group.startTime)} - {formatTime(group.endTime)}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="col-span-2">
               <label className="flex items-center gap-2">
@@ -1020,14 +901,11 @@ export default function DaypartManagement() {
             onCancel={handleCancel}
             formData={editingId === daypart.id ? formData : undefined}
             setFormData={editingId === daypart.id ? setFormData : undefined}
-            dayConfigurations={editingId === daypart.id ? dayConfigurations : undefined}
-            showDayConfigs={editingId === daypart.id ? showDayConfigs : undefined}
-            setShowDayConfigs={editingId === daypart.id ? setShowDayConfigs : undefined}
+            timeGroups={editingId === daypart.id ? timeGroups : undefined}
+            showTimeGroupManager={editingId === daypart.id ? showTimeGroupManager : undefined}
+            setShowTimeGroupManager={editingId === daypart.id ? setShowTimeGroupManager : undefined}
+            onSaveTimeGroups={editingId === daypart.id ? handleSaveTimeGroups : undefined}
             toggleDay={editingId === daypart.id ? toggleDay : undefined}
-            addDayConfiguration={editingId === daypart.id ? addDayConfiguration : undefined}
-            removeDayConfiguration={editingId === daypart.id ? removeDayConfiguration : undefined}
-            updateDayConfiguration={editingId === daypart.id ? updateDayConfiguration : undefined}
-            getDayConfiguration={editingId === daypart.id ? getDayConfiguration : undefined}
           />
         ))}
       </div>
