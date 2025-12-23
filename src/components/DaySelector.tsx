@@ -1,0 +1,134 @@
+import { getDayCollisionStatus, Schedule } from '../hooks/useScheduleCollisionDetection';
+
+interface DaySelectorProps {
+  selectedDays: number[];
+  onToggleDay: (day: number) => void;
+  schedules?: Schedule[];
+  currentDaypartName?: string;
+  editingScheduleId?: string;
+  showPresets?: boolean;
+}
+
+const DAYS_OF_WEEK = [
+  { value: 0, label: 'Sunday', short: 'S' },
+  { value: 1, label: 'Monday', short: 'M' },
+  { value: 2, label: 'Tuesday', short: 'T' },
+  { value: 3, label: 'Wednesday', short: 'W' },
+  { value: 4, label: 'Thursday', short: 'T' },
+  { value: 5, label: 'Friday', short: 'F' },
+  { value: 6, label: 'Saturday', short: 'S' }
+];
+
+const PRESETS = {
+  weekdays: [1, 2, 3, 4, 5],
+  weekend: [0, 6],
+  allDays: [0, 1, 2, 3, 4, 5, 6]
+};
+
+export default function DaySelector({
+  selectedDays,
+  onToggleDay,
+  schedules = [],
+  currentDaypartName = '',
+  editingScheduleId,
+  showPresets = true
+}: DaySelectorProps) {
+  const applyPreset = (preset: number[]) => {
+    preset.forEach(day => {
+      if (!selectedDays.includes(day)) {
+        onToggleDay(day);
+      }
+    });
+    selectedDays.forEach(day => {
+      if (!preset.includes(day)) {
+        onToggleDay(day);
+      }
+    });
+  };
+
+  const clearAll = () => {
+    selectedDays.forEach(day => onToggleDay(day));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <label className="text-sm font-medium text-slate-700">Days of the Week *</label>
+        {showPresets && (
+          <button
+            type="button"
+            onClick={selectedDays.length === 7 ? clearAll : () => applyPreset(PRESETS.allDays)}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            {selectedDays.length === 7 ? 'Clear All' : 'Select All'}
+          </button>
+        )}
+      </div>
+
+      {showPresets && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => applyPreset(PRESETS.weekdays)}
+            className="px-3 py-1.5 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors"
+          >
+            Weekdays
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset(PRESETS.weekend)}
+            className="px-3 py-1.5 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors"
+          >
+            Weekend
+          </button>
+          <button
+            type="button"
+            onClick={clearAll}
+            className="px-3 py-1.5 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {schedules.length > 0 && currentDaypartName && (
+        <div className="text-xs text-slate-500 mb-3">
+          Red border indicates day already scheduled for this daypart
+        </div>
+      )}
+
+      <div className="flex justify-between gap-2">
+        {DAYS_OF_WEEK.map((day) => {
+          const isSelected = selectedDays.includes(day.value);
+          const hasCollision = schedules.length > 0 && currentDaypartName
+            ? getDayCollisionStatus(schedules, currentDaypartName, day.value, selectedDays, editingScheduleId)
+            : false;
+
+          return (
+            <button
+              key={day.value}
+              type="button"
+              onClick={() => onToggleDay(day.value)}
+              className={`flex-1 h-12 rounded-lg text-sm font-medium transition-all ${
+                isSelected
+                  ? 'bg-slate-800 text-white shadow-md'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              } ${hasCollision && !isSelected ? 'ring-2 ring-red-400' : ''}`}
+              title={hasCollision && !isSelected
+                ? `${day.label} already scheduled for ${currentDaypartName}`
+                : day.label}
+            >
+              <div className="text-xs">{day.short}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedDays.length > 0 && (
+        <div className="mt-2 text-xs text-slate-600">
+          {selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'} selected
+        </div>
+      )}
+    </div>
+  );
+}
