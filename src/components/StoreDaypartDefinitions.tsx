@@ -253,7 +253,10 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           <h3 className="text-lg font-semibold text-slate-900">Daypart Definitions</h3>
         </div>
         <button
-          onClick={handleAddNew}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddNew();
+          }}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -329,14 +332,20 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 {definition.is_customized ? (
                   <>
                     <button
-                      onClick={() => handleEdit(definition)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(definition);
+                      }}
                       className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Edit"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(definition)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(definition);
+                      }}
                       className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete"
                     >
@@ -345,7 +354,10 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                   </>
                 ) : (
                   <button
-                    onClick={() => handleCustomize(definition)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCustomize(definition);
+                    }}
                     className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
                     title="Customize for this store"
                   >
