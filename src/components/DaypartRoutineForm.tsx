@@ -61,6 +61,7 @@ export default function DaypartRoutineForm({
   preFillDaypart
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [formData, setFormData] = useState({
     schedule_type: editingRoutine?.schedule_type || 'regular' as 'regular' | 'event_holiday',
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
@@ -211,14 +212,18 @@ export default function DaypartRoutineForm({
     }
   };
 
-  const handleTemplateApply = (template: any) => {
-    setFormData({
-      ...formData,
-      event_name: template.name,
-      event_date: template.date || '',
-      recurrence_type: template.recurrenceType || 'none',
-      recurrence_config: template.recurrenceConfig || {}
-    });
+  const handleTemplateApply = (templates: any[]) => {
+    if (templates.length > 0) {
+      const template = templates[0];
+      setFormData({
+        ...formData,
+        event_name: template.name,
+        event_date: template.date || '',
+        recurrence_type: template.recurrenceType || 'none',
+        recurrence_config: template.recurrenceConfig || {}
+      });
+    }
+    setShowTemplatePicker(false);
   };
 
   return (
@@ -271,10 +276,15 @@ export default function DaypartRoutineForm({
         {formData.schedule_type === 'event_holiday' && (
           <>
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-purple-900">Quick Fill from Template</p>
-              </div>
-              <HolidayTemplatePicker onSelectTemplate={handleTemplateApply} />
+              <p className="text-sm font-medium text-purple-900 mb-2">Quick Fill from Template</p>
+              <button
+                type="button"
+                onClick={() => setShowTemplatePicker(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <Calendar className="w-4 h-4" />
+                Choose Holiday Template
+              </button>
             </div>
 
             <div>
@@ -422,6 +432,14 @@ export default function DaypartRoutineForm({
           </button>
         </div>
       </div>
+
+      {showTemplatePicker && (
+        <HolidayTemplatePicker
+          onSelect={handleTemplateApply}
+          onClose={() => setShowTemplatePicker(false)}
+          allowMultiple={false}
+        />
+      )}
     </div>
   );
 }
