@@ -154,6 +154,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                 <div className="bg-slate-600 p-6 text-white">
                   <div className="text-6xl font-light tracking-tight flex items-baseline justify-center gap-1">
                     <button
+                      type="button"
                       onClick={() => setSelectionMode('hour')}
                       className={`transition-opacity ${selectionMode === 'hour' ? 'opacity-100' : 'opacity-60'}`}
                     >
@@ -161,6 +162,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                     </button>
                     <span>:</span>
                     <button
+                      type="button"
                       onClick={() => setSelectionMode('minute')}
                       className={`transition-opacity ${selectionMode === 'minute' ? 'opacity-100' : 'opacity-60'}`}
                     >
@@ -169,6 +171,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                   </div>
                   <div className="flex justify-center gap-2 mt-4">
                     <button
+                      type="button"
                       onClick={() => togglePeriod(false)}
                       className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
                         !isPM ? 'bg-white text-slate-800' : 'bg-slate-700 text-white hover:bg-slate-500'
@@ -177,6 +180,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                       AM
                     </button>
                     <button
+                      type="button"
                       onClick={() => togglePeriod(true)}
                       className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
                         isPM ? 'bg-white text-slate-800' : 'bg-slate-700 text-white hover:bg-slate-500'
@@ -250,6 +254,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
 
                 <div className="flex items-center justify-between p-4 border-t border-slate-700">
                   <button
+                    type="button"
                     onClick={() => {
                       setManualMode(true);
                     }}
@@ -259,6 +264,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                   </button>
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => setIsOpen(false)}
                       className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium"
                       style={{ color: 'rgb(0, 173, 240)' }}
@@ -266,6 +272,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                       CANCEL
                     </button>
                     <button
+                      type="button"
                       onClick={handleOK}
                       className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium"
                       style={{ color: 'rgb(0, 173, 240)' }}
@@ -379,6 +386,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
 
                 <div className="flex items-center justify-between p-4 border-t border-slate-700">
                   <button
+                    type="button"
                     onClick={() => setManualMode(false)}
                     className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
                   >
@@ -386,6 +394,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                   </button>
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => setIsOpen(false)}
                       className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium"
                       style={{ color: 'rgb(0, 173, 240)' }}
@@ -393,6 +402,7 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
                       CANCEL
                     </button>
                     <button
+                      type="button"
                       onClick={handleManualSubmit}
                       className="px-6 py-2 hover:bg-slate-700 rounded-lg transition-colors font-medium disabled:opacity-50"
                       style={{ color: !manualHour || !manualMinute ? '' : 'rgb(0, 173, 240)' }}
