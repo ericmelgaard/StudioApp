@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { ArrowLeft, Save, AlertCircle, MapPin, Phone, Clock, Globe, Building2, Layers, X, Info, Copy, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import SiteDaypartManager from '../components/SiteDaypartManager';
+import StoreDaypartDefinitions from '../components/StoreDaypartDefinitions';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 
 interface StoreData {
@@ -326,8 +326,8 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
       { id: 'store-location', label: 'Store Location', icon: MapPin },
     ];
 
-    if (storeId && storeRoot) {
-      sections.push({ id: 'daypart-config', label: 'Daypart Configuration', icon: Clock });
+    if (storeId) {
+      sections.push({ id: 'daypart-definitions', label: 'Daypart Definitions', icon: Clock });
     }
 
     if (storeId && storeRoot) {
@@ -601,13 +601,13 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
                 </div>
               </div>
 
-              {storeId && storeRoot && (
+              {storeId && (
                 <div
-                  id="daypart-config"
-                  ref={(el) => (sectionRefs.current['daypart-config'] = el)}
+                  id="daypart-definitions"
+                  ref={(el) => (sectionRefs.current['daypart-definitions'] = el)}
                   className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
                 >
-                  <SiteDaypartManager placementGroupId={storeRoot.id} />
+                  <StoreDaypartDefinitions storeId={storeId} />
                 </div>
               )}
 
