@@ -1,8 +1,24 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { ArrowLeft, Save, AlertCircle, MapPin, Clock, Info, Copy, Check, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, MapPin, Clock, Info, Copy, Check, Calendar, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import StoreDaypartDefinitions from '../components/StoreDaypartDefinitions';
 import StoreOperationHours from '../components/StoreOperationHours';
+
+const TIMEZONES = [
+  { value: 'America/New_York', label: 'Eastern Time (ET)', offset: 'UTC-5/-4' },
+  { value: 'America/Chicago', label: 'Central Time (CT)', offset: 'UTC-6/-5' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)', offset: 'UTC-7/-6' },
+  { value: 'America/Phoenix', label: 'Mountain Time - Arizona (no DST)', offset: 'UTC-7' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)', offset: 'UTC-8/-7' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKT)', offset: 'UTC-9/-8' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HST)', offset: 'UTC-10' },
+  { value: 'America/Toronto', label: 'Toronto (ET)', offset: 'UTC-5/-4' },
+  { value: 'America/Vancouver', label: 'Vancouver (PT)', offset: 'UTC-8/-7' },
+  { value: 'Europe/London', label: 'London (GMT/BST)', offset: 'UTC+0/+1' },
+  { value: 'Europe/Paris', label: 'Paris (CET/CEST)', offset: 'UTC+1/+2' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)', offset: 'UTC+9' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEDT/AEST)', offset: 'UTC+10/+11' },
+];
 
 interface StoreData {
   id?: number;
@@ -15,6 +31,7 @@ interface StoreData {
   phone?: string;
   latitude?: number;
   longitude?: number;
+  timezone?: string;
 }
 
 interface StoreEditProps {
@@ -38,7 +55,8 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     zip_code: '',
     phone: '',
     latitude: undefined,
-    longitude: undefined
+    longitude: undefined,
+    timezone: 'America/New_York'
   });
 
   const [activeSection, setActiveSection] = useState('basic-info');
@@ -407,6 +425,27 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="(555) 123-4567"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-blue-600" />
+                      Time Zone
+                    </label>
+                    <select
+                      value={formData.timezone || 'America/New_York'}
+                      onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {TIMEZONES.map((tz) => (
+                        <option key={tz.value} value={tz.value}>
+                          {tz.label} ({tz.offset})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Used for operation hours and daypart scheduling
+                    </p>
                   </div>
                 </div>
               </div>
