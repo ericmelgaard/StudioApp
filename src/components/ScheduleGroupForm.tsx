@@ -84,7 +84,7 @@ export default function ScheduleGroupForm({
         schedules={allSchedules}
         currentDaypartName={localSchedule.daypart_name}
         editingScheduleId={localSchedule.id}
-        showPresets={true}
+        showPresets={false}
       />
 
       <div className="grid grid-cols-2 gap-3">
