@@ -137,12 +137,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         const { error: updateError } = await supabase
           .from('daypart_definitions')
           .update({
-            display_name: formData.display_name,
+            display_label: formData.display_name,
             color: formData.color,
             icon: formData.icon,
-            start_time: formData.start_time,
-            end_time: formData.end_time,
-            days_of_week: formData.days_of_week,
+            default_start_time: formData.start_time,
+            default_end_time: formData.end_time,
+            default_days: formData.days_of_week,
             sort_order: formData.sort_order,
             updated_at: new Date().toISOString(),
           })
@@ -155,13 +155,14 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           .from('daypart_definitions')
           .insert([{
             daypart_name: formData.daypart_name,
-            display_name: formData.display_name,
+            display_label: formData.display_name,
             color: formData.color,
             icon: formData.icon,
-            start_time: formData.start_time,
-            end_time: formData.end_time,
-            days_of_week: formData.days_of_week,
+            default_start_time: formData.start_time,
+            default_end_time: formData.end_time,
+            default_days: formData.days_of_week,
             sort_order: formData.sort_order,
+            is_active: true,
             store_id: storeId,
             concept_id: null,
           }]);
