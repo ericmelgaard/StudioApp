@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Clock, AlertCircle, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Edit2, Clock, AlertCircle, RotateCcw, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DaypartRoutineForm, { DaypartRoutine } from './DaypartRoutineForm';
 
@@ -182,13 +182,45 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     setShowForm(true);
   };
 
-  const groupedRoutines = routines.reduce((acc, routine) => {
+  const regularRoutines = routines.filter(r => r.schedule_type !== 'event_holiday');
+  const eventRoutines = routines.filter(r => r.schedule_type === 'event_holiday');
+
+  const groupedRoutines = regularRoutines.reduce((acc, routine) => {
     if (!acc[routine.daypart_name]) {
       acc[routine.daypart_name] = [];
     }
     acc[routine.daypart_name].push(routine);
     return acc;
   }, {} as Record<string, DaypartRoutine[]>);
+
+  const groupedEventRoutines = eventRoutines.reduce((acc, routine) => {
+    if (!acc[routine.daypart_name]) {
+      acc[routine.daypart_name] = [];
+    }
+    acc[routine.daypart_name].push(routine);
+    return acc;
+  }, {} as Record<string, DaypartRoutine[]>);
+
+  const formatEventDate = (dateString: string | undefined, recurrenceType?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString + 'T00:00:00');
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    if (recurrenceType === 'none') {
+      options.year = 'numeric';
+    }
+    return date.toLocaleDateString('en-US', options);
+  };
+
+  const getRecurrenceLabel = (type?: string) => {
+    switch (type) {
+      case 'none': return 'One-time';
+      case 'annual_date': return 'Annual';
+      case 'monthly_date': return 'Monthly';
+      case 'annual_relative': return 'Annual (relative)';
+      case 'annual_date_range': return 'Annual range';
+      default: return 'Unknown';
+    }
+  };
 
   if (loading) {
     return (
@@ -199,14 +231,14 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
           <Clock className="w-5 h-5 text-amber-600" />
-          Placement Daypart Schedules
+          Placement Schedules
         </h3>
         <p className="text-sm text-slate-600 mt-1">
-          Configure specific daypart hours for this placement. If not set, inherits from site configuration.
+          Configure daypart hours and event/holiday schedules for this placement.
         </p>
       </div>
 
@@ -247,11 +279,135 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
           >
             <Plus className="w-4 h-4" />
-            Add Placement Schedule
+            Add Schedule
           </button>
         </div>
       ) : routines.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {eventRoutines.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-5 h-5 text-purple-600" />
+                <h4 className="font-semibold text-slate-900">Event & Holiday Schedules</h4>
+              </div>
+              {Object.entries(groupedEventRoutines).map(([daypartName, daypartRoutines]) => {
+                const definition = daypartDefinitions[daypartName];
+                const displayLabel = definition?.display_label || daypartName;
+                const colorClass = definition?.color || 'bg-slate-100 text-slate-800 border-slate-300';
+
+                return (
+                  <div key={`event-${daypartName}`} className="bg-white rounded-lg border-2 border-purple-200 overflow-hidden">
+                    <div className={`px-4 py-3 border-b border-purple-200 ${colorClass} bg-purple-50`}>
+                      <div className="flex items-center justify-between">
+                        <h5 className="font-semibold flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-purple-600" />
+                          {displayLabel} Events
+                        </h5>
+                        {!showForm && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddNew(daypartName);
+                            }}
+                            className="p-1.5 text-purple-600 hover:text-purple-700 hover:bg-white/50 rounded-lg transition-colors"
+                            title={`Add another ${displayLabel} event`}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="divide-y divide-purple-100">
+                      {daypartRoutines.map((routine) => (
+                        <div key={routine.id}>
+                          <div className="p-4 hover:bg-purple-50/50 transition-colors group">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="text-sm font-semibold text-purple-900">
+                                    {routine.event_name || 'Unnamed Event'}
+                                  </span>
+                                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded font-medium">
+                                    {getRecurrenceLabel(routine.recurrence_type)}
+                                  </span>
+                                </div>
+                                <div className="text-sm text-slate-700 mb-2">
+                                  <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                  {formatEventDate(routine.event_date, routine.recurrence_type)}
+                                  <span className="mx-2 text-slate-400">•</span>
+                                  <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                  {routine.start_time} - {routine.end_time}
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {routine.days_of_week.sort().map(day => {
+                                    const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                    return (
+                                      <span
+                                        key={day}
+                                        className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium"
+                                      >
+                                        {dayInfo?.short}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEdit(routine);
+                                  }}
+                                  className="p-2 text-slate-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                  title="Edit schedule"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDelete(routine.id!);
+                                  }}
+                                  className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete schedule"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {editingRoutine?.id === routine.id && (
+                            <div className="px-4 pb-4 bg-purple-50 border-t border-purple-200">
+                              <div className="pt-4">
+                                <DaypartRoutineForm
+                                  placementGroupId={placementGroupId}
+                                  existingRoutines={routines}
+                                  onSave={handleSave}
+                                  onCancel={handleCancel}
+                                  editingRoutine={editingRoutine}
+                                  preFillDaypart={preFillDaypart}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {regularRoutines.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-5 h-5 text-amber-600" />
+                <h4 className="font-semibold text-slate-900">Regular Daypart Schedules</h4>
+              </div>
           {Object.entries(groupedRoutines).map(([daypartName, daypartRoutines]) => {
             const definition = daypartDefinitions[daypartName];
             const displayLabel = definition?.display_label || daypartName;
@@ -351,6 +507,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             </div>
             );
           })}
+            </div>
+          )}
+
           {!showForm && (
             <button
               onClick={(e) => {
@@ -361,7 +520,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
               className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-amber-600 hover:text-amber-600 hover:bg-amber-50 transition-colors font-medium"
             >
               <Plus className="w-4 h-4" />
-              Add Daypart Schedule
+              Add Schedule
             </button>
           )}
         </div>

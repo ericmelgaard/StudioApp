@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Calendar } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 import { supabase } from '../lib/supabase';
+import HolidayTemplatePicker from './HolidayTemplatePicker';
 
 interface DaypartRoutineFormProps {
   placementGroupId: string;
@@ -19,6 +20,19 @@ export interface DaypartRoutine {
   days_of_week: number[];
   start_time: string;
   end_time: string;
+  schedule_type?: 'regular' | 'event_holiday';
+  event_name?: string;
+  event_date?: string;
+  recurrence_type?: 'none' | 'annual_date' | 'monthly_date' | 'annual_relative' | 'annual_date_range';
+  recurrence_config?: {
+    month?: number;
+    day_of_month?: number;
+    weekday?: number;
+    position?: number;
+    range_start_date?: string;
+    range_end_date?: string;
+  };
+  priority_level?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -48,10 +62,15 @@ export default function DaypartRoutineForm({
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [formData, setFormData] = useState({
+    schedule_type: editingRoutine?.schedule_type || 'regular' as 'regular' | 'event_holiday',
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
     days_of_week: editingRoutine?.days_of_week || [] as number[],
     start_time: editingRoutine?.start_time || '06:00',
-    end_time: editingRoutine?.end_time || '11:00'
+    end_time: editingRoutine?.end_time || '11:00',
+    event_name: editingRoutine?.event_name || '',
+    event_date: editingRoutine?.event_date || '',
+    recurrence_type: editingRoutine?.recurrence_type || 'none' as 'none' | 'annual_date' | 'monthly_date' | 'annual_relative' | 'annual_date_range',
+    recurrence_config: editingRoutine?.recurrence_config || {}
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,10 +154,28 @@ export default function DaypartRoutineForm({
     });
   };
 
+  const calculatePriorityLevel = (): number => {
+    if (formData.schedule_type === 'regular') return 10;
+    if (formData.recurrence_type === 'none') return 100;
+    if (formData.recurrence_type === 'annual_date_range') return 50;
+    return 100;
+  };
+
   const handleSubmit = async () => {
     if (!formData.daypart_name) {
       setError('Please select a daypart type');
       return;
+    }
+
+    if (formData.schedule_type === 'event_holiday') {
+      if (!formData.event_name?.trim()) {
+        setError('Please enter an event name');
+        return;
+      }
+      if (!formData.event_date) {
+        setError('Please select an event date');
+        return;
+      }
     }
 
     if (formData.days_of_week.length === 0) {
@@ -161,9 +198,12 @@ export default function DaypartRoutineForm({
     setError(null);
 
     try {
+      const priority_level = calculatePriorityLevel();
       await onSave({
         placement_group_id: placementGroupId,
-        ...formData
+        ...formData,
+        priority_level,
+        recurrence_config: Object.keys(formData.recurrence_config).length > 0 ? formData.recurrence_config : undefined
       });
     } catch (err: any) {
       setError(err.message || 'Failed to save daypart routine');
@@ -171,11 +211,21 @@ export default function DaypartRoutineForm({
     }
   };
 
+  const handleTemplateApply = (template: any) => {
+    setFormData({
+      ...formData,
+      event_name: template.name,
+      event_date: template.date || '',
+      recurrence_type: template.recurrenceType || 'none',
+      recurrence_config: template.recurrenceConfig || {}
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-200 bg-slate-50">
         <h3 className="font-semibold text-slate-900">
-          {editingRoutine ? 'Edit Daypart Routine' : 'New Daypart Routine'}
+          {editingRoutine ? 'Edit Schedule' : 'New Schedule'}
         </h3>
       </div>
 
@@ -185,6 +235,96 @@ export default function DaypartRoutineForm({
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Schedule Type *
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, schedule_type: 'regular' })}
+              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                formData.schedule_type === 'regular'
+                  ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              Regular Schedule
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, schedule_type: 'event_holiday' })}
+              className={`px-4 py-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                formData.schedule_type === 'event_holiday'
+                  ? 'border-purple-600 bg-purple-50 text-purple-900 font-semibold'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              Event/Holiday
+            </button>
+          </div>
+        </div>
+
+        {formData.schedule_type === 'event_holiday' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Event Name *
+              </label>
+              <input
+                type="text"
+                value={formData.event_name}
+                onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
+                placeholder="e.g., Christmas, New Year's Eve, Super Bowl Sunday"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Event Date *
+              </label>
+              <input
+                type="date"
+                value={formData.event_date}
+                onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Recurrence *
+              </label>
+              <select
+                value={formData.recurrence_type}
+                onChange={(e) => setFormData({ ...formData, recurrence_type: e.target.value as any })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="none">One-time event</option>
+                <option value="annual_date">Annual (same date every year)</option>
+                <option value="monthly_date">Monthly (same day each month)</option>
+                <option value="annual_relative">Annual (relative day, e.g., last Monday of May)</option>
+                <option value="annual_date_range">Annual date range (multi-week event)</option>
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                {formData.recurrence_type === 'none' && 'Event occurs only once on the specified date'}
+                {formData.recurrence_type === 'annual_date' && 'Event repeats on the same date every year'}
+                {formData.recurrence_type === 'monthly_date' && 'Event repeats on the same day every month'}
+                {formData.recurrence_type === 'annual_relative' && 'Event repeats on a relative weekday (e.g., 3rd Thursday)'}
+                {formData.recurrence_type === 'annual_date_range' && 'Event spans multiple weeks, repeating annually'}
+              </p>
+            </div>
+
+            <div>
+              <HolidayTemplatePicker onSelectTemplate={handleTemplateApply} />
+            </div>
+          </>
         )}
 
         <div>
@@ -262,9 +402,13 @@ export default function DaypartRoutineForm({
             type="button"
             onClick={handleSubmit}
             disabled={saving || !!error || !formData.daypart_name || formData.days_of_week.length === 0}
-            className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ${
+              formData.schedule_type === 'event_holiday'
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-amber-600 hover:bg-amber-700'
+            }`}
           >
-            {saving ? 'Saving...' : editingRoutine ? 'Update Routine' : 'Add Routine'}
+            {saving ? 'Saving...' : editingRoutine ? 'Update Schedule' : 'Add Schedule'}
           </button>
           <button
             type="button"
