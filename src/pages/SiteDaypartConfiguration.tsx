@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Edit2, Trash2, ChevronDown, ChevronUp, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Clock, Edit2, Trash2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import TimeGroupManager from '../components/TimeGroupManager';
 
@@ -9,9 +9,6 @@ interface DaypartDefinition {
   display_label: string;
   description: string;
   color: string;
-  default_start_time: string;
-  default_end_time: string;
-  default_days: number[];
   sort_order: number;
   is_active: boolean;
   created_at: string;
@@ -83,8 +80,8 @@ function EditForm({ daypartDefinition, routines, placementGroupId, onSave, onCan
 
   return (
     <TimeGroupManager
-      defaultStartTime={daypartDefinition.default_start_time}
-      defaultEndTime={daypartDefinition.default_end_time}
+      defaultStartTime="06:00:00"
+      defaultEndTime="11:00:00"
       existingGroups={existingGroups}
       onSave={handleSaveGroups}
       onCancel={onCancel}
@@ -114,8 +111,6 @@ function DaypartCard({
   onCancel,
   onDelete
 }: DaypartCardProps) {
-  const [showDetails, setShowDetails] = useState(false);
-
   const isConfigured = routines.length > 0;
 
   return (
@@ -224,59 +219,12 @@ function DaypartCard({
             })}
           </div>
 
-          <div className="mt-3 pt-3 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-900"
-            >
-              {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              Default Configuration (from Global Definition)
-            </button>
-
-            {showDetails && (
-              <div className="mt-2 p-3 bg-slate-100 rounded text-sm">
-                <div className="text-slate-600">
-                  <div><span className="font-medium">Default Time:</span> {daypartDefinition.default_start_time} - {daypartDefinition.default_end_time}</div>
-                  <div className="mt-1">
-                    <span className="font-medium">Default Days:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {daypartDefinition.default_days.sort().map((day) => {
-                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                        return (
-                          <span key={day} className="px-2 py-1 bg-white text-slate-600 text-xs rounded">
-                            {dayInfo?.short}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       ) : (
         <div className="px-6 py-4 bg-slate-50">
           <p className="text-sm text-slate-600 mb-3">
-            This daypart is not configured for this site. Default configuration from global definition:
+            This daypart is not configured for this site. Click "Edit" to set up site-specific schedules.
           </p>
-          <div className="text-sm text-slate-700">
-            <div><span className="font-medium">Time:</span> {daypartDefinition.default_start_time} - {daypartDefinition.default_end_time}</div>
-            <div className="mt-1">
-              <span className="font-medium">Days:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {daypartDefinition.default_days.sort().map((day) => {
-                  const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                  return (
-                    <span key={day} className="px-2 py-1 bg-white text-slate-600 text-xs rounded border border-slate-200">
-                      {dayInfo?.short}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
