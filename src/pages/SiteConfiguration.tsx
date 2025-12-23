@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, ArrowLeft, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import PlacementGroupModal from '../components/PlacementGroupModal';
 import { useLocation } from '../hooks/useLocation';
 import MetricsBar from '../components/MetricsBar';
 import ConceptsGrid from '../components/ConceptsGrid';
@@ -13,6 +12,7 @@ import StoreModal from '../components/StoreModal';
 import CycleSettingsCard from '../components/CycleSettingsCard';
 import StoreEdit from './StoreEdit';
 import SiteDaypartConfiguration from './SiteDaypartConfiguration';
+import PlacementEdit from './PlacementEdit';
 import * as Icons from 'lucide-react';
 
 interface PlacementGroup {
@@ -72,10 +72,11 @@ export default function SiteConfiguration() {
   const { location, setLocation, canNavigateBack } = useLocation();
 
   // Navigation state
-  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store' | 'store-edit' | 'site-dayparts'>('wand');
+  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store' | 'store-edit' | 'site-dayparts' | 'placement-edit'>('wand');
   const [selectedConcept, setSelectedConcept] = useState<ConceptData | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
+  const [editingPlacement, setEditingPlacement] = useState<PlacementGroup | null>(null);
 
   // Data state
   const [concepts, setConcepts] = useState<ConceptData[]>([]);
@@ -88,7 +89,6 @@ export default function SiteConfiguration() {
   const [showConceptModal, setShowConceptModal] = useState(false);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showStoreModal, setShowStoreModal] = useState(false);
-  const [showPlacementModal, setShowPlacementModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [parentForNewPlacement, setParentForNewPlacement] = useState<string | null>(null);
 
@@ -314,20 +314,36 @@ export default function SiteConfiguration() {
 
   const handleEditStore = () => {
     if (storeRoot) {
-      setEditingItem(storeRoot);
-      setShowPlacementModal(true);
+      setEditingPlacement(storeRoot);
+      setViewLevel('placement-edit');
     }
   };
 
   const handleAddPlacement = (parentId: string | null = null) => {
-    setEditingItem(null);
+    setEditingPlacement({
+      id: undefined,
+      name: '',
+      parent_id: parentId,
+      store_id: selectedStore?.id || null,
+      is_store_root: false,
+      daypart_hours: {},
+      meal_stations: [],
+      templates: {},
+      nfc_url: null,
+      address: null,
+      timezone: 'America/New_York',
+      phone: null,
+      operating_hours: {},
+      description: null,
+      created_at: new Date().toISOString()
+    } as PlacementGroup);
     setParentForNewPlacement(parentId);
-    setShowPlacementModal(true);
+    setViewLevel('placement-edit');
   };
 
   const handleEditPlacement = (placement: PlacementGroup) => {
-    setEditingItem(placement);
-    setShowPlacementModal(true);
+    setEditingPlacement(placement);
+    setViewLevel('placement-edit');
   };
 
   const handleDeletePlacement = async (placement: PlacementGroup) => {
@@ -766,7 +782,24 @@ export default function SiteConfiguration() {
           {renderBreadcrumbs()}
         </div>
 
-        {viewLevel === 'store-edit' && selectedStore && selectedCompany ? (
+        {viewLevel === 'placement-edit' ? (
+          <PlacementEdit
+            placementId={editingPlacement?.id}
+            storeId={editingPlacement?.store_id || selectedStore?.id || undefined}
+            parentId={parentForNewPlacement || editingPlacement?.parent_id}
+            onBack={() => {
+              setViewLevel('store');
+              setEditingPlacement(null);
+              setParentForNewPlacement(null);
+            }}
+            onSave={async () => {
+              setViewLevel('store');
+              setEditingPlacement(null);
+              setParentForNewPlacement(null);
+              await loadStoreLevelData();
+            }}
+          />
+        ) : viewLevel === 'store-edit' && selectedStore && selectedCompany ? (
           <StoreEdit
             storeId={selectedStore.id}
             companyId={selectedCompany.id}
@@ -1021,26 +1054,6 @@ export default function SiteConfiguration() {
         )}
       </div>
 
-      {showPlacementModal && (
-        <PlacementGroupModal
-          group={editingItem}
-          availableParents={availableParents}
-          storeId={currentStore?.id}
-          defaultParentId={parentForNewPlacement}
-          isParentStoreRoot={parentForNewPlacement === storeRoot?.id}
-          onClose={() => {
-            setShowPlacementModal(false);
-            setEditingItem(null);
-            setParentForNewPlacement(null);
-          }}
-          onSuccess={() => {
-            setShowPlacementModal(false);
-            setEditingItem(null);
-            setParentForNewPlacement(null);
-            loadStoreLevelData();
-          }}
-        />
-      )}
     </div>
   );
 }
