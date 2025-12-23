@@ -1,8 +1,7 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { ArrowLeft, Save, AlertCircle, MapPin, Phone, Clock, Globe, Building2, Layers, X, Info, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, MapPin, Clock, Info, Copy, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import StoreDaypartDefinitions from '../components/StoreDaypartDefinitions';
-import PlacementGroupModal from '../components/PlacementGroupModal';
 
 interface StoreData {
   id?: number;
@@ -15,24 +14,6 @@ interface StoreData {
   phone?: string;
   latitude?: number;
   longitude?: number;
-}
-
-interface PlacementGroup {
-  id: string;
-  name: string;
-  description: string | null;
-  parent_id: string | null;
-  store_id: number | null;
-  is_store_root: boolean;
-  daypart_hours: Record<string, any>;
-  meal_stations: string[];
-  templates: Record<string, any>;
-  nfc_url: string | null;
-  address: string | null;
-  timezone: string;
-  phone: string | null;
-  operating_hours: Record<string, any>;
-  created_at: string;
 }
 
 interface StoreEditProps {
@@ -58,12 +39,6 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     latitude: undefined,
     longitude: undefined
   });
-
-  const [placements, setPlacements] = useState<PlacementGroup[]>([]);
-  const [storeRoot, setStoreRoot] = useState<PlacementGroup | null>(null);
-  const [showPlacementModal, setShowPlacementModal] = useState(false);
-  const [editingPlacement, setEditingPlacement] = useState<PlacementGroup | null>(null);
-  const [parentForNew, setParentForNew] = useState<string | null>(null);
 
   const [activeSection, setActiveSection] = useState('basic-info');
   const [idCopied, setIdCopied] = useState(false);
@@ -106,7 +81,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
         if (ref) observer.unobserve(ref);
       });
     };
-  }, [storeId, storeRoot]);
+  }, [storeId]);
 
   const checkIfDirty = () => {
     if (!originalDataRef.current) {
@@ -137,40 +112,6 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
         setFormData(data);
         originalDataRef.current = data;
       }
-
-      await loadPlacements();
-    } else {
-      setLoading(false);
-    }
-  };
-
-  const loadPlacements = async () => {
-    if (!storeId) return;
-
-    const { data: rootData, error: rootError } = await supabase
-      .from('placement_groups')
-      .select('*')
-      .eq('store_id', storeId)
-      .eq('is_store_root', true)
-      .maybeSingle();
-
-    if (rootError) {
-      console.error('Error loading store root:', rootError);
-    } else {
-      setStoreRoot(rootData);
-    }
-
-    const { data: placementsData, error: placementsError } = await supabase
-      .from('placement_groups')
-      .select('*')
-      .eq('store_id', storeId)
-      .eq('is_store_root', false)
-      .order('name');
-
-    if (placementsError) {
-      console.error('Error loading placements:', placementsError);
-    } else {
-      setPlacements(placementsData || []);
     }
 
     setLoading(false);
@@ -260,39 +201,6 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  const handleAddPlacement = (parentId: string | null = null) => {
-    setParentForNew(parentId);
-    setEditingPlacement(null);
-    setShowPlacementModal(true);
-  };
-
-  const handleEditPlacement = (placement: PlacementGroup) => {
-    setEditingPlacement(placement);
-    setParentForNew(null);
-    setShowPlacementModal(true);
-  };
-
-  const handleDeletePlacement = async (placementId: string) => {
-    if (!confirm('Are you sure you want to delete this placement?')) return;
-
-    const { error } = await supabase
-      .from('placement_groups')
-      .delete()
-      .eq('id', placementId);
-
-    if (error) {
-      console.error('Error deleting placement:', error);
-      alert('Failed to delete placement');
-    } else {
-      await loadPlacements();
-    }
-  };
-
-  const handlePlacementSave = async () => {
-    setShowPlacementModal(false);
-    await loadPlacements();
-  };
-
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
     const element = sectionRefs.current[sectionId];
@@ -328,10 +236,6 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
 
     if (storeId) {
       sections.push({ id: 'daypart-definitions', label: 'Daypart Definitions', icon: Clock });
-    }
-
-    if (storeId && storeRoot) {
-      sections.push({ id: 'placements', label: 'Placements', icon: Layers });
     }
 
     return sections;
@@ -406,7 +310,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
                 </h1>
                 <p className="text-slate-600">
                   {storeId
-                    ? 'Update store details, dayparts, and placements'
+                    ? 'Update store details and daypart definitions'
                     : 'Create a new store location'}
                 </p>
               </div>
@@ -611,88 +515,6 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
                 </div>
               )}
 
-              {storeId && storeRoot && (
-                <div
-                  id="placements"
-                  ref={(el) => (sectionRefs.current['placements'] = el)}
-                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-blue-600" />
-                      <h3 className="text-lg font-semibold text-slate-900">Placements</h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAddPlacement(storeRoot.id)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      <Building2 className="w-4 h-4" />
-                      Add Placement
-                    </button>
-                  </div>
-
-                  {placements.length > 0 ? (
-                    <div className="grid gap-3">
-                      {placements.map((placement) => (
-                        <div
-                          key={placement.id}
-                          className="p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-slate-900">{placement.name}</h4>
-                              {placement.description && (
-                                <p className="text-sm text-slate-600 mt-1">{placement.description}</p>
-                              )}
-                              <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
-                                {placement.address && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {placement.address}
-                                  </span>
-                                )}
-                                {placement.phone && (
-                                  <span className="flex items-center gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    {placement.phone}
-                                  </span>
-                                )}
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {placement.timezone}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 ml-4">
-                              <button
-                                type="button"
-                                onClick={() => handleEditPlacement(placement)}
-                                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              >
-                                <Building2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePlacement(placement.id)}
-                                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-slate-500">
-                      <Building2 className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-                      <p className="text-sm">No placements yet. Add your first placement to get started.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {isDirty && (
                 <div className="sticky bottom-0 bg-white rounded-lg border border-slate-200 p-6 shadow-lg transition-all duration-300 ease-in-out">
                   <div className="flex gap-3">
@@ -727,17 +549,6 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
           </div>
         </div>
       </div>
-
-      {showPlacementModal && storeRoot && (
-        <PlacementGroupModal
-          storeId={storeId!}
-          storeRoot={storeRoot}
-          group={editingPlacement || undefined}
-          parentId={parentForNew}
-          onClose={() => setShowPlacementModal(false)}
-          onSave={handlePlacementSave}
-        />
-      )}
     </>
   );
 }
