@@ -302,6 +302,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           <h3 className="text-lg font-semibold text-slate-900">Daypart Schedules</h3>
         </div>
         <button
+          type="button"
           onClick={() => setShowUnused(!showUnused)}
           className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors"
         >
@@ -368,6 +369,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         : 'Global'}
                     </span>
                     <button
+                      type="button"
                       onClick={() => toggleInUseStatus(definition.id)}
                       className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
                         isInUse
@@ -530,6 +532,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             <EyeOff className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm mb-2">All dayparts are marked as not in use.</p>
             <button
+              type="button"
               onClick={() => setShowUnused(true)}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
