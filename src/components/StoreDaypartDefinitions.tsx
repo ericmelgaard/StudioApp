@@ -385,6 +385,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     {definition.is_customized && (
                       <>
                         <button
+                          type="button"
                           onClick={() => handleEditDefinition(definition)}
                           className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
                           title="Edit definition"
@@ -392,6 +393,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDeleteDefinition(definition)}
                           className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
                           title="Delete definition"
@@ -402,6 +404,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     )}
                     {defSchedules.length > 0 && !addingScheduleForDef && !editingSchedule && (
                       <button
+                        type="button"
                         onClick={() => handleAddSchedule(definition.id)}
                         className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
                         title="Add schedule"
@@ -419,6 +422,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     No schedules yet. Add a schedule to define when this daypart is active.
                   </p>
                   <button
+                    type="button"
                     onClick={() => handleAddSchedule(definition.id)}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
@@ -468,6 +472,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                 </div>
                                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button
+                                    type="button"
                                     onClick={() => handleEditSchedule(schedule)}
                                     className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="Edit schedule"
@@ -475,6 +480,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                     <Edit2 className="w-4 h-4" />
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => handleDeleteSchedule(schedule.id!)}
                                     className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Delete schedule"
@@ -542,6 +548,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         )}
 
         <button
+          type="button"
           onClick={handleAddDefinition}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
         >
@@ -569,6 +576,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 {editingDefinition ? 'Edit Daypart Definition' : 'Add Daypart Definition'}
               </h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowDefinitionForm(false);
                   setEditingDefinition(null);
