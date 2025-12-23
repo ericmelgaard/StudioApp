@@ -26,6 +26,7 @@ export default function ScheduleGroupForm({
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [scheduleType, setScheduleType] = useState<ScheduleType>(schedule.schedule_type || 'regular');
+  const [scheduleName, setScheduleName] = useState(schedule.schedule_name || '');
   const [eventName, setEventName] = useState(schedule.event_name || '');
   const [eventDate, setEventDate] = useState(schedule.event_date || '');
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(schedule.recurrence_type || 'none');
@@ -102,6 +103,7 @@ export default function ScheduleGroupForm({
     const updatedSchedule: Schedule = {
       ...localSchedule,
       schedule_type: scheduleType,
+      schedule_name: scheduleName || undefined,
       priority_level: scheduleType === 'event_holiday' ? getPriorityLevel(recurrenceType) : 10
     };
 
@@ -171,6 +173,19 @@ export default function ScheduleGroupForm({
           </div>
         </div>
       )}
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Schedule Name (optional)
+        </label>
+        <input
+          type="text"
+          value={scheduleName}
+          onChange={(e) => setScheduleName(e.target.value)}
+          placeholder="e.g., Weekend Hours, Summer Schedule"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
       {error && scheduleType === 'regular' && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">

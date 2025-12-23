@@ -8,6 +8,12 @@ export interface Schedule {
   start_time: string;
   end_time: string;
   schedule_type?: ScheduleType;
+  schedule_name?: string;
+  event_name?: string;
+  event_date?: string;
+  recurrence_type?: string;
+  recurrence_config?: any;
+  priority_level?: number;
 }
 
 export interface CollisionResult {
