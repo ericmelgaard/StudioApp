@@ -56,8 +56,17 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
   const [isStoreRoot, setIsStoreRoot] = useState(false);
   const [activeSection, setActiveSection] = useState('basic-info');
   const [idCopied, setIdCopied] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const originalDataRef = useRef<{
+    formData: typeof formData;
+    daypartHours: typeof daypartHours;
+    mealStations: typeof mealStations;
+    templates: typeof templates;
+    operatingHours: typeof operatingHours;
+  } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -94,6 +103,26 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
     };
   }, [isStoreRoot, placementId]);
 
+  const checkIfDirty = () => {
+    if (!originalDataRef.current) {
+      return placementId ? false : true;
+    }
+
+    const original = originalDataRef.current;
+
+    const formChanged = JSON.stringify(formData) !== JSON.stringify(original.formData);
+    const daypartChanged = JSON.stringify(daypartHours) !== JSON.stringify(original.daypartHours);
+    const stationsChanged = JSON.stringify(mealStations) !== JSON.stringify(original.mealStations);
+    const templatesChanged = JSON.stringify(templates) !== JSON.stringify(original.templates);
+    const hoursChanged = JSON.stringify(operatingHours) !== JSON.stringify(original.operatingHours);
+
+    return formChanged || daypartChanged || stationsChanged || templatesChanged || hoursChanged;
+  };
+
+  useEffect(() => {
+    setIsDirty(checkIfDirty());
+  }, [formData, daypartHours, mealStations, templates, operatingHours]);
+
   const loadData = async () => {
     setLoading(true);
 
@@ -108,7 +137,7 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
         console.error('Error loading placement:', fetchError);
         setError('Failed to load placement');
       } else if (data) {
-        setFormData({
+        const loadedFormData = {
           name: data.name || '',
           description: data.description || '',
           parent_id: data.parent_id || '',
@@ -116,12 +145,26 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
           address: data.address || '',
           timezone: data.timezone || 'America/New_York',
           phone: data.phone || '',
-        });
-        setDaypartHours(data.daypart_hours || {});
-        setMealStations(data.meal_stations || []);
-        setTemplates(data.templates || {});
-        setOperatingHours(data.operating_hours || {});
+        };
+        const loadedDaypartHours = data.daypart_hours || {};
+        const loadedMealStations = data.meal_stations || [];
+        const loadedTemplates = data.templates || {};
+        const loadedOperatingHours = data.operating_hours || {};
+
+        setFormData(loadedFormData);
+        setDaypartHours(loadedDaypartHours);
+        setMealStations(loadedMealStations);
+        setTemplates(loadedTemplates);
+        setOperatingHours(loadedOperatingHours);
         setIsStoreRoot(data.is_store_root || false);
+
+        originalDataRef.current = {
+          formData: loadedFormData,
+          daypartHours: loadedDaypartHours,
+          mealStations: loadedMealStations,
+          templates: loadedTemplates,
+          operatingHours: loadedOperatingHours,
+        };
       }
     }
 
@@ -179,6 +222,14 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
         if (insertError) throw insertError;
       }
 
+      originalDataRef.current = {
+        formData,
+        daypartHours,
+        mealStations,
+        templates,
+        operatingHours,
+      };
+      setIsDirty(false);
       onSave();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save placement');
@@ -186,6 +237,50 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
       setSaving(false);
     }
   };
+
+  const handleBack = () => {
+    if (isDirty) {
+      setShowExitConfirm(true);
+    } else {
+      onBack();
+    }
+  };
+
+  const handleDiscardAndExit = () => {
+    setShowExitConfirm(false);
+    onBack();
+  };
+
+  const handleSaveAndExit = async () => {
+    setShowExitConfirm(false);
+    const form = document.querySelector('form');
+    if (form) {
+      form.requestSubmit();
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !showExitConfirm) {
+        handleBack();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDirty, showExitConfirm]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const addMealStation = () => {
     if (newMealStation.trim() && !mealStations.includes(newMealStation.trim())) {
@@ -270,11 +365,53 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
   }
 
   return (
+    <>
+      {showExitConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    Unsaved Changes
+                  </h3>
+                  <p className="text-slate-600 text-sm">
+                    You have unsaved changes. What would you like to do?
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+              >
+                Keep Editing
+              </button>
+              <button
+                onClick={handleDiscardAndExit}
+                className="flex-1 px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium"
+              >
+                Discard Changes
+              </button>
+              <button
+                onClick={handleSaveAndExit}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Save & Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -627,37 +764,40 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
             />
           </div>
 
-            <div className="sticky bottom-0 bg-white rounded-lg border border-slate-200 p-6 shadow-lg">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 font-medium"
-                >
-                  {saving ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      {placementId ? 'Update Placement' : 'Create Placement'}
-                    </>
-                  )}
-                </button>
+            {isDirty && (
+              <div className="sticky bottom-0 bg-white rounded-lg border border-slate-200 p-6 shadow-lg transition-all duration-300 ease-in-out">
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 font-medium"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        {placementId ? 'Update Placement' : 'Create Placement'}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </form>
         </div>
       </div>
     </div>
+    </>
   );
 }
