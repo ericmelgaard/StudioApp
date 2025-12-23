@@ -71,7 +71,12 @@ export function getDayCollisionStatus(
 
   return schedules.some(schedule => {
     if (editingScheduleId && schedule.id === editingScheduleId) return false;
-    return schedule.daypart_name === currentDaypartName && schedule.days_of_week.includes(day);
+    if (!schedule.daypart_name || !schedule.days_of_week) return false;
+
+    const daypartMatches = schedule.daypart_name === currentDaypartName;
+    const dayInSchedule = schedule.days_of_week.some(d => Number(d) === Number(day));
+
+    return daypartMatches && dayInSchedule;
   });
 }
 

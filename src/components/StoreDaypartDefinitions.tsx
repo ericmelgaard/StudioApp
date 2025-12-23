@@ -65,16 +65,25 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setError(null);
 
     try {
-      const [defsResult, schedulesResult] = await Promise.all([
-        supabase.rpc('get_effective_daypart_definitions', { p_store_id: storeId }),
-        supabase.from('daypart_schedules').select('*')
-      ]);
+      const defsResult = await supabase.rpc('get_effective_daypart_definitions', { p_store_id: storeId });
 
       if (defsResult.error) throw defsResult.error;
-      if (schedulesResult.error) throw schedulesResult.error;
 
-      setDefinitions(defsResult.data || []);
-      setSchedules(schedulesResult.data || []);
+      const defs = defsResult.data || [];
+      setDefinitions(defs);
+
+      if (defs.length > 0) {
+        const defIds = defs.map(d => d.id);
+        const schedulesResult = await supabase
+          .from('daypart_schedules')
+          .select('*')
+          .in('daypart_definition_id', defIds);
+
+        if (schedulesResult.error) throw schedulesResult.error;
+        setSchedules(schedulesResult.data || []);
+      } else {
+        setSchedules([]);
+      }
     } catch (err: any) {
       console.error('Error loading data:', err);
       setError(err.message || 'Failed to load daypart data');
