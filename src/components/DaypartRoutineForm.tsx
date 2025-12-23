@@ -209,6 +209,7 @@ export default function DaypartRoutineForm({
       await onSave({
         placement_group_id: placementGroupId,
         ...formData,
+        event_date: formData.event_date || undefined,
         priority_level,
         recurrence_config: Object.keys(formData.recurrence_config).length > 0 ? formData.recurrence_config : undefined
       });
