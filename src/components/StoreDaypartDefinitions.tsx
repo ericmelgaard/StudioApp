@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Clock, Plus, Edit2, Trash2, Copy, AlertCircle, Check, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import ColorPicker from './ColorPicker';
 import IconPicker from './IconPicker';
 
 interface DaypartDefinition {
@@ -60,10 +59,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     loadDefinitions();
   }, [storeId]);
 
-  useEffect(() => {
-    console.log('showForm changed to:', showForm);
-  }, [showForm]);
-
   const loadDefinitions = async () => {
     setLoading(true);
     setError(null);
@@ -84,7 +79,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   };
 
   const handleAddNew = () => {
-    console.log('handleAddNew called');
     setFormData({
       daypart_name: '',
       display_name: '',
@@ -98,7 +92,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setEditingDefinition(null);
     setCustomizingDefinition(null);
     setShowForm(true);
-    console.log('showForm set to true');
   };
 
   const handleEdit = (definition: DaypartDefinition) => {
@@ -266,7 +259,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Add button clicked');
             handleAddNew();
           }}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -373,7 +365,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log('Customize button clicked');
                       handleCustomize(definition);
                     }}
                     className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
@@ -400,9 +391,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={(e) => {
-            console.log('Overlay clicked', e.target === e.currentTarget);
             if (e.target === e.currentTarget) {
-              console.log('Closing modal from overlay click');
               setShowForm(false);
               setEditingDefinition(null);
               setCustomizingDefinition(null);
@@ -448,13 +437,13 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 <input
                   type="text"
                   required
-                  disabled={!!editingDefinition}
+                  disabled={!!editingDefinition || !!customizingDefinition}
                   value={formData.daypart_name}
                   onChange={(e) => setFormData({ ...formData, daypart_name: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:text-slate-500"
                   placeholder="e.g., breakfast, lunch, dinner"
                 />
-                {!editingDefinition && (
+                {!editingDefinition && !customizingDefinition && (
                   <p className="text-xs text-slate-500 mt-1">
                     Lowercase, no spaces. Used internally for matching with routines.
                   </p>
@@ -468,28 +457,56 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 <input
                   type="text"
                   required
+                  disabled={!!customizingDefinition}
                   value={formData.display_name}
                   onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:text-slate-500"
                   placeholder="e.g., Breakfast"
                 />
+                {customizingDefinition && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Display name is inherited from the global definition.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Color</label>
-                  <ColorPicker
-                    color={formData.color}
-                    onChange={(color) => setFormData({ ...formData, color })}
-                  />
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Color {customizingDefinition && <span className="text-xs text-slate-500">(inherited)</span>}
+                  </label>
+                  {customizingDefinition ? (
+                    <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg bg-slate-50">
+                      <div
+                        className="w-6 h-6 rounded border border-slate-300"
+                        style={{ backgroundColor: formData.color }}
+                      />
+                      <span className="text-sm text-slate-600">{formData.color}</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                      className="w-full h-10 px-1 py-1 border border-slate-300 rounded-lg cursor-pointer"
+                    />
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Icon</label>
-                  <IconPicker
-                    selectedIcon={formData.icon}
-                    onSelect={(icon) => setFormData({ ...formData, icon })}
-                  />
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Icon {customizingDefinition && <span className="text-xs text-slate-500">(inherited)</span>}
+                  </label>
+                  {customizingDefinition ? (
+                    <div className="px-3 py-2 border border-slate-200 rounded-lg bg-slate-50">
+                      <span className="text-sm text-slate-600">{formData.icon}</span>
+                    </div>
+                  ) : (
+                    <IconPicker
+                      selectedIcon={formData.icon}
+                      onSelect={(icon) => setFormData({ ...formData, icon })}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -561,6 +578,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                   Lower numbers appear first in lists
                 </p>
               </div>
+
+              {customizingDefinition && (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
+                  <strong>Note:</strong> When customizing, you can only change the time ranges and days of the week. The daypart name, display name, color, and icon are inherited from the global definition to maintain consistency.
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <button
