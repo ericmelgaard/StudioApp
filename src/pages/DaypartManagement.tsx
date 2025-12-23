@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, Save, X, AlertCircle } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, Save, X, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface DaypartDefinition {
@@ -17,6 +17,14 @@ interface DaypartDefinition {
   concept_id: number | null;
   created_at: string;
   updated_at: string;
+}
+
+interface DayConfiguration {
+  id?: string;
+  daypart_definition_id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -40,12 +48,157 @@ const COLOR_OPTIONS = [
   { value: 'bg-teal-100 text-teal-800 border-teal-300', label: 'Teal' },
 ];
 
+function DaypartCard({
+  daypart,
+  onEdit,
+  onDelete
+}: {
+  daypart: DaypartDefinition;
+  onEdit: (daypart: DaypartDefinition) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [dayConfigs, setDayConfigs] = useState<DayConfiguration[]>([]);
+  const [showConfigs, setShowConfigs] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const loadConfigs = async () => {
+    if (dayConfigs.length > 0) return;
+
+    setLoading(true);
+    const { data } = await supabase
+      .from('daypart_day_configurations')
+      .select('*')
+      .eq('daypart_definition_id', daypart.id)
+      .order('day_of_week');
+
+    setDayConfigs(data || []);
+    setLoading(false);
+  };
+
+  const toggleConfigs = () => {
+    if (!showConfigs && dayConfigs.length === 0) {
+      loadConfigs();
+    }
+    setShowConfigs(!showConfigs);
+  };
+
+  const getDayConfig = (day: number) => dayConfigs.find(c => c.day_of_week === day);
+
+  return (
+    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className={`px-6 py-4 border-b border-slate-200 ${daypart.color}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              {daypart.display_label}
+              {!daypart.is_active && (
+                <span className="text-xs px-2 py-1 bg-white/50 rounded">Inactive</span>
+              )}
+            </h3>
+            <p className="text-sm opacity-90 mt-1">{daypart.description}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onEdit(daypart)}
+              className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+              title="Edit daypart"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onDelete(daypart.id)}
+              className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+              title="Delete daypart"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="px-6 py-4 bg-slate-50">
+        <div className="grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <span className="font-medium text-slate-700">System ID:</span>{' '}
+            <span className="text-slate-600">{daypart.daypart_name}</span>
+          </div>
+          <div>
+            <span className="font-medium text-slate-700">Default Time:</span>{' '}
+            <span className="text-slate-600">
+              {daypart.default_start_time} - {daypart.default_end_time}
+            </span>
+          </div>
+          <div>
+            <span className="font-medium text-slate-700">Sort Order:</span>{' '}
+            <span className="text-slate-600">{daypart.sort_order}</span>
+          </div>
+        </div>
+        <div className="mt-2">
+          <span className="font-medium text-slate-700 text-sm">Default Days: </span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {daypart.default_days.sort().map((day) => {
+              const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+              return (
+                <span
+                  key={day}
+                  className="px-2 py-1 bg-white text-slate-600 text-xs rounded border border-slate-200"
+                >
+                  {dayInfo?.short}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={toggleConfigs}
+            className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+          >
+            {showConfigs ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            Day-Specific Configurations
+          </button>
+
+          {showConfigs && (
+            <div className="mt-2">
+              {loading ? (
+                <div className="text-xs text-slate-500">Loading...</div>
+              ) : dayConfigs.length > 0 ? (
+                <div className="space-y-1">
+                  {DAYS_OF_WEEK.map((day) => {
+                    const config = getDayConfig(day.value);
+                    if (!config) return null;
+
+                    return (
+                      <div key={day.value} className="flex items-center justify-between text-xs py-1">
+                        <span className="font-medium text-slate-700">{day.label}:</span>
+                        <span className="text-slate-600">
+                          {config.start_time} - {config.end_time}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500">No day-specific configurations</div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DaypartManagement() {
   const [dayparts, setDayparts] = useState<DaypartDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDayConfigs, setShowDayConfigs] = useState(false);
+  const [dayConfigurations, setDayConfigurations] = useState<DayConfiguration[]>([]);
   const [formData, setFormData] = useState<Partial<DaypartDefinition>>({
     daypart_name: '',
     display_label: '',
@@ -80,6 +233,20 @@ export default function DaypartManagement() {
     setLoading(false);
   };
 
+  const loadDayConfigurations = async (daypartId: string) => {
+    const { data, error } = await supabase
+      .from('daypart_day_configurations')
+      .select('*')
+      .eq('daypart_definition_id', daypartId)
+      .order('day_of_week');
+
+    if (error) {
+      console.error('Error loading day configurations:', error);
+      return [];
+    }
+    return data || [];
+  };
+
   const handleSave = async () => {
     if (!formData.daypart_name || !formData.display_label) {
       setError('Daypart name and display label are required');
@@ -87,6 +254,8 @@ export default function DaypartManagement() {
     }
 
     try {
+      let daypartId = editingId;
+
       if (editingId) {
         const { error } = await supabase
           .from('daypart_definitions')
@@ -95,15 +264,24 @@ export default function DaypartManagement() {
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('daypart_definitions')
-          .insert([formData]);
+          .insert([formData])
+          .select()
+          .single();
 
         if (error) throw error;
+        daypartId = data.id;
+      }
+
+      if (daypartId) {
+        await saveDayConfigurations(daypartId);
       }
 
       setEditingId(null);
       setShowAddForm(false);
+      setShowDayConfigs(false);
+      setDayConfigurations([]);
       setFormData({
         daypart_name: '',
         display_label: '',
@@ -124,10 +302,85 @@ export default function DaypartManagement() {
     }
   };
 
-  const handleEdit = (daypart: DaypartDefinition) => {
+  const saveDayConfigurations = async (daypartId: string) => {
+    const existingConfigs = await loadDayConfigurations(daypartId);
+    const existingConfigIds = existingConfigs.map(c => c.id);
+
+    const configurationsToKeep = dayConfigurations.filter(dc => dc.id);
+    const configurationsToAdd = dayConfigurations.filter(dc => !dc.id);
+
+    const configIdsToKeep = configurationsToKeep.map(c => c.id);
+    const configsToDelete = existingConfigIds.filter(id => !configIdsToKeep.includes(id));
+
+    if (configsToDelete.length > 0) {
+      await supabase
+        .from('daypart_day_configurations')
+        .delete()
+        .in('id', configsToDelete);
+    }
+
+    for (const config of configurationsToKeep) {
+      if (config.id) {
+        await supabase
+          .from('daypart_day_configurations')
+          .update({
+            start_time: config.start_time,
+            end_time: config.end_time
+          })
+          .eq('id', config.id);
+      }
+    }
+
+    if (configurationsToAdd.length > 0) {
+      await supabase
+        .from('daypart_day_configurations')
+        .insert(configurationsToAdd.map(c => ({
+          daypart_definition_id: daypartId,
+          day_of_week: c.day_of_week,
+          start_time: c.start_time,
+          end_time: c.end_time
+        })));
+    }
+  };
+
+  const handleEdit = async (daypart: DaypartDefinition) => {
     setEditingId(daypart.id);
     setFormData(daypart);
     setShowAddForm(false);
+    const configs = await loadDayConfigurations(daypart.id);
+    setDayConfigurations(configs);
+  };
+
+  const addDayConfiguration = (day: number) => {
+    if (dayConfigurations.some(dc => dc.day_of_week === day)) {
+      return;
+    }
+
+    setDayConfigurations([
+      ...dayConfigurations,
+      {
+        daypart_definition_id: editingId || '',
+        day_of_week: day,
+        start_time: formData.default_start_time || '06:00:00',
+        end_time: formData.default_end_time || '11:00:00'
+      }
+    ]);
+  };
+
+  const removeDayConfiguration = (day: number) => {
+    setDayConfigurations(dayConfigurations.filter(dc => dc.day_of_week !== day));
+  };
+
+  const updateDayConfiguration = (day: number, field: 'start_time' | 'end_time', value: string) => {
+    setDayConfigurations(
+      dayConfigurations.map(dc =>
+        dc.day_of_week === day ? { ...dc, [field]: value } : dc
+      )
+    );
+  };
+
+  const getDayConfiguration = (day: number) => {
+    return dayConfigurations.find(dc => dc.day_of_week === day);
   };
 
   const handleDelete = async (id: string) => {
@@ -150,6 +403,8 @@ export default function DaypartManagement() {
   const handleCancel = () => {
     setEditingId(null);
     setShowAddForm(false);
+    setShowDayConfigs(false);
+    setDayConfigurations([]);
     setFormData({
       daypart_name: '',
       display_label: '',
@@ -319,6 +574,88 @@ export default function DaypartManagement() {
               </div>
             </div>
 
+            <div className="col-span-2 border-t border-slate-200 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowDayConfigs(!showDayConfigs)}
+                className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900"
+              >
+                {showDayConfigs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                Day-Specific Time Configurations (Optional)
+              </button>
+              <p className="text-xs text-slate-500 mt-1">
+                Override default times for specific days. Days without custom times will use the default times above.
+              </p>
+
+              {showDayConfigs && (
+                <div className="mt-4 space-y-3">
+                  {DAYS_OF_WEEK.map((day) => {
+                    const config = getDayConfiguration(day.value);
+                    const hasConfig = !!config;
+
+                    return (
+                      <div
+                        key={day.value}
+                        className={`p-3 rounded-lg border ${
+                          hasConfig ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700">{day.label}</span>
+                          {hasConfig ? (
+                            <button
+                              type="button"
+                              onClick={() => removeDayConfiguration(day.value)}
+                              className="text-xs text-red-600 hover:text-red-700 font-medium"
+                            >
+                              Remove Override
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => addDayConfiguration(day.value)}
+                              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                              Add Custom Times
+                            </button>
+                          )}
+                        </div>
+
+                        {hasConfig && config && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs text-slate-600 mb-1">Start Time</label>
+                              <input
+                                type="time"
+                                value={config.start_time}
+                                onChange={(e) => updateDayConfiguration(day.value, 'start_time', e.target.value)}
+                                className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-slate-600 mb-1">End Time</label>
+                              <input
+                                type="time"
+                                value={config.end_time}
+                                onChange={(e) => updateDayConfiguration(day.value, 'end_time', e.target.value)}
+                                className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {!hasConfig && (
+                          <div className="text-xs text-slate-500">
+                            Using default: {formData.default_start_time} - {formData.default_end_time}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="col-span-2">
               <label className="flex items-center gap-2">
                 <input
@@ -362,77 +699,7 @@ export default function DaypartManagement() {
       )}
 
       <div className="space-y-4">
-        {dayparts.map((daypart) => (
-          <div
-            key={daypart.id}
-            className="bg-white rounded-lg border border-slate-200 overflow-hidden"
-          >
-            <div className={`px-6 py-4 border-b border-slate-200 ${daypart.color}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    {daypart.display_label}
-                    {!daypart.is_active && (
-                      <span className="text-xs px-2 py-1 bg-white/50 rounded">Inactive</span>
-                    )}
-                  </h3>
-                  <p className="text-sm opacity-90 mt-1">{daypart.description}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleEdit(daypart)}
-                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                    title="Edit daypart"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(daypart.id)}
-                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                    title="Delete daypart"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-slate-700">System ID:</span>{' '}
-                  <span className="text-slate-600">{daypart.daypart_name}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-slate-700">Default Time:</span>{' '}
-                  <span className="text-slate-600">
-                    {daypart.default_start_time} - {daypart.default_end_time}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-slate-700">Sort Order:</span>{' '}
-                  <span className="text-slate-600">{daypart.sort_order}</span>
-                </div>
-              </div>
-              <div className="mt-2">
-                <span className="font-medium text-slate-700 text-sm">Default Days: </span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {daypart.default_days.sort().map((day) => {
-                    const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                    return (
-                      <span
-                        key={day}
-                        className="px-2 py-1 bg-white text-slate-600 text-xs rounded border border-slate-200"
-                      >
-                        {dayInfo?.short}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+        {dayparts.map((daypart) => <DaypartCard key={daypart.id} daypart={daypart} onEdit={handleEdit} onDelete={handleDelete} />)}
       </div>
 
       {dayparts.length === 0 && (
