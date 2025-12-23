@@ -11,7 +11,6 @@ import CompanyModal from '../components/CompanyModal';
 import StoreModal from '../components/StoreModal';
 import CycleSettingsCard from '../components/CycleSettingsCard';
 import StoreEdit from './StoreEdit';
-import SiteDaypartConfiguration from './SiteDaypartConfiguration';
 import PlacementEdit from './PlacementEdit';
 import * as Icons from 'lucide-react';
 
@@ -72,7 +71,7 @@ export default function SiteConfiguration() {
   const { location, setLocation, canNavigateBack } = useLocation();
 
   // Navigation state
-  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store' | 'store-edit' | 'site-dayparts' | 'placement-edit'>('wand');
+  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store' | 'store-edit' | 'placement-edit'>('wand');
   const [selectedConcept, setSelectedConcept] = useState<ConceptData | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
@@ -809,12 +808,6 @@ export default function SiteConfiguration() {
               await loadStoreLevelData();
             }}
           />
-        ) : viewLevel === 'site-dayparts' && storeRoot && selectedStore ? (
-          <SiteDaypartConfiguration
-            placementGroupId={storeRoot.id}
-            siteName={selectedStore.name}
-            onBack={() => setViewLevel('store')}
-          />
         ) : hasStoreContext ? (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -827,14 +820,6 @@ export default function SiteConfiguration() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setViewLevel('site-dayparts')}
-                      disabled={!storeRoot}
-                      className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Clock className="w-4 h-4" />
-                      Site Dayparts
-                    </button>
                     <button
                       onClick={() => setViewLevel('store-edit')}
                       disabled={!storeRoot}
