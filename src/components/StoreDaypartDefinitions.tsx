@@ -127,12 +127,27 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setShowForm(true);
   };
 
+  const convertDaysToIntegers = (days: string[]): number[] => {
+    const dayMap: Record<string, number> = {
+      'sunday': 0,
+      'monday': 1,
+      'tuesday': 2,
+      'wednesday': 3,
+      'thursday': 4,
+      'friday': 5,
+      'saturday': 6,
+    };
+    return days.map(day => dayMap[day]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
     try {
+      const daysAsIntegers = convertDaysToIntegers(formData.days_of_week);
+
       if (editingDefinition) {
         const { error: updateError } = await supabase
           .from('daypart_definitions')
@@ -142,7 +157,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             icon: formData.icon,
             default_start_time: formData.start_time,
             default_end_time: formData.end_time,
-            default_days: formData.days_of_week,
+            default_days: daysAsIntegers,
             sort_order: formData.sort_order,
             updated_at: new Date().toISOString(),
           })
@@ -160,7 +175,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             icon: formData.icon,
             default_start_time: formData.start_time,
             default_end_time: formData.end_time,
-            default_days: formData.days_of_week,
+            default_days: daysAsIntegers,
             sort_order: formData.sort_order,
             is_active: true,
             store_id: storeId,
