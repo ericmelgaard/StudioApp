@@ -66,26 +66,29 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
   useEffect(() => {
     const observerOptions = {
       root: null,
-      rootMargin: '-20% 0px -60% 0px',
-      threshold: 0,
+      rootMargin: '-100px 0px -66% 0px',
+      threshold: [0, 0.25, 0.5, 0.75, 1],
     };
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
+      const intersectingEntries = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+      if (intersectingEntries.length > 0) {
+        setActiveSection(intersectingEntries[0].target.id);
+      }
     };
 
     const observer = new IntersectionObserver(observerCallback, observerOptions);
 
-    Object.values(sectionRefs.current).forEach((ref) => {
+    const refs = Object.values(sectionRefs.current).filter(ref => ref !== null);
+    refs.forEach((ref) => {
       if (ref) observer.observe(ref);
     });
 
     return () => {
-      Object.values(sectionRefs.current).forEach((ref) => {
+      refs.forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };
@@ -203,9 +206,10 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
   };
 
   const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId);
     const element = sectionRefs.current[sectionId];
     if (element) {
-      const offset = 80;
+      const offset = 100;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - offset;
 
