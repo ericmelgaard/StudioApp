@@ -23,6 +23,16 @@ interface DaypartSchedule extends Schedule {
   daypart_definition_id: string;
 }
 
+const DAYS_OF_WEEK = [
+  { value: 0, label: 'Sunday', short: 'Sun' },
+  { value: 1, label: 'Monday', short: 'Mon' },
+  { value: 2, label: 'Tuesday', short: 'Tue' },
+  { value: 3, label: 'Wednesday', short: 'Wed' },
+  { value: 4, label: 'Thursday', short: 'Thu' },
+  { value: 5, label: 'Friday', short: 'Fri' },
+  { value: 6, label: 'Saturday', short: 'Sat' }
+];
+
 interface StoreDaypartDefinitionsProps {
   storeId: number;
 }
@@ -42,7 +52,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [formData, setFormData] = useState({
     daypart_name: '',
     display_label: '',
-    color: '#3b82f6',
+    description: '',
+    color: 'bg-blue-100 text-blue-800 border-blue-300',
     icon: 'Clock',
     sort_order: 0,
   });
@@ -88,7 +99,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setFormData({
       daypart_name: '',
       display_label: '',
-      color: '#3b82f6',
+      description: '',
+      color: 'bg-blue-100 text-blue-800 border-blue-300',
       icon: 'Clock',
       sort_order: definitions.length * 10,
     });
@@ -100,6 +112,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setFormData({
       daypart_name: definition.daypart_name,
       display_label: definition.display_label,
+      description: '',
       color: definition.color,
       icon: definition.icon,
       sort_order: definition.sort_order,
@@ -296,7 +309,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         </div>
       )}
 
-      <div className="space-y-3 mb-6">
+      <div className="space-y-4 mb-6">
         {definitions.map((definition) => {
           const defSchedules = schedules.filter(s => s.daypart_definition_id === definition.id);
           const isExpanded = expandedDefinitions.has(definition.id);
@@ -304,67 +317,60 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           return (
             <div
               key={definition.id}
-              className={`border rounded-lg transition-all ${
-                definition.is_customized
-                  ? 'border-blue-200 bg-blue-50/50'
-                  : 'border-slate-200 bg-slate-50/50'
-              }`}
+              className="bg-white rounded-lg border border-slate-200 overflow-hidden"
             >
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-                      style={{ backgroundColor: definition.color }}
+              <div className={`px-4 py-3 ${definition.color}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Clock className="w-4 h-4" />
+                    <h4 className="font-semibold">{definition.display_label}</h4>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        definition.source_level === 'store'
+                          ? 'bg-blue-600/20 text-blue-900'
+                          : definition.source_level === 'concept'
+                          ? 'bg-purple-600/20 text-purple-900'
+                          : 'bg-slate-600/20 text-slate-900'
+                      }`}
                     >
-                      <Clock className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-slate-900">{definition.display_label}</h4>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            definition.source_level === 'store'
-                              ? 'bg-blue-100 text-blue-700'
-                              : definition.source_level === 'concept'
-                              ? 'bg-purple-100 text-purple-700'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {definition.source_level === 'store'
-                            ? 'Store'
-                            : definition.source_level === 'concept'
-                            ? 'Concept'
-                            : 'Global'}
-                        </span>
-                      </div>
-                      <div className="text-sm text-slate-600">
-                        {defSchedules.length} {defSchedules.length === 1 ? 'schedule' : 'schedules'}
-                      </div>
-                    </div>
+                      {definition.source_level === 'store'
+                        ? 'Store'
+                        : definition.source_level === 'concept'
+                        ? 'Concept'
+                        : 'Global'}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-1">
                     {definition.is_customized && (
                       <>
                         <button
                           onClick={() => handleEditDefinition(definition)}
-                          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
                           title="Edit definition"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteDefinition(definition)}
-                          className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
                           title="Delete definition"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </>
                     )}
+                    {defSchedules.length > 0 && !addingScheduleForDef && !editingSchedule && (
+                      <button
+                        onClick={() => handleAddSchedule(definition.id)}
+                        className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                        title="Add schedule"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => toggleExpanded(definition.id)}
-                      className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
@@ -373,71 +379,109 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
               </div>
 
               {isExpanded && (
-                <div className="border-t border-slate-200 p-4 bg-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <h5 className="text-sm font-semibold text-slate-900">Schedules</h5>
-                    {!addingScheduleForDef && !editingSchedule && (
+                <>
+                  {defSchedules.length === 0 && !addingScheduleForDef ? (
+                    <div className="p-6 text-center">
+                      <p className="text-slate-600 text-sm mb-4">
+                        No schedules yet. Add a schedule to define when this daypart is active.
+                      </p>
                       <button
                         onClick={() => handleAddSchedule(definition.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-4 h-4" />
                         Add Schedule
                       </button>
-                    )}
-                  </div>
-
-                  {defSchedules.length === 0 && !addingScheduleForDef ? (
-                    <div className="text-center py-6 text-slate-500 text-sm">
-                      No schedules yet. Add a schedule to define when this daypart is active.
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="divide-y divide-slate-200">
                       {defSchedules.map((schedule) => (
-                        editingSchedule?.id === schedule.id ? (
-                          <ScheduleGroupForm
-                            key={schedule.id}
-                            schedule={editingSchedule}
-                            allSchedules={defSchedules}
-                            onUpdate={setEditingSchedule}
-                            onSave={() => handleSaveSchedule(editingSchedule)}
-                            onCancel={() => setEditingSchedule(null)}
-                            level="global"
-                          />
-                        ) : (
-                          <ScheduleGroupCard
-                            key={schedule.id}
-                            schedule={schedule}
-                            onEdit={() => handleEditSchedule(schedule)}
-                            onDelete={() => handleDeleteSchedule(schedule.id!)}
-                            level="global"
-                          />
-                        )
+                        <div key={schedule.id}>
+                          {editingSchedule?.id === schedule.id ? (
+                            <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
+                              <div className="pt-4">
+                                <ScheduleGroupForm
+                                  schedule={editingSchedule}
+                                  allSchedules={defSchedules}
+                                  onUpdate={setEditingSchedule}
+                                  onSave={() => handleSaveSchedule(editingSchedule)}
+                                  onCancel={() => setEditingSchedule(null)}
+                                  level="site"
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="p-4 hover:bg-slate-50 transition-colors group">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <span className="text-sm font-medium text-slate-900">
+                                      {schedule.start_time} - {schedule.end_time}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {schedule.days_of_week.sort().map(day => {
+                                      const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                      return (
+                                        <span
+                                          key={day}
+                                          className={`px-2 py-1 text-xs rounded font-medium ${definition.color}`}
+                                        >
+                                          {dayInfo?.short}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => handleEditSchedule(schedule)}
+                                    className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Edit schedule"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSchedule(schedule.id!)}
+                                    className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete schedule"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       ))}
 
                       {addingScheduleForDef === definition.id && (
-                        <ScheduleGroupForm
-                          schedule={{
-                            daypart_name: definition.daypart_name,
-                            days_of_week: [],
-                            start_time: '06:00',
-                            end_time: '11:00',
-                          }}
-                          allSchedules={defSchedules}
-                          onUpdate={() => {}}
-                          onSave={() => handleSaveSchedule({
-                            daypart_name: definition.daypart_name,
-                            days_of_week: [],
-                            start_time: '06:00',
-                            end_time: '11:00',
-                          })}
-                          onCancel={() => setAddingScheduleForDef(null)}
-                          level="global"
-                        />
+                        <div className="px-4 pb-4 bg-slate-50">
+                          <div className="pt-4">
+                            <ScheduleGroupForm
+                              schedule={{
+                                daypart_name: definition.daypart_name,
+                                days_of_week: [],
+                                start_time: '06:00',
+                                end_time: '11:00',
+                              }}
+                              allSchedules={defSchedules}
+                              onUpdate={() => {}}
+                              onSave={() => handleSaveSchedule({
+                                daypart_name: definition.daypart_name,
+                                days_of_week: [],
+                                start_time: '06:00',
+                                end_time: '11:00',
+                              })}
+                              onCancel={() => setAddingScheduleForDef(null)}
+                              level="site"
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           );
