@@ -297,7 +297,9 @@ export default function DaypartManagement() {
 
       <div className="space-y-4">
         {definitions.map((definition) => {
-          const defSchedules = schedules.filter(s => s.daypart_definition_id === definition.id);
+          const defSchedules = schedules
+            .filter(s => s.daypart_definition_id === definition.id)
+            .map(s => ({ ...s, daypart_name: definition.daypart_name }));
 
           return (
             <div
@@ -363,7 +365,7 @@ export default function DaypartManagement() {
                               <div className="pt-4">
                                 <ScheduleGroupForm
                                   schedule={editingSchedule}
-                                  allSchedules={schedules}
+                                  allSchedules={defSchedules}
                                   onUpdate={setEditingSchedule}
                                   onSave={() => handleSaveSchedule(editingSchedule)}
                                   onCancel={() => setEditingSchedule(null)}
@@ -422,14 +424,16 @@ export default function DaypartManagement() {
                         <ScheduleGroupForm
                           schedule={{
                             daypart_name: definition.daypart_name,
+                            daypart_definition_id: definition.id,
                             days_of_week: [],
                             start_time: '06:00',
                             end_time: '11:00',
                           }}
-                          allSchedules={schedules}
+                          allSchedules={defSchedules}
                           onUpdate={() => {}}
                           onSave={() => handleSaveSchedule({
                             daypart_name: definition.daypart_name,
+                            daypart_definition_id: definition.id,
                             days_of_week: [],
                             start_time: '06:00',
                             end_time: '11:00',
