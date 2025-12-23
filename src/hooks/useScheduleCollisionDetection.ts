@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { ScheduleType } from '../types/schedules';
 
 export interface Schedule {
   id?: string;
@@ -6,6 +7,7 @@ export interface Schedule {
   days_of_week: number[];
   start_time: string;
   end_time: string;
+  schedule_type?: ScheduleType;
 }
 
 export interface CollisionResult {
@@ -18,7 +20,8 @@ export function useScheduleCollisionDetection(
   schedules: Schedule[],
   currentDaypartName: string,
   selectedDays: number[],
-  editingScheduleId?: string
+  editingScheduleId?: string,
+  currentScheduleType?: ScheduleType
 ): CollisionResult {
   return useMemo(() => {
     if (!currentDaypartName || selectedDays.length === 0) {
@@ -29,8 +32,17 @@ export function useScheduleCollisionDetection(
       };
     }
 
+    if (currentScheduleType === 'event_holiday') {
+      return {
+        hasCollision: false,
+        collisionMessage: null,
+        conflictingDays: []
+      };
+    }
+
     const conflictingSchedules = schedules.filter(schedule => {
       if (editingScheduleId && schedule.id === editingScheduleId) return false;
+      if (schedule.schedule_type === 'event_holiday') return false;
       if (schedule.daypart_name !== currentDaypartName) return false;
       return schedule.days_of_week.some(day => selectedDays.includes(day));
     });
@@ -57,7 +69,7 @@ export function useScheduleCollisionDetection(
       collisionMessage: `This daypart already has a schedule for: ${conflictingDayNames}`,
       conflictingDays
     };
-  }, [schedules, currentDaypartName, selectedDays, editingScheduleId]);
+  }, [schedules, currentDaypartName, selectedDays, editingScheduleId, currentScheduleType]);
 }
 
 export function getDayCollisionStatus(
@@ -65,12 +77,15 @@ export function getDayCollisionStatus(
   currentDaypartName: string,
   day: number,
   selectedDays: number[],
-  editingScheduleId?: string
+  editingScheduleId?: string,
+  currentScheduleType?: ScheduleType
 ): boolean {
   if (!currentDaypartName || selectedDays.includes(day)) return false;
+  if (currentScheduleType === 'event_holiday') return false;
 
   return schedules.some(schedule => {
     if (editingScheduleId && schedule.id === editingScheduleId) return false;
+    if (schedule.schedule_type === 'event_holiday') return false;
     if (!schedule.daypart_name || !schedule.days_of_week) return false;
 
     const daypartMatches = schedule.daypart_name === currentDaypartName;
@@ -84,19 +99,22 @@ export function getDayUsageInfo(
   schedules: Schedule[],
   currentDaypartName: string,
   day: number,
-  editingScheduleId?: string
+  editingScheduleId?: string,
+  currentScheduleType?: ScheduleType
 ): { usedBySameDaypart: boolean; usedByOtherDayparts: string[] } {
-  const sameDaypart = schedules
+  const regularSchedules = schedules.filter(s => s.schedule_type !== 'event_holiday');
+
+  const sameDaypart = regularSchedules
     .filter(s => s.id !== editingScheduleId && s.daypart_name === currentDaypartName && s.days_of_week.includes(day))
     .length > 0;
 
-  const otherDayparts = schedules
+  const otherDayparts = regularSchedules
     .filter(s => s.id !== editingScheduleId && s.daypart_name !== currentDaypartName && s.days_of_week.includes(day))
     .map(s => s.daypart_name)
     .filter((name, index, self) => self.indexOf(name) === index);
 
   return {
-    usedBySameDaypart: sameDaypart,
-    usedByOtherDayparts: otherDayparts
+    usedBySameDaypart: currentScheduleType !== 'event_holiday' && sameDaypart,
+    usedByOtherDayparts: currentScheduleType !== 'event_holiday' ? otherDayparts : []
   };
 }

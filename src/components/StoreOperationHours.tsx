@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Plus, Edit2, Trash2, AlertCircle, Check } from 'lucide-react';
+import { Calendar, Plus, Edit2, Trash2, AlertCircle, Check, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ScheduleGroupForm from './ScheduleGroupForm';
 import { Schedule } from '../hooks/useScheduleCollisionDetection';
+import { ScheduleType, RecurrenceType, RecurrenceConfig, formatRecurrenceText, isEventSchedule } from '../types/schedules';
 
 interface OperationSchedule extends Schedule {
   id?: string;
   store_id: number;
   schedule_name?: string;
   is_closed: boolean;
+  schedule_type?: ScheduleType;
+  event_name?: string;
+  event_date?: string;
+  recurrence_type?: RecurrenceType;
+  recurrence_config?: RecurrenceConfig;
+  priority_level?: number;
 }
 
 interface StoreOperationHoursProps {
@@ -31,7 +38,9 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [addingSchedule, setAddingSchedule] = useState(false);
+  const [addingEventSchedule, setAddingEventSchedule] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<OperationSchedule | null>(null);
+  const [filterType, setFilterType] = useState<'all' | 'regular' | 'event'>('all');
   const [newSchedule, setNewSchedule] = useState<OperationSchedule>({
     store_id: storeId,
     schedule_name: '',
@@ -39,7 +48,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
     start_time: '09:00',
     end_time: '17:00',
     is_closed: false,
-    daypart_name: 'operation_hours'
+    daypart_name: 'operation_hours',
+    schedule_type: 'regular'
   });
 
   useEffect(() => {
@@ -67,10 +77,22 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
         start_time: s.open_time || '09:00',
         end_time: s.close_time || '17:00',
         is_closed: s.is_closed || false,
-        daypart_name: 'operation_hours'
+        daypart_name: 'operation_hours',
+        schedule_type: s.schedule_type || 'regular',
+        event_name: s.event_name,
+        event_date: s.event_date,
+        recurrence_type: s.recurrence_type,
+        recurrence_config: s.recurrence_config,
+        priority_level: s.priority_level || 10
       }));
 
-      setSchedules(mappedSchedules);
+      const sortedSchedules = mappedSchedules.sort((a, b) => {
+        if (a.schedule_type === 'event_holiday' && b.schedule_type !== 'event_holiday') return -1;
+        if (a.schedule_type !== 'event_holiday' && b.schedule_type === 'event_holiday') return 1;
+        return (b.priority_level || 10) - (a.priority_level || 10);
+      });
+
+      setSchedules(sortedSchedules);
     } catch (err: any) {
       console.error('Error loading operation hours:', err);
       setError(err.message || 'Failed to load operation hours');
@@ -87,9 +109,27 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       start_time: '09:00',
       end_time: '17:00',
       is_closed: false,
-      daypart_name: 'operation_hours'
+      daypart_name: 'operation_hours',
+      schedule_type: 'regular'
     });
     setAddingSchedule(true);
+    setAddingEventSchedule(false);
+    setEditingSchedule(null);
+  };
+
+  const handleAddEventSchedule = () => {
+    setNewSchedule({
+      store_id: storeId,
+      schedule_name: '',
+      days_of_week: [],
+      start_time: '09:00',
+      end_time: '17:00',
+      is_closed: false,
+      daypart_name: 'operation_hours',
+      schedule_type: 'event_holiday'
+    });
+    setAddingEventSchedule(true);
+    setAddingSchedule(false);
     setEditingSchedule(null);
   };
 
@@ -100,15 +140,25 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
   const handleSaveSchedule = async (schedule: Schedule) => {
     try {
-      const scheduleData = {
+      const operationSchedule = schedule as OperationSchedule;
+      const scheduleData: any = {
         store_id: storeId,
-        schedule_name: (schedule as OperationSchedule).schedule_name || null,
+        schedule_name: operationSchedule.schedule_name || null,
         days_of_week: schedule.days_of_week,
         open_time: schedule.start_time,
         close_time: schedule.end_time,
-        is_closed: (schedule as OperationSchedule).is_closed || false,
+        is_closed: operationSchedule.is_closed || false,
+        schedule_type: schedule.schedule_type || 'regular',
+        priority_level: schedule.priority_level || 10,
         updated_at: new Date().toISOString()
       };
+
+      if (schedule.schedule_type === 'event_holiday') {
+        scheduleData.event_name = schedule.event_name;
+        scheduleData.event_date = schedule.event_date || null;
+        scheduleData.recurrence_type = schedule.recurrence_type;
+        scheduleData.recurrence_config = schedule.recurrence_config || null;
+      }
 
       if (editingSchedule?.id) {
         const { error: updateError } = await supabase
@@ -128,6 +178,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       }
 
       setAddingSchedule(false);
+      setAddingEventSchedule(false);
       setEditingSchedule(null);
       await loadSchedules();
 
@@ -169,6 +220,16 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
     );
   }
 
+  const filteredSchedules = schedules.filter(schedule => {
+    if (filterType === 'all') return true;
+    if (filterType === 'regular') return schedule.schedule_type !== 'event_holiday';
+    if (filterType === 'event') return schedule.schedule_type === 'event_holiday';
+    return true;
+  });
+
+  const eventCount = schedules.filter(s => s.schedule_type === 'event_holiday').length;
+  const regularCount = schedules.filter(s => s.schedule_type !== 'event_holiday').length;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -176,6 +237,39 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
           <Calendar className="w-5 h-5 text-blue-600" />
           <h3 className="text-lg font-semibold text-slate-900">Store Operation Hours</h3>
         </div>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setFilterType('all')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            filterType === 'all'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          All ({schedules.length})
+        </button>
+        <button
+          onClick={() => setFilterType('regular')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            filterType === 'regular'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          Regular Hours ({regularCount})
+        </button>
+        <button
+          onClick={() => setFilterType('event')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            filterType === 'event'
+              ? 'bg-amber-600 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          Events & Holidays ({eventCount})
+        </button>
       </div>
 
       {error && (
@@ -193,44 +287,62 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       )}
 
       <div className="space-y-4 mb-6">
-        {schedules.map((schedule) => (
-          <div
-            key={schedule.id}
-            className="bg-white rounded-lg border border-slate-200 overflow-hidden"
-          >
-            <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1">
-                  <Calendar className="w-4 h-4 text-blue-600" />
-                  <h4 className="font-semibold text-slate-900">
-                    {schedule.schedule_name || 'Store Hours'}
-                  </h4>
-                  {schedule.is_closed && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
-                      Closed
-                    </span>
-                  )}
+        {filteredSchedules.map((schedule) => {
+          const isEvent = schedule.schedule_type === 'event_holiday';
+          const headerBg = isEvent ? 'bg-amber-50' : 'bg-blue-50';
+          const headerBorder = isEvent ? 'border-amber-100' : 'border-blue-100';
+          const iconColor = isEvent ? 'text-amber-600' : 'text-blue-600';
+          const Icon = isEvent ? Sparkles : Calendar;
+
+          return (
+            <div
+              key={schedule.id}
+              className={`bg-white rounded-lg border ${isEvent ? 'border-amber-200' : 'border-slate-200'} overflow-hidden`}
+            >
+              <div className={`px-4 py-3 ${headerBg} border-b ${headerBorder}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Icon className={`w-4 h-4 ${iconColor}`} />
+                    <h4 className="font-semibold text-slate-900">
+                      {isEvent ? schedule.event_name : (schedule.schedule_name || 'Store Hours')}
+                    </h4>
+                    {isEvent && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-900 font-medium">
+                        Event
+                      </span>
+                    )}
+                    {schedule.is_closed && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
+                        Closed
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleEditSchedule(schedule)}
+                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                      title="Edit schedule"
+                    >
+                      <Edit2 className={`w-4 h-4 ${iconColor}`} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => schedule.id && handleDeleteSchedule(schedule.id)}
+                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                      title="Delete schedule"
+                    >
+                      <Trash2 className={`w-4 h-4 ${iconColor}`} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleEditSchedule(schedule)}
-                    className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                    title="Edit schedule"
-                  >
-                    <Edit2 className="w-4 h-4 text-blue-600" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => schedule.id && handleDeleteSchedule(schedule.id)}
-                    className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                    title="Delete schedule"
-                  >
-                    <Trash2 className="w-4 h-4 text-blue-600" />
-                  </button>
-                </div>
+                {isEvent && schedule.recurrence_type && (
+                  <div className="mt-2 text-sm text-amber-800">
+                    <Calendar className="w-3 h-3 inline mr-1" />
+                    {formatRecurrenceText(schedule.recurrence_type, schedule.recurrence_config, schedule.event_date)}
+                  </div>
+                )}
               </div>
-            </div>
 
             {editingSchedule?.id === schedule.id ? (
               <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
@@ -265,28 +377,40 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                       <span className="text-sm font-medium text-slate-900">
                         {schedule.is_closed ? 'Closed' : `${schedule.start_time} - ${schedule.end_time}`}
                       </span>
+                      {isEvent && schedule.priority_level && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                          Priority: {schedule.priority_level === 100 ? 'Single Day' : 'Date Range'}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                      {schedule.days_of_week.sort().map(day => {
-                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                        return (
-                          <span
-                            key={day}
-                            className="px-2 py-1 text-xs rounded font-medium bg-blue-100 text-blue-800 border border-blue-300"
-                          >
-                            {dayInfo?.short}
-                          </span>
-                        );
-                      })}
-                    </div>
+                    {!isEvent && schedule.days_of_week.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {schedule.days_of_week.sort().map(day => {
+                          const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                          return (
+                            <span
+                              key={day}
+                              className={`px-2 py-1 text-xs rounded font-medium ${
+                                isEvent
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : 'bg-blue-100 text-blue-800 border border-blue-300'
+                              }`}
+                            >
+                              {dayInfo?.short}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
 
-        {schedules.length === 0 && !addingSchedule && (
+        {schedules.length === 0 && !addingSchedule && !addingEventSchedule && (
           <div className="text-center py-8 bg-white rounded-lg border border-slate-200">
             <Calendar className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm text-slate-600 mb-4">
@@ -295,34 +419,48 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
           </div>
         )}
 
-        {addingSchedule && (
-          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+        {(addingSchedule || addingEventSchedule) && (
+          <div className={`bg-white rounded-lg border ${addingEventSchedule ? 'border-amber-200' : 'border-slate-200'} overflow-hidden`}>
+            <div className={`px-4 py-3 ${addingEventSchedule ? 'bg-amber-50 border-b border-amber-100' : 'bg-blue-50 border-b border-blue-100'}`}>
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-blue-600" />
-                <h4 className="font-semibold text-slate-900">New Schedule</h4>
+                {addingEventSchedule ? (
+                  <>
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <h4 className="font-semibold text-slate-900">New Event / Holiday Schedule</h4>
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <h4 className="font-semibold text-slate-900">New Regular Schedule</h4>
+                  </>
+                )}
               </div>
             </div>
             <div className="px-4 pb-4 bg-slate-50">
               <div className="pt-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Schedule Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={newSchedule.schedule_name || ''}
-                    onChange={(e) => setNewSchedule({ ...newSchedule, schedule_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Weekday Hours, Weekend Hours"
-                  />
-                </div>
+                {!addingEventSchedule && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Schedule Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={newSchedule.schedule_name || ''}
+                      onChange={(e) => setNewSchedule({ ...newSchedule, schedule_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Weekday Hours, Weekend Hours"
+                    />
+                  </div>
+                )}
                 <ScheduleGroupForm
                   schedule={newSchedule}
                   allSchedules={schedules}
                   onUpdate={setNewSchedule}
                   onSave={() => handleSaveSchedule(newSchedule)}
-                  onCancel={() => setAddingSchedule(false)}
+                  onCancel={() => {
+                    setAddingSchedule(false);
+                    setAddingEventSchedule(false);
+                  }}
                   level="site"
                 />
               </div>
@@ -330,15 +468,25 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
           </div>
         )}
 
-        {!addingSchedule && !editingSchedule && (
-          <button
-            type="button"
-            onClick={handleAddSchedule}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Schedule
-          </button>
+        {!addingSchedule && !addingEventSchedule && !editingSchedule && (
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={handleAddSchedule}
+              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Add Schedule
+            </button>
+            <button
+              type="button"
+              onClick={handleAddEventSchedule}
+              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-amber-300 text-amber-600 rounded-lg hover:border-amber-600 hover:bg-amber-50 transition-colors font-medium"
+            >
+              <Sparkles className="w-4 h-4" />
+              Add Event/Holiday
+            </button>
+          </div>
         )}
       </div>
     </div>
