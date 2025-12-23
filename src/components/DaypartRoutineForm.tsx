@@ -26,9 +26,6 @@ export interface DaypartRoutine {
 interface DaypartDefinition {
   daypart_name: string;
   display_label: string;
-  default_start_time: string;
-  default_end_time: string;
-  default_days: number[];
 }
 
 const DAYS_OF_WEEK = [
@@ -66,7 +63,7 @@ export default function DaypartRoutineForm({
   const loadDaypartTypes = async () => {
     const { data, error } = await supabase
       .from('daypart_definitions')
-      .select('daypart_name, display_label, default_start_time, default_end_time, default_days')
+      .select('daypart_name, display_label')
       .eq('is_active', true)
       .order('sort_order');
 
@@ -124,19 +121,7 @@ export default function DaypartRoutineForm({
   };
 
   const handleDaypartChange = (daypartName: string) => {
-    const selectedDaypart = daypartTypes.find(d => d.daypart_name === daypartName);
-
-    if (selectedDaypart && !editingRoutine) {
-      setFormData({
-        ...formData,
-        daypart_name: daypartName,
-        start_time: selectedDaypart.default_start_time.substring(0, 5),
-        end_time: selectedDaypart.default_end_time.substring(0, 5),
-        days_of_week: selectedDaypart.default_days
-      });
-    } else {
-      setFormData({ ...formData, daypart_name: daypartName });
-    }
+    setFormData({ ...formData, daypart_name: daypartName });
 
     const collision = checkCollision(daypartName, formData.days_of_week);
     setError(collision);

@@ -1,655 +1,253 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, Save, X, AlertCircle } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import TimeGroupManager from '../components/TimeGroupManager';
+import IconPicker from '../components/IconPicker';
+import ScheduleGroupCard from '../components/ScheduleGroupCard';
+import ScheduleGroupForm from '../components/ScheduleGroupForm';
+import { Schedule } from '../hooks/useScheduleCollisionDetection';
 
 interface DaypartDefinition {
   id: string;
   daypart_name: string;
   display_label: string;
-  description: string;
   color: string;
-  default_start_time: string;
-  default_end_time: string;
-  default_days: number[];
   icon: string;
   sort_order: number;
-  is_active: boolean;
   concept_id: number | null;
-  created_at: string;
-  updated_at: string;
 }
 
-interface TimeGroup {
-  id?: string;
-  days: number[];
-  startTime: string;
-  endTime: string;
-}
-
-const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sunday', short: 'Sun' },
-  { value: 1, label: 'Monday', short: 'Mon' },
-  { value: 2, label: 'Tuesday', short: 'Tue' },
-  { value: 3, label: 'Wednesday', short: 'Wed' },
-  { value: 4, label: 'Thursday', short: 'Thu' },
-  { value: 5, label: 'Friday', short: 'Fri' },
-  { value: 6, label: 'Saturday', short: 'Sat' }
-];
-
-const COLOR_OPTIONS = [
-  { value: 'bg-amber-100 text-amber-800 border-amber-300', label: 'Amber' },
-  { value: 'bg-green-100 text-green-800 border-green-300', label: 'Green' },
-  { value: 'bg-blue-100 text-blue-800 border-blue-300', label: 'Blue' },
-  { value: 'bg-teal-100 text-teal-800 border-teal-300', label: 'Teal' },
-  { value: 'bg-slate-100 text-slate-800 border-slate-300', label: 'Slate' },
-  { value: 'bg-red-100 text-red-800 border-red-300', label: 'Red' },
-  { value: 'bg-orange-100 text-orange-800 border-orange-300', label: 'Orange' },
-];
-
-interface EditFormProps {
-  formData: Partial<DaypartDefinition>;
-  setFormData: (data: Partial<DaypartDefinition>) => void;
-  timeGroups: TimeGroup[];
-  showTimeGroupManager: boolean;
-  setShowTimeGroupManager: (show: boolean) => void;
-  onSaveTimeGroups: (groups: TimeGroup[]) => void;
-  toggleDay: (day: number) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(':');
-  const hour = parseInt(hours);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${minutes} ${ampm}`;
-}
-
-function EditForm({
-  formData,
-  setFormData,
-  timeGroups,
-  showTimeGroupManager,
-  setShowTimeGroupManager,
-  onSaveTimeGroups,
-  toggleDay,
-  onSave,
-  onCancel
-}: EditFormProps) {
-  return (
-    <div className="px-6 py-4 bg-white border-t border-slate-200">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Daypart Name (System ID) *
-          </label>
-          <input
-            type="text"
-            value={formData.daypart_name}
-            onChange={(e) => setFormData({ ...formData, daypart_name: e.target.value })}
-            placeholder="e.g., breakfast"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Display Label *
-          </label>
-          <input
-            type="text"
-            value={formData.display_label}
-            onChange={(e) => setFormData({ ...formData, display_label: e.target.value })}
-            placeholder="e.g., Breakfast"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div className="col-span-2">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Description
-          </label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Brief description of this daypart"
-            rows={2}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Color Theme
-          </label>
-          <select
-            value={formData.color}
-            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {COLOR_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Sort Order
-          </label>
-          <input
-            type="number"
-            value={formData.sort_order}
-            onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Default Start Time
-          </label>
-          <input
-            type="time"
-            value={formData.default_start_time}
-            onChange={(e) => setFormData({ ...formData, default_start_time: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Default End Time
-          </label>
-          <input
-            type="time"
-            value={formData.default_end_time}
-            onChange={(e) => setFormData({ ...formData, default_end_time: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div className="col-span-2">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Default Days of Week
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {DAYS_OF_WEEK.map((day) => (
-              <button
-                key={day.value}
-                type="button"
-                onClick={() => toggleDay(day.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  (formData.default_days || []).includes(day.value)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {day.short}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {showTimeGroupManager ? (
-          <div className="col-span-2 border-t border-slate-200 pt-4">
-            <TimeGroupManager
-              defaultStartTime={formData.default_start_time || '06:00:00'}
-              defaultEndTime={formData.default_end_time || '11:00:00'}
-              existingGroups={timeGroups}
-              onSave={(groups) => {
-                onSaveTimeGroups(groups);
-                setShowTimeGroupManager(false);
-              }}
-              onCancel={() => setShowTimeGroupManager(false)}
-              color={formData.color}
-            />
-          </div>
-        ) : (
-          <div className="col-span-2 border-t border-slate-200 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowTimeGroupManager(true)}
-              className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              {timeGroups.length > 0 ? 'Edit Time Groups' : 'Add Time Groups'}
-            </button>
-            {timeGroups.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {timeGroups.map((group, index) => (
-                  <div key={index} className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg">
-                    <div className="flex flex-wrap gap-1">
-                      {group.days.sort().map((day) => {
-                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                        return (
-                          <span
-                            key={day}
-                            className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200"
-                          >
-                            {dayInfo?.short}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <span className="text-slate-600 ml-2">
-                      {formatTime(group.startTime)} - {formatTime(group.endTime)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="col-span-2">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-slate-700">Active</span>
-          </label>
-        </div>
-      </div>
-
-      <div className="flex gap-2 mt-6">
-        <button
-          onClick={onSave}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <Save className="w-4 h-4" />
-          Save
-        </button>
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
-        >
-          <X className="w-4 h-4" />
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DaypartCard({
-  daypart,
-  onEdit,
-  onDelete,
-  isEditing,
-  onSave,
-  onCancel,
-  formData,
-  setFormData,
-  timeGroups,
-  showTimeGroupManager,
-  setShowTimeGroupManager,
-  onSaveTimeGroups,
-  toggleDay
-}: {
-  daypart: DaypartDefinition;
-  onEdit: (daypart: DaypartDefinition) => void;
-  onDelete: (id: string) => void;
-  isEditing: boolean;
-  onSave: () => void;
-  onCancel: () => void;
-  formData?: Partial<DaypartDefinition>;
-  setFormData?: (data: Partial<DaypartDefinition>) => void;
-  timeGroups?: TimeGroup[];
-  showTimeGroupManager?: boolean;
-  setShowTimeGroupManager?: (show: boolean) => void;
-  onSaveTimeGroups?: (groups: TimeGroup[]) => void;
-  toggleDay?: (day: number) => void;
-}) {
-  const [loadedTimeGroups, setLoadedTimeGroups] = useState<TimeGroup[]>([]);
-  const [showGroups, setShowGroups] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const loadTimeGroups = async () => {
-    if (loadedTimeGroups.length > 0) return;
-
-    setLoading(true);
-    const { data } = await supabase
-      .from('daypart_time_groups')
-      .select('*')
-      .eq('daypart_definition_id', daypart.id);
-
-    const groups: TimeGroup[] = (data || []).map(group => ({
-      id: group.id,
-      days: group.days_of_week,
-      startTime: group.start_time,
-      endTime: group.end_time
-    }));
-
-    setLoadedTimeGroups(groups);
-    setLoading(false);
-  };
-
-  const toggleGroups = () => {
-    if (!showGroups && loadedTimeGroups.length === 0) {
-      loadTimeGroups();
-    }
-    setShowGroups(!showGroups);
-  };
-
-  return (
-    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      <div className={`px-6 py-4 ${isEditing ? '' : 'border-b border-slate-200'} ${daypart.color}`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              {daypart.display_label}
-              {!daypart.is_active && (
-                <span className="text-xs px-2 py-1 bg-white/50 rounded">Inactive</span>
-              )}
-              {isEditing && (
-                <span className="text-xs px-2 py-1 bg-white/50 rounded font-medium">Editing</span>
-              )}
-            </h3>
-            <p className="text-sm opacity-90 mt-1">{daypart.description}</p>
-          </div>
-          {!isEditing && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onEdit(daypart)}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                title="Edit daypart"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => onDelete(daypart.id)}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                title="Delete daypart"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {isEditing && formData && setFormData && timeGroups && showTimeGroupManager !== undefined && setShowTimeGroupManager && onSaveTimeGroups && toggleDay ? (
-        <EditForm
-          formData={formData}
-          setFormData={setFormData}
-          timeGroups={timeGroups}
-          showTimeGroupManager={showTimeGroupManager}
-          setShowTimeGroupManager={setShowTimeGroupManager}
-          onSaveTimeGroups={onSaveTimeGroups}
-          toggleDay={toggleDay}
-          onSave={onSave}
-          onCancel={onCancel}
-        />
-      ) : !isEditing ? (
-        <div className="px-6 py-4 bg-slate-50">
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="font-medium text-slate-700">System ID:</span>{' '}
-              <span className="text-slate-600">{daypart.daypart_name}</span>
-            </div>
-            <div>
-              <span className="font-medium text-slate-700">Default Time:</span>{' '}
-              <span className="text-slate-600">
-                {daypart.default_start_time} - {daypart.default_end_time}
-              </span>
-            </div>
-            <div>
-              <span className="font-medium text-slate-700">Sort Order:</span>{' '}
-              <span className="text-slate-600">{daypart.sort_order}</span>
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="font-medium text-slate-700 text-sm">Default Days: </span>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {daypart.default_days.sort().map((day) => {
-                const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                return (
-                  <span
-                    key={day}
-                    className="px-2 py-1 bg-white text-slate-600 text-xs rounded border border-slate-200"
-                  >
-                    {dayInfo?.short}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          {loadedTimeGroups.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-slate-200">
-              <h5 className="text-xs font-semibold text-slate-700 mb-2">Time Groups</h5>
-              <div className="space-y-2">
-                {loadedTimeGroups.map((group, index) => (
-                  <div key={index} className="flex items-center justify-between text-xs">
-                    <div className="flex flex-wrap gap-1">
-                      {group.days.sort().map((day) => {
-                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                        return (
-                          <span
-                            key={day}
-                            className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200"
-                          >
-                            {dayInfo?.short}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <span className="text-slate-600 ml-2">
-                      {formatTime(group.startTime)} - {formatTime(group.endTime)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
+interface DaypartSchedule extends Schedule {
+  daypart_definition_id: string;
 }
 
 export default function DaypartManagement() {
-  const [dayparts, setDayparts] = useState<DaypartDefinition[]>([]);
+  const [definitions, setDefinitions] = useState<DaypartDefinition[]>([]);
+  const [schedules, setSchedules] = useState<DaypartSchedule[]>([]);
+  const [expandedDefinitions, setExpandedDefinitions] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showDefinitionForm, setShowDefinitionForm] = useState(false);
+  const [editingDefinition, setEditingDefinition] = useState<DaypartDefinition | null>(null);
+  const [addingScheduleForDef, setAddingScheduleForDef] = useState<string | null>(null);
+  const [editingSchedule, setEditingSchedule] = useState<DaypartSchedule | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showTimeGroupManager, setShowTimeGroupManager] = useState(false);
-  const [timeGroups, setTimeGroups] = useState<TimeGroup[]>([]);
-  const [formData, setFormData] = useState<Partial<DaypartDefinition>>({
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
     daypart_name: '',
     display_label: '',
-    description: '',
-    color: 'bg-slate-100 text-slate-800 border-slate-300',
-    default_start_time: '06:00:00',
-    default_end_time: '11:00:00',
-    default_days: [1, 2, 3, 4, 5, 6, 0],
+    color: '#3b82f6',
     icon: 'Clock',
     sort_order: 0,
-    is_active: true,
-    concept_id: null
   });
 
   useEffect(() => {
-    loadDayparts();
+    loadData();
   }, []);
 
-  const loadDayparts = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('daypart_definitions')
-      .select('*')
-      .order('sort_order');
+    setError(null);
 
-    if (error) {
-      console.error('Error loading dayparts:', error);
-      setError('Failed to load dayparts');
+    try {
+      const [defsResult, schedulesResult] = await Promise.all([
+        supabase
+          .from('daypart_definitions')
+          .select('*')
+          .is('store_id', null)
+          .is('concept_id', null)
+          .order('sort_order'),
+        supabase.from('daypart_schedules').select('*')
+      ]);
+
+      if (defsResult.error) throw defsResult.error;
+      if (schedulesResult.error) throw schedulesResult.error;
+
+      setDefinitions(defsResult.data || []);
+      setSchedules(schedulesResult.data || []);
+    } catch (err: any) {
+      console.error('Error loading data:', err);
+      setError(err.message || 'Failed to load daypart data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleExpanded = (defId: string) => {
+    const newExpanded = new Set(expandedDefinitions);
+    if (newExpanded.has(defId)) {
+      newExpanded.delete(defId);
     } else {
-      setDayparts(data || []);
+      newExpanded.add(defId);
     }
-    setLoading(false);
+    setExpandedDefinitions(newExpanded);
   };
 
-  const loadTimeGroups = async (daypartId: string) => {
-    const { data, error } = await supabase
-      .from('daypart_time_groups')
-      .select('*')
-      .eq('daypart_definition_id', daypartId);
-
-    if (error) {
-      console.error('Error loading time groups:', error);
-      return [];
-    }
-
-    return (data || []).map(group => ({
-      id: group.id,
-      days: group.days_of_week,
-      startTime: group.start_time,
-      endTime: group.end_time
-    }));
+  const handleAddDefinition = () => {
+    setFormData({
+      daypart_name: '',
+      display_label: '',
+      color: '#3b82f6',
+      icon: 'Clock',
+      sort_order: definitions.length * 10,
+    });
+    setEditingDefinition(null);
+    setShowDefinitionForm(true);
   };
 
-  const handleSave = async () => {
-    if (!formData.daypart_name || !formData.display_label) {
-      setError('Daypart name and display label are required');
+  const handleEditDefinition = (definition: DaypartDefinition) => {
+    setFormData({
+      daypart_name: definition.daypart_name,
+      display_label: definition.display_label,
+      color: definition.color,
+      icon: definition.icon,
+      sort_order: definition.sort_order,
+    });
+    setEditingDefinition(definition);
+    setShowDefinitionForm(true);
+  };
+
+  const handleSubmitDefinition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (editingDefinition) {
+        const { error: updateError } = await supabase
+          .from('daypart_definitions')
+          .update({
+            display_label: formData.display_label,
+            color: formData.color,
+            icon: formData.icon,
+            sort_order: formData.sort_order,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingDefinition.id);
+
+        if (updateError) throw updateError;
+        setSuccess('Daypart definition updated successfully');
+      } else {
+        const { data: newDef, error: insertError } = await supabase
+          .from('daypart_definitions')
+          .insert([{
+            daypart_name: formData.daypart_name,
+            display_label: formData.display_label,
+            color: formData.color,
+            icon: formData.icon,
+            sort_order: formData.sort_order,
+            is_active: true,
+          }])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setSuccess('Daypart definition created successfully');
+
+        if (newDef) {
+          setExpandedDefinitions(new Set([newDef.id]));
+          setAddingScheduleForDef(newDef.id);
+        }
+      }
+
+      setShowDefinitionForm(false);
+      setEditingDefinition(null);
+      await loadData();
+
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('Error saving definition:', err);
+      setError(err.message || 'Failed to save daypart definition');
+    }
+  };
+
+  const handleDeleteDefinition = async (definition: DaypartDefinition) => {
+    if (!confirm(`Delete "${definition.display_label}"? This will also delete all its schedules.`)) {
       return;
     }
 
     try {
-      let daypartId = editingId;
+      const { error: deleteError } = await supabase
+        .from('daypart_definitions')
+        .delete()
+        .eq('id', definition.id);
 
-      if (editingId) {
-        const { error } = await supabase
-          .from('daypart_definitions')
-          .update(formData)
-          .eq('id', editingId);
+      if (deleteError) throw deleteError;
 
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from('daypart_definitions')
-          .insert([formData])
-          .select()
-          .single();
+      setSuccess('Daypart definition deleted successfully');
+      await loadData();
 
-        if (error) throw error;
-        daypartId = data.id;
-      }
-
-      if (daypartId) {
-        await saveTimeGroups(daypartId);
-      }
-
-      setEditingId(null);
-      setShowAddForm(false);
-      setShowTimeGroupManager(false);
-      setTimeGroups([]);
-      setFormData({
-        daypart_name: '',
-        display_label: '',
-        description: '',
-        color: 'bg-slate-100 text-slate-800 border-slate-300',
-        default_start_time: '06:00:00',
-        default_end_time: '11:00:00',
-        default_days: [1, 2, 3, 4, 5, 6, 0],
-        icon: 'Clock',
-        sort_order: 0,
-        is_active: true,
-        concept_id: null
-      });
-      setError(null);
-      await loadDayparts();
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to save daypart');
+      console.error('Error deleting definition:', err);
+      setError(err.message || 'Failed to delete daypart definition');
     }
   };
 
-  const saveTimeGroups = async (daypartId: string) => {
-    await supabase
-      .from('daypart_time_groups')
-      .delete()
-      .eq('daypart_definition_id', daypartId);
+  const handleAddSchedule = (defId: string) => {
+    setAddingScheduleForDef(defId);
+    setEditingSchedule(null);
+    setExpandedDefinitions(new Set([...expandedDefinitions, defId]));
+  };
 
-    if (timeGroups.length > 0) {
-      const groupsToInsert = timeGroups.map(group => ({
-        daypart_definition_id: daypartId,
-        days_of_week: group.days,
-        start_time: group.startTime,
-        end_time: group.endTime
-      }));
+  const handleEditSchedule = (schedule: DaypartSchedule) => {
+    setEditingSchedule(schedule);
+    setAddingScheduleForDef(null);
+  };
 
-      const { error } = await supabase
-        .from('daypart_time_groups')
-        .insert(groupsToInsert);
+  const handleSaveSchedule = async (schedule: Schedule) => {
+    try {
+      if (editingSchedule) {
+        const { error: updateError } = await supabase
+          .from('daypart_schedules')
+          .update({
+            days_of_week: schedule.days_of_week,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingSchedule.id);
 
-      if (error) throw error;
+        if (updateError) throw updateError;
+      } else if (addingScheduleForDef) {
+        const { error: insertError } = await supabase
+          .from('daypart_schedules')
+          .insert([{
+            daypart_definition_id: addingScheduleForDef,
+            days_of_week: schedule.days_of_week,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+          }]);
+
+        if (insertError) throw insertError;
+      }
+
+      setEditingSchedule(null);
+      setAddingScheduleForDef(null);
+      await loadData();
+    } catch (err: any) {
+      console.error('Error saving schedule:', err);
+      setError(err.message || 'Failed to save schedule');
     }
   };
 
-  const handleEdit = async (daypart: DaypartDefinition) => {
-    setEditingId(daypart.id);
-    setFormData(daypart);
-    setShowAddForm(false);
-    const groups = await loadTimeGroups(daypart.id);
-    setTimeGroups(groups);
-  };
-
-  const handleSaveTimeGroups = (groups: TimeGroup[]) => {
-    setTimeGroups(groups);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this daypart definition?')) {
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    if (!confirm('Are you sure you want to delete this schedule?')) {
       return;
     }
 
-    const { error } = await supabase
-      .from('daypart_definitions')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error: deleteError } = await supabase
+        .from('daypart_schedules')
+        .delete()
+        .eq('id', scheduleId);
 
-    if (error) {
-      setError('Failed to delete daypart');
-    } else {
-      await loadDayparts();
+      if (deleteError) throw deleteError;
+
+      await loadData();
+    } catch (err: any) {
+      console.error('Error deleting schedule:', err);
+      setError(err.message || 'Failed to delete schedule');
     }
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
-    setShowAddForm(false);
-    setShowTimeGroupManager(false);
-    setTimeGroups([]);
-    setFormData({
-      daypart_name: '',
-      display_label: '',
-      description: '',
-      color: 'bg-slate-100 text-slate-800 border-slate-300',
-      default_start_time: '06:00:00',
-      default_end_time: '11:00:00',
-      default_days: [1, 2, 3, 4, 5, 6, 0],
-      icon: 'Clock',
-      sort_order: 0,
-      is_active: true,
-      concept_id: null
-    });
-    setError(null);
-  };
-
-  const toggleDay = (day: number) => {
-    const current = formData.default_days || [];
-    const newDays = current.includes(day)
-      ? current.filter(d => d !== day)
-      : [...current, day].sort();
-    setFormData({ ...formData, default_days: newDays });
   };
 
   if (loading) {
@@ -661,260 +259,306 @@ export default function DaypartManagement() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Global Daypart Definitions</h1>
-        <p className="text-slate-600">
-          Define global daypart types that can be used across all sites for configuring daypart routines.
-        </p>
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+            <Clock className="w-7 h-7 text-blue-600" />
+            Global Daypart Definitions
+          </h1>
+          <p className="text-slate-600 mt-1">
+            Define daypart types and their operating schedules used across all locations
+          </p>
+        </div>
+        <button
+          onClick={handleAddDefinition}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Definition
+        </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
-      {showAddForm && !editingId && (
-        <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            Add New Daypart
-          </h3>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Daypart Name (System ID) *
-              </label>
-              <input
-                type="text"
-                value={formData.daypart_name}
-                onChange={(e) => setFormData({ ...formData, daypart_name: e.target.value })}
-                placeholder="e.g., breakfast"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Display Label *
-              </label>
-              <input
-                type="text"
-                value={formData.display_label}
-                onChange={(e) => setFormData({ ...formData, display_label: e.target.value })}
-                placeholder="e.g., Breakfast"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of this daypart"
-                rows={2}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Color Theme
-              </label>
-              <select
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {COLOR_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Sort Order
-              </label>
-              <input
-                type="number"
-                value={formData.sort_order}
-                onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Default Start Time
-              </label>
-              <input
-                type="time"
-                value={formData.default_start_time}
-                onChange={(e) => setFormData({ ...formData, default_start_time: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Default End Time
-              </label>
-              <input
-                type="time"
-                value={formData.default_end_time}
-                onChange={(e) => setFormData({ ...formData, default_end_time: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Default Days of Week
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {DAYS_OF_WEEK.map((day) => (
-                  <button
-                    key={day.value}
-                    type="button"
-                    onClick={() => toggleDay(day.value)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      (formData.default_days || []).includes(day.value)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {day.short}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {showTimeGroupManager ? (
-              <div className="col-span-2 border-t border-slate-200 pt-4">
-                <TimeGroupManager
-                  defaultStartTime={formData.default_start_time || '06:00:00'}
-                  defaultEndTime={formData.default_end_time || '11:00:00'}
-                  existingGroups={timeGroups}
-                  onSave={(groups) => {
-                    setTimeGroups(groups);
-                    setShowTimeGroupManager(false);
-                  }}
-                  onCancel={() => setShowTimeGroupManager(false)}
-                  color={formData.color}
-                />
-              </div>
-            ) : (
-              <div className="col-span-2 border-t border-slate-200 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowTimeGroupManager(true)}
-                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  {timeGroups.length > 0 ? 'Edit Time Groups' : 'Add Time Groups'}
-                </button>
-                {timeGroups.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {timeGroups.map((group, index) => (
-                      <div key={index} className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg">
-                        <div className="flex flex-wrap gap-1">
-                          {group.days.sort().map((day) => {
-                            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                            return (
-                              <span
-                                key={day}
-                                className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200"
-                              >
-                                {dayInfo?.short}
-                              </span>
-                            );
-                          })}
-                        </div>
-                        <span className="text-slate-600 ml-2">
-                          {formatTime(group.startTime)} - {formatTime(group.endTime)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="col-span-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-slate-700">Active</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex gap-2 mt-6">
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <Save className="w-4 h-4" />
-              Save
-            </button>
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              Cancel
-            </button>
-          </div>
+      {success && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-start gap-2">
+          <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span>{success}</span>
         </div>
       )}
 
-      {!showAddForm && !editingId && (
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="mb-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Daypart
-        </button>
-      )}
+      <div className="space-y-3">
+        {definitions.map((definition) => {
+          const defSchedules = schedules.filter(s => s.daypart_definition_id === definition.id);
+          const isExpanded = expandedDefinitions.has(definition.id);
 
-      <div className="space-y-4">
-        {dayparts.map((daypart) => (
-          <DaypartCard
-            key={daypart.id}
-            daypart={daypart}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isEditing={editingId === daypart.id}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            formData={editingId === daypart.id ? formData : undefined}
-            setFormData={editingId === daypart.id ? setFormData : undefined}
-            timeGroups={editingId === daypart.id ? timeGroups : undefined}
-            showTimeGroupManager={editingId === daypart.id ? showTimeGroupManager : undefined}
-            setShowTimeGroupManager={editingId === daypart.id ? setShowTimeGroupManager : undefined}
-            onSaveTimeGroups={editingId === daypart.id ? handleSaveTimeGroups : undefined}
-            toggleDay={editingId === daypart.id ? toggleDay : undefined}
-          />
-        ))}
+          return (
+            <div
+              key={definition.id}
+              className="border border-slate-200 bg-white rounded-lg transition-all"
+            >
+              <div className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+                      style={{ backgroundColor: definition.color }}
+                    >
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-slate-900">{definition.display_label}</h4>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                          Global
+                        </span>
+                      </div>
+                      <div className="text-sm text-slate-600">
+                        {defSchedules.length} {defSchedules.length === 1 ? 'schedule' : 'schedules'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => handleEditDefinition(definition)}
+                      className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Edit definition"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDefinition(definition)}
+                      className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete definition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => toggleExpanded(definition.id)}
+                      className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="border-t border-slate-200 p-4 bg-slate-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h5 className="text-sm font-semibold text-slate-900">Schedules</h5>
+                    {!addingScheduleForDef && !editingSchedule && (
+                      <button
+                        onClick={() => handleAddSchedule(definition.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Schedule
+                      </button>
+                    )}
+                  </div>
+
+                  {defSchedules.length === 0 && !addingScheduleForDef ? (
+                    <div className="text-center py-6 text-slate-500 text-sm">
+                      No schedules yet. Add a schedule to define when this daypart is active.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {defSchedules.map((schedule) => (
+                        editingSchedule?.id === schedule.id ? (
+                          <ScheduleGroupForm
+                            key={schedule.id}
+                            schedule={editingSchedule}
+                            allSchedules={defSchedules}
+                            onUpdate={setEditingSchedule}
+                            onSave={() => handleSaveSchedule(editingSchedule)}
+                            onCancel={() => setEditingSchedule(null)}
+                            level="global"
+                          />
+                        ) : (
+                          <ScheduleGroupCard
+                            key={schedule.id}
+                            schedule={schedule}
+                            onEdit={() => handleEditSchedule(schedule)}
+                            onDelete={() => handleDeleteSchedule(schedule.id!)}
+                            level="global"
+                          />
+                        )
+                      ))}
+
+                      {addingScheduleForDef === definition.id && (
+                        <ScheduleGroupForm
+                          schedule={{
+                            daypart_name: definition.daypart_name,
+                            days_of_week: [],
+                            start_time: '06:00',
+                            end_time: '11:00',
+                          }}
+                          allSchedules={defSchedules}
+                          onUpdate={() => {}}
+                          onSave={() => handleSaveSchedule({
+                            daypart_name: definition.daypart_name,
+                            days_of_week: [],
+                            start_time: '06:00',
+                            end_time: '11:00',
+                          })}
+                          onCancel={() => setAddingScheduleForDef(null)}
+                          level="global"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {definitions.length === 0 && (
+          <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+            <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+            <p className="text-slate-600 mb-4">No daypart definitions yet. Add your first definition to get started.</p>
+            <button
+              onClick={handleAddDefinition}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Definition
+            </button>
+          </div>
+        )}
       </div>
 
-      {dayparts.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
-          <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-900 mb-2">No Dayparts Defined</h3>
-          <p className="text-slate-600 text-sm mb-4">Get started by adding your first daypart definition.</p>
+      {showDefinitionForm && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDefinitionForm(false);
+              setEditingDefinition(null);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {editingDefinition ? 'Edit Daypart Definition' : 'Add Daypart Definition'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowDefinitionForm(false);
+                  setEditingDefinition(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitDefinition} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Daypart Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={!!editingDefinition}
+                  value={formData.daypart_name}
+                  onChange={(e) => setFormData({ ...formData, daypart_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:text-slate-500"
+                  placeholder="e.g., breakfast, lunch"
+                />
+                {!editingDefinition && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Lowercase, no spaces. Used internally for matching with routines.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Display Label *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.display_label}
+                  onChange={(e) => setFormData({ ...formData, display_label: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., Breakfast"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Color
+                  </label>
+                  <input
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    className="w-full h-10 px-1 py-1 border border-slate-300 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Icon
+                  </label>
+                  <IconPicker
+                    selectedIcon={formData.icon}
+                    onSelect={(icon) => setFormData({ ...formData, icon })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Sort Order
+                </label>
+                <input
+                  type="number"
+                  value={formData.sort_order}
+                  onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Lower numbers appear first in lists
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDefinitionForm(false);
+                    setEditingDefinition(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {editingDefinition ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
