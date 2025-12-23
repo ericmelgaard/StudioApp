@@ -270,6 +270,13 @@ export default function DaypartRoutineForm({
 
         {formData.schedule_type === 'event_holiday' && (
           <>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-purple-900">Quick Fill from Template</p>
+              </div>
+              <HolidayTemplatePicker onSelectTemplate={handleTemplateApply} />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Event Name *
@@ -319,10 +326,6 @@ export default function DaypartRoutineForm({
                 {formData.recurrence_type === 'annual_relative' && 'Event repeats on a relative weekday (e.g., 3rd Thursday)'}
                 {formData.recurrence_type === 'annual_date_range' && 'Event spans multiple weeks, repeating annually'}
               </p>
-            </div>
-
-            <div>
-              <HolidayTemplatePicker onSelectTemplate={handleTemplateApply} />
             </div>
           </>
         )}
