@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 import { supabase } from '../lib/supabase';
 import HolidayTemplatePicker from './HolidayTemplatePicker';
@@ -215,13 +215,19 @@ export default function DaypartRoutineForm({
   const handleTemplateApply = (templates: any[]) => {
     if (templates.length > 0) {
       const template = templates[0];
-      setFormData({
+      const updates: any = {
         ...formData,
         event_name: template.name,
-        event_date: template.date || '',
-        recurrence_type: template.recurrenceType || 'none',
-        recurrence_config: template.recurrenceConfig || {}
-      });
+        recurrence_type: template.recurrence_type || 'none',
+        recurrence_config: template.recurrence_config || {}
+      };
+
+      if (template.suggested_hours) {
+        updates.start_time = template.suggested_hours.start_time;
+        updates.end_time = template.suggested_hours.end_time;
+      }
+
+      setFormData(updates);
     }
     setShowTemplatePicker(false);
   };
@@ -275,17 +281,14 @@ export default function DaypartRoutineForm({
 
         {formData.schedule_type === 'event_holiday' && (
           <>
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <p className="text-sm font-medium text-purple-900 mb-2">Quick Fill from Template</p>
-              <button
-                type="button"
-                onClick={() => setShowTemplatePicker(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <Calendar className="w-4 h-4" />
-                Choose Holiday Template
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowTemplatePicker(true)}
+              className="w-full px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Quick Add from Holiday Template
+            </button>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
