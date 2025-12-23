@@ -137,6 +137,7 @@ export default function ScheduleGroupForm({
     <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-4">
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={() => handleScheduleTypeChange('regular')}
           className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
             scheduleType === 'regular'
@@ -147,6 +148,7 @@ export default function ScheduleGroupForm({
           Regular Schedule
         </button>
         <button
+          type="button"
           onClick={() => handleScheduleTypeChange('event_holiday')}
           className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
             scheduleType === 'event_holiday'
@@ -178,6 +180,7 @@ export default function ScheduleGroupForm({
       {scheduleType === 'event_holiday' && (
         <div className="space-y-4">
           <button
+            type="button"
             onClick={() => setShowTemplatePicker(true)}
             className="w-full px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-medium text-sm flex items-center justify-center gap-2"
           >
@@ -408,6 +411,7 @@ export default function ScheduleGroupForm({
 
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={handleSave}
           disabled={!!error}
           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
@@ -415,6 +419,7 @@ export default function ScheduleGroupForm({
           Save Schedule
         </button>
         <button
+          type="button"
           onClick={onCancel}
           className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
         >
