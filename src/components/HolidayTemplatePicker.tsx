@@ -81,6 +81,7 @@ export default function HolidayTemplatePicker({
 
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => setSelectedCategory('all')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 selectedCategory === 'all'
@@ -91,6 +92,7 @@ export default function HolidayTemplatePicker({
               All ({HOLIDAY_TEMPLATES.length})
             </button>
             <button
+              type="button"
               onClick={() => setSelectedCategory('federal')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 selectedCategory === 'federal'
@@ -101,6 +103,7 @@ export default function HolidayTemplatePicker({
               Federal ({federalCount})
             </button>
             <button
+              type="button"
               onClick={() => setSelectedCategory('seasonal')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 selectedCategory === 'seasonal'
@@ -111,6 +114,7 @@ export default function HolidayTemplatePicker({
               Seasonal ({seasonalCount})
             </button>
             <button
+              type="button"
               onClick={() => setSelectedCategory('custom')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 selectedCategory === 'custom'
@@ -130,6 +134,7 @@ export default function HolidayTemplatePicker({
               return (
                 <button
                   key={template.id}
+                  type="button"
                   onClick={() => toggleTemplate(template.id)}
                   className={`text-left p-4 rounded-lg border-2 transition-all ${
                     isSelected
@@ -188,12 +193,14 @@ export default function HolidayTemplatePicker({
           </div>
           <div className="flex gap-3">
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleApply}
               disabled={selectedTemplates.size === 0}
               className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
