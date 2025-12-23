@@ -210,26 +210,25 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </p>
       </div>
 
-      {showForm && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <p className="text-sm text-blue-800 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span>
-              This routine will apply to the selected days for this placement.
-            </span>
-          </p>
-        </div>
-      )}
-
-      {showForm && (
-        <DaypartRoutineForm
-          placementGroupId={placementGroupId}
-          existingRoutines={routines}
-          onSave={handleSave}
-          onCancel={handleCancel}
-          editingRoutine={editingRoutine}
-          preFillDaypart={preFillDaypart}
-        />
+      {showForm && !editingRoutine && (
+        <>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>
+                This routine will apply to the selected days for this placement.
+              </span>
+            </p>
+          </div>
+          <DaypartRoutineForm
+            placementGroupId={placementGroupId}
+            existingRoutines={routines}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            editingRoutine={null}
+            preFillDaypart={preFillDaypart}
+          />
+        </>
       )}
 
       {routines.length === 0 && !showForm ? (
@@ -283,53 +282,69 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 </div>
               <div className="divide-y divide-slate-200">
                 {daypartRoutines.map((routine) => (
-                  <div key={routine.id} className="p-4 hover:bg-slate-50 transition-colors group">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-sm font-medium text-slate-900">
-                            {routine.start_time} - {routine.end_time}
-                          </span>
+                  <div key={routine.id}>
+                    <div className="p-4 hover:bg-slate-50 transition-colors group">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-sm font-medium text-slate-900">
+                              {routine.start_time} - {routine.end_time}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {routine.days_of_week.sort().map(day => {
+                              const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                              return (
+                                <span
+                                  key={day}
+                                  className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded font-medium"
+                                >
+                                  {dayInfo?.short}
+                                </span>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-1">
-                          {routine.days_of_week.sort().map(day => {
-                            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                            return (
-                              <span
-                                key={day}
-                                className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded font-medium"
-                              >
-                                {dayInfo?.short}
-                              </span>
-                            );
-                          })}
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleEdit(routine);
+                            }}
+                            className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                            title="Edit routine"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDelete(routine.id!);
+                            }}
+                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete routine"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleEdit(routine);
-                          }}
-                          className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                          title="Edit routine"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDelete(routine.id!);
-                          }}
-                          className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete routine"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
+                    {editingRoutine?.id === routine.id && (
+                      <div className="px-4 pb-4 bg-amber-50 border-t border-amber-200">
+                        <div className="pt-4">
+                          <DaypartRoutineForm
+                            placementGroupId={placementGroupId}
+                            existingRoutines={routines}
+                            onSave={handleSave}
+                            onCancel={handleCancel}
+                            editingRoutine={editingRoutine}
+                            preFillDaypart={preFillDaypart}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
