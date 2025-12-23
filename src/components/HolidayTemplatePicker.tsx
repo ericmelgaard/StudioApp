@@ -40,7 +40,6 @@ export default function HolidayTemplatePicker({
   const handleApply = () => {
     const templates = HOLIDAY_TEMPLATES.filter(t => selectedTemplates.has(t.id));
     onSelect(templates);
-    onClose();
   };
 
   const federalCount = HOLIDAY_TEMPLATES.filter(t => t.category === 'federal').length;

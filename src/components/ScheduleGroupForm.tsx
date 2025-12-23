@@ -79,6 +79,7 @@ export default function ScheduleGroupForm({
         handleTimeChange('start_time', template.suggested_hours.start_time);
         handleTimeChange('end_time', template.suggested_hours.end_time);
       }
+      setShowTemplatePicker(false);
     }
   };
 
