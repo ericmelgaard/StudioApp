@@ -48,14 +48,301 @@ const COLOR_OPTIONS = [
   { value: 'bg-teal-100 text-teal-800 border-teal-300', label: 'Teal' },
 ];
 
+interface EditFormProps {
+  formData: Partial<DaypartDefinition>;
+  setFormData: (data: Partial<DaypartDefinition>) => void;
+  dayConfigurations: DayConfiguration[];
+  showDayConfigs: boolean;
+  setShowDayConfigs: (show: boolean) => void;
+  toggleDay: (day: number) => void;
+  addDayConfiguration: (day: number) => void;
+  removeDayConfiguration: (day: number) => void;
+  updateDayConfiguration: (day: number, field: 'start_time' | 'end_time', value: string) => void;
+  getDayConfiguration: (day: number) => DayConfiguration | undefined;
+  onSave: () => void;
+  onCancel: () => void;
+}
+
+function EditForm({
+  formData,
+  setFormData,
+  dayConfigurations,
+  showDayConfigs,
+  setShowDayConfigs,
+  toggleDay,
+  addDayConfiguration,
+  removeDayConfiguration,
+  updateDayConfiguration,
+  getDayConfiguration,
+  onSave,
+  onCancel
+}: EditFormProps) {
+  return (
+    <div className="px-6 py-4 bg-white border-t border-slate-200">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Daypart Name (System ID) *
+          </label>
+          <input
+            type="text"
+            value={formData.daypart_name}
+            onChange={(e) => setFormData({ ...formData, daypart_name: e.target.value })}
+            placeholder="e.g., breakfast"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Display Label *
+          </label>
+          <input
+            type="text"
+            value={formData.display_label}
+            onChange={(e) => setFormData({ ...formData, display_label: e.target.value })}
+            placeholder="e.g., Breakfast"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Description
+          </label>
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Brief description of this daypart"
+            rows={2}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Color Theme
+          </label>
+          <select
+            value={formData.color}
+            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            {COLOR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Sort Order
+          </label>
+          <input
+            type="number"
+            value={formData.sort_order}
+            onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Default Start Time
+          </label>
+          <input
+            type="time"
+            value={formData.default_start_time}
+            onChange={(e) => setFormData({ ...formData, default_start_time: e.target.value })}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Default End Time
+          </label>
+          <input
+            type="time"
+            value={formData.default_end_time}
+            onChange={(e) => setFormData({ ...formData, default_end_time: e.target.value })}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Default Days of Week
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {DAYS_OF_WEEK.map((day) => (
+              <button
+                key={day.value}
+                type="button"
+                onClick={() => toggleDay(day.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  (formData.default_days || []).includes(day.value)
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {day.short}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="col-span-2 border-t border-slate-200 pt-4">
+          <button
+            type="button"
+            onClick={() => setShowDayConfigs(!showDayConfigs)}
+            className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900"
+          >
+            {showDayConfigs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            Day-Specific Time Configurations (Optional)
+          </button>
+          <p className="text-xs text-slate-500 mt-1">
+            Override default times for specific days. Days without custom times will use the default times above.
+          </p>
+
+          {showDayConfigs && (
+            <div className="mt-4 space-y-3">
+              {DAYS_OF_WEEK.map((day) => {
+                const config = getDayConfiguration(day.value);
+                const hasConfig = !!config;
+
+                return (
+                  <div
+                    key={day.value}
+                    className={`p-3 rounded-lg border ${
+                      hasConfig ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-slate-700">{day.label}</span>
+                      {hasConfig ? (
+                        <button
+                          type="button"
+                          onClick={() => removeDayConfiguration(day.value)}
+                          className="text-xs text-red-600 hover:text-red-700 font-medium"
+                        >
+                          Remove Override
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addDayConfiguration(day.value)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Add Custom Times
+                        </button>
+                      )}
+                    </div>
+
+                    {hasConfig && config && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-slate-600 mb-1">Start Time</label>
+                          <input
+                            type="time"
+                            value={config.start_time}
+                            onChange={(e) => updateDayConfiguration(day.value, 'start_time', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-600 mb-1">End Time</label>
+                          <input
+                            type="time"
+                            value={config.end_time}
+                            onChange={(e) => updateDayConfiguration(day.value, 'end_time', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {!hasConfig && (
+                      <div className="text-xs text-slate-500">
+                        Using default: {formData.default_start_time} - {formData.default_end_time}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="col-span-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-slate-700">Active</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="flex gap-2 mt-6">
+        <button
+          onClick={onSave}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+        >
+          <Save className="w-4 h-4" />
+          Save
+        </button>
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DaypartCard({
   daypart,
   onEdit,
-  onDelete
+  onDelete,
+  isEditing,
+  onSave,
+  onCancel,
+  formData,
+  setFormData,
+  dayConfigurations,
+  showDayConfigs,
+  setShowDayConfigs,
+  toggleDay,
+  addDayConfiguration,
+  removeDayConfiguration,
+  updateDayConfiguration,
+  getDayConfiguration
 }: {
   daypart: DaypartDefinition;
   onEdit: (daypart: DaypartDefinition) => void;
   onDelete: (id: string) => void;
+  isEditing: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+  formData?: Partial<DaypartDefinition>;
+  setFormData?: (data: Partial<DaypartDefinition>) => void;
+  dayConfigurations?: DayConfiguration[];
+  showDayConfigs?: boolean;
+  setShowDayConfigs?: (show: boolean) => void;
+  toggleDay?: (day: number) => void;
+  addDayConfiguration?: (day: number) => void;
+  removeDayConfiguration?: (day: number) => void;
+  updateDayConfiguration?: (day: number, field: 'start_time' | 'end_time', value: string) => void;
+  getDayConfiguration?: (day: number) => DayConfiguration | undefined;
 }) {
   const [dayConfigs, setDayConfigs] = useState<DayConfiguration[]>([]);
   const [showConfigs, setShowConfigs] = useState(false);
@@ -86,7 +373,7 @@ function DaypartCard({
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      <div className={`px-6 py-4 border-b border-slate-200 ${daypart.color}`}>
+      <div className={`px-6 py-4 ${isEditing ? '' : 'border-b border-slate-200'} ${daypart.color}`}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -95,98 +382,121 @@ function DaypartCard({
               {!daypart.is_active && (
                 <span className="text-xs px-2 py-1 bg-white/50 rounded">Inactive</span>
               )}
+              {isEditing && (
+                <span className="text-xs px-2 py-1 bg-white/50 rounded font-medium">Editing</span>
+              )}
             </h3>
             <p className="text-sm opacity-90 mt-1">{daypart.description}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onEdit(daypart)}
-              className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-              title="Edit daypart"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onDelete(daypart.id)}
-              className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-              title="Delete daypart"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="px-6 py-4 bg-slate-50">
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="font-medium text-slate-700">System ID:</span>{' '}
-            <span className="text-slate-600">{daypart.daypart_name}</span>
-          </div>
-          <div>
-            <span className="font-medium text-slate-700">Default Time:</span>{' '}
-            <span className="text-slate-600">
-              {daypart.default_start_time} - {daypart.default_end_time}
-            </span>
-          </div>
-          <div>
-            <span className="font-medium text-slate-700">Sort Order:</span>{' '}
-            <span className="text-slate-600">{daypart.sort_order}</span>
-          </div>
-        </div>
-        <div className="mt-2">
-          <span className="font-medium text-slate-700 text-sm">Default Days: </span>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {daypart.default_days.sort().map((day) => {
-              const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-              return (
-                <span
-                  key={day}
-                  className="px-2 py-1 bg-white text-slate-600 text-xs rounded border border-slate-200"
-                >
-                  {dayInfo?.short}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-3 pt-3 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={toggleConfigs}
-            className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-900"
-          >
-            {showConfigs ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            Day-Specific Configurations
-          </button>
-
-          {showConfigs && (
-            <div className="mt-2">
-              {loading ? (
-                <div className="text-xs text-slate-500">Loading...</div>
-              ) : dayConfigs.length > 0 ? (
-                <div className="space-y-1">
-                  {DAYS_OF_WEEK.map((day) => {
-                    const config = getDayConfig(day.value);
-                    if (!config) return null;
-
-                    return (
-                      <div key={day.value} className="flex items-center justify-between text-xs py-1">
-                        <span className="font-medium text-slate-700">{day.label}:</span>
-                        <span className="text-slate-600">
-                          {config.start_time} - {config.end_time}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-xs text-slate-500">No day-specific configurations</div>
-              )}
+          {!isEditing && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onEdit(daypart)}
+                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                title="Edit daypart"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onDelete(daypart.id)}
+                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                title="Delete daypart"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      {isEditing && formData && setFormData && dayConfigurations && showDayConfigs !== undefined && setShowDayConfigs && toggleDay && addDayConfiguration && removeDayConfiguration && updateDayConfiguration && getDayConfiguration ? (
+        <EditForm
+          formData={formData}
+          setFormData={setFormData}
+          dayConfigurations={dayConfigurations}
+          showDayConfigs={showDayConfigs}
+          setShowDayConfigs={setShowDayConfigs}
+          toggleDay={toggleDay}
+          addDayConfiguration={addDayConfiguration}
+          removeDayConfiguration={removeDayConfiguration}
+          updateDayConfiguration={updateDayConfiguration}
+          getDayConfiguration={getDayConfiguration}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      ) : !isEditing ? (
+        <div className="px-6 py-4 bg-slate-50">
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="font-medium text-slate-700">System ID:</span>{' '}
+              <span className="text-slate-600">{daypart.daypart_name}</span>
+            </div>
+            <div>
+              <span className="font-medium text-slate-700">Default Time:</span>{' '}
+              <span className="text-slate-600">
+                {daypart.default_start_time} - {daypart.default_end_time}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium text-slate-700">Sort Order:</span>{' '}
+              <span className="text-slate-600">{daypart.sort_order}</span>
+            </div>
+          </div>
+          <div className="mt-2">
+            <span className="font-medium text-slate-700 text-sm">Default Days: </span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {daypart.default_days.sort().map((day) => {
+                const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                return (
+                  <span
+                    key={day}
+                    className="px-2 py-1 bg-white text-slate-600 text-xs rounded border border-slate-200"
+                  >
+                    {dayInfo?.short}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={toggleConfigs}
+              className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+            >
+              {showConfigs ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              Day-Specific Configurations
+            </button>
+
+            {showConfigs && (
+              <div className="mt-2">
+                {loading ? (
+                  <div className="text-xs text-slate-500">Loading...</div>
+                ) : dayConfigs.length > 0 ? (
+                  <div className="space-y-1">
+                    {DAYS_OF_WEEK.map((day) => {
+                      const config = getDayConfig(day.value);
+                      if (!config) return null;
+
+                      return (
+                        <div key={day.value} className="flex items-center justify-between text-xs py-1">
+                          <span className="font-medium text-slate-700">{day.label}:</span>
+                          <span className="text-slate-600">
+                            {config.start_time} - {config.end_time}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-500">No day-specific configurations</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -453,10 +763,10 @@ export default function DaypartManagement() {
         </div>
       )}
 
-      {(showAddForm || editingId) && (
+      {showAddForm && !editingId && (
         <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            {editingId ? 'Edit Daypart Definition' : 'Add New Daypart'}
+            Add New Daypart
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
@@ -699,7 +1009,27 @@ export default function DaypartManagement() {
       )}
 
       <div className="space-y-4">
-        {dayparts.map((daypart) => <DaypartCard key={daypart.id} daypart={daypart} onEdit={handleEdit} onDelete={handleDelete} />)}
+        {dayparts.map((daypart) => (
+          <DaypartCard
+            key={daypart.id}
+            daypart={daypart}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isEditing={editingId === daypart.id}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            formData={editingId === daypart.id ? formData : undefined}
+            setFormData={editingId === daypart.id ? setFormData : undefined}
+            dayConfigurations={editingId === daypart.id ? dayConfigurations : undefined}
+            showDayConfigs={editingId === daypart.id ? showDayConfigs : undefined}
+            setShowDayConfigs={editingId === daypart.id ? setShowDayConfigs : undefined}
+            toggleDay={editingId === daypart.id ? toggleDay : undefined}
+            addDayConfiguration={editingId === daypart.id ? addDayConfiguration : undefined}
+            removeDayConfiguration={editingId === daypart.id ? removeDayConfiguration : undefined}
+            updateDayConfiguration={editingId === daypart.id ? updateDayConfiguration : undefined}
+            getDayConfiguration={editingId === daypart.id ? getDayConfiguration : undefined}
+          />
+        ))}
       </div>
 
       {dayparts.length === 0 && (
