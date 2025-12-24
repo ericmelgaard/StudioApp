@@ -64,6 +64,8 @@ export default function DaypartManagement() {
   const [editingDefinition, setEditingDefinition] = useState<DaypartDefinition | null>(null);
   const [addingScheduleForDef, setAddingScheduleForDef] = useState<string | null>(null);
   const [editingSchedule, setEditingSchedule] = useState<DaypartSchedule | null>(null);
+  const [addingSiteRoutineForDaypart, setAddingSiteRoutineForDaypart] = useState<string | null>(null);
+  const [editingSiteRoutine, setEditingSiteRoutine] = useState<SiteRoutine | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -430,15 +432,88 @@ export default function DaypartManagement() {
     }
   };
 
+  const handleAddSiteRoutine = (daypartName: string) => {
+    setAddingSiteRoutineForDaypart(daypartName);
+    setEditingSiteRoutine(null);
+  };
+
+  const handleEditSiteRoutine = (routine: SiteRoutine) => {
+    setEditingSiteRoutine(routine);
+    setAddingSiteRoutineForDaypart(null);
+  };
+
+  const handleSaveSiteRoutine = async (schedule: Schedule, daypartName: string) => {
+    if (!siteRootPlacementId) return;
+
+    try {
+      if (editingSiteRoutine) {
+        const { error: updateError } = await supabase
+          .from('site_daypart_routines')
+          .update({
+            days_of_week: schedule.days_of_week,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingSiteRoutine.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('site_daypart_routines')
+          .insert([{
+            placement_group_id: siteRootPlacementId,
+            daypart_name: daypartName,
+            days_of_week: schedule.days_of_week,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+          }]);
+
+        if (insertError) throw insertError;
+      }
+
+      setEditingSiteRoutine(null);
+      setAddingSiteRoutineForDaypart(null);
+      await loadData();
+    } catch (err: any) {
+      console.error('Error saving site routine:', err);
+      setError(err.message || 'Failed to save site routine');
+    }
+  };
+
+  const handleDeleteSiteRoutine = async (routineId: string) => {
+    if (!confirm('Are you sure you want to delete this site-specific schedule?')) {
+      return;
+    }
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('site_daypart_routines')
+        .delete()
+        .eq('id', routineId);
+
+      if (deleteError) throw deleteError;
+
+      await loadData();
+    } catch (err: any) {
+      console.error('Error deleting site routine:', err);
+      setError(err.message || 'Failed to delete site routine');
+    }
+  };
+
   const renderDaypartCard = (definition: DaypartDefinition, level: string) => {
     const defSchedules = schedules
       .filter(s => s.daypart_definition_id === definition.id)
       .map(s => ({ ...s, daypart_name: definition.daypart_name }));
 
+    const siteDaypartRoutines = siteRoutines.filter(r => r.daypart_name === definition.daypart_name);
+
     const isEditable =
       (level === 'wand' && contextLevel === 'wand') ||
       (level === 'concept' && contextLevel === 'concept') ||
       (level === 'store' && contextLevel === 'store');
+
+    const canAddSiteOverride = contextLevel === 'store' && level !== 'store';
 
     return (
       <div
@@ -482,103 +557,246 @@ export default function DaypartManagement() {
                   <Plus className="w-4 h-4" />
                 </button>
               )}
+              {canAddSiteOverride && !addingSiteRoutineForDaypart && !editingSiteRoutine && (
+                <button
+                  onClick={() => handleAddSiteRoutine(definition.daypart_name)}
+                  className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                  title="Add site-specific schedule"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {defSchedules.length === 0 && !addingScheduleForDef && isEditable ? (
+        {defSchedules.length === 0 && siteDaypartRoutines.length === 0 && !addingScheduleForDef && !addingSiteRoutineForDaypart ? (
           <div className="p-6 text-center">
             <p className="text-slate-600 text-sm mb-4">
-              No schedules yet. Add a schedule to define when this daypart is active.
+              {canAddSiteOverride
+                ? 'No schedules defined yet. Add a site-specific schedule for this location.'
+                : 'No schedules yet. Add a schedule to define when this daypart is active.'
+              }
             </p>
-            <button
-              onClick={() => handleAddSchedule(definition.id)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Add Schedule
-            </button>
+            {isEditable && (
+              <button
+                onClick={() => handleAddSchedule(definition.id)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Add Schedule
+              </button>
+            )}
+            {canAddSiteOverride && (
+              <button
+                onClick={() => handleAddSiteRoutine(definition.daypart_name)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Add Site Schedule
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-slate-200">
-            {defSchedules.map((schedule) => (
-              <div key={schedule.id}>
-                {editingSchedule?.id === schedule.id ? (
-                  <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
+            {defSchedules.length > 0 && (
+              <>
+                {level !== 'store' && contextLevel === 'store' && (
+                  <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                    <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                      {level === 'wand' ? 'WAND' : 'Concept'} Level Schedules (Read-only)
+                    </div>
+                  </div>
+                )}
+                {defSchedules.map((schedule) => (
+                  <div key={schedule.id}>
+                    {editingSchedule?.id === schedule.id ? (
+                      <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
+                        <div className="pt-4">
+                          <ScheduleGroupForm
+                            schedule={editingSchedule}
+                            allSchedules={defSchedules}
+                            onUpdate={setEditingSchedule}
+                            onSave={() => handleSaveSchedule(editingSchedule)}
+                            onCancel={() => setEditingSchedule(null)}
+                            level="global"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`p-4 transition-colors group ${canAddSiteOverride ? 'bg-slate-50/50' : 'hover:bg-slate-50'}`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-sm font-medium text-slate-900">
+                                {schedule.start_time} - {schedule.end_time}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {schedule.days_of_week.sort().map(day => {
+                                const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                return (
+                                  <span
+                                    key={day}
+                                    className={`px-2 py-1 text-xs rounded font-medium ${definition.color}`}
+                                  >
+                                    {dayInfo?.short}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          {isEditable && (
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleEditSchedule(schedule)}
+                                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit schedule"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSchedule(schedule.id!)}
+                                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete schedule"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {addingScheduleForDef === definition.id && (
+                  <div className="px-4 pb-4 bg-slate-50">
                     <div className="pt-4">
                       <ScheduleGroupForm
-                        schedule={editingSchedule}
+                        schedule={{
+                          daypart_name: definition.daypart_name,
+                          daypart_definition_id: definition.id,
+                          days_of_week: [],
+                          start_time: '06:00',
+                          end_time: '11:00',
+                        }}
                         allSchedules={defSchedules}
-                        onUpdate={setEditingSchedule}
-                        onSave={() => handleSaveSchedule(editingSchedule)}
-                        onCancel={() => setEditingSchedule(null)}
+                        onUpdate={() => {}}
+                        onSave={(newSchedule) => handleSaveSchedule(newSchedule)}
+                        onCancel={() => setAddingScheduleForDef(null)}
                         level="global"
                       />
                     </div>
                   </div>
-                ) : (
-                  <div className="p-4 transition-colors group hover:bg-slate-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-sm font-medium text-slate-900">
-                            {schedule.start_time} - {schedule.end_time}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {schedule.days_of_week.sort().map(day => {
-                            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                            return (
-                              <span
-                                key={day}
-                                className={`px-2 py-1 text-xs rounded font-medium ${definition.color}`}
-                              >
-                                {dayInfo?.short}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      {isEditable && (
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEditSchedule(schedule)}
-                            className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit schedule"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSchedule(schedule.id!)}
-                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete schedule"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                )}
+              </>
+            )}
+
+            {(siteDaypartRoutines.length > 0 || (canAddSiteOverride && defSchedules.length > 0)) && (
+              <>
+                <div className="px-4 py-2 bg-amber-50 border-b border-amber-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-medium text-amber-900">
+                      <MapPin className="w-4 h-4" />
+                      Site-Specific Schedules {siteDaypartRoutines.length === 0 && '(Optional Override)'}
                     </div>
+                    {!addingSiteRoutineForDaypart && !editingSiteRoutine && (
+                      <button
+                        onClick={() => handleAddSiteRoutine(definition.daypart_name)}
+                        className="text-xs text-amber-700 hover:text-amber-900 font-medium"
+                      >
+                        + Add Schedule
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {siteDaypartRoutines.length === 0 && (
+                  <div className="px-4 py-3 bg-amber-50/20 text-center">
+                    <p className="text-xs text-slate-600">
+                      No site-specific schedules. Using {level === 'wand' ? 'WAND' : 'concept'} level schedules.
+                    </p>
                   </div>
                 )}
-              </div>
-            ))}
+                {siteDaypartRoutines.map((routine) => (
+                  <div key={routine.id}>
+                    {editingSiteRoutine?.id === routine.id ? (
+                      <div className="px-4 pb-4 bg-amber-50/30 border-t border-amber-100">
+                        <div className="pt-4">
+                          <ScheduleGroupForm
+                            schedule={editingSiteRoutine}
+                            allSchedules={siteDaypartRoutines}
+                            onUpdate={setEditingSiteRoutine}
+                            onSave={() => handleSaveSiteRoutine(editingSiteRoutine, definition.daypart_name)}
+                            onCancel={() => setEditingSiteRoutine(null)}
+                            level="site"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-amber-50/30 hover:bg-amber-50/50 transition-colors group">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-sm font-medium text-slate-900">
+                                {routine.start_time} - {routine.end_time}
+                              </span>
+                              <span className="text-xs text-amber-600 font-medium">Site Override</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {routine.days_of_week.sort().map(day => {
+                                const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                return (
+                                  <span
+                                    key={day}
+                                    className="px-2 py-1 text-xs rounded font-medium bg-amber-100 text-amber-800 border border-amber-300"
+                                  >
+                                    {dayInfo?.short}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleEditSiteRoutine(routine)}
+                              className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                              title="Edit site schedule"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSiteRoutine(routine.id!)}
+                              className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete site schedule"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
 
-            {addingScheduleForDef === definition.id && (
-              <div className="px-4 pb-4 bg-slate-50">
+            {addingSiteRoutineForDaypart === definition.daypart_name && (
+              <div className="px-4 pb-4 bg-amber-50/30">
                 <div className="pt-4">
                   <ScheduleGroupForm
                     schedule={{
                       daypart_name: definition.daypart_name,
-                      daypart_definition_id: definition.id,
+                      placement_group_id: siteRootPlacementId || '',
                       days_of_week: [],
                       start_time: '06:00',
                       end_time: '11:00',
                     }}
-                    allSchedules={defSchedules}
+                    allSchedules={siteDaypartRoutines}
                     onUpdate={() => {}}
-                    onSave={(newSchedule) => handleSaveSchedule(newSchedule)}
-                    onCancel={() => setAddingScheduleForDef(null)}
-                    level="global"
+                    onSave={(newSchedule) => handleSaveSiteRoutine(newSchedule, definition.daypart_name)}
+                    onCancel={() => setAddingSiteRoutineForDaypart(null)}
+                    level="site"
                   />
                 </div>
               </div>
