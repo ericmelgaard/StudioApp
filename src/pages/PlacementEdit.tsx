@@ -464,7 +464,7 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
         <div className="flex gap-8">
           {/* Sidebar Navigation */}
           <aside className="w-64 flex-shrink-0">
-            <div className="sticky top-20 z-10 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+            <div className="sticky top-[104px] z-10 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wide">
                 Sections
               </h3>
