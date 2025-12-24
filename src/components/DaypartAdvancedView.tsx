@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Filter, Download, Upload, Save, X, Calendar } from 'lucide-react';
+import { Filter, Download, Upload, Save, X, Calendar, Plus } from 'lucide-react';
 import DaypartScheduleGrid from './DaypartScheduleGrid';
-import PlacementOverrideGrid from './PlacementOverrideGrid';
 import ChangesStagingPanel from './ChangesStagingPanel';
 import DaypartFilterToolbar from './DaypartFilterToolbar';
 import PublishScheduleModal from './PublishScheduleModal';
@@ -43,7 +42,23 @@ interface PlacementGroup {
 interface PlacementOverride {
   id: string;
   placement_group_id: string;
-  schedule_group_id: string;
+  daypart_definition_id: string;
+  start_time: string;
+  end_time: string;
+  days_of_week: number[];
+}
+
+interface UnifiedScheduleRow {
+  id: string;
+  type: 'base' | 'override';
+  daypart_definition_id: string;
+  daypart_label: string;
+  daypart_color: string;
+  placement_id?: string;
+  placement_name?: string;
+  days_of_week: number[];
+  start_time: string;
+  end_time: string;
 }
 
 interface StagedChange {
@@ -60,6 +75,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
   const [schedules, setSchedules] = useState<DaypartSchedule[]>([]);
   const [placements, setPlacements] = useState<PlacementGroup[]>([]);
   const [overrides, setOverrides] = useState<PlacementOverride[]>([]);
+  const [unifiedSchedules, setUnifiedSchedules] = useState<UnifiedScheduleRow[]>([]);
   const [stagedChanges, setStagedChanges] = useState<StagedChange[]>([]);
   const [loading, setLoading] = useState(true);
   const [showStagingPanel, setShowStagingPanel] = useState(false);
@@ -80,6 +96,10 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
       setShowStagingPanel(true);
     }
   }, [stagedChanges.length]);
+
+  useEffect(() => {
+    combineSchedules();
+  }, [definitions, schedules, overrides, placements]);
 
   const loadAllData = async () => {
     setLoading(true);
@@ -150,31 +170,58 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
     }
   };
 
-  const handleScheduleChange = (definitionId: string, day: number, newSchedule: { start_time: string; end_time: string }) => {
-    const existingSchedule = schedules.find(
-      s => s.daypart_definition_id === definitionId && s.days_of_week.includes(day)
-    );
+  const combineSchedules = () => {
+    const unified: UnifiedScheduleRow[] = [];
 
-    const change: StagedChange = existingSchedule
-      ? {
-          change_type: 'update',
-          target_table: 'daypart_schedules',
-          target_id: existingSchedule.id,
-          change_data: {
-            start_time: newSchedule.start_time,
-            end_time: newSchedule.end_time,
-          },
-        }
-      : {
-          change_type: 'create',
-          target_table: 'daypart_schedules',
-          change_data: {
-            daypart_definition_id: definitionId,
-            days_of_week: [day],
-            start_time: newSchedule.start_time,
-            end_time: newSchedule.end_time,
-          },
-        };
+    schedules.forEach(schedule => {
+      const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
+      if (definition) {
+        unified.push({
+          id: schedule.id,
+          type: 'base',
+          daypart_definition_id: definition.id,
+          daypart_label: definition.display_label,
+          daypart_color: definition.color,
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+        });
+      }
+    });
+
+    overrides.forEach(override => {
+      const definition = definitions.find(d => d.id === override.daypart_definition_id);
+      const placement = placements.find(p => p.id === override.placement_group_id);
+      if (definition && placement) {
+        unified.push({
+          id: override.id,
+          type: 'override',
+          daypart_definition_id: definition.id,
+          daypart_label: definition.display_label,
+          daypart_color: definition.color,
+          placement_id: placement.id,
+          placement_name: placement.name,
+          days_of_week: override.days_of_week,
+          start_time: override.start_time,
+          end_time: override.end_time,
+        });
+      }
+    });
+
+    setUnifiedSchedules(unified);
+  };
+
+  const handleEdit = (schedule: UnifiedScheduleRow) => {
+    console.log('Edit schedule:', schedule);
+  };
+
+  const handleDelete = (schedule: UnifiedScheduleRow) => {
+    const change: StagedChange = {
+      change_type: 'delete',
+      target_table: schedule.type === 'base' ? 'daypart_schedules' : 'placement_daypart_overrides',
+      target_id: schedule.id,
+      change_data: {},
+    };
 
     setStagedChanges(prev => [...prev, change]);
   };
@@ -310,25 +357,12 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
         <div className="flex gap-6">
           <div className={`transition-all duration-300 ${showStagingPanel ? 'flex-1' : 'w-full'}`}>
             <DaypartScheduleGrid
-              definitions={definitions}
-              schedules={schedules}
+              schedules={unifiedSchedules}
               filterOptions={filterOptions}
               stagedChanges={stagedChanges}
-              onScheduleChange={handleScheduleChange}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
-
-            {placements.length > 0 && (
-              <div className="mt-6">
-                <PlacementOverrideGrid
-                  placements={placements}
-                  overrides={overrides}
-                  definitions={definitions}
-                  filterOptions={filterOptions}
-                  stagedChanges={stagedChanges}
-                  onOverrideChange={(change) => setStagedChanges(prev => [...prev, change])}
-                />
-              </div>
-            )}
           </div>
 
           {showStagingPanel && (
