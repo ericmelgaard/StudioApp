@@ -29,6 +29,7 @@ interface DaypartSchedule {
   end_time: string;
   days_of_week: number[];
   schedule_type?: string;
+  schedule_name?: string;
   event_name?: string;
 }
 
@@ -60,6 +61,9 @@ interface UnifiedScheduleRow {
   days_of_week: number[];
   start_time: string;
   end_time: string;
+  schedule_type?: string;
+  schedule_name?: string;
+  event_name?: string;
 }
 
 interface StagedChange {
@@ -230,6 +234,9 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           days_of_week: schedule.days_of_week,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
+          schedule_type: schedule.schedule_type,
+          schedule_name: schedule.schedule_name,
+          event_name: schedule.event_name,
         });
       }
     });

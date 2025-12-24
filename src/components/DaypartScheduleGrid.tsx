@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Edit2, Trash2, AlertCircle, MapPin } from 'lucide-react';
+import { Clock, Edit2, Trash2, AlertCircle, MapPin, Calendar, Sparkles } from 'lucide-react';
 
 interface DaypartDefinition {
   id: string;
@@ -28,6 +28,9 @@ interface UnifiedScheduleRow {
   days_of_week: number[];
   start_time: string;
   end_time: string;
+  schedule_type?: string;
+  schedule_name?: string;
+  event_name?: string;
 }
 
 interface FilterOptions {
@@ -250,17 +253,30 @@ export default function DaypartScheduleGrid({
                   </td>
 
                   <td className="px-4 py-3">
-                    <div className="inline-flex items-center gap-1.5">
-                      {schedule.days_of_week.map(day => (
-                        <div
-                          key={day}
-                          className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium"
-                          title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day]}
-                        >
-                          {DAYS_OF_WEEK[day].label}
-                        </div>
-                      ))}
-                    </div>
+                    {schedule.schedule_type === 'holiday' || schedule.schedule_type === 'event' ? (
+                      <div className="inline-flex items-center gap-2">
+                        {schedule.schedule_type === 'event' ? (
+                          <Sparkles className="w-4 h-4 text-purple-500" />
+                        ) : (
+                          <Calendar className="w-4 h-4 text-purple-500" />
+                        )}
+                        <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-md font-medium shadow-sm">
+                          {schedule.schedule_name || schedule.event_name || 'Holiday Schedule'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5">
+                        {schedule.days_of_week.map(day => (
+                          <div
+                            key={day}
+                            className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium"
+                            title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day]}
+                          >
+                            {DAYS_OF_WEEK[day].label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
