@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Clock, Trash2, MapPin, Calendar, Sparkles, Pencil } from 'lucide-react';
+import { formatRecurrenceText } from '../types/schedules';
 
 interface DaypartDefinition {
   id: string;
@@ -32,6 +33,7 @@ interface UnifiedScheduleRow {
   schedule_name?: string;
   event_name?: string;
   event_date?: string;
+  recurrence_type?: string;
   recurrence_config?: any;
 }
 
