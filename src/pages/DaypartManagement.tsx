@@ -422,67 +422,100 @@ export default function DaypartManagement() {
       (definition.store_id !== null && contextLevel === 'store');
 
     const canEditSchedule = isDefinitionEditable && contextLevel !== 'store';
-    const canEditSiteRoutine = contextLevel === 'store' && siteRootPlacementId !== null;
+    const canEditSiteRoutine = contextLevel === 'store';
     const hasSchedules = defSchedules.length > 0;
     const hasSiteRoutines = defSiteRoutines.length > 0;
 
-    const isEditingSchedule = editingScheduleForDef === definition.id;
-    const isEditingSiteRoutine = editingSiteRoutineForDef === definition.id;
+    const isEditing = editingScheduleForDef === definition.id || editingSiteRoutineForDef === definition.id;
 
     return (
       <div key={definition.id} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        <div className={`px-6 py-4 ${isEditingSchedule || isEditingSiteRoutine ? '' : 'border-b border-slate-200'} ${definition.color}`}>
+        <div className={`px-6 py-4 ${isEditing ? '' : 'border-b border-slate-200'} ${definition.color}`}>
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 {definition.display_label}
-                {!hasSchedules && !hasSiteRoutines && !isEditingSchedule && !isEditingSiteRoutine && (
+                {!hasSchedules && !hasSiteRoutines && !isEditing && (
                   <span className="text-xs px-2 py-1 bg-white/50 rounded font-medium">Not Configured</span>
+                )}
+                {isEditing && (
+                  <span className="text-xs px-2 py-1 bg-white/50 rounded font-medium">Editing</span>
                 )}
               </h3>
               <p className="text-sm opacity-90 mt-1">{definition.description}</p>
             </div>
-            {!isEditingSchedule && !isEditingSiteRoutine && isDefinitionEditable && (
+            {!isEditing && (
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setEditingDefinition(definition);
-                    setFormData({
-                      daypart_name: definition.daypart_name,
-                      display_label: definition.display_label,
-                      description: definition.description,
-                      color: definition.color,
-                      icon: definition.icon,
-                      sort_order: definition.sort_order,
-                    });
-                    setShowDefinitionForm(true);
-                  }}
-                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                  title="Edit definition"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteDefinition(definition)}
-                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                  title="Delete daypart"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {isDefinitionEditable && contextLevel !== 'store' && (
+                  <button
+                    onClick={() => {
+                      setEditingDefinition(definition);
+                      setFormData({
+                        daypart_name: definition.daypart_name,
+                        display_label: definition.display_label,
+                        description: definition.description,
+                        color: definition.color,
+                        icon: definition.icon,
+                        sort_order: definition.sort_order,
+                      });
+                      setShowDefinitionForm(true);
+                    }}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                    title="Edit definition"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {canEditSchedule && (
+                  <button
+                    onClick={() => setEditingScheduleForDef(definition.id)}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                    title="Edit schedules"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {canEditSiteRoutine && (
+                  <button
+                    onClick={() => setEditingSiteRoutineForDef(definition.id)}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                    title="Edit site schedules"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {isDefinitionEditable && contextLevel !== 'store' && (
+                  <button
+                    onClick={() => handleDeleteDefinition(definition)}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                    title="Delete daypart"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                {canEditSiteRoutine && hasSiteRoutines && (
+                  <button
+                    onClick={() => handleDeleteSiteRoutine(definition.id)}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                    title="Clear site configuration"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {isEditingSchedule ? (
+        {editingScheduleForDef === definition.id ? (
           <ScheduleEditForm
             daypartDefinition={definition}
             schedules={defSchedules}
             onSave={(schedules) => handleSaveSchedule(definition.id, schedules)}
             onCancel={() => setEditingScheduleForDef(null)}
           />
-        ) : isEditingSiteRoutine ? (
+        ) : editingSiteRoutineForDef === definition.id ? (
           <SiteRoutineEditForm
             daypartDefinition={definition}
             routines={defSiteRoutines}
@@ -492,66 +525,35 @@ export default function DaypartManagement() {
           />
         ) : (
           <>
-            {hasSchedules && (
+            {canEditSiteRoutine ? (
               <div className="px-6 py-4 bg-slate-50">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-slate-700">
-                    {contextLevel === 'store' ? 'Inherited Schedules' : 'Global Schedules'}
-                  </h4>
-                  {canEditSchedule && (
-                    <button
-                      onClick={() => setEditingScheduleForDef(definition.id)}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Edit
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  {defSchedules.map((schedule, index) => renderScheduleCard(schedule, index, definition.color))}
-                </div>
-              </div>
-            )}
-
-            {contextLevel === 'store' && (
-              <div className={`px-6 py-4 ${hasSiteRoutines ? 'bg-amber-50/30' : 'bg-slate-50'} border-t border-slate-200`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-amber-800 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Site-Specific Schedules
-                  </h4>
-                  <button
-                    onClick={() => setEditingSiteRoutineForDef(definition.id)}
-                    className="text-sm text-amber-600 hover:text-amber-700 font-medium"
-                  >
-                    {hasSiteRoutines ? 'Edit' : 'Add Override'}
-                  </button>
-                </div>
                 {hasSiteRoutines ? (
                   <div className="space-y-3">
-                    {defSiteRoutines.map((routine, index) => renderScheduleCard(routine, index, 'bg-amber-100 text-amber-800 border-amber-300'))}
+                    {defSiteRoutines.map((routine, index) => renderScheduleCard(routine, index, definition.color))}
                   </div>
+                ) : hasSchedules ? (
+                  <>
+                    <p className="text-xs text-slate-500 mb-3">Using inherited schedules:</p>
+                    <div className="space-y-3 opacity-60">
+                      {defSchedules.map((schedule, index) => renderScheduleCard(schedule, index, definition.color))}
+                    </div>
+                  </>
                 ) : (
                   <p className="text-sm text-slate-600">
-                    No site-specific schedules. Using inherited schedules.
+                    This daypart is not configured. Click Edit to set up site-specific schedules.
                   </p>
                 )}
               </div>
-            )}
-
-            {!hasSchedules && !hasSiteRoutines && (
+            ) : (
               <div className="px-6 py-4 bg-slate-50">
-                <p className="text-sm text-slate-600 mb-3">
-                  This daypart is not configured. {canEditSchedule ? 'Click "Edit" to set up schedules.' : canEditSiteRoutine ? 'Click "Add Override" to set up site-specific schedules.' : ''}
-                </p>
-                {canEditSchedule && (
-                  <button
-                    onClick={() => setEditingScheduleForDef(definition.id)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Schedule
-                  </button>
+                {hasSchedules ? (
+                  <div className="space-y-3">
+                    {defSchedules.map((schedule, index) => renderScheduleCard(schedule, index, definition.color))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-600">
+                    This daypart is not configured. Click Edit to set up schedules.
+                  </p>
                 )}
               </div>
             )}
