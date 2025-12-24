@@ -145,10 +145,12 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
   const loadPlacements = async () => {
     if (!locationId) {
+      console.log('No location selected, clearing placements');
       setPlacements([]);
       return;
     }
 
+    console.log('Loading placements for location:', locationId);
     const { data, error } = await supabase
       .from('placement_groups')
       .select('*')
@@ -156,6 +158,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
       .order('name');
 
     if (!error && data) {
+      console.log('Loaded placements:', data);
       setPlacements(data);
     } else if (error) {
       console.error('Error loading placements:', error);
@@ -164,10 +167,12 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
   const loadOverrides = async () => {
     if (!locationId) {
+      console.log('No location selected, clearing overrides');
       setOverrides([]);
       return;
     }
 
+    console.log('Loading overrides for location:', locationId);
     const { data: placementIds, error: placementError } = await supabase
       .from('placement_groups')
       .select('id')
@@ -180,11 +185,13 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
     }
 
     if (!placementIds || placementIds.length === 0) {
+      console.log('No placements found for this location');
       setOverrides([]);
       return;
     }
 
     const ids = placementIds.map(p => p.id);
+    console.log('Placement IDs:', ids);
 
     const { data, error } = await supabase
       .from('placement_daypart_overrides')
@@ -192,6 +199,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
       .in('placement_group_id', ids);
 
     if (!error && data) {
+      console.log('Loaded overrides:', data);
       setOverrides(data);
     } else if (error) {
       console.error('Error loading overrides:', error);
@@ -200,6 +208,13 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
   const combineSchedules = () => {
     const unified: UnifiedScheduleRow[] = [];
+
+    console.log('Combining schedules:', {
+      schedules: schedules.length,
+      overrides: overrides.length,
+      placements: placements.length,
+      definitions: definitions.length,
+    });
 
     schedules.forEach(schedule => {
       const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
@@ -219,9 +234,19 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
       }
     });
 
+    console.log('Processing overrides:', overrides);
     overrides.forEach(override => {
       const definition = definitions.find(d => d.id === override.daypart_definition_id);
       const placement = placements.find(p => p.id === override.placement_group_id);
+
+      console.log('Override:', {
+        override_id: override.id,
+        placement_group_id: override.placement_group_id,
+        daypart_definition_id: override.daypart_definition_id,
+        found_definition: !!definition,
+        found_placement: !!placement,
+      });
+
       if (definition && placement) {
         unified.push({
           id: override.id,
@@ -236,9 +261,12 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           start_time: override.start_time,
           end_time: override.end_time,
         });
+      } else if (!definition && override.daypart_definition_id) {
+        console.warn('Override missing definition:', override);
       }
     });
 
+    console.log('Unified schedules:', unified);
     setUnifiedSchedules(unified);
   };
 
