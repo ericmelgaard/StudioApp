@@ -304,7 +304,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 e.stopPropagation();
                 handleAddNew('event_holiday');
               }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-dashed border-amber-300 text-amber-700 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors font-medium"
+              className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
             >
               <Sparkles className="w-4 h-4" />
               Add Event/Holiday Hours
@@ -584,7 +584,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                   e.stopPropagation();
                   handleAddNew('event_holiday');
                 }}
-                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-amber-300 text-amber-700 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors font-medium"
+                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
               >
                 <Sparkles className="w-4 h-4" />
                 Add Event/Holiday Hours
