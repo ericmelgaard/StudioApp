@@ -5,8 +5,6 @@ import IconPicker from '../components/IconPicker';
 import ScheduleGroupForm from '../components/ScheduleGroupForm';
 import { useLocation } from '../hooks/useLocation';
 import { Schedule } from '../hooks/useScheduleCollisionDetection';
-import HeaderNavigation from '../components/HeaderNavigation';
-import { useUser } from '../hooks/useUser';
 
 interface DaypartDefinition {
   id: string;
@@ -43,7 +41,6 @@ const DAYS_OF_WEEK = [
 
 export default function DaypartManagement() {
   const { location, getLocationBreadcrumb } = useLocation();
-  const { user } = useUser();
   const [contextLevel, setContextLevel] = useState<ContextLevel>('wand');
   const [currentConceptId, setCurrentConceptId] = useState<number | null>(null);
   const [currentStoreId, setCurrentStoreId] = useState<number | null>(null);
@@ -356,34 +353,26 @@ export default function DaypartManagement() {
                 </span>
               )}
             </div>
-            <HeaderNavigation
-              userConceptId={user?.concept_id}
-              userCompanyId={user?.company_id}
-              userStoreId={user?.store_id}
-              onOpenFullNavigator={() => {}}
-              actionButton={
-                contextLevel !== 'store' && !showDefinitionForm && (
-                  <button
-                    onClick={() => {
-                      setEditingDefinition(null);
-                      setFormData({
-                        daypart_name: '',
-                        display_label: '',
-                        description: '',
-                        color: 'bg-blue-100 text-blue-800 border-blue-300',
-                        icon: 'Clock',
-                        sort_order: definitions.length,
-                      });
-                      setShowDefinitionForm(true);
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Add Daypart
-                  </button>
-                )
-              }
-            />
+            {contextLevel !== 'store' && !showDefinitionForm && (
+              <button
+                onClick={() => {
+                  setEditingDefinition(null);
+                  setFormData({
+                    daypart_name: '',
+                    display_label: '',
+                    description: '',
+                    color: 'bg-blue-100 text-blue-800 border-blue-300',
+                    icon: 'Clock',
+                    sort_order: definitions.length,
+                  });
+                  setShowDefinitionForm(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <Plus className="w-5 h-5" />
+                Add Daypart
+              </button>
+            )}
           </div>
         </div>
       </header>
