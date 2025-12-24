@@ -260,26 +260,34 @@ export default function DaypartManagement() {
   const handleSaveSchedule = async (schedule: Schedule) => {
     try {
       if (editingSchedule) {
+        const updateData: any = {
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (schedule.schedule_name !== undefined) updateData.schedule_name = schedule.schedule_name;
+
         const { error: updateError } = await supabase
           .from('daypart_schedules')
-          .update({
-            days_of_week: schedule.days_of_week,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', editingSchedule.id);
 
         if (updateError) throw updateError;
       } else if (addingScheduleForDef) {
+        const insertData: any = {
+          daypart_definition_id: addingScheduleForDef,
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+        };
+
+        if (schedule.schedule_name !== undefined) insertData.schedule_name = schedule.schedule_name;
+
         const { error: insertError } = await supabase
           .from('daypart_schedules')
-          .insert([{
-            daypart_definition_id: addingScheduleForDef,
-            days_of_week: schedule.days_of_week,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-          }]);
+          .insert([insertData]);
 
         if (insertError) throw insertError;
       }

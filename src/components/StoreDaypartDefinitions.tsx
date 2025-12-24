@@ -44,6 +44,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [showDefinitionForm, setShowDefinitionForm] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<DaypartDefinition | null>(null);
   const [addingScheduleForDef, setAddingScheduleForDef] = useState<string | null>(null);
+  const [newSchedule, setNewSchedule] = useState<Schedule | null>(null);
   const [editingSchedule, setEditingSchedule] = useState<DaypartSchedule | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -214,6 +215,15 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   };
 
   const handleAddSchedule = (defId: string) => {
+    const def = definitions.find(d => d.id === defId);
+    setNewSchedule({
+      daypart_name: def?.daypart_name || '',
+      daypart_definition_id: defId,
+      days_of_week: [],
+      start_time: '06:00',
+      end_time: '11:00',
+      schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
+    });
     setAddingScheduleForDef(defId);
     setEditingSchedule(null);
   };
@@ -221,12 +231,28 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const handleAddScheduleClick = () => {
     setNewScheduleType('regular');
     setIsEventSchedule(false);
+    setNewSchedule({
+      daypart_name: '',
+      daypart_definition_id: '',
+      days_of_week: [],
+      start_time: '06:00',
+      end_time: '11:00',
+      schedule_type: 'regular',
+    });
     setAddingScheduleForDef('new');
   };
 
   const handleAddEventScheduleClick = () => {
     setNewScheduleType('event_holiday');
     setIsEventSchedule(true);
+    setNewSchedule({
+      daypart_name: '',
+      daypart_definition_id: '',
+      days_of_week: [],
+      start_time: '06:00',
+      end_time: '11:00',
+      schedule_type: 'event_holiday',
+    });
     setAddingScheduleForDef('new');
   };
 
@@ -245,6 +271,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           updated_at: new Date().toISOString(),
         };
 
+        if (schedule.schedule_name !== undefined) updateData.schedule_name = schedule.schedule_name;
         if (schedule.schedule_type) updateData.schedule_type = schedule.schedule_type;
         if (schedule.event_name) updateData.event_name = schedule.event_name;
         if (schedule.event_date) updateData.event_date = schedule.event_date;
@@ -271,6 +298,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           end_time: schedule.end_time,
         };
 
+        if (schedule.schedule_name !== undefined) insertData.schedule_name = schedule.schedule_name;
         if (schedule.schedule_type) insertData.schedule_type = schedule.schedule_type;
         if (schedule.event_name) insertData.event_name = schedule.event_name;
         if (schedule.event_date) insertData.event_date = schedule.event_date;
@@ -286,6 +314,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
       setEditingSchedule(null);
       setAddingScheduleForDef(null);
+      setNewSchedule(null);
       setIsEventSchedule(false);
       setNewScheduleType(null);
       setSelectedDaypartId('');
@@ -552,30 +581,17 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         </div>
                       ))}
 
-                      {addingScheduleForDef === definition.id && (
+                      {addingScheduleForDef === definition.id && newSchedule && (
                         <div className="px-4 pb-4 bg-slate-50">
                           <div className="pt-4">
                             <ScheduleGroupForm
-                              schedule={{
-                                daypart_name: definition.daypart_name,
-                                daypart_definition_id: definition.id,
-                                days_of_week: [],
-                                start_time: '06:00',
-                                end_time: '11:00',
-                                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
-                              }}
+                              schedule={newSchedule}
                               allSchedules={defSchedules}
-                              onUpdate={() => {}}
-                              onSave={() => handleSaveSchedule({
-                                daypart_name: definition.daypart_name,
-                                daypart_definition_id: definition.id,
-                                days_of_week: [],
-                                start_time: '06:00',
-                                end_time: '11:00',
-                                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
-                              })}
+                              onUpdate={setNewSchedule}
+                              onSave={() => handleSaveSchedule(newSchedule)}
                               onCancel={() => {
                                 setAddingScheduleForDef(null);
+                                setNewSchedule(null);
                                 setIsEventSchedule(false);
                               }}
                               level="site"
@@ -704,33 +720,20 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           </div>
         )}
 
-        {addingScheduleForDef === 'new' && (
+        {addingScheduleForDef === 'new' && newSchedule && (
           <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">
               {isEventSchedule ? 'Add Event/Holiday' : 'Add Schedule'}
             </h3>
 
             <ScheduleGroupForm
-              schedule={{
-                daypart_name: selectedDaypartId ? definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '' : '',
-                daypart_definition_id: selectedDaypartId || '',
-                days_of_week: [],
-                start_time: '06:00',
-                end_time: '11:00',
-                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
-              }}
-              allSchedules={selectedDaypartId ? schedules.filter(s => s.daypart_definition_id === selectedDaypartId) : []}
-              onUpdate={() => {}}
-              onSave={() => handleSaveSchedule({
-                daypart_name: definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '',
-                daypart_definition_id: selectedDaypartId,
-                days_of_week: [],
-                start_time: '06:00',
-                end_time: '11:00',
-                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
-              })}
+              schedule={newSchedule}
+              allSchedules={newSchedule.daypart_definition_id ? schedules.filter(s => s.daypart_definition_id === newSchedule.daypart_definition_id) : []}
+              onUpdate={setNewSchedule}
+              onSave={() => handleSaveSchedule(newSchedule)}
               onCancel={() => {
                 setAddingScheduleForDef(null);
+                setNewSchedule(null);
                 setIsEventSchedule(false);
                 setNewScheduleType(null);
                 setSelectedDaypartId('');
@@ -743,9 +746,14 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 display_label: d.display_label,
                 source_level: d.source_level
               }))}
-              selectedDaypartId={selectedDaypartId}
+              selectedDaypartId={newSchedule.daypart_definition_id || ''}
               onDaypartChange={(daypartId, daypartName) => {
                 setSelectedDaypartId(daypartId);
+                setNewSchedule(prev => prev ? {
+                  ...prev,
+                  daypart_definition_id: daypartId,
+                  daypart_name: daypartName
+                } : null);
               }}
             />
           </div>
