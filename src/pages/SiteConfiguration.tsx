@@ -292,28 +292,36 @@ export default function SiteConfiguration() {
     }
 
     const { data: scheduleData, error: scheduleError } = await supabase
-      .from('store_schedule_groups')
+      .from('store_operation_hours_schedules')
       .select('*')
       .eq('store_id', storeId)
-      .order('priority');
+      .eq('schedule_type', 'regular')
+      .order('priority_level', { ascending: false });
 
     if (scheduleError) {
       console.error('Error loading operation hours:', scheduleError);
     } else if (scheduleData && scheduleData.length > 0) {
-      const activeSchedule = scheduleData.find(s => {
-        const now = new Date();
-        const start = s.start_date ? new Date(s.start_date) : null;
-        const end = s.end_date ? new Date(s.end_date) : null;
+      const dayMap: Record<string, { open: string; close: string }> = {};
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-        if (start && now < start) return false;
-        if (end && now > end) return false;
+      scheduleData.forEach((schedule: any) => {
+        if (schedule.is_closed) return;
 
-        return true;
-      }) || scheduleData[0];
+        const openTime = schedule.open_time?.substring(0, 5) || '';
+        const closeTime = schedule.close_time?.substring(0, 5) || '';
 
-      if (activeSchedule?.schedules) {
-        setOperationHours(activeSchedule.schedules);
-      }
+        schedule.days_of_week?.forEach((dayNum: number) => {
+          const dayName = dayNames[dayNum];
+          if (!dayMap[dayName] && openTime && closeTime) {
+            dayMap[dayName] = {
+              open: openTime,
+              close: closeTime
+            };
+          }
+        });
+      });
+
+      setOperationHours(dayMap);
     }
   };
 
