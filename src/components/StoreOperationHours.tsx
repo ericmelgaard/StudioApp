@@ -592,7 +592,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
             <button
               type="button"
               onClick={handleAddEventSchedule}
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
+              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
             >
               <Sparkles className="w-4 h-4" />
               Add Event/Holiday
