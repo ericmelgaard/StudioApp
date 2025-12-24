@@ -83,6 +83,7 @@ export default function SiteConfiguration() {
   const [stores, setStores] = useState<StoreData[]>([]);
   const [placements, setPlacements] = useState<PlacementGroup[]>([]);
   const [storeRoot, setStoreRoot] = useState<PlacementGroup | null>(null);
+  const [operationHours, setOperationHours] = useState<Record<string, { open: string; close: string }>>({});
 
   // Modal state
   const [showConceptModal, setShowConceptModal] = useState(false);
@@ -288,6 +289,31 @@ export default function SiteConfiguration() {
       console.error('Error loading placements:', placementsError);
     } else {
       setPlacements(placementsData || []);
+    }
+
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from('store_schedule_groups')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('priority');
+
+    if (scheduleError) {
+      console.error('Error loading operation hours:', scheduleError);
+    } else if (scheduleData && scheduleData.length > 0) {
+      const activeSchedule = scheduleData.find(s => {
+        const now = new Date();
+        const start = s.start_date ? new Date(s.start_date) : null;
+        const end = s.end_date ? new Date(s.end_date) : null;
+
+        if (start && now < start) return false;
+        if (end && now > end) return false;
+
+        return true;
+      }) || scheduleData[0];
+
+      if (activeSchedule?.schedules) {
+        setOperationHours(activeSchedule.schedules);
+      }
     }
   };
 
@@ -872,20 +898,23 @@ export default function SiteConfiguration() {
 
                     <div>
                       <h3 className="text-sm font-semibold text-slate-700 mb-3">Operating Hours</h3>
-                      {storeRoot.operating_hours && Object.keys(storeRoot.operating_hours).length > 0 ? (
+                      {operationHours && Object.keys(operationHours).length > 0 ? (
                         <div className="space-y-2">
-                          {Object.entries(storeRoot.operating_hours).map(([day, hours]: [string, any]) => (
-                            <div key={day} className="flex items-center justify-between text-sm">
-                              <span className="text-slate-600 font-medium w-24">{day}</span>
-                              {hours.open && hours.close ? (
-                                <span className="text-slate-900">
-                                  {hours.open} - {hours.close}
-                                </span>
-                              ) : (
-                                <span className="text-slate-400 italic">Closed</span>
-                              )}
-                            </div>
-                          ))}
+                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                            const hours = operationHours[day];
+                            return (
+                              <div key={day} className="flex items-center justify-between text-sm">
+                                <span className="text-slate-600 font-medium w-24">{day}</span>
+                                {hours?.open && hours?.close ? (
+                                  <span className="text-slate-900 font-mono">
+                                    {hours.open} - {hours.close}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 italic">Closed</span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="text-sm text-slate-400 italic">No operating hours configured</div>
