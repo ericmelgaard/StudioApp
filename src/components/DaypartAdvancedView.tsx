@@ -236,14 +236,23 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
     console.log('Processing overrides:', overrides);
     overrides.forEach(override => {
-      const definition = definitions.find(d => d.id === override.daypart_definition_id);
+      let definition = definitions.find(d => d.id === override.daypart_definition_id);
+
+      if (!definition && override.daypart_name) {
+        definition = definitions.find(d =>
+          d.name.toLowerCase() === override.daypart_name.toLowerCase()
+        );
+      }
+
       const placement = placements.find(p => p.id === override.placement_group_id);
 
       console.log('Override:', {
         override_id: override.id,
         placement_group_id: override.placement_group_id,
         daypart_definition_id: override.daypart_definition_id,
+        daypart_name: override.daypart_name,
         found_definition: !!definition,
+        found_by: definition ? (override.daypart_definition_id ? 'id' : 'name') : null,
         found_placement: !!placement,
       });
 
@@ -261,8 +270,12 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           start_time: override.start_time,
           end_time: override.end_time,
         });
-      } else if (!definition && override.daypart_definition_id) {
-        console.warn('Override missing definition:', override);
+      } else {
+        console.warn('Override missing definition or placement:', {
+          override,
+          has_definition: !!definition,
+          has_placement: !!placement,
+        });
       }
     });
 
