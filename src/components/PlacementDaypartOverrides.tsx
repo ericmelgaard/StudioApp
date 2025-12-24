@@ -342,7 +342,12 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <span className="text-sm font-medium text-slate-900">
+                            {routine.schedule_name && (
+                              <span className="text-sm font-semibold text-slate-900">
+                                {routine.schedule_name}
+                              </span>
+                            )}
+                            <span className={`text-sm ${routine.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
                               {routine.start_time} - {routine.end_time}
                             </span>
                           </div>
@@ -467,7 +472,12 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
                                     <div className="flex items-center gap-3 mb-2">
-                                      <span className="font-medium text-violet-900">
+                                      {routine.schedule_name && (
+                                        <span className="font-semibold text-violet-900">
+                                          {routine.schedule_name}
+                                        </span>
+                                      )}
+                                      <span className={`${routine.schedule_name ? 'text-violet-700' : 'font-medium text-violet-900'}`}>
                                         {routine.event_name || 'Unnamed Event'}
                                       </span>
                                       <span className="text-xs px-2 py-1 bg-violet-100 text-violet-700 rounded font-medium">
