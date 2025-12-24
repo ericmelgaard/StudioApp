@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, Calendar, ChevronDown, ChevronRight, MapPin, Layers } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Calendar, ChevronDown, ChevronRight, MapPin, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from '../components/IconPicker';
 import ScheduleGroupForm from '../components/ScheduleGroupForm';
@@ -57,8 +57,6 @@ export default function DaypartManagement() {
   const [editingSchedule, setEditingSchedule] = useState<DaypartSchedule | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showUnused, setShowUnused] = useState(false);
-  const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
 
   const [formData, setFormData] = useState({
@@ -136,14 +134,7 @@ export default function DaypartManagement() {
       console.error('Error loading definitions:', error);
       setError('Failed to load daypart definitions');
     } else {
-      const defs = data || [];
-      setDefinitions(defs);
-
-      const initialInUseStatus: Record<string, boolean> = {};
-      defs.forEach((def, index) => {
-        initialInUseStatus[def.id] = index < 3;
-      });
-      setInUseStatus(initialInUseStatus);
+      setDefinitions(data || []);
     }
   };
 
@@ -320,23 +311,12 @@ export default function DaypartManagement() {
     }
   };
 
-  const toggleInUseStatus = (defId: string) => {
-    setInUseStatus(prev => ({
-      ...prev,
-      [defId]: !prev[defId]
-    }));
-  };
-
   const toggleEventsExpanded = (defId: string) => {
     setExpandedEvents(prev => ({
       ...prev,
       [defId]: !prev[defId]
     }));
   };
-
-  const filteredDefinitions = definitions.filter(def =>
-    showUnused || inUseStatus[def.id]
-  );
 
   if (loading) {
     return (
@@ -349,46 +329,56 @@ export default function DaypartManagement() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-slate-900">Daypart Schedules</h3>
-            {contextLevel === 'wand' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 border border-blue-300 rounded-lg">
-                <Layers className="w-4 h-4" />
-                WAND Level
-              </span>
-            )}
-            {contextLevel === 'concept' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-green-100 text-green-800 border border-green-300 rounded-lg">
-                <Layers className="w-4 h-4" />
-                Concept Level
-              </span>
-            )}
-            {contextLevel === 'store' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-amber-100 text-amber-800 border border-amber-300 rounded-lg">
-                <MapPin className="w-4 h-4" />
-                Store Level
-              </span>
-            )}
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <Clock className="w-7 h-7 text-blue-600" />
+              Daypart Management
+              {contextLevel === 'wand' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 border border-blue-300 rounded-lg">
+                  <Layers className="w-4 h-4" />
+                  WAND Level
+                </span>
+              )}
+              {contextLevel === 'concept' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-green-100 text-green-800 border border-green-300 rounded-lg">
+                  <Layers className="w-4 h-4" />
+                  Concept Level
+                </span>
+              )}
+              {contextLevel === 'store' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-amber-100 text-amber-800 border border-amber-300 rounded-lg">
+                  <MapPin className="w-4 h-4" />
+                  Store Level
+                </span>
+              )}
+            </h1>
+            <p className="text-slate-600 mt-1">
+              {contextLevel === 'store'
+                ? 'View inherited dayparts and create site-specific schedule overrides'
+                : 'Define dayparts and their default schedules'}
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowUnused(!showUnused)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors"
-          >
-            {showUnused ? (
-              <>
-                <Eye className="w-4 h-4" />
-                <span>Showing All</span>
-              </>
-            ) : (
-              <>
-                <EyeOff className="w-4 h-4" />
-                <span>Showing In-Use Only</span>
-              </>
-            )}
-          </button>
+          {contextLevel !== 'store' && !showDefinitionForm && (
+            <button
+              onClick={() => {
+                setEditingDefinition(null);
+                setFormData({
+                  daypart_name: '',
+                  display_label: '',
+                  description: '',
+                  color: 'bg-blue-100 text-blue-800 border-blue-300',
+                  icon: 'Clock',
+                  sort_order: definitions.length,
+                });
+                setShowDefinitionForm(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              Add Daypart
+            </button>
+          )}
         </div>
       </div>
 
@@ -407,13 +397,12 @@ export default function DaypartManagement() {
       )}
 
       <div className="space-y-4 mb-6">
-        {filteredDefinitions.map((definition) => {
+        {definitions.map((definition) => {
           const defSchedules = allSchedules
             .filter(s => s.daypart_definition_id === definition.id)
             .map(s => ({ ...s, daypart_name: definition.daypart_name }));
           const regularSchedules = defSchedules.filter(s => s.schedule_type !== 'event_holiday');
           const eventSchedules = defSchedules.filter(s => s.schedule_type === 'event_holiday');
-          const isInUse = inUseStatus[definition.id];
           const hasEvents = eventSchedules.length > 0;
           const eventsExpanded = expandedEvents[definition.id];
 
@@ -425,9 +414,7 @@ export default function DaypartManagement() {
           return (
             <div
               key={definition.id}
-              className={`bg-white rounded-lg border overflow-hidden transition-opacity ${
-                isInUse ? 'border-slate-200' : 'border-slate-300 opacity-60'
-              }`}
+              className="bg-white rounded-lg border border-slate-200 overflow-hidden"
             >
               <div className={`px-4 py-3 ${definition.color}`}>
                 <div className="flex items-center justify-between">
@@ -455,18 +442,6 @@ export default function DaypartManagement() {
                         {eventSchedules.length} {eventSchedules.length === 1 ? 'Event' : 'Events'}
                       </span>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => toggleInUseStatus(definition.id)}
-                      className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
-                        isInUse
-                          ? 'bg-green-600/20 text-green-900 hover:bg-green-600/30'
-                          : 'bg-slate-600/20 text-slate-900 hover:bg-slate-600/30'
-                      }`}
-                      title={isInUse ? 'Mark as not in use' : 'Mark as in use'}
-                    >
-                      {isInUse ? 'In Use' : 'Not In Use'}
-                    </button>
                   </div>
                   <div className="flex items-center gap-1">
                     {isDefinitionEditable && (
@@ -719,45 +694,36 @@ export default function DaypartManagement() {
         })}
 
         {definitions.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
-            <Clock className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm">No daypart schedules yet.</p>
+          <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
+            <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-slate-900 mb-2">No Daypart Definitions Available</h3>
+            <p className="text-slate-600 text-sm mb-4">
+              {contextLevel === 'store'
+                ? 'No daypart definitions have been created at WAND or concept level yet.'
+                : 'Create your first daypart definition to get started.'}
+            </p>
+            {contextLevel !== 'store' && (
+              <button
+                onClick={() => {
+                  setEditingDefinition(null);
+                  setFormData({
+                    daypart_name: '',
+                    display_label: '',
+                    description: '',
+                    color: 'bg-blue-100 text-blue-800 border-blue-300',
+                    icon: 'Clock',
+                    sort_order: 0,
+                  });
+                  setShowDefinitionForm(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Add Daypart
+              </button>
+            )}
           </div>
         )}
-
-        {definitions.length > 0 && filteredDefinitions.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
-            <EyeOff className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm mb-2">All dayparts are marked as not in use.</p>
-            <button
-              type="button"
-              onClick={() => setShowUnused(true)}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Show all dayparts
-            </button>
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={() => {
-            setEditingDefinition(null);
-            setFormData({
-              daypart_name: '',
-              display_label: '',
-              description: '',
-              color: 'bg-blue-100 text-blue-800 border-blue-300',
-              icon: 'Clock',
-              sort_order: definitions.length * 10,
-            });
-            setShowDefinitionForm(true);
-          }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Add Daypart
-        </button>
       </div>
 
       {showDefinitionForm && (
