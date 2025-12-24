@@ -1,0 +1,364 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { Filter, Download, Upload, Save, X, Calendar } from 'lucide-react';
+import DaypartScheduleGrid from './DaypartScheduleGrid';
+import PlacementOverrideGrid from './PlacementOverrideGrid';
+import ChangesStagingPanel from './ChangesStagingPanel';
+import DaypartFilterToolbar from './DaypartFilterToolbar';
+import PublishScheduleModal from './PublishScheduleModal';
+
+interface DaypartAdvancedViewProps {
+  locationId: number | null;
+  conceptId: number | null;
+  onClose: () => void;
+}
+
+interface DaypartDefinition {
+  id: string;
+  daypart_name: string;
+  name: string;
+  display_order: number;
+  color: string;
+  concept_id: number | null;
+  store_id: number | null;
+}
+
+interface DaypartSchedule {
+  id: string;
+  definition_id: string;
+  time_group_id: string;
+  start_time: string;
+  end_time: string;
+  days_of_week: number[];
+  schedule_type?: string;
+  event_name?: string;
+}
+
+interface PlacementGroup {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  store_id: number;
+}
+
+interface PlacementOverride {
+  id: string;
+  placement_group_id: string;
+  schedule_group_id: string;
+}
+
+interface StagedChange {
+  id?: string;
+  change_type: 'create' | 'update' | 'delete';
+  target_table: string;
+  target_id?: string;
+  change_data: any;
+  notes?: string;
+}
+
+export default function DaypartAdvancedView({ locationId, conceptId, onClose }: DaypartAdvancedViewProps) {
+  const [definitions, setDefinitions] = useState<DaypartDefinition[]>([]);
+  const [schedules, setSchedules] = useState<DaypartSchedule[]>([]);
+  const [placements, setPlacements] = useState<PlacementGroup[]>([]);
+  const [overrides, setOverrides] = useState<PlacementOverride[]>([]);
+  const [stagedChanges, setStagedChanges] = useState<StagedChange[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showStagingPanel, setShowStagingPanel] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [filterOptions, setFilterOptions] = useState({
+    dayparts: [] as string[],
+    placements: [] as string[],
+    showModifiedOnly: false,
+    showOverridesOnly: false,
+  });
+
+  useEffect(() => {
+    loadAllData();
+  }, [locationId, conceptId]);
+
+  useEffect(() => {
+    if (stagedChanges.length > 0) {
+      setShowStagingPanel(true);
+    }
+  }, [stagedChanges.length]);
+
+  const loadAllData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadDefinitions(),
+        loadSchedules(),
+        loadPlacements(),
+        loadOverrides(),
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadDefinitions = async () => {
+    const { data, error } = await supabase
+      .from('daypart_definitions')
+      .select('*')
+      .order('display_order');
+
+    if (!error && data) {
+      setDefinitions(data);
+    }
+  };
+
+  const loadSchedules = async () => {
+    const { data, error } = await supabase
+      .from('daypart_schedules')
+      .select('*');
+
+    if (!error && data) {
+      setSchedules(data);
+    }
+  };
+
+  const loadPlacements = async () => {
+    if (!locationId) {
+      setPlacements([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('placement_groups')
+      .select('*')
+      .eq('store_id', locationId)
+      .order('name');
+
+    if (!error && data) {
+      setPlacements(data);
+    }
+  };
+
+  const loadOverrides = async () => {
+    if (!locationId) {
+      setOverrides([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('placement_daypart_overrides')
+      .select('*');
+
+    if (!error && data) {
+      setOverrides(data);
+    }
+  };
+
+  const handleScheduleChange = (definitionId: string, day: number, newSchedule: { start_time: string; end_time: string }) => {
+    const existingSchedule = schedules.find(
+      s => s.definition_id === definitionId && s.days_of_week.includes(day)
+    );
+
+    const change: StagedChange = existingSchedule
+      ? {
+          change_type: 'update',
+          target_table: 'daypart_schedules',
+          target_id: existingSchedule.id,
+          change_data: {
+            start_time: newSchedule.start_time,
+            end_time: newSchedule.end_time,
+          },
+        }
+      : {
+          change_type: 'create',
+          target_table: 'daypart_schedules',
+          change_data: {
+            definition_id: definitionId,
+            days_of_week: [day],
+            start_time: newSchedule.start_time,
+            end_time: newSchedule.end_time,
+          },
+        };
+
+    setStagedChanges(prev => [...prev, change]);
+  };
+
+  const handleCancelChanges = () => {
+    if (stagedChanges.length > 0) {
+      if (confirm('Discard all pending changes?')) {
+        setStagedChanges([]);
+        setShowStagingPanel(false);
+      }
+    } else {
+      onClose();
+    }
+  };
+
+  const handlePublish = () => {
+    setShowPublishModal(true);
+  };
+
+  const handleExportCSV = () => {
+    const csvRows = [
+      ['Daypart Name', 'Level', 'Day', 'Start Time', 'End Time', 'Schedule Type', 'Event Name'].join(',')
+    ];
+
+    definitions.forEach(def => {
+      const defSchedules = schedules.filter(s => s.definition_id === def.id);
+      const level = def.store_id ? 'Store' : def.concept_id ? 'Concept' : 'Global';
+
+      defSchedules.forEach(schedule => {
+        schedule.days_of_week.forEach(day => {
+          csvRows.push([
+            def.name,
+            level,
+            ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day],
+            schedule.start_time,
+            schedule.end_time,
+            schedule.schedule_type || 'regular',
+            schedule.event_name || '',
+          ].join(','));
+        });
+      });
+    });
+
+    const csv = csvRows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `daypart-schedules-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportCSV = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const text = await file.text();
+      const rows = text.split('\n').slice(1);
+
+      console.log('CSV import:', rows.length, 'rows');
+    };
+    input.click();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-full px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-slate-900">Advanced Daypart Management</h2>
+              <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                POWER USER MODE
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={handleImportCSV}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                Import CSV
+              </button>
+              {stagedChanges.length > 0 && (
+                <button
+                  onClick={handlePublish}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  Publish Changes ({stagedChanges.length})
+                </button>
+              )}
+              <button
+                onClick={handleCancelChanges}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                {stagedChanges.length > 0 ? 'Cancel' : 'Exit'}
+              </button>
+            </div>
+          </div>
+
+          <DaypartFilterToolbar
+            definitions={definitions}
+            placements={placements}
+            filterOptions={filterOptions}
+            onFilterChange={setFilterOptions}
+          />
+        </div>
+      </div>
+
+      <div className="max-w-full px-6 py-6">
+        <div className="flex gap-6">
+          <div className={`transition-all duration-300 ${showStagingPanel ? 'flex-1' : 'w-full'}`}>
+            <DaypartScheduleGrid
+              definitions={definitions}
+              schedules={schedules}
+              filterOptions={filterOptions}
+              stagedChanges={stagedChanges}
+              onScheduleChange={handleScheduleChange}
+            />
+
+            {placements.length > 0 && (
+              <div className="mt-6">
+                <PlacementOverrideGrid
+                  placements={placements}
+                  overrides={overrides}
+                  definitions={definitions}
+                  filterOptions={filterOptions}
+                  stagedChanges={stagedChanges}
+                  onOverrideChange={(change) => setStagedChanges(prev => [...prev, change])}
+                />
+              </div>
+            )}
+          </div>
+
+          {showStagingPanel && (
+            <div className="w-96 flex-shrink-0">
+              <ChangesStagingPanel
+                stagedChanges={stagedChanges}
+                definitions={definitions}
+                schedules={schedules}
+                onRemoveChange={(index) => setStagedChanges(prev => prev.filter((_, i) => i !== index))}
+                onClearAll={() => setStagedChanges([])}
+                onClose={() => setShowStagingPanel(false)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showPublishModal && (
+        <PublishScheduleModal
+          stagedChanges={stagedChanges}
+          locationId={locationId}
+          onClose={() => setShowPublishModal(false)}
+          onPublished={() => {
+            setShowPublishModal(false);
+            setStagedChanges([]);
+            loadAllData();
+          }}
+        />
+      )}
+    </div>
+  );
+}

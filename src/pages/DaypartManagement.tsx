@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Calendar, ChevronDown, ChevronRight, MapPin, Layers } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Calendar, ChevronDown, ChevronRight, MapPin, Layers, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from '../components/IconPicker';
 import ScheduleGroupForm from '../components/ScheduleGroupForm';
 import { useLocation } from '../hooks/useLocation';
 import { Schedule } from '../hooks/useScheduleCollisionDetection';
+import DaypartAdvancedView from '../components/DaypartAdvancedView';
 
 interface DaypartDefinition {
   id: string;
@@ -58,6 +59,7 @@ export default function DaypartManagement() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
+  const [showAdvancedView, setShowAdvancedView] = useState(false);
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -326,6 +328,16 @@ export default function DaypartManagement() {
     );
   }
 
+  if (showAdvancedView) {
+    return (
+      <DaypartAdvancedView
+        locationId={currentStoreId}
+        conceptId={currentConceptId}
+        onClose={() => setShowAdvancedView(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
@@ -353,26 +365,36 @@ export default function DaypartManagement() {
                 </span>
               )}
             </div>
-            {!showDefinitionForm && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  setEditingDefinition(null);
-                  setFormData({
-                    daypart_name: '',
-                    display_label: '',
-                    description: '',
-                    color: 'bg-blue-100 text-blue-800 border-blue-300',
-                    icon: 'Clock',
-                    sort_order: definitions.length,
-                  });
-                  setShowDefinitionForm(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                onClick={() => setShowAdvancedView(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-md hover:shadow-lg"
+                title="Power user mode with advanced features"
               >
-                <Plus className="w-5 h-5" />
-                Add Daypart
+                <Zap className="w-5 h-5" />
+                Advanced View
               </button>
-            )}
+              {!showDefinitionForm && (
+                <button
+                  onClick={() => {
+                    setEditingDefinition(null);
+                    setFormData({
+                      daypart_name: '',
+                      display_label: '',
+                      description: '',
+                      color: 'bg-blue-100 text-blue-800 border-blue-300',
+                      icon: 'Clock',
+                      sort_order: definitions.length,
+                    });
+                    setShowDefinitionForm(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add Daypart
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
