@@ -126,34 +126,20 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
     if (!error && data) {
       setDefinitions(data);
+    } else if (error) {
+      console.error('Error loading definitions:', error);
     }
   };
 
   const loadSchedules = async () => {
-    if (!locationId) {
-      setSchedules([]);
-      return;
-    }
-
-    const { data: placementIds } = await supabase
-      .from('placement_groups')
-      .select('id')
-      .eq('store_id', locationId);
-
-    if (!placementIds || placementIds.length === 0) {
-      setSchedules([]);
-      return;
-    }
-
-    const ids = placementIds.map(p => p.id);
-
     const { data, error } = await supabase
-      .from('site_daypart_routines')
-      .select('*')
-      .in('placement_group_id', ids);
+      .from('daypart_schedules')
+      .select('*');
 
     if (!error && data) {
       setSchedules(data);
+    } else if (error) {
+      console.error('Error loading schedules:', error);
     }
   };
 
@@ -171,6 +157,8 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
     if (!error && data) {
       setPlacements(data);
+    } else if (error) {
+      console.error('Error loading placements:', error);
     }
   };
 
@@ -180,10 +168,16 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
       return;
     }
 
-    const { data: placementIds } = await supabase
+    const { data: placementIds, error: placementError } = await supabase
       .from('placement_groups')
       .select('id')
       .eq('store_id', locationId);
+
+    if (placementError) {
+      console.error('Error loading placement IDs:', placementError);
+      setOverrides([]);
+      return;
+    }
 
     if (!placementIds || placementIds.length === 0) {
       setOverrides([]);
@@ -199,6 +193,8 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
     if (!error && data) {
       setOverrides(data);
+    } else if (error) {
+      console.error('Error loading overrides:', error);
     }
   };
 
@@ -207,20 +203,15 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
     schedules.forEach(schedule => {
       const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
-      const placement = placements.find(p => p.id === schedule.placement_group_id);
 
       if (definition) {
-        const isSiteLevel = placement?.parent_id === null;
-
         unified.push({
           id: schedule.id,
-          type: isSiteLevel ? 'base' : 'override',
+          type: 'base',
           source: 'routine',
           daypart_definition_id: definition.id,
           daypart_label: definition.display_label,
           daypart_color: definition.color,
-          placement_id: !isSiteLevel ? placement?.id : undefined,
-          placement_name: !isSiteLevel ? placement?.name : undefined,
           days_of_week: schedule.days_of_week,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
@@ -258,7 +249,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
   const handleDelete = (schedule: UnifiedScheduleRow) => {
     const change: StagedChange = {
       change_type: 'delete',
-      target_table: schedule.source === 'routine' ? 'site_daypart_routines' : 'placement_daypart_overrides',
+      target_table: schedule.source === 'routine' ? 'daypart_schedules' : 'placement_daypart_overrides',
       target_id: schedule.id,
       change_data: {},
     };
