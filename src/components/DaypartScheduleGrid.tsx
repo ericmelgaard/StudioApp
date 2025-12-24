@@ -235,6 +235,9 @@ export default function DaypartScheduleGrid({
                 Daypart
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Schedule Name
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 Scope
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -269,6 +272,14 @@ export default function DaypartScheduleGrid({
                       ></div>
                       <span className="font-medium text-sm text-slate-900">{schedule.daypart_label}</span>
                     </div>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {schedule.schedule_name ? (
+                      <span className="text-sm text-slate-600 italic">{schedule.schedule_name}</span>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
