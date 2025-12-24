@@ -218,7 +218,7 @@ export default function ScheduleGroupForm({
             <option value="">Select a daypart...</option>
             {availableDayparts.map((daypart) => (
               <option key={daypart.id} value={daypart.id}>
-                {daypart.display_label} ({daypart.source_level})
+                {daypart.display_label}
               </option>
             ))}
           </select>
