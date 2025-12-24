@@ -194,11 +194,6 @@ export default function DaypartRoutineForm({
       return;
     }
 
-    if (formData.runs_on_days && formData.start_time && formData.end_time && formData.start_time >= formData.end_time && formData.start_time !== '00:00') {
-      setError('End time must be after start time (or use 00:00 for midnight crossing)');
-      return;
-    }
-
     if (formData.schedule_type === 'regular') {
       const collision = checkCollision(formData.daypart_name, formData.days_of_week);
       if (collision) {

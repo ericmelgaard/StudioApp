@@ -132,9 +132,6 @@ export default function ScheduleGroupForm({
     if (scheduleType === 'event_holiday' && !eventName) {
       return;
     }
-    if (runsOnDays && localSchedule.start_time && localSchedule.end_time && localSchedule.start_time >= localSchedule.end_time && localSchedule.start_time !== '00:00') {
-      return;
-    }
     if (collision.hasCollision && !disableCollisionDetection) {
       return;
     }
@@ -161,9 +158,7 @@ export default function ScheduleGroupForm({
     ? 'Please select a daypart type'
     : null;
 
-  const timeError = runsOnDays && localSchedule.start_time && localSchedule.end_time && localSchedule.start_time >= localSchedule.end_time && localSchedule.start_time !== '00:00'
-    ? 'End time must be after start time (or use 00:00 for midnight crossing)'
-    : null;
+  const timeError = null;
 
   const daysError = scheduleType === 'regular' && !skipDayValidation && localSchedule.days_of_week.length === 0
     ? 'Please select at least one day'
