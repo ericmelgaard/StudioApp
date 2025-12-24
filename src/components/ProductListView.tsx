@@ -993,7 +993,7 @@ export default function ProductListView({
       )}
 
       {showColumnManager && (
-        <div className="fixed inset-0 z-[60]">
+        <div className="fixed inset-0 z-[200]">
           <ColumnManager
             isOpen={showColumnManager}
             onClose={() => setShowColumnManager(false)}

@@ -18,8 +18,8 @@ export default function Toast({ message, onClose, duration = 2000 }: ToastProps)
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm z-[70] animate-fade-in" />
-      <div className="fixed inset-0 z-[71] flex items-center justify-center pointer-events-none">
+      <div className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm z-[200] animate-fade-in" />
+      <div className="fixed inset-0 z-[201] flex items-center justify-center pointer-events-none">
         <div className="pointer-events-auto animate-scale-in">
           <div className="bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden min-w-[380px]">
             <div className="flex items-center gap-3 p-5">
