@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, CreditCard as Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
 import ScheduleGroupForm from './ScheduleGroupForm';
@@ -50,8 +50,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [showUnused, setShowUnused] = useState(false);
   const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
-  const [showDaypartSelector, setShowDaypartSelector] = useState(false);
   const [isEventSchedule, setIsEventSchedule] = useState(false);
+  const [newScheduleType, setNewScheduleType] = useState<'regular' | 'event_holiday' | null>(null);
+  const [selectedDaypartId, setSelectedDaypartId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -218,18 +219,15 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   };
 
   const handleAddScheduleClick = () => {
+    setNewScheduleType('regular');
     setIsEventSchedule(false);
-    setShowDaypartSelector(true);
+    setAddingScheduleForDef('new');
   };
 
   const handleAddEventScheduleClick = () => {
+    setNewScheduleType('event_holiday');
     setIsEventSchedule(true);
-    setShowDaypartSelector(true);
-  };
-
-  const handleDaypartSelect = (defId: string) => {
-    setShowDaypartSelector(false);
-    setAddingScheduleForDef(defId);
+    setAddingScheduleForDef('new');
   };
 
   const handleEditSchedule = (schedule: DaypartSchedule) => {
@@ -260,8 +258,14 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
         if (updateError) throw updateError;
       } else if (addingScheduleForDef) {
+        const targetDaypartId = addingScheduleForDef === 'new' ? selectedDaypartId : addingScheduleForDef;
+
+        if (!targetDaypartId || targetDaypartId === 'new') {
+          throw new Error('Please select a daypart');
+        }
+
         const insertData: any = {
-          daypart_definition_id: addingScheduleForDef,
+          daypart_definition_id: targetDaypartId,
           days_of_week: schedule.days_of_week,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
@@ -283,6 +287,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       setEditingSchedule(null);
       setAddingScheduleForDef(null);
       setIsEventSchedule(false);
+      setNewScheduleType(null);
+      setSelectedDaypartId('');
       await loadData();
     } catch (err: any) {
       console.error('Error saving schedule:', err);
@@ -698,7 +704,65 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        {addingScheduleForDef === 'new' && (
+          <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+              {isEventSchedule ? 'Add Event/Holiday' : 'Add Schedule'}
+            </h3>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Daypart Type *
+              </label>
+              <select
+                value={selectedDaypartId}
+                onChange={(e) => setSelectedDaypartId(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select a daypart...</option>
+                {filteredDefinitions.map((definition) => (
+                  <option key={definition.id} value={definition.id}>
+                    {definition.display_label} ({definition.source_level})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedDaypartId && (
+              <ScheduleGroupForm
+                schedule={{
+                  daypart_name: definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '',
+                  daypart_definition_id: selectedDaypartId,
+                  days_of_week: [],
+                  start_time: '06:00',
+                  end_time: '11:00',
+                  schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
+                }}
+                allSchedules={schedules.filter(s => s.daypart_definition_id === selectedDaypartId)}
+                onUpdate={() => {}}
+                onSave={() => handleSaveSchedule({
+                  daypart_name: definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '',
+                  daypart_definition_id: selectedDaypartId,
+                  days_of_week: [],
+                  start_time: '06:00',
+                  end_time: '11:00',
+                  schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
+                })}
+                onCancel={() => {
+                  setAddingScheduleForDef(null);
+                  setIsEventSchedule(false);
+                  setNewScheduleType(null);
+                  setSelectedDaypartId('');
+                }}
+                level="site"
+              />
+            )}
+          </div>
+        )}
+
+        {!addingScheduleForDef && (
+          <div className="grid grid-cols-2 gap-4">
           <button
             type="button"
             onClick={handleAddScheduleClick}
@@ -715,7 +779,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             <Sparkles className="w-4 h-4" />
             Add Event/Holiday
           </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {showDefinitionForm && (
@@ -833,74 +898,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {showDaypartSelector && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowDaypartSelector(false);
-              setIsEventSchedule(false);
-            }
-          }}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Select Daypart for {isEventSchedule ? 'Event/Holiday' : 'Schedule'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDaypartSelector(false);
-                  setIsEventSchedule(false);
-                }}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <p className="text-sm text-slate-600 mb-4">
-                Select which daypart you want to add this {isEventSchedule ? 'event/holiday' : 'schedule'} to:
-              </p>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredDefinitions.map((definition) => (
-                  <button
-                    key={definition.id}
-                    onClick={() => handleDaypartSelect(definition.id)}
-                    className={`w-full px-4 py-3 rounded-lg border-2 transition-colors text-left ${definition.color} hover:shadow-md`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-semibold">{definition.display_label}</span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          definition.source_level === 'store'
-                            ? 'bg-blue-600/20 text-blue-900'
-                            : definition.source_level === 'concept'
-                            ? 'bg-purple-600/20 text-purple-900'
-                            : 'bg-slate-600/20 text-slate-900'
-                        }`}
-                      >
-                        {definition.source_level === 'store'
-                          ? 'Store'
-                          : definition.source_level === 'concept'
-                          ? 'Concept'
-                          : 'Global'}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       )}
