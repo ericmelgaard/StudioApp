@@ -32,6 +32,7 @@ interface DaypartSchedule {
   schedule_name?: string;
   event_name?: string;
   event_date?: string;
+  recurrence_type?: string;
   recurrence_config?: any;
 }
 
@@ -54,6 +55,7 @@ interface PlacementOverride {
   schedule_name?: string;
   event_name?: string;
   event_date?: string;
+  recurrence_type?: string;
   recurrence_config?: any;
 }
 
@@ -73,6 +75,7 @@ interface UnifiedScheduleRow {
   schedule_name?: string;
   event_name?: string;
   event_date?: string;
+  recurrence_type?: string;
   recurrence_config?: any;
 }
 
@@ -248,6 +251,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           schedule_name: schedule.schedule_name,
           event_name: schedule.event_name,
           event_date: schedule.event_date,
+          recurrence_type: schedule.recurrence_type,
           recurrence_config: schedule.recurrence_config,
         });
       }
@@ -292,6 +296,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           schedule_name: override.schedule_name,
           event_name: override.event_name,
           event_date: override.event_date,
+          recurrence_type: override.recurrence_type,
           recurrence_config: override.recurrence_config,
         });
       } else {
