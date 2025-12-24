@@ -1,4 +1,4 @@
-import { Clock, Edit2, Trash2 } from 'lucide-react';
+import { Clock, Edit2, Trash2, Calendar, Sparkles } from 'lucide-react';
 import { Schedule } from '../hooks/useScheduleCollisionDetection';
 
 interface ScheduleGroupCardProps {
@@ -59,13 +59,23 @@ export default function ScheduleGroupCard({
     placement: 'bg-amber-100 text-amber-700'
   };
 
+  const isHolidayOrEvent = schedule.schedule_type === 'holiday' || schedule.schedule_type === 'event';
   const dayBadgeColor = levelColors[level];
 
+  const icon = isHolidayOrEvent
+    ? (schedule.schedule_type === 'event' ? Sparkles : Calendar)
+    : Clock;
+  const Icon = icon;
+
+  const cardBorderColor = isHolidayOrEvent
+    ? 'border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50'
+    : 'border-slate-200';
+
   return (
-    <div className="p-4 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+    <div className={`p-4 bg-white rounded-lg border ${cardBorderColor} hover:border-slate-300 transition-colors`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-slate-400" />
+          <Icon className={`w-5 h-5 ${isHolidayOrEvent ? 'text-purple-500' : 'text-slate-400'}`} />
           <div>
             <h4 className="font-semibold text-slate-900">{getScheduleLabel(schedule.days_of_week)}</h4>
             <p className="text-sm text-slate-600 mt-0.5">
@@ -91,17 +101,23 @@ export default function ScheduleGroupCard({
         </div>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {schedule.days_of_week.sort().map((day) => {
-          const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-          return (
-            <span
-              key={day}
-              className={`px-2.5 py-1 ${dayBadgeColor} text-xs rounded-md font-medium`}
-            >
-              {dayInfo?.short}
-            </span>
-          );
-        })}
+        {isHolidayOrEvent ? (
+          <span className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-md font-medium shadow-sm">
+            {schedule.schedule_name || schedule.event_name || 'Holiday Schedule'}
+          </span>
+        ) : (
+          schedule.days_of_week.sort().map((day) => {
+            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+            return (
+              <span
+                key={day}
+                className={`px-2.5 py-1 ${dayBadgeColor} text-xs rounded-md font-medium`}
+              >
+                {dayInfo?.short}
+              </span>
+            );
+          })
+        )}
       </div>
     </div>
   );
