@@ -427,6 +427,7 @@ export default function DaypartManagement() {
     const hasSiteRoutines = defSiteRoutines.length > 0;
 
     const isEditing = editingScheduleForDef === definition.id || editingSiteRoutineForDef === definition.id;
+    const isConfigured = canEditSiteRoutine ? hasSiteRoutines : hasSchedules;
 
     return (
       <div key={definition.id} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
@@ -436,7 +437,7 @@ export default function DaypartManagement() {
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 {definition.display_label}
-                {!hasSchedules && !hasSiteRoutines && !isEditing && (
+                {!isConfigured && !isEditing && (
                   <span className="text-xs px-2 py-1 bg-white/50 rounded font-medium">Not Configured</span>
                 )}
                 {isEditing && (
@@ -480,7 +481,7 @@ export default function DaypartManagement() {
                   <button
                     onClick={() => setEditingSiteRoutineForDef(definition.id)}
                     className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                    title="Edit site schedules"
+                    title="Edit site daypart"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -523,41 +524,33 @@ export default function DaypartManagement() {
             onSave={(routines) => handleSaveSiteRoutine(definition.id, routines)}
             onCancel={() => setEditingSiteRoutineForDef(null)}
           />
+        ) : isConfigured ? (
+          <div className="px-6 py-4 bg-slate-50">
+            <div className="space-y-3">
+              {canEditSiteRoutine
+                ? defSiteRoutines.map((routine, index) => renderScheduleCard(routine, index, definition.color))
+                : defSchedules.map((schedule, index) => renderScheduleCard(schedule, index, definition.color))
+              }
+            </div>
+          </div>
         ) : (
-          <>
-            {canEditSiteRoutine ? (
-              <div className="px-6 py-4 bg-slate-50">
-                {hasSiteRoutines ? (
-                  <div className="space-y-3">
-                    {defSiteRoutines.map((routine, index) => renderScheduleCard(routine, index, definition.color))}
-                  </div>
-                ) : hasSchedules ? (
-                  <>
-                    <p className="text-xs text-slate-500 mb-3">Using inherited schedules:</p>
-                    <div className="space-y-3 opacity-60">
-                      {defSchedules.map((schedule, index) => renderScheduleCard(schedule, index, definition.color))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-600">
-                    This daypart is not configured. Click Edit to set up site-specific schedules.
-                  </p>
-                )}
-              </div>
+          <div className="px-6 py-4 bg-slate-50">
+            {canEditSiteRoutine && hasSchedules ? (
+              <>
+                <p className="text-sm text-slate-600 mb-3">
+                  This daypart is not configured for this site. Click "Edit" to set up site-specific schedules.
+                </p>
+                <p className="text-xs text-slate-500 mb-3">Inherited schedules:</p>
+                <div className="space-y-3 opacity-60">
+                  {defSchedules.map((schedule, index) => renderScheduleCard(schedule, index, definition.color))}
+                </div>
+              </>
             ) : (
-              <div className="px-6 py-4 bg-slate-50">
-                {hasSchedules ? (
-                  <div className="space-y-3">
-                    {defSchedules.map((schedule, index) => renderScheduleCard(schedule, index, definition.color))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-600">
-                    This daypart is not configured. Click Edit to set up schedules.
-                  </p>
-                )}
-              </div>
+              <p className="text-sm text-slate-600 mb-3">
+                This daypart is not configured. Click "Edit" to set up {canEditSiteRoutine ? 'site-specific ' : ''}schedules.
+              </p>
             )}
-          </>
+          </div>
         )}
       </div>
     );
