@@ -167,95 +167,135 @@ export default function DaypartScheduleGrid({
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-200 bg-slate-50">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-slate-600" />
-          <h3 className="text-lg font-semibold text-slate-900">Daypart Schedules</h3>
-          <span className="text-sm text-slate-600">
-            ({sortedSchedules.length} schedule{sortedSchedules.length !== 1 ? 's' : ''})
-          </span>
-        </div>
-        <div className="mt-2 text-xs text-slate-600 flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></span>
-            Base Schedule
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-purple-100 border border-purple-300 rounded"></span>
-            Placement Override
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></span>
-            Modified
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-slate-600" />
+            <h3 className="text-lg font-semibold text-slate-900">Daypart Schedules</h3>
+            <span className="text-sm text-slate-600">
+              ({sortedSchedules.length} schedule{sortedSchedules.length !== 1 ? 's' : ''})
+            </span>
+          </div>
+          <div className="text-xs text-slate-600 flex items-center gap-4">
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></span>
+              Base Schedule
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 bg-purple-100 border border-purple-300 rounded"></span>
+              Placement Override
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></span>
+              Modified
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="divide-y divide-slate-200">
-        {sortedSchedules.map((schedule) => {
-          const modified = isModified(schedule.id);
-          const isHovered = hoveredRow === schedule.id;
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Daypart
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Scope
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Active Days
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Time Range
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {sortedSchedules.map((schedule) => {
+              const modified = isModified(schedule.id);
+              const isHovered = hoveredRow === schedule.id;
 
-          return (
-            <div
-              key={schedule.id}
-              className={`flex items-center gap-4 px-4 py-3 hover:bg-slate-50 transition-colors ${
-                modified ? 'bg-amber-50 border-l-4 border-amber-400' : ''
-              }`}
-              onMouseEnter={() => setHoveredRow(schedule.id)}
-              onMouseLeave={() => setHoveredRow(null)}
-            >
-              <div className="flex items-center gap-2 w-48">
-                <div
-                  className={`w-3 h-3 rounded-full ${schedule.daypart_color.replace('text-', 'bg-').split(' ')[0]}`}
-                ></div>
-                <span className="font-medium text-sm text-slate-900">{schedule.daypart_label}</span>
-              </div>
-
-              {schedule.type === 'override' && schedule.placement_name && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium">
-                  <MapPin className="w-3 h-3" />
-                  {schedule.placement_name}
-                </div>
-              )}
-
-              {schedule.type === 'base' && (
-                <div className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
-                  Base Schedule
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="px-3 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
-                  {formatDayGroup(schedule.days_of_week)}
-                </div>
-                <div className="flex items-center gap-1 text-sm text-slate-900 font-medium">
-                  <span>{schedule.start_time}</span>
-                  <span className="text-slate-400">→</span>
-                  <span>{schedule.end_time}</span>
-                </div>
-              </div>
-
-              <div className={`flex items-center gap-1 transition-opacity ${
-                isHovered ? 'opacity-100' : 'opacity-0'
-              }`}>
-                <button
-                  onClick={() => onEdit(schedule)}
-                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                  title="Edit schedule"
+              return (
+                <tr
+                  key={schedule.id}
+                  className={`hover:bg-slate-50 transition-colors ${
+                    modified ? 'bg-amber-50 border-l-4 border-amber-400' : ''
+                  }`}
+                  onMouseEnter={() => setHoveredRow(schedule.id)}
+                  onMouseLeave={() => setHoveredRow(null)}
                 >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => onDelete(schedule)}
-                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                  title="Delete schedule"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-3 h-3 rounded-full flex-shrink-0 ${schedule.daypart_color.replace('text-', 'bg-').split(' ')[0]}`}
+                      ></div>
+                      <span className="font-medium text-sm text-slate-900">{schedule.daypart_label}</span>
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {schedule.type === 'override' && schedule.placement_name ? (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium inline-flex">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate max-w-[200px]">{schedule.placement_name}</span>
+                      </div>
+                    ) : (
+                      <div className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium inline-flex">
+                        Base Schedule
+                      </div>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <div className="inline-flex items-center gap-1.5">
+                      {schedule.days_of_week.map(day => (
+                        <div
+                          key={day}
+                          className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium"
+                          title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day]}
+                        >
+                          {DAYS_OF_WEEK[day].label}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2 text-sm text-slate-900 font-medium">
+                      <span>{schedule.start_time}</span>
+                      <span className="text-slate-400">→</span>
+                      <span>{schedule.end_time}</span>
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <div className={`flex items-center justify-end gap-1 transition-opacity ${
+                      isHovered ? 'opacity-100' : 'opacity-0'
+                    }`}>
+                      <button
+                        onClick={() => onEdit(schedule)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Edit schedule"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(schedule)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete schedule"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
