@@ -27,8 +27,9 @@ interface UnifiedScheduleRow {
   placement_id?: string;
   placement_name?: string;
   days_of_week: number[];
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
+  runs_on_days?: boolean;
   schedule_type?: string;
   schedule_name?: string;
   event_name?: string;
@@ -346,11 +347,13 @@ export default function DaypartScheduleGrid({
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {editMode ? (
+                    {schedule.runs_on_days === false ? (
+                      <span className="text-sm text-slate-600 italic">Does Not Run</span>
+                    ) : editMode ? (
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          defaultValue={schedule.start_time}
+                          defaultValue={schedule.start_time || ''}
                           onBlur={(e) => handleTimeBlur(schedule.id, 'start_time', e.target.value)}
                           placeholder="HH:MM:SS"
                           className="w-24 px-2 py-1 text-sm text-slate-900 font-medium border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -358,7 +361,7 @@ export default function DaypartScheduleGrid({
                         <span className="text-slate-400">→</span>
                         <input
                           type="text"
-                          defaultValue={schedule.end_time}
+                          defaultValue={schedule.end_time || ''}
                           onBlur={(e) => handleTimeBlur(schedule.id, 'end_time', e.target.value)}
                           placeholder="HH:MM:SS"
                           className="w-24 px-2 py-1 text-sm text-slate-900 font-medium border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

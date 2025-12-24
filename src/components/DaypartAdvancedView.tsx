@@ -25,9 +25,10 @@ interface DaypartDefinition {
 interface DaypartSchedule {
   id: string;
   daypart_definition_id: string;
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
   days_of_week: number[];
+  runs_on_days?: boolean;
   schedule_type?: string;
   schedule_name?: string;
   event_name?: string;
@@ -48,9 +49,10 @@ interface PlacementOverride {
   placement_group_id: string;
   daypart_definition_id: string;
   daypart_name?: string;
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
   days_of_week: number[];
+  runs_on_days?: boolean;
   schedule_type?: string;
   schedule_name?: string;
   event_name?: string;
@@ -69,8 +71,9 @@ interface UnifiedScheduleRow {
   placement_id?: string;
   placement_name?: string;
   days_of_week: number[];
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
+  runs_on_days?: boolean;
   schedule_type?: string;
   schedule_name?: string;
   event_name?: string;
@@ -247,6 +250,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           days_of_week: schedule.days_of_week,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
+          runs_on_days: schedule.runs_on_days,
           schedule_type: schedule.schedule_type,
           schedule_name: schedule.schedule_name,
           event_name: schedule.event_name,
@@ -292,6 +296,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           days_of_week: override.days_of_week,
           start_time: override.start_time,
           end_time: override.end_time,
+          runs_on_days: override.runs_on_days,
           schedule_type: override.schedule_type,
           schedule_name: override.schedule_name,
           event_name: override.event_name,
@@ -389,13 +394,16 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
         .map(day => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day])
         .join(';');
 
+      const startTime = schedule.runs_on_days === false ? 'Does Not Run' : schedule.start_time || '';
+      const endTime = schedule.runs_on_days === false ? '' : schedule.end_time || '';
+
       csvRows.push([
         schedule.daypart_label,
         scope,
         placementName,
         daysStr,
-        schedule.start_time,
-        schedule.end_time,
+        startTime,
+        endTime,
       ].join(','));
     });
 
