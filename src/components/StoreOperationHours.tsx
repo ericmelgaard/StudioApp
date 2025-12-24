@@ -42,7 +42,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
   const [addingEventSchedule, setAddingEventSchedule] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<OperationSchedule | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'regular' | 'event'>('all');
-  const [eventsExpanded, setEventsExpanded] = useState(true);
+  const [eventsExpanded, setEventsExpanded] = useState(false);
   const [newSchedule, setNewSchedule] = useState<OperationSchedule>({
     store_id: storeId,
     schedule_name: '',
