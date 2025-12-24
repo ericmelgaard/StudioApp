@@ -531,7 +531,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                   schedule={editingSchedule}
                                   allSchedules={defSchedules}
                                   onUpdate={setEditingSchedule}
-                                  onSave={() => handleSaveSchedule(editingSchedule)}
+                                  onSave={handleSaveSchedule}
                                   onCancel={() => setEditingSchedule(null)}
                                   level="site"
                                 />
@@ -596,7 +596,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                               schedule={newSchedule}
                               allSchedules={defSchedules}
                               onUpdate={setNewSchedule}
-                              onSave={() => handleSaveSchedule(newSchedule)}
+                              onSave={handleSaveSchedule}
                               onCancel={() => {
                                 setAddingScheduleForDef(null);
                                 setNewSchedule(null);
@@ -642,7 +642,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                           schedule={editingSchedule}
                                           allSchedules={defSchedules}
                                           onUpdate={setEditingSchedule}
-                                          onSave={() => handleSaveSchedule(editingSchedule)}
+                                          onSave={handleSaveSchedule}
                                           onCancel={() => setEditingSchedule(null)}
                                           level="site"
                                         />
@@ -738,7 +738,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
               schedule={newSchedule}
               allSchedules={newSchedule.daypart_definition_id ? schedules.filter(s => s.daypart_definition_id === newSchedule.daypart_definition_id) : []}
               onUpdate={setNewSchedule}
-              onSave={() => handleSaveSchedule(newSchedule)}
+              onSave={handleSaveSchedule}
               onCancel={() => {
                 setAddingScheduleForDef(null);
                 setNewSchedule(null);

@@ -363,7 +363,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                     schedule={editingSchedule}
                     allSchedules={schedules}
                     onUpdate={setEditingSchedule}
-                    onSave={() => handleSaveSchedule(editingSchedule)}
+                    onSave={handleSaveSchedule}
                     onCancel={() => setEditingSchedule(null)}
                     level="site"
                   />
@@ -456,7 +456,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                   schedule={newSchedule}
                   allSchedules={schedules}
                   onUpdate={setNewSchedule}
-                  onSave={() => handleSaveSchedule(newSchedule)}
+                  onSave={handleSaveSchedule}
                   onCancel={() => {
                     setAddingSchedule(false);
                     setAddingEventSchedule(false);
