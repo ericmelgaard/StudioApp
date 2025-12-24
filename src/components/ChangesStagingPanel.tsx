@@ -1,4 +1,4 @@
-import { X, Trash2, Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Trash2, Calendar, Clock, AlertCircle, CheckCircle, Upload } from 'lucide-react';
 
 interface DaypartDefinition {
   id: string;
@@ -26,6 +26,8 @@ interface ChangesStagingPanelProps {
   onRemoveChange: (index: number) => void;
   onClearAll: () => void;
   onClose: () => void;
+  onPublish: () => void;
+  isPublishing?: boolean;
 }
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -37,6 +39,8 @@ export default function ChangesStagingPanel({
   onRemoveChange,
   onClearAll,
   onClose,
+  onPublish,
+  isPublishing = false,
 }: ChangesStagingPanelProps) {
   const getDefinitionName = (definitionId: string) => {
     return definitions.find(d => d.id === definitionId)?.display_label || 'Unknown';
@@ -201,10 +205,27 @@ export default function ChangesStagingPanel({
       </div>
 
       {stagedChanges.length > 0 && (
-        <div className="p-4 border-t border-slate-200 bg-slate-50">
-          <div className="text-xs text-slate-600 mb-2">
-            Review your changes above, then click Publish Changes to apply them.
+        <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
+          <div className="text-xs text-slate-600">
+            Review your changes above, then click Publish Changes to apply them to the database.
           </div>
+          <button
+            onClick={onPublish}
+            disabled={isPublishing}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed shadow-sm font-medium"
+          >
+            {isPublishing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Publishing...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                <span>Publish Changes</span>
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>

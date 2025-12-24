@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Filter, Download, Upload, Save, X, Calendar, Plus } from 'lucide-react';
+import { Filter, Download, Upload, X, Calendar, Plus } from 'lucide-react';
 import DaypartScheduleGrid from './DaypartScheduleGrid';
 import ChangesStagingPanel from './ChangesStagingPanel';
 import DaypartFilterToolbar from './DaypartFilterToolbar';
@@ -439,15 +439,6 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
                 <Upload className="w-4 h-4" />
                 Import CSV
               </button>
-              {stagedChanges.length > 0 && (
-                <button
-                  onClick={handlePublish}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Save className="w-4 h-4" />
-                  Publish Changes ({stagedChanges.length})
-                </button>
-              )}
               <button
                 onClick={handleCancelChanges}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
@@ -489,6 +480,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
                 onRemoveChange={(index) => setStagedChanges(prev => prev.filter((_, i) => i !== index))}
                 onClearAll={() => setStagedChanges([])}
                 onClose={() => setShowStagingPanel(false)}
+                onPublish={handlePublish}
               />
             </div>
           )}
