@@ -31,6 +31,8 @@ interface DaypartSchedule {
   schedule_type?: string;
   schedule_name?: string;
   event_name?: string;
+  event_date?: string;
+  recurrence_config?: any;
 }
 
 interface PlacementGroup {
@@ -51,6 +53,8 @@ interface PlacementOverride {
   schedule_type?: string;
   schedule_name?: string;
   event_name?: string;
+  event_date?: string;
+  recurrence_config?: any;
 }
 
 interface UnifiedScheduleRow {
@@ -68,6 +72,8 @@ interface UnifiedScheduleRow {
   schedule_type?: string;
   schedule_name?: string;
   event_name?: string;
+  event_date?: string;
+  recurrence_config?: any;
 }
 
 interface StagedChange {
@@ -241,6 +247,8 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           schedule_type: schedule.schedule_type,
           schedule_name: schedule.schedule_name,
           event_name: schedule.event_name,
+          event_date: schedule.event_date,
+          recurrence_config: schedule.recurrence_config,
         });
       }
     });
@@ -283,6 +291,8 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           schedule_type: override.schedule_type,
           schedule_name: override.schedule_name,
           event_name: override.event_name,
+          event_date: override.event_date,
+          recurrence_config: override.recurrence_config,
         });
       } else {
         console.warn('Override missing definition or placement:', {

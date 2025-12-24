@@ -29,7 +29,10 @@ interface UnifiedScheduleRow {
   start_time: string;
   end_time: string;
   schedule_type?: string;
+  schedule_name?: string;
   event_name?: string;
+  event_date?: string;
+  recurrence_config?: any;
 }
 
 interface FilterOptions {
@@ -275,7 +278,9 @@ export default function DaypartScheduleGrid({
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {schedule.schedule_name ? (
+                    {schedule.event_name ? (
+                      <span className="text-sm text-slate-700 font-medium">{schedule.event_name}</span>
+                    ) : schedule.schedule_name ? (
                       <span className="text-sm text-slate-600 italic">{schedule.schedule_name}</span>
                     ) : (
                       <span className="text-xs text-slate-400">—</span>
@@ -303,9 +308,19 @@ export default function DaypartScheduleGrid({
                         ) : (
                           <Calendar className="w-4 h-4 text-purple-500" />
                         )}
-                        <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-md font-medium shadow-sm">
-                          {schedule.event_name || 'Holiday Schedule'}
-                        </span>
+                        {schedule.recurrence_config?.range_start_date && schedule.recurrence_config?.range_end_date ? (
+                          <span className="text-sm text-slate-700">
+                            {new Date(schedule.recurrence_config.range_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            <span className="text-slate-400 mx-1">→</span>
+                            {new Date(schedule.recurrence_config.range_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        ) : schedule.event_date ? (
+                          <span className="text-sm text-slate-700">
+                            {new Date(schedule.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">No date specified</span>
+                        )}
                       </div>
                     ) : (
                       <div className="inline-flex items-center gap-1.5">
