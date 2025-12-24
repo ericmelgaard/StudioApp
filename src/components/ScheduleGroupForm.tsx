@@ -25,6 +25,7 @@ interface ScheduleGroupFormProps {
   selectedDaypartId?: string;
   onDaypartChange?: (daypartId: string, daypartName: string) => void;
   skipDayValidation?: boolean;
+  disableCollisionDetection?: boolean;
 }
 
 export default function ScheduleGroupForm({
@@ -38,7 +39,8 @@ export default function ScheduleGroupForm({
   availableDayparts = [],
   selectedDaypartId = '',
   onDaypartChange,
-  skipDayValidation = false
+  skipDayValidation = false,
+  disableCollisionDetection = false
 }: ScheduleGroupFormProps) {
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -133,7 +135,7 @@ export default function ScheduleGroupForm({
     if (runsOnDays && localSchedule.start_time && localSchedule.end_time && localSchedule.start_time >= localSchedule.end_time && localSchedule.start_time !== '00:00') {
       return;
     }
-    if (collision.hasCollision) {
+    if (collision.hasCollision && !disableCollisionDetection) {
       return;
     }
 
@@ -171,7 +173,7 @@ export default function ScheduleGroupForm({
     ? 'Event name is required'
     : null;
 
-  const error = daypartError || collision.collisionMessage || timeError || daysError || eventNameError;
+  const error = daypartError || (disableCollisionDetection ? null : collision.collisionMessage) || timeError || daysError || eventNameError;
 
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

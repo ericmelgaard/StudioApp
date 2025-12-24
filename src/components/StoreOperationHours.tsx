@@ -376,6 +376,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                     onCancel={() => setEditingSchedule(null)}
                     level="site"
                     skipDayValidation={true}
+                    disableCollisionDetection={true}
                   />
                 </div>
               </div>
@@ -477,6 +478,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                   }}
                   level="site"
                   skipDayValidation={true}
+                  disableCollisionDetection={true}
                 />
               </div>
             </div>
