@@ -279,7 +279,16 @@ export default function DaypartScheduleGrid({
 
                   <td className="px-4 py-3 whitespace-nowrap">
                     {schedule.event_name ? (
-                      <span className="text-sm text-slate-700 font-medium">{schedule.event_name}</span>
+                      <div className="inline-flex items-center gap-2">
+                        {schedule.schedule_type?.includes('event') ? (
+                          <Sparkles className="w-4 h-4 text-purple-500" />
+                        ) : (
+                          <Calendar className="w-4 h-4 text-purple-500" />
+                        )}
+                        <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-md font-medium shadow-sm">
+                          {schedule.event_name}
+                        </span>
+                      </div>
                     ) : schedule.schedule_name ? (
                       <span className="text-sm text-slate-600 italic">{schedule.schedule_name}</span>
                     ) : (
@@ -302,12 +311,7 @@ export default function DaypartScheduleGrid({
 
                   <td className="px-4 py-3">
                     {schedule.schedule_type && (schedule.schedule_type.includes('holiday') || schedule.schedule_type.includes('event')) ? (
-                      <div className="inline-flex items-center gap-2">
-                        {schedule.schedule_type.includes('event') ? (
-                          <Sparkles className="w-4 h-4 text-purple-500" />
-                        ) : (
-                          <Calendar className="w-4 h-4 text-purple-500" />
-                        )}
+                      <div>
                         {schedule.recurrence_config?.range_start_date && schedule.recurrence_config?.range_end_date ? (
                           <span className="text-sm text-slate-700">
                             {new Date(schedule.recurrence_config.range_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
