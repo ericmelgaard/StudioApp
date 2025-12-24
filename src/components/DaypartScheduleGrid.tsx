@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Edit2, Trash2, AlertCircle, MapPin, Calendar, Sparkles, Save, X, Pencil } from 'lucide-react';
+import { Clock, Trash2, MapPin, Calendar, Sparkles, Pencil } from 'lucide-react';
 
 interface DaypartDefinition {
   id: string;
@@ -75,34 +75,23 @@ export default function DaypartScheduleGrid({
 }: DaypartScheduleGridProps) {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [editedTimes, setEditedTimes] = useState<Record<string, { start_time: string; end_time: string }>>({});
 
-  const handleTimeChange = (scheduleId: string, field: 'start_time' | 'end_time', value: string) => {
-    setEditedTimes(prev => ({
-      ...prev,
-      [scheduleId]: {
-        start_time: field === 'start_time' ? value : (prev[scheduleId]?.start_time || schedules.find(s => s.id === scheduleId)?.start_time || ''),
-        end_time: field === 'end_time' ? value : (prev[scheduleId]?.end_time || schedules.find(s => s.id === scheduleId)?.end_time || ''),
-      }
-    }));
+  const handleTimeBlur = (scheduleId: string, field: 'start_time' | 'end_time', value: string) => {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    if (!schedule) return;
+
+    if (value !== schedule[field]) {
+      const updatedTimes = {
+        start_time: field === 'start_time' ? value : schedule.start_time,
+        end_time: field === 'end_time' ? value : schedule.end_time,
+      };
+
+      onSaveTimeChanges([{
+        id: scheduleId,
+        ...updatedTimes
+      }]);
+    }
   };
-
-  const handleSaveChanges = () => {
-    const changes = Object.entries(editedTimes).map(([id, times]) => ({
-      id,
-      ...times
-    }));
-    onSaveTimeChanges(changes);
-    setEditedTimes({});
-    setEditMode(false);
-  };
-
-  const handleCancelChanges = () => {
-    setEditedTimes({});
-    setEditMode(false);
-  };
-
-  const hasChanges = Object.keys(editedTimes).length > 0;
 
   const formatDayGroup = (days: number[]): string => {
     if (days.length === 7) return 'All Days';
@@ -238,35 +227,6 @@ export default function DaypartScheduleGrid({
         </div>
       </div>
 
-      {hasChanges && (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-blue-600" />
-              <p className="text-sm text-blue-900 font-medium">
-                You have unsaved time changes for {Object.keys(editedTimes).length} schedule{Object.keys(editedTimes).length !== 1 ? 's' : ''}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCancelChanges}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-                <span className="text-sm font-medium">Cancel</span>
-              </button>
-              <button
-                onClick={handleSaveChanges}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                <Save className="w-4 h-4" />
-                <span className="text-sm font-medium">Save All Changes</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -356,16 +316,16 @@ export default function DaypartScheduleGrid({
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          value={editedTimes[schedule.id]?.start_time ?? schedule.start_time}
-                          onChange={(e) => handleTimeChange(schedule.id, 'start_time', e.target.value)}
+                          defaultValue={schedule.start_time}
+                          onBlur={(e) => handleTimeBlur(schedule.id, 'start_time', e.target.value)}
                           placeholder="HH:MM:SS"
                           className="w-24 px-2 py-1 text-sm text-slate-900 font-medium border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         <span className="text-slate-400">→</span>
                         <input
                           type="text"
-                          value={editedTimes[schedule.id]?.end_time ?? schedule.end_time}
-                          onChange={(e) => handleTimeChange(schedule.id, 'end_time', e.target.value)}
+                          defaultValue={schedule.end_time}
+                          onBlur={(e) => handleTimeBlur(schedule.id, 'end_time', e.target.value)}
                           placeholder="HH:MM:SS"
                           className="w-24 px-2 py-1 text-sm text-slate-900 font-medium border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />

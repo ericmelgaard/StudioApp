@@ -308,23 +308,37 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
   };
 
   const handleSaveTimeChanges = (changes: Array<{ id: string; start_time: string; end_time: string }>) => {
-    const newChanges: StagedChange[] = changes.map(change => {
-      const schedule = unifiedSchedules.find(s => s.id === change.id);
-      if (!schedule) return null;
+    setStagedChanges(prev => {
+      const updated = [...prev];
 
-      return {
-        change_type: 'update' as const,
-        target_table: schedule.source === 'routine' ? 'daypart_schedules' : 'placement_daypart_overrides',
-        target_id: change.id,
-        change_data: {
-          start_time: change.start_time,
-          end_time: change.end_time,
-        },
-        notes: `Updated times to ${change.start_time} - ${change.end_time}`,
-      };
-    }).filter(Boolean) as StagedChange[];
+      changes.forEach(change => {
+        const schedule = unifiedSchedules.find(s => s.id === change.id);
+        if (!schedule) return;
 
-    setStagedChanges(prev => [...prev, ...newChanges]);
+        const existingIndex = updated.findIndex(
+          staged => staged.target_id === change.id && staged.change_type === 'update'
+        );
+
+        const newChange: StagedChange = {
+          change_type: 'update' as const,
+          target_table: schedule.source === 'routine' ? 'daypart_schedules' : 'placement_daypart_overrides',
+          target_id: change.id,
+          change_data: {
+            start_time: change.start_time,
+            end_time: change.end_time,
+          },
+          notes: `Updated times to ${change.start_time} - ${change.end_time}`,
+        };
+
+        if (existingIndex >= 0) {
+          updated[existingIndex] = newChange;
+        } else {
+          updated.push(newChange);
+        }
+      });
+
+      return updated;
+    });
     setShowStagingPanel(true);
   };
 
