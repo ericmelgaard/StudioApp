@@ -252,9 +252,9 @@ export default function DaypartScheduleGrid({
                   </td>
 
                   <td className="px-4 py-3">
-                    {schedule.schedule_type === 'holiday' || schedule.schedule_type === 'event' ? (
+                    {schedule.schedule_type && (schedule.schedule_type.includes('holiday') || schedule.schedule_type.includes('event')) ? (
                       <div className="inline-flex items-center gap-2">
-                        {schedule.schedule_type === 'event' ? (
+                        {schedule.schedule_type.includes('event') ? (
                           <Sparkles className="w-4 h-4 text-purple-500" />
                         ) : (
                           <Calendar className="w-4 h-4 text-purple-500" />
