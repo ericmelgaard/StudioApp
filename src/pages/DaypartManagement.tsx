@@ -32,7 +32,7 @@ interface PlacementOverride extends Schedule {
   daypart_name: string;
 }
 
-type ContextLevel = 'wand' | 'site' | 'placement';
+type ContextLevel = 'wand' | 'concept' | 'company' | 'store';
 
 const DAYS_OF_WEEK = [
   { value: 0, label: 'Sunday', short: 'Sun' },
@@ -47,13 +47,17 @@ const DAYS_OF_WEEK = [
 export default function DaypartManagement() {
   const { location, getLocationBreadcrumb } = useLocation();
   const [contextLevel, setContextLevel] = useState<ContextLevel>('wand');
+  const [currentConceptId, setCurrentConceptId] = useState<number | null>(null);
+  const [currentCompanyId, setCurrentCompanyId] = useState<number | null>(null);
   const [currentStoreId, setCurrentStoreId] = useState<number | null>(null);
   const [siteRootPlacementId, setSiteRootPlacementId] = useState<string | null>(null);
 
-  const [definitions, setDefinitions] = useState<DaypartDefinition[]>([]);
+  const [wandDefinitions, setWandDefinitions] = useState<DaypartDefinition[]>([]);
+  const [conceptDefinitions, setConceptDefinitions] = useState<DaypartDefinition[]>([]);
+  const [companyDefinitions, setCompanyDefinitions] = useState<DaypartDefinition[]>([]);
+  const [storeDefinitions, setStoreDefinitions] = useState<DaypartDefinition[]>([]);
   const [schedules, setSchedules] = useState<DaypartSchedule[]>([]);
   const [siteRoutines, setSiteRoutines] = useState<SiteRoutine[]>([]);
-  const [storeDefinitions, setStoreDefinitions] = useState<DaypartDefinition[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [showDefinitionForm, setShowDefinitionForm] = useState(false);
@@ -78,11 +82,13 @@ export default function DaypartManagement() {
 
   useEffect(() => {
     loadData();
-  }, [contextLevel, currentStoreId, siteRootPlacementId]);
+  }, [contextLevel, currentConceptId, currentCompanyId, currentStoreId, siteRootPlacementId]);
 
   const detectContextLevel = async () => {
     if (location.store) {
       setCurrentStoreId(location.store.id);
+      setCurrentCompanyId(location.company?.id || null);
+      setCurrentConceptId(location.concept?.id || null);
 
       const { data: placementData } = await supabase
         .from('placement_groups')
@@ -95,10 +101,24 @@ export default function DaypartManagement() {
         setSiteRootPlacementId(placementData.id);
       }
 
-      setContextLevel('site');
+      setContextLevel('store');
+    } else if (location.company) {
+      setCurrentStoreId(null);
+      setSiteRootPlacementId(null);
+      setCurrentCompanyId(location.company.id);
+      setCurrentConceptId(location.concept?.id || null);
+      setContextLevel('company');
+    } else if (location.concept) {
+      setCurrentStoreId(null);
+      setSiteRootPlacementId(null);
+      setCurrentCompanyId(null);
+      setCurrentConceptId(location.concept.id);
+      setContextLevel('concept');
     } else {
       setCurrentStoreId(null);
       setSiteRootPlacementId(null);
+      setCurrentCompanyId(null);
+      setCurrentConceptId(null);
       setContextLevel('wand');
     }
   };
@@ -108,7 +128,7 @@ export default function DaypartManagement() {
     setError(null);
 
     try {
-      const globalDefsQuery = supabase
+      const wandDefsQuery = supabase
         .from('daypart_definitions')
         .select('*')
         .is('store_id', null)
@@ -120,19 +140,76 @@ export default function DaypartManagement() {
         .select('*');
 
       if (contextLevel === 'wand') {
-        const [defsResult, schedulesResult] = await Promise.all([
-          globalDefsQuery,
+        const [wandDefsResult, schedulesResult] = await Promise.all([
+          wandDefsQuery,
           globalSchedulesQuery
         ]);
 
-        if (defsResult.error) throw defsResult.error;
+        if (wandDefsResult.error) throw wandDefsResult.error;
         if (schedulesResult.error) throw schedulesResult.error;
 
-        setDefinitions(defsResult.data || []);
+        setWandDefinitions(wandDefsResult.data || []);
         setSchedules(schedulesResult.data || []);
-        setSiteRoutines([]);
+        setConceptDefinitions([]);
+        setCompanyDefinitions([]);
         setStoreDefinitions([]);
-      } else if (contextLevel === 'site' && currentStoreId && siteRootPlacementId) {
+        setSiteRoutines([]);
+      } else if (contextLevel === 'concept' && currentConceptId) {
+        const conceptDefsQuery = supabase
+          .from('daypart_definitions')
+          .select('*')
+          .eq('concept_id', currentConceptId)
+          .is('store_id', null)
+          .order('sort_order');
+
+        const [wandDefsResult, schedulesResult, conceptDefsResult] = await Promise.all([
+          wandDefsQuery,
+          globalSchedulesQuery,
+          conceptDefsQuery
+        ]);
+
+        if (wandDefsResult.error) throw wandDefsResult.error;
+        if (schedulesResult.error) throw schedulesResult.error;
+        if (conceptDefsResult.error) throw conceptDefsResult.error;
+
+        setWandDefinitions(wandDefsResult.data || []);
+        setSchedules(schedulesResult.data || []);
+        setConceptDefinitions(conceptDefsResult.data || []);
+        setCompanyDefinitions([]);
+        setStoreDefinitions([]);
+        setSiteRoutines([]);
+      } else if (contextLevel === 'company' && currentConceptId && currentCompanyId) {
+        const conceptDefsQuery = supabase
+          .from('daypart_definitions')
+          .select('*')
+          .eq('concept_id', currentConceptId)
+          .is('store_id', null)
+          .order('sort_order');
+
+        const [wandDefsResult, schedulesResult, conceptDefsResult] = await Promise.all([
+          wandDefsQuery,
+          globalSchedulesQuery,
+          conceptDefsQuery
+        ]);
+
+        if (wandDefsResult.error) throw wandDefsResult.error;
+        if (schedulesResult.error) throw schedulesResult.error;
+        if (conceptDefsResult.error) throw conceptDefsResult.error;
+
+        setWandDefinitions(wandDefsResult.data || []);
+        setSchedules(schedulesResult.data || []);
+        setConceptDefinitions(conceptDefsResult.data || []);
+        setCompanyDefinitions([]);
+        setStoreDefinitions([]);
+        setSiteRoutines([]);
+      } else if (contextLevel === 'store' && currentConceptId && currentCompanyId && currentStoreId && siteRootPlacementId) {
+        const conceptDefsQuery = supabase
+          .from('daypart_definitions')
+          .select('*')
+          .eq('concept_id', currentConceptId)
+          .is('store_id', null)
+          .order('sort_order');
+
         const storeDefsQuery = supabase
           .from('daypart_definitions')
           .select('*')
@@ -144,20 +221,24 @@ export default function DaypartManagement() {
           .select('*')
           .eq('placement_group_id', siteRootPlacementId);
 
-        const [defsResult, schedulesResult, storeDefsResult, siteRoutinesResult] = await Promise.all([
-          globalDefsQuery,
+        const [wandDefsResult, schedulesResult, conceptDefsResult, storeDefsResult, siteRoutinesResult] = await Promise.all([
+          wandDefsQuery,
           globalSchedulesQuery,
+          conceptDefsQuery,
           storeDefsQuery,
           siteRoutinesQuery
         ]);
 
-        if (defsResult.error) throw defsResult.error;
+        if (wandDefsResult.error) throw wandDefsResult.error;
         if (schedulesResult.error) throw schedulesResult.error;
+        if (conceptDefsResult.error) throw conceptDefsResult.error;
         if (storeDefsResult.error) throw storeDefsResult.error;
         if (siteRoutinesResult.error) throw siteRoutinesResult.error;
 
-        setDefinitions(defsResult.data || []);
+        setWandDefinitions(wandDefsResult.data || []);
         setSchedules(schedulesResult.data || []);
+        setConceptDefinitions(conceptDefsResult.data || []);
+        setCompanyDefinitions([]);
         setStoreDefinitions(storeDefsResult.data || []);
         setSiteRoutines(siteRoutinesResult.data || []);
       }
@@ -170,13 +251,14 @@ export default function DaypartManagement() {
   };
 
   const handleAddDefinition = () => {
+    const allDefinitions = [...wandDefinitions, ...conceptDefinitions, ...storeDefinitions];
     setFormData({
       daypart_name: '',
       display_label: '',
       description: '',
       color: 'bg-blue-100 text-blue-800 border-blue-300',
       icon: 'Clock',
-      sort_order: definitions.length * 10,
+      sort_order: allDefinitions.length * 10,
     });
     setEditingDefinition(null);
     setShowDefinitionForm(true);
@@ -217,24 +299,33 @@ export default function DaypartManagement() {
         if (updateError) throw updateError;
         setSuccess('Daypart definition updated successfully');
       } else {
+        const insertData: any = {
+          daypart_name: formData.daypart_name,
+          display_label: formData.display_label,
+          description: formData.description,
+          color: formData.color,
+          icon: formData.icon,
+          sort_order: formData.sort_order,
+          is_active: true,
+        };
+
+        if (contextLevel === 'concept' && currentConceptId) {
+          insertData.concept_id = currentConceptId;
+        } else if (contextLevel === 'store' && currentStoreId) {
+          insertData.store_id = currentStoreId;
+          insertData.concept_id = currentConceptId;
+        }
+
         const { data: newDef, error: insertError } = await supabase
           .from('daypart_definitions')
-          .insert([{
-            daypart_name: formData.daypart_name,
-            display_label: formData.display_label,
-            description: formData.description,
-            color: formData.color,
-            icon: formData.icon,
-            sort_order: formData.sort_order,
-            is_active: true,
-          }])
+          .insert([insertData])
           .select()
           .single();
 
         if (insertError) throw insertError;
-        setSuccess('Daypart definition created successfully');
+        setSuccess(`Daypart definition created at ${contextLevel} level`);
 
-        if (newDef) {
+        if (newDef && contextLevel === 'wand') {
           setAddingScheduleForDef(newDef.id);
         }
       }
@@ -358,19 +449,31 @@ export default function DaypartManagement() {
               {contextLevel === 'wand' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 border border-blue-300 rounded-lg">
                   <Layers className="w-4 h-4" />
-                  Global Level
+                  WAND Level
                 </span>
               )}
-              {contextLevel === 'site' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-amber-100 text-amber-800 border border-amber-300 rounded-lg">
+              {contextLevel === 'concept' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-green-100 text-green-800 border border-green-300 rounded-lg">
+                  <Layers className="w-4 h-4" />
+                  Concept Level
+                </span>
+              )}
+              {contextLevel === 'company' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-cyan-100 text-cyan-800 border border-cyan-300 rounded-lg">
                   <Building2 className="w-4 h-4" />
-                  Site Level
+                  Company Level
+                </span>
+              )}
+              {contextLevel === 'store' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-amber-100 text-amber-800 border border-amber-300 rounded-lg">
+                  <MapPin className="w-4 h-4" />
+                  Store Level
                 </span>
               )}
             </h1>
             {contextLevel === 'wand' ? (
               <p className="text-slate-600 mt-1">
-                Define daypart types and their operating schedules used across all locations
+                Define daypart types and schedules at the global WAND level
               </p>
             ) : (
               <div className="mt-1">
@@ -379,7 +482,9 @@ export default function DaypartManagement() {
                   {getLocationBreadcrumb()}
                 </p>
                 <p className="text-slate-500 text-sm mt-0.5">
-                  View global definitions and manage site-specific overrides
+                  {contextLevel === 'concept' && 'View WAND definitions and manage concept-level overrides'}
+                  {contextLevel === 'company' && 'View WAND and Concept definitions and manage company-level overrides'}
+                  {contextLevel === 'store' && 'View all inherited definitions and manage store-specific overrides'}
                 </p>
               </div>
             )}
@@ -408,17 +513,20 @@ export default function DaypartManagement() {
         </div>
       )}
 
-      <div className="space-y-4">
-        {definitions.map((definition) => {
+      <div className="space-y-6">
+        {wandDefinitions.map((definition) => {
           const defSchedules = schedules
             .filter(s => s.daypart_definition_id === definition.id)
             .map(s => ({ ...s, daypart_name: definition.daypart_name }));
 
-          const siteRoutinesForDaypart = contextLevel === 'site'
+          const conceptOverrides = conceptDefinitions.filter(d => d.daypart_name === definition.daypart_name);
+          const storeOverrides = storeDefinitions.filter(d => d.daypart_name === definition.daypart_name);
+          const siteRoutinesForDaypart = contextLevel === 'store'
             ? siteRoutines.filter(r => r.daypart_name === definition.daypart_name)
             : [];
 
-          const hasSiteOverrides = siteRoutinesForDaypart.length > 0;
+          const hasOverrides = conceptOverrides.length > 0 || storeOverrides.length > 0 || siteRoutinesForDaypart.length > 0;
+          const isEditable = contextLevel === 'wand';
 
           return (
             <div
@@ -433,34 +541,41 @@ export default function DaypartManagement() {
                     {definition.description && (
                       <span className="text-xs opacity-75">• {definition.description}</span>
                     )}
-                    {contextLevel === 'site' && (
+                    {contextLevel !== 'wand' && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded">
                         <Layers className="w-3 h-3" />
-                        Global
+                        WAND
                       </span>
                     )}
-                    {hasSiteOverrides && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded">
-                        <Building2 className="w-3 h-3" />
-                        {siteRoutinesForDaypart.length} Site Override{siteRoutinesForDaypart.length > 1 ? 's' : ''}
+                    {hasOverrides && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded">
+                        {conceptOverrides.length > 0 && `${conceptOverrides.length} Concept`}
+                        {conceptOverrides.length > 0 && storeOverrides.length > 0 && ' + '}
+                        {storeOverrides.length > 0 && `${storeOverrides.length} Store`}
+                        {(conceptOverrides.length > 0 || storeOverrides.length > 0) && siteRoutinesForDaypart.length > 0 && ' + '}
+                        {siteRoutinesForDaypart.length > 0 && `${siteRoutinesForDaypart.length} Site`}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleEditDefinition(definition)}
-                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                      title="Edit definition"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteDefinition(definition)}
-                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                      title="Delete definition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isEditable && (
+                      <>
+                        <button
+                          onClick={() => handleEditDefinition(definition)}
+                          className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                          title="Edit definition"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDefinition(definition)}
+                          className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                          title="Delete definition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                     {defSchedules.length > 0 && !addingScheduleForDef && !editingSchedule && (
                       <button
                         onClick={() => handleAddSchedule(definition.id)}
@@ -489,11 +604,11 @@ export default function DaypartManagement() {
                 </div>
               ) : (
                 <div className="divide-y divide-slate-200">
-                  {contextLevel === 'site' && defSchedules.length > 0 && (
+                  {contextLevel !== 'wand' && defSchedules.length > 0 && (
                     <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
                       <div className="flex items-center gap-2 text-sm font-medium text-blue-900">
                         <Layers className="w-4 h-4" />
-                        Global Schedules
+                        WAND Level Schedules
                       </div>
                     </div>
                   )}
@@ -513,15 +628,15 @@ export default function DaypartManagement() {
                               </div>
                             </div>
                           ) : (
-                            <div className={`p-4 transition-colors group ${contextLevel === 'site' ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
+                            <div className={`p-4 transition-colors group ${contextLevel !== 'wand' ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-2">
                                     <span className="text-sm font-medium text-slate-900">
                                       {schedule.start_time} - {schedule.end_time}
                                     </span>
-                                    {contextLevel === 'site' && (
-                                      <span className="text-xs text-blue-600 font-medium">Global</span>
+                                    {contextLevel !== 'wand' && (
+                                      <span className="text-xs text-blue-600 font-medium">WAND</span>
                                     )}
                                   </div>
                                   <div className="flex flex-wrap gap-1">
@@ -538,7 +653,7 @@ export default function DaypartManagement() {
                                     })}
                                   </div>
                                 </div>
-                                {contextLevel === 'wand' && (
+                                {isEditable && (
                                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                       onClick={() => handleEditSchedule(schedule)}
@@ -562,12 +677,68 @@ export default function DaypartManagement() {
                         </div>
                       ))}
 
-                  {contextLevel === 'site' && siteRoutinesForDaypart.length > 0 && (
+                  {conceptOverrides.length > 0 && (
+                    <>
+                      <div className="px-4 py-2 bg-green-50 border-b border-green-100">
+                        <div className="flex items-center gap-2 text-sm font-medium text-green-900">
+                          <Layers className="w-4 h-4" />
+                          Concept Level Overrides
+                        </div>
+                      </div>
+                      {conceptOverrides.map((override) => (
+                        <div key={override.id} className="p-4 bg-green-50/30 hover:bg-green-50/50 transition-colors group">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-sm font-medium text-slate-900">
+                                  {override.display_label}
+                                </span>
+                                <span className="text-xs text-green-600 font-medium">Concept Override</span>
+                              </div>
+                              {override.description && (
+                                <p className="text-xs text-slate-600">{override.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {storeOverrides.length > 0 && (
+                    <>
+                      <div className="px-4 py-2 bg-cyan-50 border-b border-cyan-100">
+                        <div className="flex items-center gap-2 text-sm font-medium text-cyan-900">
+                          <Building2 className="w-4 h-4" />
+                          Store Level Definition Overrides
+                        </div>
+                      </div>
+                      {storeOverrides.map((override) => (
+                        <div key={override.id} className="p-4 bg-cyan-50/30 hover:bg-cyan-50/50 transition-colors group">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-sm font-medium text-slate-900">
+                                  {override.display_label}
+                                </span>
+                                <span className="text-xs text-cyan-600 font-medium">Store Override</span>
+                              </div>
+                              {override.description && (
+                                <p className="text-xs text-slate-600">{override.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {contextLevel === 'store' && siteRoutinesForDaypart.length > 0 && (
                     <>
                       <div className="px-4 py-2 bg-amber-50 border-b border-amber-100">
                         <div className="flex items-center gap-2 text-sm font-medium text-amber-900">
-                          <Building2 className="w-4 h-4" />
-                          Site Overrides for {location.store?.name}
+                          <MapPin className="w-4 h-4" />
+                          Site Routine Overrides for {location.store?.name}
                         </div>
                       </div>
                       {siteRoutinesForDaypart.map((routine) => (
@@ -578,7 +749,7 @@ export default function DaypartManagement() {
                                 <span className="text-sm font-medium text-slate-900">
                                   {routine.start_time} - {routine.end_time}
                                 </span>
-                                <span className="text-xs text-amber-600 font-medium">Site Override</span>
+                                <span className="text-xs text-amber-600 font-medium">Site Routine</span>
                               </div>
                               <div className="flex flex-wrap gap-1">
                                 {routine.days_of_week.sort().map(day => {
@@ -632,17 +803,23 @@ export default function DaypartManagement() {
           );
         })}
 
-        {definitions.length === 0 && (
+        {wandDefinitions.length === 0 && (
           <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
             <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-600 mb-4">No daypart definitions yet. Add your first definition to get started.</p>
-            <button
-              onClick={handleAddDefinition}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Definition
-            </button>
+            <p className="text-slate-600 mb-4">
+              {contextLevel === 'wand'
+                ? 'No daypart definitions yet. Add your first definition to get started.'
+                : 'No WAND-level definitions found. Create definitions at WAND level first.'}
+            </p>
+            {contextLevel === 'wand' && (
+              <button
+                onClick={handleAddDefinition}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Definition
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -663,7 +840,16 @@ export default function DaypartManagement() {
           >
             <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-slate-900">
-                {editingDefinition ? 'Edit Daypart Definition' : 'Add Daypart Definition'}
+                {editingDefinition
+                  ? 'Edit Daypart Definition'
+                  : contextLevel === 'wand'
+                    ? 'Add WAND Level Definition'
+                    : contextLevel === 'concept'
+                      ? 'Add Concept Override'
+                      : contextLevel === 'company'
+                        ? 'Add Company Override'
+                        : 'Add Store Override'
+                }
               </h3>
               <button
                 onClick={() => {
