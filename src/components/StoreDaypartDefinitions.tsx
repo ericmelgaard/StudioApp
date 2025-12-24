@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, CreditCard as Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
+import { Clock, Plus, CreditCard as Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
 import ScheduleGroupForm from './ScheduleGroupForm';
@@ -50,6 +50,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [showUnused, setShowUnused] = useState(false);
   const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
+  const [showDaypartSelector, setShowDaypartSelector] = useState(false);
+  const [isEventSchedule, setIsEventSchedule] = useState(false);
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -215,6 +217,21 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setEditingSchedule(null);
   };
 
+  const handleAddScheduleClick = () => {
+    setIsEventSchedule(false);
+    setShowDaypartSelector(true);
+  };
+
+  const handleAddEventScheduleClick = () => {
+    setIsEventSchedule(true);
+    setShowDaypartSelector(true);
+  };
+
+  const handleDaypartSelect = (defId: string) => {
+    setShowDaypartSelector(false);
+    setAddingScheduleForDef(defId);
+  };
+
   const handleEditSchedule = (schedule: DaypartSchedule) => {
     setEditingSchedule(schedule);
     setAddingScheduleForDef(null);
@@ -223,32 +240,49 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const handleSaveSchedule = async (schedule: Schedule) => {
     try {
       if (editingSchedule) {
+        const updateData: any = {
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (schedule.schedule_type) updateData.schedule_type = schedule.schedule_type;
+        if (schedule.event_name) updateData.event_name = schedule.event_name;
+        if (schedule.event_date) updateData.event_date = schedule.event_date;
+        if (schedule.recurrence_type) updateData.recurrence_type = schedule.recurrence_type;
+        if (schedule.recurrence_config) updateData.recurrence_config = schedule.recurrence_config;
+
         const { error: updateError } = await supabase
           .from('daypart_schedules')
-          .update({
-            days_of_week: schedule.days_of_week,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', editingSchedule.id);
 
         if (updateError) throw updateError;
       } else if (addingScheduleForDef) {
+        const insertData: any = {
+          daypart_definition_id: addingScheduleForDef,
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+        };
+
+        if (schedule.schedule_type) insertData.schedule_type = schedule.schedule_type;
+        if (schedule.event_name) insertData.event_name = schedule.event_name;
+        if (schedule.event_date) insertData.event_date = schedule.event_date;
+        if (schedule.recurrence_type) insertData.recurrence_type = schedule.recurrence_type;
+        if (schedule.recurrence_config) insertData.recurrence_config = schedule.recurrence_config;
+
         const { error: insertError } = await supabase
           .from('daypart_schedules')
-          .insert([{
-            daypart_definition_id: addingScheduleForDef,
-            days_of_week: schedule.days_of_week,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-          }]);
+          .insert([insertData]);
 
         if (insertError) throw insertError;
       }
 
       setEditingSchedule(null);
       setAddingScheduleForDef(null);
+      setIsEventSchedule(false);
       await loadData();
     } catch (err: any) {
       console.error('Error saving schedule:', err);
@@ -522,6 +556,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                 days_of_week: [],
                                 start_time: '06:00',
                                 end_time: '11:00',
+                                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
                               }}
                               allSchedules={defSchedules}
                               onUpdate={() => {}}
@@ -531,8 +566,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                 days_of_week: [],
                                 start_time: '06:00',
                                 end_time: '11:00',
+                                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
                               })}
-                              onCancel={() => setAddingScheduleForDef(null)}
+                              onCancel={() => {
+                                setAddingScheduleForDef(null);
+                                setIsEventSchedule(false);
+                              }}
                               level="site"
                             />
                           </div>
@@ -659,14 +698,24 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleAddDefinition}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Add Daypart
-        </button>
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={handleAddScheduleClick}
+            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Schedule
+          </button>
+          <button
+            type="button"
+            onClick={handleAddEventScheduleClick}
+            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-amber-300 text-amber-600 rounded-lg hover:border-amber-600 hover:bg-amber-50 transition-colors font-medium"
+          >
+            <Sparkles className="w-4 h-4" />
+            Add Event/Holiday
+          </button>
+        </div>
       </div>
 
       {showDefinitionForm && (
@@ -784,6 +833,74 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDaypartSelector && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDaypartSelector(false);
+              setIsEventSchedule(false);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Select Daypart for {isEventSchedule ? 'Event/Holiday' : 'Schedule'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDaypartSelector(false);
+                  setIsEventSchedule(false);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-4">
+                Select which daypart you want to add this {isEventSchedule ? 'event/holiday' : 'schedule'} to:
+              </p>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredDefinitions.map((definition) => (
+                  <button
+                    key={definition.id}
+                    onClick={() => handleDaypartSelect(definition.id)}
+                    className={`w-full px-4 py-3 rounded-lg border-2 transition-colors text-left ${definition.color} hover:shadow-md`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      <span className="font-semibold">{definition.display_label}</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          definition.source_level === 'store'
+                            ? 'bg-blue-600/20 text-blue-900'
+                            : definition.source_level === 'concept'
+                            ? 'bg-purple-600/20 text-purple-900'
+                            : 'bg-slate-600/20 text-slate-900'
+                        }`}
+                      >
+                        {definition.source_level === 'store'
+                          ? 'Store'
+                          : definition.source_level === 'concept'
+                          ? 'Concept'
+                          : 'Global'}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
