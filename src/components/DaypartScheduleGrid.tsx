@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Edit2, Trash2, AlertCircle, MapPin, Calendar, Sparkles } from 'lucide-react';
+import { Clock, Edit2, Trash2, AlertCircle, MapPin, Calendar, Sparkles, Save, X, Pencil } from 'lucide-react';
 
 interface DaypartDefinition {
   id: string;
@@ -52,6 +52,7 @@ interface DaypartScheduleGridProps {
   stagedChanges: StagedChange[];
   onEdit: (schedule: UnifiedScheduleRow) => void;
   onDelete: (schedule: UnifiedScheduleRow) => void;
+  onSaveTimeChanges: (changes: Array<{ id: string; start_time: string; end_time: string }>) => void;
 }
 
 const DAYS_OF_WEEK = [
@@ -70,8 +71,38 @@ export default function DaypartScheduleGrid({
   stagedChanges,
   onEdit,
   onDelete,
+  onSaveTimeChanges,
 }: DaypartScheduleGridProps) {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editedTimes, setEditedTimes] = useState<Record<string, { start_time: string; end_time: string }>>({});
+
+  const handleTimeChange = (scheduleId: string, field: 'start_time' | 'end_time', value: string) => {
+    setEditedTimes(prev => ({
+      ...prev,
+      [scheduleId]: {
+        start_time: field === 'start_time' ? value : (prev[scheduleId]?.start_time || schedules.find(s => s.id === scheduleId)?.start_time || ''),
+        end_time: field === 'end_time' ? value : (prev[scheduleId]?.end_time || schedules.find(s => s.id === scheduleId)?.end_time || ''),
+      }
+    }));
+  };
+
+  const handleSaveChanges = () => {
+    const changes = Object.entries(editedTimes).map(([id, times]) => ({
+      id,
+      ...times
+    }));
+    onSaveTimeChanges(changes);
+    setEditedTimes({});
+    setEditMode(false);
+  };
+
+  const handleCancelChanges = () => {
+    setEditedTimes({});
+    setEditMode(false);
+  };
+
+  const hasChanges = Object.keys(editedTimes).length > 0;
 
   const formatDayGroup = (days: number[]): string => {
     if (days.length === 7) return 'All Days';
@@ -177,22 +208,64 @@ export default function DaypartScheduleGrid({
               ({sortedSchedules.length} schedule{sortedSchedules.length !== 1 ? 's' : ''})
             </span>
           </div>
-          <div className="text-xs text-slate-600 flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></span>
-              Base Schedule
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-purple-100 border border-purple-300 rounded"></span>
-              Placement Override
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></span>
-              Modified
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="text-xs text-slate-600 flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></span>
+                Base Schedule
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 bg-purple-100 border border-purple-300 rounded"></span>
+                Placement Override
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></span>
+                Modified
+              </span>
+            </div>
+            <button
+              onClick={() => setEditMode(!editMode)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+                editMode
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'
+              }`}
+            >
+              <Pencil className="w-4 h-4" />
+              <span className="text-sm font-medium">{editMode ? 'Editing Times' : 'Edit Times'}</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {hasChanges && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-blue-600" />
+              <p className="text-sm text-blue-900 font-medium">
+                You have unsaved time changes for {Object.keys(editedTimes).length} schedule{Object.keys(editedTimes).length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCancelChanges}
+                className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                <span className="text-sm font-medium">Cancel</span>
+              </button>
+              <button
+                onClick={handleSaveChanges}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <Save className="w-4 h-4" />
+                <span className="text-sm font-medium">Save All Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -279,24 +352,37 @@ export default function DaypartScheduleGrid({
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-2 text-sm text-slate-900 font-medium">
-                      <span>{schedule.start_time}</span>
-                      <span className="text-slate-400">→</span>
-                      <span>{schedule.end_time}</span>
-                    </div>
+                    {editMode ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editedTimes[schedule.id]?.start_time ?? schedule.start_time}
+                          onChange={(e) => handleTimeChange(schedule.id, 'start_time', e.target.value)}
+                          placeholder="HH:MM:SS"
+                          className="w-24 px-2 py-1 text-sm text-slate-900 font-medium border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <span className="text-slate-400">→</span>
+                        <input
+                          type="text"
+                          value={editedTimes[schedule.id]?.end_time ?? schedule.end_time}
+                          onChange={(e) => handleTimeChange(schedule.id, 'end_time', e.target.value)}
+                          placeholder="HH:MM:SS"
+                          className="w-24 px-2 py-1 text-sm text-slate-900 font-medium border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-slate-900 font-medium">
+                        <span>{schedule.start_time}</span>
+                        <span className="text-slate-400">→</span>
+                        <span>{schedule.end_time}</span>
+                      </div>
+                    )}
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap text-right">
                     <div className={`flex items-center justify-end gap-1 transition-opacity ${
                       isHovered ? 'opacity-100' : 'opacity-0'
                     }`}>
-                      <button
-                        onClick={() => onEdit(schedule)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Edit schedule"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
                       <button
                         onClick={() => onDelete(schedule)}
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"

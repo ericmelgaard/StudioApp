@@ -307,6 +307,27 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
     setStagedChanges(prev => [...prev, change]);
   };
 
+  const handleSaveTimeChanges = (changes: Array<{ id: string; start_time: string; end_time: string }>) => {
+    const newChanges: StagedChange[] = changes.map(change => {
+      const schedule = unifiedSchedules.find(s => s.id === change.id);
+      if (!schedule) return null;
+
+      return {
+        change_type: 'update' as const,
+        target_table: schedule.source === 'routine' ? 'daypart_schedules' : 'placement_daypart_overrides',
+        target_id: change.id,
+        change_data: {
+          start_time: change.start_time,
+          end_time: change.end_time,
+        },
+        notes: `Updated times to ${change.start_time} - ${change.end_time}`,
+      };
+    }).filter(Boolean) as StagedChange[];
+
+    setStagedChanges(prev => [...prev, ...newChanges]);
+    setShowStagingPanel(true);
+  };
+
   const handleCancelChanges = () => {
     if (stagedChanges.length > 0) {
       if (confirm('Discard all pending changes?')) {
@@ -441,6 +462,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
               stagedChanges={stagedChanges}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onSaveTimeChanges={handleSaveTimeChanges}
             />
           </div>
 
