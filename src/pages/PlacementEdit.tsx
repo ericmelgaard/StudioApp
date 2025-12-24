@@ -242,13 +242,13 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
     if (isDirty) {
       setShowExitConfirm(true);
     } else {
-      window.history.back();
+      onBack();
     }
   };
 
   const handleDiscardAndExit = () => {
     setShowExitConfirm(false);
-    window.history.back();
+    onBack();
   };
 
   const handleSaveAndExit = async () => {
