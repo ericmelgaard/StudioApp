@@ -10,7 +10,6 @@ import ConceptModal from '../components/ConceptModal';
 import CompanyModal from '../components/CompanyModal';
 import StoreModal from '../components/StoreModal';
 import CycleSettingsCard from '../components/CycleSettingsCard';
-import StoreOperationHours from '../components/StoreOperationHours';
 import StoreEdit from './StoreEdit';
 import PlacementEdit from './PlacementEdit';
 import * as Icons from 'lucide-react';
@@ -84,6 +83,7 @@ export default function SiteConfiguration() {
   const [stores, setStores] = useState<StoreData[]>([]);
   const [placements, setPlacements] = useState<PlacementGroup[]>([]);
   const [storeRoot, setStoreRoot] = useState<PlacementGroup | null>(null);
+  const [operationSchedules, setOperationSchedules] = useState<any[]>([]);
 
   // Modal state
   const [showConceptModal, setShowConceptModal] = useState(false);
@@ -289,6 +289,19 @@ export default function SiteConfiguration() {
       console.error('Error loading placements:', placementsError);
     } else {
       setPlacements(placementsData || []);
+    }
+
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from('store_operation_hours_schedules')
+      .select('*')
+      .eq('store_id', storeId)
+      .eq('schedule_type', 'regular')
+      .order('priority_level', { ascending: false });
+
+    if (scheduleError) {
+      console.error('Error loading operation hours:', scheduleError);
+    } else {
+      setOperationSchedules(scheduleData || []);
     }
   };
 
@@ -872,7 +885,47 @@ export default function SiteConfiguration() {
                     </div>
 
                     <div>
-                      {selectedStore && <StoreOperationHours storeId={selectedStore.id} />}
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Operating Hours</h3>
+                      {operationSchedules.length > 0 ? (
+                        <div className="space-y-2">
+                          {operationSchedules.map((schedule) => {
+                            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                            const sortedDays = [...(schedule.days_of_week || [])].sort((a, b) => a - b);
+                            const dayLabels = sortedDays.map(d => dayNames[d]);
+
+                            let dayRange = '';
+                            if (dayLabels.length === 7) {
+                              dayRange = 'Every Day';
+                            } else if (dayLabels.length === 5 && sortedDays.every((d, i) => d === i + 1)) {
+                              dayRange = 'Weekdays';
+                            } else if (dayLabels.length === 2 && sortedDays.includes(0) && sortedDays.includes(6)) {
+                              dayRange = 'Weekends';
+                            } else if (sortedDays.length > 2 && sortedDays[sortedDays.length - 1] - sortedDays[0] === sortedDays.length - 1) {
+                              dayRange = `${dayLabels[0]}-${dayLabels[dayLabels.length - 1]}`;
+                            } else {
+                              dayRange = dayLabels.join(', ');
+                            }
+
+                            return (
+                              <div key={schedule.id} className="flex items-center justify-between text-sm">
+                                <span className="text-slate-600 font-medium">
+                                  {schedule.schedule_name || dayRange}
+                                  {schedule.schedule_name && <span className="text-slate-400 text-xs ml-1">({dayRange})</span>}
+                                </span>
+                                {schedule.is_closed ? (
+                                  <span className="text-slate-400 italic">Closed</span>
+                                ) : (
+                                  <span className="text-slate-900 font-mono">
+                                    {schedule.open_time?.substring(0, 5)} - {schedule.close_time?.substring(0, 5)}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-400 italic">No operating hours configured</div>
+                      )}
                     </div>
                   </div>
                 ) : (
