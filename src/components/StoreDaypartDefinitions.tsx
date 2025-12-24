@@ -710,54 +710,44 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
               {isEventSchedule ? 'Add Event/Holiday' : 'Add Schedule'}
             </h3>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Daypart Type *
-              </label>
-              <select
-                value={selectedDaypartId}
-                onChange={(e) => setSelectedDaypartId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select a daypart...</option>
-                {filteredDefinitions.map((definition) => (
-                  <option key={definition.id} value={definition.id}>
-                    {definition.display_label} ({definition.source_level})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {selectedDaypartId && (
-              <ScheduleGroupForm
-                schedule={{
-                  daypart_name: definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '',
-                  daypart_definition_id: selectedDaypartId,
-                  days_of_week: [],
-                  start_time: '06:00',
-                  end_time: '11:00',
-                  schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
-                }}
-                allSchedules={schedules.filter(s => s.daypart_definition_id === selectedDaypartId)}
-                onUpdate={() => {}}
-                onSave={() => handleSaveSchedule({
-                  daypart_name: definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '',
-                  daypart_definition_id: selectedDaypartId,
-                  days_of_week: [],
-                  start_time: '06:00',
-                  end_time: '11:00',
-                  schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
-                })}
-                onCancel={() => {
-                  setAddingScheduleForDef(null);
-                  setIsEventSchedule(false);
-                  setNewScheduleType(null);
-                  setSelectedDaypartId('');
-                }}
-                level="site"
-              />
-            )}
+            <ScheduleGroupForm
+              schedule={{
+                daypart_name: selectedDaypartId ? definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '' : '',
+                daypart_definition_id: selectedDaypartId || '',
+                days_of_week: [],
+                start_time: '06:00',
+                end_time: '11:00',
+                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
+              }}
+              allSchedules={selectedDaypartId ? schedules.filter(s => s.daypart_definition_id === selectedDaypartId) : []}
+              onUpdate={() => {}}
+              onSave={() => handleSaveSchedule({
+                daypart_name: definitions.find(d => d.id === selectedDaypartId)?.daypart_name || '',
+                daypart_definition_id: selectedDaypartId,
+                days_of_week: [],
+                start_time: '06:00',
+                end_time: '11:00',
+                schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
+              })}
+              onCancel={() => {
+                setAddingScheduleForDef(null);
+                setIsEventSchedule(false);
+                setNewScheduleType(null);
+                setSelectedDaypartId('');
+              }}
+              level="site"
+              showDaypartSelector={true}
+              availableDayparts={filteredDefinitions.map(d => ({
+                id: d.id,
+                daypart_name: d.daypart_name,
+                display_label: d.display_label,
+                source_level: d.source_level
+              }))}
+              selectedDaypartId={selectedDaypartId}
+              onDaypartChange={(daypartId, daypartName) => {
+                setSelectedDaypartId(daypartId);
+              }}
+            />
           </div>
         )}
 

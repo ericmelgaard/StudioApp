@@ -6,6 +6,13 @@ import HolidayTemplatePicker from './HolidayTemplatePicker';
 import { useScheduleCollisionDetection, Schedule } from '../hooks/useScheduleCollisionDetection';
 import { ScheduleType, RecurrenceType, RecurrenceConfig, DayPosition, getPriorityLevel, formatRecurrenceText } from '../types/schedules';
 
+interface DaypartOption {
+  id: string;
+  daypart_name: string;
+  display_label: string;
+  source_level: string;
+}
+
 interface ScheduleGroupFormProps {
   schedule: Schedule;
   allSchedules: Schedule[];
@@ -13,6 +20,10 @@ interface ScheduleGroupFormProps {
   onSave: () => void;
   onCancel: () => void;
   level?: 'global' | 'site' | 'placement';
+  showDaypartSelector?: boolean;
+  availableDayparts?: DaypartOption[];
+  selectedDaypartId?: string;
+  onDaypartChange?: (daypartId: string, daypartName: string) => void;
 }
 
 export default function ScheduleGroupForm({
@@ -21,7 +32,11 @@ export default function ScheduleGroupForm({
   onUpdate,
   onSave,
   onCancel,
-  level = 'global'
+  level = 'global',
+  showDaypartSelector = false,
+  availableDayparts = [],
+  selectedDaypartId = '',
+  onDaypartChange
 }: ScheduleGroupFormProps) {
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -88,6 +103,9 @@ export default function ScheduleGroupForm({
   };
 
   const handleSave = () => {
+    if (showDaypartSelector && !selectedDaypartId) {
+      return;
+    }
     if (scheduleType === 'regular') {
       if (localSchedule.days_of_week.length === 0) {
         return;
@@ -121,6 +139,10 @@ export default function ScheduleGroupForm({
     onSave();
   };
 
+  const daypartError = showDaypartSelector && !selectedDaypartId
+    ? 'Please select a daypart type'
+    : null;
+
   const timeError = localSchedule.start_time >= localSchedule.end_time
     ? 'End time must be after start time'
     : null;
@@ -133,7 +155,7 @@ export default function ScheduleGroupForm({
     ? 'Event name is required'
     : null;
 
-  const error = collision.collisionMessage || timeError || daysError || eventNameError;
+  const error = daypartError || collision.collisionMessage || timeError || daysError || eventNameError;
 
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -174,6 +196,32 @@ export default function ScheduleGroupForm({
             <p className="font-medium mb-1">Event schedules override all regular schedules</p>
             <p className="text-blue-700">No collision checking needed for events and holidays</p>
           </div>
+        </div>
+      )}
+
+      {showDaypartSelector && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Daypart Type *
+          </label>
+          <select
+            value={selectedDaypartId}
+            onChange={(e) => {
+              const selectedOption = availableDayparts.find(d => d.id === e.target.value);
+              if (selectedOption && onDaypartChange) {
+                onDaypartChange(selectedOption.id, selectedOption.daypart_name);
+              }
+            }}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Select a daypart...</option>
+            {availableDayparts.map((daypart) => (
+              <option key={daypart.id} value={daypart.id}>
+                {daypart.display_label} ({daypart.source_level})
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
