@@ -240,7 +240,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
       if (!definition && override.daypart_name) {
         definition = definitions.find(d =>
-          d.name && d.name.toLowerCase() === override.daypart_name.toLowerCase()
+          d.daypart_name && d.daypart_name.toLowerCase() === override.daypart_name.toLowerCase()
         );
       }
 
