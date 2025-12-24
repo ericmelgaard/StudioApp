@@ -353,7 +353,7 @@ export default function DaypartManagement() {
                 </span>
               )}
             </div>
-            {contextLevel !== 'store' && !showDefinitionForm && (
+            {!showDefinitionForm && (
               <button
                 onClick={() => {
                   setEditingDefinition(null);
