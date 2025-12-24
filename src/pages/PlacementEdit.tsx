@@ -412,7 +412,7 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
         <div className="mb-6">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4 transition-colors"
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 transition-colors font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
