@@ -539,7 +539,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-2">
-                                    <span className="text-sm font-medium text-slate-900">
+                                    {schedule.schedule_name && (
+                                      <span className="text-sm font-semibold text-slate-900">
+                                        {schedule.schedule_name}
+                                      </span>
+                                    )}
+                                    <span className={`text-sm ${schedule.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
                                       {schedule.start_time} - {schedule.end_time}
                                     </span>
                                   </div>
