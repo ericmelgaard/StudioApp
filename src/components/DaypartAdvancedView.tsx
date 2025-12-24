@@ -51,6 +51,7 @@ interface PlacementOverride {
 interface UnifiedScheduleRow {
   id: string;
   type: 'base' | 'override';
+  source: 'routine' | 'override';
   daypart_definition_id: string;
   daypart_label: string;
   daypart_color: string;
@@ -129,9 +130,27 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
   };
 
   const loadSchedules = async () => {
+    if (!locationId) {
+      setSchedules([]);
+      return;
+    }
+
+    const { data: placementIds } = await supabase
+      .from('placement_groups')
+      .select('id')
+      .eq('store_id', locationId);
+
+    if (!placementIds || placementIds.length === 0) {
+      setSchedules([]);
+      return;
+    }
+
+    const ids = placementIds.map(p => p.id);
+
     const { data, error } = await supabase
-      .from('daypart_schedules')
-      .select('*');
+      .from('site_daypart_routines')
+      .select('*')
+      .in('placement_group_id', ids);
 
     if (!error && data) {
       setSchedules(data);
@@ -161,9 +180,22 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
       return;
     }
 
+    const { data: placementIds } = await supabase
+      .from('placement_groups')
+      .select('id')
+      .eq('store_id', locationId);
+
+    if (!placementIds || placementIds.length === 0) {
+      setOverrides([]);
+      return;
+    }
+
+    const ids = placementIds.map(p => p.id);
+
     const { data, error } = await supabase
       .from('placement_daypart_overrides')
-      .select('*');
+      .select('*')
+      .in('placement_group_id', ids);
 
     if (!error && data) {
       setOverrides(data);
@@ -175,13 +207,20 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
     schedules.forEach(schedule => {
       const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
+      const placement = placements.find(p => p.id === schedule.placement_group_id);
+
       if (definition) {
+        const isSiteLevel = placement?.parent_id === null;
+
         unified.push({
           id: schedule.id,
-          type: 'base',
+          type: isSiteLevel ? 'base' : 'override',
+          source: 'routine',
           daypart_definition_id: definition.id,
           daypart_label: definition.display_label,
           daypart_color: definition.color,
+          placement_id: !isSiteLevel ? placement?.id : undefined,
+          placement_name: !isSiteLevel ? placement?.name : undefined,
           days_of_week: schedule.days_of_week,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
@@ -196,6 +235,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
         unified.push({
           id: override.id,
           type: 'override',
+          source: 'override',
           daypart_definition_id: definition.id,
           daypart_label: definition.display_label,
           daypart_color: definition.color,
@@ -218,7 +258,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
   const handleDelete = (schedule: UnifiedScheduleRow) => {
     const change: StagedChange = {
       change_type: 'delete',
-      target_table: schedule.type === 'base' ? 'daypart_schedules' : 'placement_daypart_overrides',
+      target_table: schedule.source === 'routine' ? 'site_daypart_routines' : 'placement_daypart_overrides',
       target_id: schedule.id,
       change_data: {},
     };
@@ -243,26 +283,24 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
   const handleExportCSV = () => {
     const csvRows = [
-      ['Daypart Name', 'Level', 'Day', 'Start Time', 'End Time', 'Schedule Type', 'Event Name'].join(',')
+      ['Daypart Name', 'Scope', 'Placement', 'Active Days', 'Start Time', 'End Time'].join(',')
     ];
 
-    definitions.forEach(def => {
-      const defSchedules = schedules.filter(s => s.daypart_definition_id === def.id);
-      const level = def.store_id ? 'Store' : def.concept_id ? 'Concept' : 'Global';
+    unifiedSchedules.forEach(schedule => {
+      const scope = schedule.type === 'base' ? 'Site' : 'Placement';
+      const placementName = schedule.placement_name || 'Site Root';
+      const daysStr = schedule.days_of_week
+        .map(day => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day])
+        .join(';');
 
-      defSchedules.forEach(schedule => {
-        schedule.days_of_week.forEach(day => {
-          csvRows.push([
-            def.display_label,
-            level,
-            ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day],
-            schedule.start_time,
-            schedule.end_time,
-            schedule.schedule_type || 'regular',
-            schedule.event_name || '',
-          ].join(','));
-        });
-      });
+      csvRows.push([
+        schedule.daypart_label,
+        scope,
+        placementName,
+        daysStr,
+        schedule.start_time,
+        schedule.end_time,
+      ].join(','));
     });
 
     const csv = csvRows.join('\n');
