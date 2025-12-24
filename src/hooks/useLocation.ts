@@ -99,6 +99,13 @@ export function useLocation() {
     return navigationHistory.length >= 2;
   };
 
+  const getPreviousLocation = (): LocationState | null => {
+    if (navigationHistory.length < 2) {
+      return null;
+    }
+    return navigationHistory[navigationHistory.length - 2].location;
+  };
+
   const clearHistory = () => {
     setNavigationHistory([]);
     localStorage.removeItem('navigationHistory');
@@ -134,6 +141,7 @@ export function useLocation() {
     setLocation: setLocationWithHistory,
     navigateBack,
     canNavigateBack,
+    getPreviousLocation,
     clearHistory,
     getLocationDisplay,
     getLocationBreadcrumb,
