@@ -143,7 +143,7 @@ export default function ChangesStagingPanel({
   const deleteCount = stagedChanges.filter(c => c.change_type === 'delete').length;
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-lg h-full flex flex-col">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-lg h-full flex flex-col relative z-30">
       <div className="p-4 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
