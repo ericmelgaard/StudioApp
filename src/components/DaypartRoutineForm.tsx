@@ -13,6 +13,7 @@ interface DaypartRoutineFormProps {
   onCancel: () => void;
   editingRoutine?: DaypartRoutine | null;
   preFillDaypart?: string;
+  preFillScheduleType?: 'regular' | 'event_holiday';
 }
 
 export interface DaypartRoutine {
@@ -61,12 +62,13 @@ export default function DaypartRoutineForm({
   onSave,
   onCancel,
   editingRoutine,
-  preFillDaypart
+  preFillDaypart,
+  preFillScheduleType
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [formData, setFormData] = useState({
-    schedule_type: editingRoutine?.schedule_type || 'regular' as 'regular' | 'event_holiday',
+    schedule_type: editingRoutine?.schedule_type || preFillScheduleType || 'regular' as 'regular' | 'event_holiday',
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
     days_of_week: editingRoutine?.days_of_week || [] as number[],
     start_time: editingRoutine?.start_time || '06:00',

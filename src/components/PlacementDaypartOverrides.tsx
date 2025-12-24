@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Clock, AlertCircle, RotateCcw, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Edit2, Clock, AlertCircle, RotateCcw, Calendar, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DaypartRoutineForm, { DaypartRoutine } from './DaypartRoutineForm';
 
@@ -35,6 +35,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [showForm, setShowForm] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<DaypartRoutine | null>(null);
   const [preFillDaypart, setPreFillDaypart] = useState<string | undefined>(undefined);
+  const [preFillScheduleType, setPreFillScheduleType] = useState<'regular' | 'event_holiday'>('regular');
   const [storeRootId, setStoreRootId] = useState<string | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
 
@@ -177,9 +178,10 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     setPreFillDaypart(undefined);
   };
 
-  const handleAddNew = (daypartName?: string) => {
+  const handleAddNew = (scheduleType: 'regular' | 'event_holiday' = 'regular', daypartName?: string) => {
     setEditingRoutine(null);
     setPreFillDaypart(daypartName);
+    setPreFillScheduleType(scheduleType);
     setShowForm(true);
   };
 
@@ -272,6 +274,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             onCancel={handleCancel}
             editingRoutine={null}
             preFillDaypart={preFillDaypart}
+            preFillScheduleType={preFillScheduleType}
           />
         </>
       )}
@@ -280,20 +283,33 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
           <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-semibold text-slate-900 mb-2">No Placement Schedules</h3>
-          <p className="text-slate-600 mb-2 text-sm">
+          <p className="text-slate-600 mb-4 text-sm">
             This placement inherits all daypart hours from the site configuration
           </p>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddNew();
-            }}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Schedule
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddNew('regular');
+              }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-dashed border-slate-300 text-slate-700 rounded-lg hover:border-slate-400 hover:bg-slate-100 transition-colors font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Add Schedule
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddNew('event_holiday');
+              }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-dashed border-amber-300 text-amber-700 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors font-medium"
+            >
+              <Sparkles className="w-4 h-4" />
+              Add Event/Holiday Hours
+            </button>
+          </div>
         </div>
       ) : routines.length > 0 ? (
         <div className="space-y-3">
@@ -546,17 +562,30 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           })}
 
           {!showForm && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleAddNew();
-              }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-amber-600 hover:text-amber-600 hover:bg-amber-50 transition-colors font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Add Schedule
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddNew('regular');
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-colors font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Add Schedule
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddNew('event_holiday');
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-amber-300 text-amber-700 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors font-medium"
+              >
+                <Sparkles className="w-4 h-4" />
+                Add Event/Holiday Hours
+              </button>
+            </div>
           )}
         </div>
       ) : null}
