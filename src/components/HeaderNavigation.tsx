@@ -25,6 +25,7 @@ interface HeaderNavigationProps {
   userCompanyId?: number | null;
   userStoreId?: number | null;
   onOpenFullNavigator: () => void;
+  actionButton?: React.ReactNode;
 }
 
 interface ParentNavigationOption {
@@ -52,7 +53,8 @@ export default function HeaderNavigation({
   userConceptId,
   userCompanyId,
   userStoreId,
-  onOpenFullNavigator
+  onOpenFullNavigator,
+  actionButton
 }: HeaderNavigationProps) {
   const { location, setLocation } = useLocation();
   const [concepts, setConcepts] = useState<Concept[]>([]);
@@ -344,6 +346,9 @@ export default function HeaderNavigation({
       >
         <Map className="w-4 h-4 text-slate-600" />
       </button>
+
+      {/* Action Button */}
+      {actionButton && actionButton}
     </div>
   );
 }

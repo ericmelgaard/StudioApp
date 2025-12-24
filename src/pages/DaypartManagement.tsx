@@ -5,6 +5,8 @@ import IconPicker from '../components/IconPicker';
 import ScheduleGroupForm from '../components/ScheduleGroupForm';
 import { useLocation } from '../hooks/useLocation';
 import { Schedule } from '../hooks/useScheduleCollisionDetection';
+import HeaderNavigation from '../components/HeaderNavigation';
+import { useUser } from '../hooks/useUser';
 
 interface DaypartDefinition {
   id: string;
@@ -41,6 +43,7 @@ const DAYS_OF_WEEK = [
 
 export default function DaypartManagement() {
   const { location, getLocationBreadcrumb } = useLocation();
+  const { user } = useUser();
   const [contextLevel, setContextLevel] = useState<ContextLevel>('wand');
   const [currentConceptId, setCurrentConceptId] = useState<number | null>(null);
   const [currentStoreId, setCurrentStoreId] = useState<number | null>(null);
@@ -327,13 +330,13 @@ export default function DaypartManagement() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Clock className="w-7 h-7 text-blue-600" />
-              Daypart Management
+              <h1 className="text-2xl font-bold text-slate-900">Daypart Management</h1>
               {contextLevel === 'wand' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 border border-blue-300 rounded-lg">
                   <Layers className="w-4 h-4" />
@@ -352,35 +355,40 @@ export default function DaypartManagement() {
                   Store Level
                 </span>
               )}
-            </h1>
-            <p className="text-slate-600 mt-1">
-              {contextLevel === 'store'
-                ? 'View inherited dayparts and create site-specific schedule overrides'
-                : 'Define dayparts and their default schedules'}
-            </p>
+            </div>
+            <HeaderNavigation
+              userConceptId={user?.concept_id}
+              userCompanyId={user?.company_id}
+              userStoreId={user?.store_id}
+              onOpenFullNavigator={() => {}}
+              actionButton={
+                contextLevel !== 'store' && !showDefinitionForm && (
+                  <button
+                    onClick={() => {
+                      setEditingDefinition(null);
+                      setFormData({
+                        daypart_name: '',
+                        display_label: '',
+                        description: '',
+                        color: 'bg-blue-100 text-blue-800 border-blue-300',
+                        icon: 'Clock',
+                        sort_order: definitions.length,
+                      });
+                      setShowDefinitionForm(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add Daypart
+                  </button>
+                )
+              }
+            />
           </div>
-          {contextLevel !== 'store' && !showDefinitionForm && (
-            <button
-              onClick={() => {
-                setEditingDefinition(null);
-                setFormData({
-                  daypart_name: '',
-                  display_label: '',
-                  description: '',
-                  color: 'bg-blue-100 text-blue-800 border-blue-300',
-                  icon: 'Clock',
-                  sort_order: definitions.length,
-                });
-                setShowDefinitionForm(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              Add Daypart
-            </button>
-          )}
         </div>
-      </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto p-6">
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
@@ -862,6 +870,7 @@ export default function DaypartManagement() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
