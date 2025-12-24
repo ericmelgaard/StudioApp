@@ -180,13 +180,13 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     if (isDirty) {
       setShowExitConfirm(true);
     } else {
-      onBack();
+      window.history.back();
     }
   };
 
   const handleDiscardAndExit = () => {
     setShowExitConfirm(false);
-    onBack();
+    window.history.back();
   };
 
   const handleSaveAndExit = async () => {
@@ -321,7 +321,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
               className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Site Configuration
+              Back
             </button>
             <div className="flex items-start justify-between">
               <div>
