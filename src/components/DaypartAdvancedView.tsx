@@ -29,6 +29,7 @@ interface DaypartSchedule {
   end_time: string;
   days_of_week: number[];
   schedule_type?: string;
+  schedule_name?: string;
   event_name?: string;
 }
 
@@ -48,6 +49,7 @@ interface PlacementOverride {
   end_time: string;
   days_of_week: number[];
   schedule_type?: string;
+  schedule_name?: string;
   event_name?: string;
 }
 
@@ -64,6 +66,7 @@ interface UnifiedScheduleRow {
   start_time: string;
   end_time: string;
   schedule_type?: string;
+  schedule_name?: string;
   event_name?: string;
 }
 
@@ -236,6 +239,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           start_time: schedule.start_time,
           end_time: schedule.end_time,
           schedule_type: schedule.schedule_type,
+          schedule_name: schedule.schedule_name,
           event_name: schedule.event_name,
         });
       }
@@ -277,6 +281,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           start_time: override.start_time,
           end_time: override.end_time,
           schedule_type: override.schedule_type,
+          schedule_name: override.schedule_name,
           event_name: override.event_name,
         });
       } else {

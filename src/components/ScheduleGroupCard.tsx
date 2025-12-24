@@ -77,10 +77,21 @@ export default function ScheduleGroupCard({
         <div className="flex items-center gap-2">
           <Icon className={`w-5 h-5 ${isHolidayOrEvent ? 'text-purple-500' : 'text-slate-400'}`} />
           <div>
-            <h4 className="font-semibold text-slate-900">{getScheduleLabel(schedule.days_of_week)}</h4>
-            <p className="text-sm text-slate-600 mt-0.5">
-              {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
-            </p>
+            {schedule.schedule_name ? (
+              <div className="text-sm text-slate-900">
+                <span className="font-bold">{schedule.schedule_name}</span>{' '}
+                <span className="text-slate-600">
+                  {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                </span>
+              </div>
+            ) : (
+              <>
+                <h4 className="font-semibold text-slate-900">{getScheduleLabel(schedule.days_of_week)}</h4>
+                <p className="text-sm text-slate-600 mt-0.5">
+                  {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                </p>
+              </>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1">

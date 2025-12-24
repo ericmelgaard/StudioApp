@@ -17,7 +17,7 @@ interface ScheduleGroupFormProps {
   schedule: Schedule;
   allSchedules: Schedule[];
   onUpdate: (schedule: Schedule) => void;
-  onSave: () => void;
+  onSave: (schedule?: Schedule) => void;
   onCancel: () => void;
   level?: 'global' | 'site' | 'placement';
   showDaypartSelector?: boolean;
@@ -136,7 +136,7 @@ export default function ScheduleGroupForm({
     }
 
     onUpdate(updatedSchedule);
-    onSave();
+    onSave(updatedSchedule);
   };
 
   const daypartError = showDaypartSelector && !selectedDaypartId

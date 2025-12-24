@@ -261,7 +261,10 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setAddingScheduleForDef(null);
   };
 
-  const handleSaveSchedule = async (schedule: Schedule) => {
+  const handleSaveSchedule = async (scheduleToSave?: Schedule) => {
+    const schedule = scheduleToSave || editingSchedule || newSchedule;
+    if (!schedule) return;
+
     try {
       if (editingSchedule) {
         const updateData: any = {
