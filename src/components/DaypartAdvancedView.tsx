@@ -43,9 +43,12 @@ interface PlacementOverride {
   id: string;
   placement_group_id: string;
   daypart_definition_id: string;
+  daypart_name?: string;
   start_time: string;
   end_time: string;
   days_of_week: number[];
+  schedule_type?: string;
+  event_name?: string;
 }
 
 interface UnifiedScheduleRow {
@@ -273,6 +276,8 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           days_of_week: override.days_of_week,
           start_time: override.start_time,
           end_time: override.end_time,
+          schedule_type: override.schedule_type,
+          event_name: override.event_name,
         });
       } else {
         console.warn('Override missing definition or placement:', {
