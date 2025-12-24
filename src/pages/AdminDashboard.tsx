@@ -106,7 +106,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     wand: [
       { id: 'wand-products' as ViewType, label: 'Product Library', icon: Package },
       { id: 'integration-sources' as ViewType, label: 'Integration Sources', icon: Database },
-      { id: 'dayparts' as ViewType, label: 'Daypart Definitions', icon: Clock },
+      { id: 'dayparts' as ViewType, label: 'Daypart Manager', icon: Clock },
       { id: 'core-attributes' as ViewType, label: 'Core Attributes', icon: Sliders },
       { id: 'wand-templates' as ViewType, label: 'Manage Templates', icon: Layers },
       { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
