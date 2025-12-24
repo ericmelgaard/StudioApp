@@ -29,7 +29,6 @@ interface UnifiedScheduleRow {
   start_time: string;
   end_time: string;
   schedule_type?: string;
-  schedule_name?: string;
   event_name?: string;
 }
 
@@ -261,7 +260,7 @@ export default function DaypartScheduleGrid({
                           <Calendar className="w-4 h-4 text-purple-500" />
                         )}
                         <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-md font-medium shadow-sm">
-                          {schedule.schedule_name || schedule.event_name || 'Holiday Schedule'}
+                          {schedule.event_name || 'Holiday Schedule'}
                         </span>
                       </div>
                     ) : (
