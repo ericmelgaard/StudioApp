@@ -364,7 +364,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                               </span>
                             )}
                             <span className={`text-sm ${routine.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
-                              {routine.start_time} - {routine.end_time}
+                              {routine.runs_on_days === false
+                                ? 'Does Not Run'
+                                : `${routine.start_time} - ${routine.end_time}`}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-1">
@@ -505,7 +507,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                       {formatEventDate(routine.event_date, routine.recurrence_type)}
                                       <span className="mx-2 text-violet-400">•</span>
                                       <Clock className="w-3.5 h-3.5 inline mr-1" />
-                                      {routine.start_time} - {routine.end_time}
+                                      {routine.runs_on_days === false
+                                        ? 'Does Not Run'
+                                        : `${routine.start_time} - ${routine.end_time}`}
                                     </div>
                                     {routine.days_of_week.length > 0 && (
                                       <div className="flex flex-wrap gap-1">

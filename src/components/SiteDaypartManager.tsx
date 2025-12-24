@@ -213,7 +213,9 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <span className="text-sm font-medium text-slate-900">
-                              {routine.start_time} - {routine.end_time}
+                              {routine.runs_on_days === false
+                                ? 'Does Not Run'
+                                : `${routine.start_time} - ${routine.end_time}`}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-1">

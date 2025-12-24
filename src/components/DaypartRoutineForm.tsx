@@ -21,8 +21,9 @@ export interface DaypartRoutine {
   placement_group_id: string;
   daypart_name: string;
   days_of_week: number[];
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
+  runs_on_days?: boolean;
   schedule_name?: string;
   schedule_type?: 'regular' | 'event_holiday';
   event_name?: string;
@@ -73,6 +74,7 @@ export default function DaypartRoutineForm({
     days_of_week: editingRoutine?.days_of_week || [] as number[],
     start_time: editingRoutine?.start_time || '06:00',
     end_time: editingRoutine?.end_time || '11:00',
+    runs_on_days: editingRoutine?.runs_on_days !== false,
     schedule_name: editingRoutine?.schedule_name || '',
     event_name: editingRoutine?.event_name || '',
     event_date: editingRoutine?.event_date || '',
@@ -192,8 +194,8 @@ export default function DaypartRoutineForm({
       return;
     }
 
-    if (formData.start_time >= formData.end_time) {
-      setError('End time must be after start time');
+    if (formData.runs_on_days && formData.start_time && formData.end_time && formData.start_time >= formData.end_time && formData.start_time !== '00:00') {
+      setError('End time must be after start time (or use 00:00 for midnight crossing)');
       return;
     }
 
@@ -213,6 +215,8 @@ export default function DaypartRoutineForm({
       await onSave({
         placement_group_id: placementGroupId,
         ...formData,
+        start_time: formData.runs_on_days ? formData.start_time : null,
+        end_time: formData.runs_on_days ? formData.end_time : null,
         event_date: formData.event_date || undefined,
         priority_level,
         recurrence_config: Object.keys(formData.recurrence_config).length > 0 ? formData.recurrence_config : undefined
@@ -569,16 +573,50 @@ export default function DaypartRoutineForm({
           </>
         )}
 
+        <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
+          <div>
+            <label className="text-sm font-medium text-slate-900">
+              Schedule runs on selected days
+            </label>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Turn off for days where this schedule does not activate
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const newValue = !formData.runs_on_days;
+              setFormData({
+                ...formData,
+                runs_on_days: newValue,
+                start_time: newValue ? '06:00' : null,
+                end_time: newValue ? '11:00' : null
+              });
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              formData.runs_on_days ? 'bg-blue-600' : 'bg-slate-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                formData.runs_on_days ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <TimeSelector
-            label="Start Time *"
-            value={formData.start_time}
+            label={formData.runs_on_days ? "Start Time *" : "Start Time"}
+            value={formData.start_time || '06:00'}
             onChange={(time) => setFormData({ ...formData, start_time: time })}
+            disabled={!formData.runs_on_days}
           />
           <TimeSelector
-            label="End Time *"
-            value={formData.end_time}
+            label={formData.runs_on_days ? "End Time *" : "End Time"}
+            value={formData.end_time || '11:00'}
             onChange={(time) => setFormData({ ...formData, end_time: time })}
+            disabled={!formData.runs_on_days}
           />
         </div>
 
