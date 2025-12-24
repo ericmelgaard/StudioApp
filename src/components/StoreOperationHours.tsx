@@ -241,9 +241,12 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-slate-900">Store Operation Hours</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Store Closed Hours</h3>
         </div>
       </div>
+      <p className="text-sm text-slate-600 mb-4">
+        Define when devices should be turned off during store closures. Multiple schedules per day are allowed.
+      </p>
 
       <div className="flex gap-2 mb-4">
         <button
@@ -264,7 +267,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >
-          Regular Hours ({regularCount})
+          Regular Closures ({regularCount})
         </button>
         <button
           onClick={() => setFilterType('event')}
@@ -310,7 +313,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                   <div className="flex items-center gap-2 flex-1">
                     <Icon className={`w-4 h-4 ${iconColor}`} />
                     <h4 className="font-semibold text-slate-900">
-                      {isEvent ? schedule.event_name : (schedule.schedule_name || 'Store Hours')}
+                      {isEvent ? schedule.event_name : (schedule.schedule_name || 'Store Closure')}
                     </h4>
                     {isEvent && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-900 font-medium">
@@ -362,7 +365,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                       value={editingSchedule.schedule_name || ''}
                       onChange={(e) => setEditingSchedule({ ...editingSchedule, schedule_name: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., Weekday Hours, Weekend Hours"
+                      placeholder="e.g., Night Closure, Lunch Break"
                     />
                   </div>
                   <ScheduleGroupForm
@@ -372,6 +375,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                     onSave={handleSaveSchedule}
                     onCancel={() => setEditingSchedule(null)}
                     level="site"
+                    skipDayValidation={true}
                   />
                 </div>
               </div>
@@ -424,7 +428,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
           <div className="text-center py-8 bg-white rounded-lg border border-slate-200">
             <Calendar className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm text-slate-600 mb-4">
-              No operation hours set. Add a schedule to define when your store is open.
+              No closed hours set. Add a schedule to define when devices should be turned off.
             </p>
           </div>
         )}
@@ -458,7 +462,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                       value={newSchedule.schedule_name || ''}
                       onChange={(e) => setNewSchedule({ ...newSchedule, schedule_name: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., Weekday Hours, Weekend Hours"
+                      placeholder="e.g., Night Closure, Lunch Break"
                     />
                   </div>
                 )}
@@ -472,6 +476,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                     setAddingEventSchedule(false);
                   }}
                   level="site"
+                  skipDayValidation={true}
                 />
               </div>
             </div>

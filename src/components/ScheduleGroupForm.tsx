@@ -24,6 +24,7 @@ interface ScheduleGroupFormProps {
   availableDayparts?: DaypartOption[];
   selectedDaypartId?: string;
   onDaypartChange?: (daypartId: string, daypartName: string) => void;
+  skipDayValidation?: boolean;
 }
 
 export default function ScheduleGroupForm({
@@ -36,7 +37,8 @@ export default function ScheduleGroupForm({
   showDaypartSelector = false,
   availableDayparts = [],
   selectedDaypartId = '',
-  onDaypartChange
+  onDaypartChange,
+  skipDayValidation = false
 }: ScheduleGroupFormProps) {
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -120,7 +122,7 @@ export default function ScheduleGroupForm({
     if (showDaypartSelector && !selectedDaypartId) {
       return;
     }
-    if (scheduleType === 'regular') {
+    if (scheduleType === 'regular' && !skipDayValidation) {
       if (localSchedule.days_of_week.length === 0) {
         return;
       }
@@ -161,7 +163,7 @@ export default function ScheduleGroupForm({
     ? 'End time must be after start time (or use 00:00 for midnight crossing)'
     : null;
 
-  const daysError = scheduleType === 'regular' && localSchedule.days_of_week.length === 0
+  const daysError = scheduleType === 'regular' && !skipDayValidation && localSchedule.days_of_week.length === 0
     ? 'Please select at least one day'
     : null;
 
