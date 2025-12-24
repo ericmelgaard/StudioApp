@@ -311,16 +311,18 @@ export default function DaypartScheduleGrid({
 
                   <td className="px-4 py-3">
                     {schedule.schedule_type && (schedule.schedule_type.includes('holiday') || schedule.schedule_type.includes('event')) ? (
-                      <div>
-                        {schedule.recurrence_config?.range_start_date && schedule.recurrence_config?.range_end_date ? (
-                          <span className="text-sm text-slate-700">
-                            {new Date(schedule.recurrence_config.range_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      <div className="text-sm text-slate-700">
+                        {schedule.recurrence_type === 'annual_date_range' && schedule.recurrence_config?.range_start_date && schedule.recurrence_config?.range_end_date ? (
+                          <>
+                            {new Date(schedule.recurrence_config.range_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             <span className="text-slate-400 mx-1">→</span>
-                            {new Date(schedule.recurrence_config.range_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </span>
-                        ) : schedule.event_date ? (
-                          <span className="text-sm text-slate-700">
-                            {new Date(schedule.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {new Date(schedule.recurrence_config.range_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </>
+                        ) : schedule.recurrence_type === 'none' && schedule.event_date ? (
+                          new Date(schedule.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        ) : schedule.recurrence_type && schedule.recurrence_type !== 'none' ? (
+                          <span className="italic text-slate-600">
+                            {formatRecurrenceText(schedule.recurrence_type as any, schedule.recurrence_config, schedule.event_date)}
                           </span>
                         ) : (
                           <span className="text-xs text-slate-400 italic">No date specified</span>
