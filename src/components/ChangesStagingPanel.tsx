@@ -181,12 +181,32 @@ export default function ChangesStagingPanel({
         </div>
 
         {stagedChanges.length > 0 && (
-          <button
-            onClick={onClearAll}
-            className="mt-3 w-full px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-          >
-            Clear All Changes
-          </button>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={onPublish}
+              disabled={isPublishing}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed shadow-sm font-medium text-sm"
+            >
+              {isPublishing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Publishing...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  <span>Publish Changes</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={onClearAll}
+              className="px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              title="Clear all pending changes"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -204,30 +224,6 @@ export default function ChangesStagingPanel({
         )}
       </div>
 
-      {stagedChanges.length > 0 && (
-        <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
-          <div className="text-xs text-slate-600">
-            Review your changes above, then click Publish Changes to apply them to the database.
-          </div>
-          <button
-            onClick={onPublish}
-            disabled={isPublishing}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed shadow-sm font-medium"
-          >
-            {isPublishing ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Publishing...</span>
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4" />
-                <span>Publish Changes</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
