@@ -10,6 +10,7 @@ import ConceptModal from '../components/ConceptModal';
 import CompanyModal from '../components/CompanyModal';
 import StoreModal from '../components/StoreModal';
 import CycleSettingsCard from '../components/CycleSettingsCard';
+import StoreOperationHours from '../components/StoreOperationHours';
 import StoreEdit from './StoreEdit';
 import PlacementEdit from './PlacementEdit';
 import * as Icons from 'lucide-react';
@@ -83,7 +84,6 @@ export default function SiteConfiguration() {
   const [stores, setStores] = useState<StoreData[]>([]);
   const [placements, setPlacements] = useState<PlacementGroup[]>([]);
   const [storeRoot, setStoreRoot] = useState<PlacementGroup | null>(null);
-  const [operationHours, setOperationHours] = useState<Record<string, { open: string; close: string }>>({});
 
   // Modal state
   const [showConceptModal, setShowConceptModal] = useState(false);
@@ -289,39 +289,6 @@ export default function SiteConfiguration() {
       console.error('Error loading placements:', placementsError);
     } else {
       setPlacements(placementsData || []);
-    }
-
-    const { data: scheduleData, error: scheduleError } = await supabase
-      .from('store_operation_hours_schedules')
-      .select('*')
-      .eq('store_id', storeId)
-      .eq('schedule_type', 'regular')
-      .order('priority_level', { ascending: false });
-
-    if (scheduleError) {
-      console.error('Error loading operation hours:', scheduleError);
-    } else if (scheduleData && scheduleData.length > 0) {
-      const dayMap: Record<string, { open: string; close: string }> = {};
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-      scheduleData.forEach((schedule: any) => {
-        if (schedule.is_closed) return;
-
-        const openTime = schedule.open_time?.substring(0, 5) || '';
-        const closeTime = schedule.close_time?.substring(0, 5) || '';
-
-        schedule.days_of_week?.forEach((dayNum: number) => {
-          const dayName = dayNames[dayNum];
-          if (!dayMap[dayName] && openTime && closeTime) {
-            dayMap[dayName] = {
-              open: openTime,
-              close: closeTime
-            };
-          }
-        });
-      });
-
-      setOperationHours(dayMap);
     }
   };
 
@@ -905,28 +872,7 @@ export default function SiteConfiguration() {
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Operating Hours</h3>
-                      {operationHours && Object.keys(operationHours).length > 0 ? (
-                        <div className="space-y-2">
-                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
-                            const hours = operationHours[day];
-                            return (
-                              <div key={day} className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600 font-medium w-24">{day}</span>
-                                {hours?.open && hours?.close ? (
-                                  <span className="text-slate-900 font-mono">
-                                    {hours.open} - {hours.close}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400 italic">Closed</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-slate-400 italic">No operating hours configured</div>
-                      )}
+                      {selectedStore && <StoreOperationHours storeId={selectedStore.id} />}
                     </div>
                   </div>
                 ) : (
