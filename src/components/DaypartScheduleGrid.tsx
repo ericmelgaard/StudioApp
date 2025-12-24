@@ -3,8 +3,8 @@ import { Clock, Edit2, AlertCircle } from 'lucide-react';
 
 interface DaypartDefinition {
   id: string;
-  name: string;
-  display_order: number;
+  display_label: string;
+  sort_order: number;
   color: string;
   concept_id: number | null;
   store_id: number | null;
@@ -12,7 +12,7 @@ interface DaypartDefinition {
 
 interface DaypartSchedule {
   id: string;
-  definition_id: string;
+  daypart_definition_id: string;
   days_of_week: number[];
   start_time: string;
   end_time: string;
@@ -76,7 +76,7 @@ export default function DaypartScheduleGrid({
 
   const getScheduleForCell = (definitionId: string, day: number) => {
     return schedules.find(
-      s => s.definition_id === definitionId && s.days_of_week.includes(day)
+      s => s.daypart_definition_id === definitionId && s.days_of_week.includes(day)
     );
   };
 
@@ -84,8 +84,8 @@ export default function DaypartScheduleGrid({
     return stagedChanges.some(
       change =>
         change.target_table === 'daypart_schedules' &&
-        (change.change_data.definition_id === definitionId ||
-         (change.target_id && schedules.find(s => s.id === change.target_id)?.definition_id === definitionId)) &&
+        (change.change_data.daypart_definition_id === definitionId ||
+         (change.target_id && schedules.find(s => s.id === change.target_id)?.daypart_definition_id === definitionId)) &&
         (change.change_data.days_of_week?.includes(day) ||
          schedules.find(s => s.id === change.target_id)?.days_of_week.includes(day))
     );
@@ -203,7 +203,7 @@ export default function DaypartScheduleGrid({
                 <td className={`sticky left-0 z-10 bg-white px-4 py-3 border-r border-slate-300 ${definition.color}`}>
                   <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full ${definition.color.replace('text-', 'bg-').split(' ')[0]}`}></div>
-                    <span className="font-medium text-sm">{definition.name}</span>
+                    <span className="font-medium text-sm">{definition.display_label}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       definition.store_id
                         ? 'bg-blue-100 text-blue-700'

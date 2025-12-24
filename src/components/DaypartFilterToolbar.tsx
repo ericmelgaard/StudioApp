@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 interface DaypartDefinition {
   id: string;
-  name: string;
+  display_label: string;
 }
 
 interface PlacementGroup {
@@ -68,7 +68,7 @@ export default function DaypartFilterToolbar({
     searchTerm.length > 0;
 
   const filteredDefinitions = definitions.filter(def =>
-    def.name.toLowerCase().includes(searchTerm.toLowerCase())
+    def.display_label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredPlacements = placements.filter(p =>
@@ -160,7 +160,7 @@ export default function DaypartFilterToolbar({
                         onChange={() => toggleDaypart(def.id)}
                         className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-slate-700">{def.name}</span>
+                      <span className="text-sm text-slate-700">{def.display_label}</span>
                     </label>
                   ))
                 )}

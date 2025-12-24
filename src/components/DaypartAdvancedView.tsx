@@ -16,8 +16,8 @@ interface DaypartAdvancedViewProps {
 interface DaypartDefinition {
   id: string;
   daypart_name: string;
-  name: string;
-  display_order: number;
+  display_label: string;
+  sort_order: number;
   color: string;
   concept_id: number | null;
   store_id: number | null;
@@ -25,8 +25,7 @@ interface DaypartDefinition {
 
 interface DaypartSchedule {
   id: string;
-  definition_id: string;
-  time_group_id: string;
+  daypart_definition_id: string;
   start_time: string;
   end_time: string;
   days_of_week: number[];
@@ -102,7 +101,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
     const { data, error } = await supabase
       .from('daypart_definitions')
       .select('*')
-      .order('display_order');
+      .order('sort_order');
 
     if (!error && data) {
       setDefinitions(data);
@@ -153,7 +152,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
 
   const handleScheduleChange = (definitionId: string, day: number, newSchedule: { start_time: string; end_time: string }) => {
     const existingSchedule = schedules.find(
-      s => s.definition_id === definitionId && s.days_of_week.includes(day)
+      s => s.daypart_definition_id === definitionId && s.days_of_week.includes(day)
     );
 
     const change: StagedChange = existingSchedule
@@ -170,7 +169,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
           change_type: 'create',
           target_table: 'daypart_schedules',
           change_data: {
-            definition_id: definitionId,
+            daypart_definition_id: definitionId,
             days_of_week: [day],
             start_time: newSchedule.start_time,
             end_time: newSchedule.end_time,
@@ -201,13 +200,13 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
     ];
 
     definitions.forEach(def => {
-      const defSchedules = schedules.filter(s => s.definition_id === def.id);
+      const defSchedules = schedules.filter(s => s.daypart_definition_id === def.id);
       const level = def.store_id ? 'Store' : def.concept_id ? 'Concept' : 'Global';
 
       defSchedules.forEach(schedule => {
         schedule.days_of_week.forEach(day => {
           csvRows.push([
-            def.name,
+            def.display_label,
             level,
             ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day],
             schedule.start_time,

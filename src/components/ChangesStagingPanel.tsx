@@ -2,12 +2,12 @@ import { X, Trash2, Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-rea
 
 interface DaypartDefinition {
   id: string;
-  name: string;
+  display_label: string;
 }
 
 interface DaypartSchedule {
   id: string;
-  definition_id: string;
+  daypart_definition_id: string;
 }
 
 interface StagedChange {
@@ -39,11 +39,11 @@ export default function ChangesStagingPanel({
   onClose,
 }: ChangesStagingPanelProps) {
   const getDefinitionName = (definitionId: string) => {
-    return definitions.find(d => d.id === definitionId)?.name || 'Unknown';
+    return definitions.find(d => d.id === definitionId)?.display_label || 'Unknown';
   };
 
   const getScheduleDefinitionId = (scheduleId: string) => {
-    return schedules.find(s => s.id === scheduleId)?.definition_id;
+    return schedules.find(s => s.id === scheduleId)?.daypart_definition_id;
   };
 
   const renderChange = (change: StagedChange, index: number) => {
@@ -55,7 +55,7 @@ export default function ChangesStagingPanel({
     let icon = null;
 
     if (isScheduleChange) {
-      const definitionId = change.change_data.definition_id ||
+      const definitionId = change.change_data.daypart_definition_id ||
         (change.target_id && getScheduleDefinitionId(change.target_id));
       const definitionName = definitionId ? getDefinitionName(definitionId) : 'Unknown';
 
