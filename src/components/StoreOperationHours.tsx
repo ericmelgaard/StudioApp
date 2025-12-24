@@ -16,6 +16,7 @@ interface OperationSchedule extends Schedule {
   recurrence_type?: RecurrenceType;
   recurrence_config?: RecurrenceConfig;
   priority_level?: number;
+  runs_on_days?: boolean;
 }
 
 interface StoreOperationHoursProps {
@@ -49,7 +50,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
     end_time: '17:00',
     is_closed: false,
     daypart_name: 'operation_hours',
-    schedule_type: 'regular'
+    schedule_type: 'regular',
+    runs_on_days: true
   });
 
   useEffect(() => {
@@ -83,7 +85,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
         event_date: s.event_date,
         recurrence_type: s.recurrence_type,
         recurrence_config: s.recurrence_config,
-        priority_level: s.priority_level || 10
+        priority_level: s.priority_level || 10,
+        runs_on_days: s.runs_on_days !== false
       }));
 
       const sortedSchedules = mappedSchedules.sort((a, b) => {
@@ -110,7 +113,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       end_time: '17:00',
       is_closed: false,
       daypart_name: 'operation_hours',
-      schedule_type: 'regular'
+      schedule_type: 'regular',
+      runs_on_days: true
     });
     setAddingSchedule(true);
     setAddingEventSchedule(false);
@@ -126,7 +130,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       end_time: '17:00',
       is_closed: false,
       daypart_name: 'operation_hours',
-      schedule_type: 'event_holiday'
+      schedule_type: 'event_holiday',
+      runs_on_days: true
     });
     setAddingEventSchedule(true);
     setAddingSchedule(false);
@@ -145,11 +150,12 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
         store_id: storeId,
         schedule_name: operationSchedule.schedule_name || null,
         days_of_week: schedule.days_of_week,
-        open_time: schedule.start_time,
-        close_time: schedule.end_time,
+        open_time: schedule.runs_on_days !== false ? schedule.start_time : null,
+        close_time: schedule.runs_on_days !== false ? schedule.end_time : null,
         is_closed: operationSchedule.is_closed || false,
         schedule_type: schedule.schedule_type || 'regular',
         priority_level: schedule.priority_level || 10,
+        runs_on_days: schedule.runs_on_days !== false,
         updated_at: new Date().toISOString()
       };
 
@@ -375,7 +381,11 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm font-medium text-slate-900">
-                        {schedule.is_closed ? 'Closed' : `${schedule.start_time} - ${schedule.end_time}`}
+                        {schedule.runs_on_days === false
+                          ? 'Does Not Run'
+                          : schedule.is_closed
+                            ? 'Closed'
+                            : `${schedule.start_time} - ${schedule.end_time}`}
                       </span>
                       {isEvent && schedule.priority_level && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">

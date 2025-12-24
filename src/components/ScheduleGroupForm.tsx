@@ -46,6 +46,7 @@ export default function ScheduleGroupForm({
   const [eventDate, setEventDate] = useState(schedule.event_date || '');
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(schedule.recurrence_type || 'none');
   const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig>(schedule.recurrence_config || {});
+  const [runsOnDays, setRunsOnDays] = useState<boolean>(schedule.runs_on_days !== false);
 
   const collision = useScheduleCollisionDetection(
     allSchedules,
@@ -69,6 +70,19 @@ export default function ScheduleGroupForm({
     const updated = { ...localSchedule, [field]: value };
     setLocalSchedule(updated);
     onUpdate(updated);
+  };
+
+  const handleRunsOnDaysToggle = (value: boolean) => {
+    setRunsOnDays(value);
+    if (!value) {
+      const updated = { ...localSchedule, start_time: null, end_time: null, runs_on_days: false };
+      setLocalSchedule(updated);
+      onUpdate(updated);
+    } else {
+      const updated = { ...localSchedule, start_time: '09:00', end_time: '17:00', runs_on_days: true };
+      setLocalSchedule(updated);
+      onUpdate(updated);
+    }
   };
 
   const handleScheduleTypeChange = (type: ScheduleType) => {
@@ -114,7 +128,7 @@ export default function ScheduleGroupForm({
     if (scheduleType === 'event_holiday' && !eventName) {
       return;
     }
-    if (localSchedule.start_time >= localSchedule.end_time) {
+    if (runsOnDays && localSchedule.start_time && localSchedule.end_time && localSchedule.start_time >= localSchedule.end_time && localSchedule.start_time !== '00:00') {
       return;
     }
     if (collision.hasCollision) {
@@ -143,8 +157,8 @@ export default function ScheduleGroupForm({
     ? 'Please select a daypart type'
     : null;
 
-  const timeError = localSchedule.start_time >= localSchedule.end_time
-    ? 'End time must be after start time'
+  const timeError = runsOnDays && localSchedule.start_time && localSchedule.end_time && localSchedule.start_time >= localSchedule.end_time && localSchedule.start_time !== '00:00'
+    ? 'End time must be after start time (or use 00:00 for midnight crossing)'
     : null;
 
   const daysError = scheduleType === 'regular' && localSchedule.days_of_week.length === 0
@@ -464,16 +478,42 @@ export default function ScheduleGroupForm({
         />
       )}
 
+      <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
+        <div>
+          <label className="text-sm font-medium text-slate-900">
+            Schedule runs on selected days
+          </label>
+          <p className="text-xs text-slate-600 mt-0.5">
+            Turn off for days where this schedule does not activate
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleRunsOnDaysToggle(!runsOnDays)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            runsOnDays ? 'bg-blue-600' : 'bg-slate-300'
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              runsOnDays ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <TimeSelector
-          label="Start Time *"
-          value={localSchedule.start_time}
+          label={runsOnDays ? "Start Time *" : "Start Time"}
+          value={localSchedule.start_time || '09:00'}
           onChange={(time) => handleTimeChange('start_time', time)}
+          disabled={!runsOnDays}
         />
         <TimeSelector
-          label="End Time *"
-          value={localSchedule.end_time}
+          label={runsOnDays ? "End Time *" : "End Time"}
+          value={localSchedule.end_time || '17:00'}
           onChange={(time) => handleTimeChange('end_time', time)}
+          disabled={!runsOnDays}
         />
       </div>
 

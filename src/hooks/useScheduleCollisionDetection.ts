@@ -5,8 +5,9 @@ export interface Schedule {
   id?: string;
   daypart_name: string;
   days_of_week: number[];
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
+  runs_on_days?: boolean;
   schedule_type?: ScheduleType;
   schedule_name?: string;
   event_name?: string;

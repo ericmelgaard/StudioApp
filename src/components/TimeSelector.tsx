@@ -5,6 +5,7 @@ interface TimeSelectorProps {
   value: string;
   onChange: (time: string) => void;
   label: string;
+  disabled?: boolean;
 }
 
 type SelectionMode = 'hour' | 'minute';
@@ -16,7 +17,7 @@ const formatDisplayTime = (time: string) => {
   return `${displayHour}:${String(minutes).padStart(2, '0')} ${period}`;
 };
 
-export default function TimeSelector({ value, onChange, label }: TimeSelectorProps) {
+export default function TimeSelector({ value, onChange, label, disabled = false }: TimeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [manualMode, setManualMode] = useState(false);
   const [manualHour, setManualHour] = useState('');
@@ -135,8 +136,13 @@ export default function TimeSelector({ value, onChange, label }: TimeSelectorPro
 
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
-        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-transparent font-mono text-base text-left bg-white hover:bg-slate-50 transition-colors"
+        onClick={() => !disabled && setIsOpen(true)}
+        disabled={disabled}
+        className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg font-mono text-base text-left transition-colors ${
+          disabled
+            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            : 'bg-white hover:bg-slate-50 focus:ring-2 focus:ring-slate-400 focus:border-transparent'
+        }`}
       >
         {formatDisplayTime(value)}
       </button>

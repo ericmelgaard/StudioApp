@@ -21,8 +21,9 @@ export interface RecurrenceConfig {
 export interface BaseSchedule {
   id: string;
   schedule_group_id: string;
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
+  runs_on_days?: boolean;
   created_at?: string;
   updated_at?: string;
   schedule_type?: ScheduleType;
