@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
 import FieldLinkModal, { FieldLinkData } from './FieldLinkModal';
+import PriceConfigModal, { PriceConfig } from './PriceConfigModal';
 import TranslationEditor from './TranslationEditor';
 import SyncBadge from './SyncBadge';
 import { SyncStateManager, ProductSyncState } from '../lib/syncStateManager';
@@ -32,7 +33,7 @@ interface Product {
   integration_source_id?: string | null;
   integration_type?: 'product' | 'modifier' | 'discount' | null;
   local_fields?: string[];
-  price_calculations?: Record<string, any>;
+  price_calculations?: Record<string, PriceConfig>;
   last_synced_at?: string | null;
 }
 
@@ -63,7 +64,7 @@ interface Option {
     integration_source_id: string;
   };
   local_fields?: string[];
-  price_calculation?: any;
+  price_calculation?: PriceConfig;
 }
 
 interface OptionsEditorProps {
@@ -607,22 +608,23 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
       )}
 
       {showPriceCalcModal && linkingOptionId && (
-        <FieldLinkModal
+        <PriceConfigModal
           isOpen={showPriceCalcModal}
           onClose={() => {
             setShowPriceCalcModal(false);
             setLinkingOptionId(null);
           }}
-          onLink={(linkData) => {
+          onSave={(config) => {
             if (linkingOptionId) {
-              updateOption(linkingOptionId, { price_calculation: linkData });
+              updateOption(linkingOptionId, { price_calculation: config });
             }
             setShowPriceCalcModal(false);
             setLinkingOptionId(null);
           }}
-          fieldName="price"
-          fieldLabel="Option Price"
-          currentLink={options.find(o => o.id === linkingOptionId)?.price_calculation || null}
+          entityType="product"
+          currentConfig={options.find(o => o.id === linkingOptionId)?.price_calculation || null}
+          currentValue={options.find(o => o.id === linkingOptionId)?.price || 0}
+          integrationSourceId={integrationSourceId || undefined}
         />
       )}
 
