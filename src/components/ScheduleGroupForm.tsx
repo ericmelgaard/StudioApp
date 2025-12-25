@@ -522,7 +522,7 @@ export default function ScheduleGroupForm({
               Schedule does not run on selected days
             </p>
             <p className="text-xs text-slate-600 mt-0.5">
-              This daypart will be inactive/closed on the selected days.
+              This daypart will be inactive/not start on the selected days.
             </p>
           </div>
         </div>
