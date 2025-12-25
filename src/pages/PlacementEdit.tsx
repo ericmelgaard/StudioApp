@@ -75,18 +75,16 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
   useEffect(() => {
     const observerOptions = {
       root: null,
-      rootMargin: '-100px 0px -66% 0px',
-      threshold: [0, 0.25, 0.5, 0.75, 1],
+      rootMargin: '-20% 0px -75% 0px',
+      threshold: 0,
     };
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      const intersectingEntries = entries
-        .filter(entry => entry.isIntersecting)
-        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-
-      if (intersectingEntries.length > 0) {
-        setActiveSection(intersectingEntries[0].target.id);
-      }
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
     };
 
     const observer = new IntersectionObserver(observerCallback, observerOptions);
