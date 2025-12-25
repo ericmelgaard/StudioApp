@@ -510,22 +510,9 @@ export default function SiteConfiguration() {
             <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
 
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <div
-                  className="p-3 rounded-lg"
-                  style={{
-                    backgroundColor: selectedConcept.brand_primary_color || '#E5E7EB',
-                    color: selectedConcept.brand_primary_color ? '#FFFFFF' : '#374151'
-                  }}
-                >
-                  {renderIcon(selectedConcept.icon)}
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-slate-900">{selectedConcept.name}</h1>
-                  {selectedConcept.description && (
-                    <p className="text-slate-600">{selectedConcept.description}</p>
-                  )}
-                </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Concept Configuration</h1>
+                <p className="text-slate-600">Manage companies and settings</p>
               </div>
               <button
                 onClick={handleEditConcept}
@@ -625,10 +612,8 @@ export default function SiteConfiguration() {
 
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">{selectedCompany.name}</h1>
-                {selectedCompany.description && (
-                  <p className="text-slate-600 mt-1">{selectedCompany.description}</p>
-                )}
+                <h1 className="text-3xl font-bold text-slate-900">Company Configuration</h1>
+                <p className="text-slate-600">Manage stores and settings</p>
               </div>
               <button
                 onClick={handleEditCompany}
@@ -725,7 +710,7 @@ export default function SiteConfiguration() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
           <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{currentStore?.name || 'Store Configuration'}</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
           <p className="text-slate-600">Manage store settings and placement groups</p>
         </div>
 

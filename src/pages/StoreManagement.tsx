@@ -305,7 +305,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">{company?.name || 'Store Management'}</h1>
+                <h1 className="text-3xl font-bold text-slate-900">Store Management</h1>
                 <p className="text-slate-600 mt-1">Manage store locations and settings</p>
               </div>
               {company && (
@@ -443,7 +443,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
             </button>
           )}
 
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{location.store?.name || 'Store Configuration'}</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
           <p className="text-slate-600">Manage store settings and placement groups</p>
           {renderBreadcrumbs()}
         </div>
