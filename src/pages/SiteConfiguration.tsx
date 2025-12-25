@@ -78,22 +78,6 @@ export default function SiteConfiguration() {
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
   const [editingPlacement, setEditingPlacement] = useState<PlacementGroup | null>(null);
 
-  useEffect(() => {
-    if (viewLevel === 'store-edit' && selectedStore) {
-      window.dispatchEvent(new CustomEvent('editContext', {
-        detail: { contextId: selectedStore.id, contextLabel: 'Store ID' }
-      }));
-    } else if (viewLevel === 'placement-edit' && editingPlacement) {
-      window.dispatchEvent(new CustomEvent('editContext', {
-        detail: { contextId: editingPlacement.id, contextLabel: 'Placement ID' }
-      }));
-    } else {
-      window.dispatchEvent(new CustomEvent('editContext', {
-        detail: null
-      }));
-    }
-  }, [viewLevel, selectedStore, editingPlacement]);
-
   // Data state
   const [concepts, setConcepts] = useState<ConceptData[]>([]);
   const [companies, setCompanies] = useState<CompanyData[]>([]);
