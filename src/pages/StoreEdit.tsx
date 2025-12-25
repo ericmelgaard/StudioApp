@@ -275,21 +275,13 @@ export default function StoreEdit({ storeId, companyId, conceptName, companyName
 
   const getBreadcrumbItems = () => {
     const items = [
-      { label: 'WAND Digital', onClick: () => handleNavigate('wand') }
+      { label: 'Location Manager', onClick: onBack }
     ];
 
-    if (conceptName) {
-      items.push({ label: conceptName, onClick: () => handleNavigate('concept') });
-    }
-
-    if (companyName) {
-      items.push({ label: companyName, onClick: () => handleNavigate('company') });
-    }
-
-    if (storeId && storeName) {
-      items.push({ label: storeName });
+    if (storeId) {
+      items.push({ label: 'Edit Store' });
     } else {
-      items.push({ label: 'New Store' });
+      items.push({ label: 'Create Store' });
     }
 
     return items;

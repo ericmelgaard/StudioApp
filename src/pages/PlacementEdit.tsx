@@ -371,27 +371,17 @@ export default function PlacementEdit({ placementId, storeId, parentId, conceptN
 
   const getBreadcrumbItems = () => {
     const items = [
-      { label: 'WAND Digital', onClick: () => handleNavigate('wand') }
+      { label: 'Location Manager', onClick: onBack }
     ];
 
-    if (conceptName) {
-      items.push({ label: conceptName, onClick: () => handleNavigate('concept') });
-    }
-
-    if (companyName) {
-      items.push({ label: companyName, onClick: () => handleNavigate('company') });
-    }
-
-    if (storeName) {
-      items.push({ label: storeName, onClick: () => handleNavigate('store') });
-    }
-
-    if (placementId && placementName) {
-      items.push({ label: placementName });
-    } else if (placementId && isStoreRoot) {
-      items.push({ label: 'Store Root' });
+    if (placementId) {
+      if (isStoreRoot) {
+        items.push({ label: 'Edit Store Configuration' });
+      } else {
+        items.push({ label: 'Edit Placement' });
+      }
     } else {
-      items.push({ label: 'New Placement' });
+      items.push({ label: 'Create Placement' });
     }
 
     return items;
