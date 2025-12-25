@@ -59,13 +59,10 @@ export default function ScheduleGroupCard({
     placement: 'bg-amber-100 text-amber-700'
   };
 
-  const isHolidayOrEvent = schedule.schedule_type === 'holiday' || schedule.schedule_type === 'event';
+  const isHolidayOrEvent = schedule.schedule_type === 'event_holiday';
   const dayBadgeColor = levelColors[level];
 
-  const icon = isHolidayOrEvent
-    ? (schedule.schedule_type === 'event' ? Sparkles : Calendar)
-    : Clock;
-  const Icon = icon;
+  const Icon = isHolidayOrEvent ? Sparkles : Clock;
 
   const cardBorderColor = isHolidayOrEvent
     ? 'border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50'
