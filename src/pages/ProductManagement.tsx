@@ -7,7 +7,7 @@ import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
 import { LocationProductService } from '../lib/locationProductService';
 import ProductTile from '../components/ProductTile';
-import EditProductModal from '../components/EditProductModal';
+import ProductEdit from './ProductEdit';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
 import IntegrationProductMapper from '../components/IntegrationProductMapper';
 import CategoryManagementModal from '../components/CategoryManagementModal';
@@ -49,8 +49,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const [filterState, setFilterState] = useState<FilterState>({});
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentView, setCurrentView] = useState<'list' | 'create' | 'edit'>('list');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showMapper, setShowMapper] = useState(false);
@@ -323,6 +322,37 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     return items;
   };
 
+  if (currentView === 'create') {
+    return (
+      <ProductEdit
+        mode="create"
+        onBack={() => setCurrentView('list')}
+        onSave={() => {
+          loadProducts();
+          setCurrentView('list');
+        }}
+      />
+    );
+  }
+
+  if (currentView === 'edit' && selectedProduct) {
+    return (
+      <ProductEdit
+        productId={selectedProduct.id}
+        mode="edit"
+        onBack={() => {
+          setCurrentView('list');
+          setSelectedProduct(null);
+        }}
+        onSave={() => {
+          loadProducts();
+          setCurrentView('list');
+          setSelectedProduct(null);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Side Panel Overlay */}
@@ -415,7 +445,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => setCurrentView('create')}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
               >
                 <Plus className="w-5 h-5" />
@@ -545,7 +575,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   products={filteredProducts}
                   onProductClick={(product) => {
                     setSelectedProduct(product);
-                    setShowEditModal(true);
+                    setCurrentView('edit');
                   }}
                   selectedProductIds={selectedProductIds}
                   onSelectionChange={setSelectedProductIds}
@@ -587,7 +617,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                       }
 
                       setSelectedProduct(productToEdit);
-                      setShowEditModal(true);
+                      setCurrentView('edit');
                     }}
                   />
                 ))}
@@ -604,24 +634,6 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
           )}
         </div>
       </main>
-
-      <EditProductModal
-        mode="create"
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        product={null}
-        onSuccess={loadProducts}
-      />
-
-      <EditProductModal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
-        onSuccess={loadProducts}
-      />
 
       <AttributeTemplateManager
         isOpen={showTemplateManager}
