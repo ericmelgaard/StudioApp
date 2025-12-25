@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Calendar, ChevronDown, ChevronRight, MapPin, Layers, Zap } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Calendar, ChevronDown, ChevronRight, MapPin, Layers, Zap, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from '../components/IconPicker';
 import ScheduleGroupForm from '../components/ScheduleGroupForm';
@@ -465,7 +465,7 @@ export default function DaypartManagement() {
                     </span>
                     {hasEvents && (
                       <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900 font-medium">
-                        <Calendar className="w-3 h-3" />
+                        <Sparkles className="w-3 h-3" />
                         {eventSchedules.length} {eventSchedules.length === 1 ? 'Event' : 'Events'}
                       </span>
                     )}
@@ -634,7 +634,7 @@ export default function DaypartManagement() {
                         className="w-full px-4 py-3 bg-violet-50 hover:bg-violet-100 transition-colors flex items-center justify-between group"
                       >
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-violet-600" />
+                          <Sparkles className="w-4 h-4 text-violet-600" />
                           <span className="font-medium text-violet-900">
                             Event & Holiday Schedules
                           </span>
