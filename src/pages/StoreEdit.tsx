@@ -252,7 +252,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
 
     if (storeId) {
       sections.push({ id: 'operation-hours', label: 'Power Save', icon: Calendar });
-      sections.push({ id: 'daypart-definitions', label: 'Daypart Definitions', icon: Clock });
+      sections.push({ id: 'daypart-definitions', label: 'Daypart Schedules', icon: Clock });
     }
 
     return sections;
