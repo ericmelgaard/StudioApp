@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { Save, AlertCircle, MapPin, Clock, Info, Calendar, Globe } from 'lucide-react';
+import { Save, AlertCircle, MapPin, Clock, Info, Copy, Check, Calendar, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
 import StoreDaypartDefinitions from '../components/StoreDaypartDefinitions';
