@@ -519,10 +519,10 @@ export default function ScheduleGroupForm({
           <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-slate-700">
-              Schedule runs all day
+              Schedule does not run on selected days
             </p>
             <p className="text-xs text-slate-600 mt-0.5">
-              This schedule is active for the entire day on selected days, without specific time restrictions.
+              This daypart will be inactive/closed on the selected days.
             </p>
           </div>
         </div>
