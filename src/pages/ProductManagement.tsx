@@ -651,6 +651,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
             loadProducts();
             setShowCreateModal(false);
           }}
+          product={null}
           mode="create"
         />
       )}
@@ -667,7 +668,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
             setShowEditModal(false);
             setSelectedProduct(null);
           }}
-          productId={selectedProduct.id}
+          product={selectedProduct}
           mode="edit"
         />
       )}
