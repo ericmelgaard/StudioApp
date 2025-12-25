@@ -279,7 +279,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
 
         <div className="flex-1 overflow-y-auto p-4 min-h-[400px]">
           {filteredConcepts.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">No locations found</div>
+            <div className="text-center py-4 text-slate-500">No locations found</div>
           ) : (
             <div className="space-y-2">
               {filteredConcepts.map((concept) => {

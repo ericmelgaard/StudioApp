@@ -183,11 +183,11 @@ export default function CategoryLinkModal({
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-4 text-slate-500">
               Loading categories...
             </div>
           ) : filteredCategories.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-4 text-slate-500">
               {searchTerm
                 ? 'No categories found matching your search'
                 : 'No categories found in this integration source'}

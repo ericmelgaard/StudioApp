@@ -219,7 +219,7 @@ export default function ResourceManagement({ onBack }: ResourceManagementProps) 
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {/* Tabs */}
           <div className="border-b border-slate-200">
@@ -305,7 +305,7 @@ export default function ResourceManagement({ onBack }: ResourceManagementProps) 
                   ))}
 
                   {iconPacks.length === 0 && (
-                    <div className="text-center py-8 text-slate-500">
+                    <div className="text-center py-4 text-slate-500">
                       <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>No icon packs yet</p>
                     </div>

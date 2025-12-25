@@ -362,7 +362,7 @@ export default function TimeGroupManager({
         </div>
 
         {groups.length === 0 && !isAdding ? (
-          <div className="text-center py-8 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+          <div className="text-center py-4 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
             <Clock className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-slate-900 mb-1">No time groups configured</h3>
             <p className="text-xs text-slate-600 mb-4">

@@ -241,7 +241,7 @@ export default function PriceConfigModal({
                 </div>
 
                 {calculatingRange ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center justify-center py-4">
                     <RefreshCw className="w-6 h-6 text-blue-600 animate-spin" />
                     <span className="ml-3 text-slate-600">Calculating price range...</span>
                   </div>

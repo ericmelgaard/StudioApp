@@ -128,7 +128,7 @@ export default function DaypartTimelineView({ routines }: DaypartTimelineViewPro
           </div>
 
           {routinesForDay.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-4 text-slate-500">
               <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No dayparts configured for {DAYS_OF_WEEK.find(d => d.value === selectedDay)?.label}</p>
             </div>

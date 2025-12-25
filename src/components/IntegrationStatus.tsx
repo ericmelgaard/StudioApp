@@ -130,7 +130,7 @@ export default function IntegrationStatus() {
 
   if (loading) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-4">
         <div className="inline-block w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
     );

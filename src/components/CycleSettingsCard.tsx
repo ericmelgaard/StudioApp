@@ -250,7 +250,7 @@ export default function CycleSettingsCard({ conceptId }: CycleSettingsCardProps)
           </div>
         </div>
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-4">
           <p className="text-slate-600 mb-4">
             No cycle settings configured. Click Configure to set up weekly cycle timing.
           </p>

@@ -287,7 +287,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
       <div className="space-y-4 mb-6">
         {regularSchedules.length === 0 && eventSchedules.length === 0 && !addingSchedule && !addingEventSchedule ? (
-          <div className="text-center py-8 bg-white rounded-lg border border-slate-200">
+          <div className="text-center py-4 bg-white rounded-lg border border-slate-200">
             <Calendar className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm text-slate-600 mb-4">
               No power save schedules set. Add a schedule to define when devices should enter a power savings state.

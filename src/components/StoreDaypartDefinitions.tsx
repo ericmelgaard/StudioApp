@@ -708,14 +708,14 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         })}
 
         {definitions.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-4 text-slate-500">
             <Clock className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm">No daypart schedules yet.</p>
           </div>
         )}
 
         {definitions.length > 0 && filteredDefinitions.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-4 text-slate-500">
             <EyeOff className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm mb-2">All dayparts are marked as not in use.</p>
             <button

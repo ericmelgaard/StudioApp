@@ -175,7 +175,7 @@ export default function ApiLinkModal({
 
         <div className="p-6 space-y-4 flex-1 overflow-auto">
           {entityType === 'product' && !integrationSourceId ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-4 text-slate-500">
               <p>Product must be linked to an integration source first.</p>
               <p className="text-sm mt-2">Link the product to an API before linking options.</p>
             </div>
@@ -230,9 +230,9 @@ export default function ApiLinkModal({
               </div>
 
               {loading ? (
-                <div className="text-center py-8 text-slate-500">Loading...</div>
+                <div className="text-center py-4 text-slate-500">Loading...</div>
               ) : filteredItems.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-4 text-slate-500">
                   No items found. Try a different search or type.
                 </div>
               ) : (

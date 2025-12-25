@@ -113,7 +113,7 @@ export default function IconPicker({ selectedIcon, onSelect }: IconPickerProps) 
                 ))}
               </div>
               {filteredIcons.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-4 text-gray-500">
                   No icons found matching "{searchTerm}"
                 </div>
               )}

@@ -105,7 +105,7 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="p-4 bg-white rounded-lg shadow-sm border border-slate-200">
             <p className="text-sm text-slate-600 mb-1">Total Positions</p>

@@ -246,7 +246,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
           </div>
@@ -293,7 +293,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="mb-6">
             <button
               onClick={onBack}
@@ -423,7 +423,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="mb-6">
           {canNavigateBack() ? (
             <button
@@ -530,7 +530,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
+                <div className="text-center py-4">
                   <Store className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-600 mb-4">Store configuration not initialized</p>
                 </div>
@@ -560,7 +560,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
             <div className="p-6">
               {placements.length === 0 ? (
-                <div className="text-center py-8">
+                <div className="text-center py-4">
                   <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Store className="w-8 h-8 text-amber-600" />
                   </div>
