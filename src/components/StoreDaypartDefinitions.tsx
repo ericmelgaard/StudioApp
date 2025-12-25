@@ -454,7 +454,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     </span>
                     {hasEvents && (
                       <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900 font-medium">
-                        <Calendar className="w-3 h-3" />
+                        <Sparkles className="w-3 h-3" />
                         {eventSchedules.length} {eventSchedules.length === 1 ? 'Event' : 'Events'}
                       </span>
                     )}
