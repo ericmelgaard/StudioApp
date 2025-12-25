@@ -501,20 +501,32 @@ export default function ScheduleGroupForm({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <TimeSelector
-          label={runsOnDays ? "Start Time *" : "Start Time"}
-          value={localSchedule.start_time || '09:00'}
-          onChange={(time) => handleTimeChange('start_time', time)}
-          disabled={!runsOnDays}
-        />
-        <TimeSelector
-          label={runsOnDays ? "End Time *" : "End Time"}
-          value={localSchedule.end_time || '17:00'}
-          onChange={(time) => handleTimeChange('end_time', time)}
-          disabled={!runsOnDays}
-        />
-      </div>
+      {runsOnDays ? (
+        <div className="grid grid-cols-2 gap-3">
+          <TimeSelector
+            label="Start Time *"
+            value={localSchedule.start_time || '09:00'}
+            onChange={(time) => handleTimeChange('start_time', time)}
+          />
+          <TimeSelector
+            label="End Time *"
+            value={localSchedule.end_time || '17:00'}
+            onChange={(time) => handleTimeChange('end_time', time)}
+          />
+        </div>
+      ) : (
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-2">
+          <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-slate-700">
+              Schedule runs all day
+            </p>
+            <p className="text-xs text-slate-600 mt-0.5">
+              This schedule is active for the entire day on selected days, without specific time restrictions.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <button
