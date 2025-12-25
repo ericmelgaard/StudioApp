@@ -7,7 +7,7 @@ import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
 import { LocationProductService } from '../lib/locationProductService';
 import ProductTile from '../components/ProductTile';
-import ProductEdit from './ProductEdit';
+import EditProductModal from '../components/EditProductModal';
 import AttributeTemplateManager from '../components/AttributeTemplateManager';
 import IntegrationProductMapper from '../components/IntegrationProductMapper';
 import CategoryManagementModal from '../components/CategoryManagementModal';
@@ -49,7 +49,8 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const [filterState, setFilterState] = useState<FilterState>({});
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
-  const [currentView, setCurrentView] = useState<'list' | 'create' | 'edit'>('list');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showMapper, setShowMapper] = useState(false);
@@ -322,37 +323,6 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     return items;
   };
 
-  if (currentView === 'create') {
-    return (
-      <ProductEdit
-        mode="create"
-        onBack={() => setCurrentView('list')}
-        onSave={() => {
-          loadProducts();
-          setCurrentView('list');
-        }}
-      />
-    );
-  }
-
-  if (currentView === 'edit' && selectedProduct) {
-    return (
-      <ProductEdit
-        productId={selectedProduct.id}
-        mode="edit"
-        onBack={() => {
-          setCurrentView('list');
-          setSelectedProduct(null);
-        }}
-        onSave={() => {
-          loadProducts();
-          setCurrentView('list');
-          setSelectedProduct(null);
-        }}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Side Panel Overlay */}
@@ -445,7 +415,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentView('create')}
+                onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
               >
                 <Plus className="w-5 h-5" />
@@ -575,7 +545,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   products={filteredProducts}
                   onProductClick={(product) => {
                     setSelectedProduct(product);
-                    setCurrentView('edit');
+                    setShowEditModal(true);
                   }}
                   selectedProductIds={selectedProductIds}
                   onSelectionChange={setSelectedProductIds}
@@ -617,7 +587,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                       }
 
                       setSelectedProduct(productToEdit);
-                      setCurrentView('edit');
+                      setShowEditModal(true);
                     }}
                   />
                 ))}
@@ -672,6 +642,35 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         companyId={location.company?.id}
         siteId={location.store?.id}
       />
+
+      {showCreateModal && (
+        <EditProductModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            loadProducts();
+            setShowCreateModal(false);
+          }}
+          mode="create"
+        />
+      )}
+
+      {showEditModal && selectedProduct && (
+        <EditProductModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedProduct(null);
+          }}
+          onSuccess={() => {
+            loadProducts();
+            setShowEditModal(false);
+            setSelectedProduct(null);
+          }}
+          productId={selectedProduct.id}
+          mode="edit"
+        />
+      )}
     </div>
   );
 }
