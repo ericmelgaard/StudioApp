@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { ArrowLeft, Save, AlertCircle, MapPin, Clock, Info, Copy, Check, Calendar, Globe } from 'lucide-react';
+import { Save, AlertCircle, MapPin, Clock, Info, Copy, Check, Calendar, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import Breadcrumb from '../components/Breadcrumb';
 import StoreDaypartDefinitions from '../components/StoreDaypartDefinitions';
 import StoreOperationHours from '../components/StoreOperationHours';
 
@@ -37,11 +38,15 @@ interface StoreData {
 interface StoreEditProps {
   storeId?: number;
   companyId: number;
+  conceptName?: string;
+  companyName?: string;
+  storeName?: string;
   onBack: () => void;
   onSave: (store: StoreData) => void;
+  onNavigate?: (level: 'wand' | 'concept' | 'company' | 'store') => void;
 }
 
-export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreEditProps) {
+export default function StoreEdit({ storeId, companyId, conceptName, companyName, storeName, onBack, onSave, onNavigate }: StoreEditProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -182,6 +187,16 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     }
   };
 
+  const handleNavigate = (level: 'wand' | 'concept' | 'company' | 'store') => {
+    if (isDirty) {
+      setShowExitConfirm(true);
+    } else if (onNavigate) {
+      onNavigate(level);
+    } else {
+      onBack();
+    }
+  };
+
   const handleDiscardAndExit = () => {
     setShowExitConfirm(false);
     onBack();
@@ -258,6 +273,28 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     return sections;
   };
 
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'WAND Digital', onClick: () => handleNavigate('wand') }
+    ];
+
+    if (conceptName) {
+      items.push({ label: conceptName, onClick: () => handleNavigate('concept') });
+    }
+
+    if (companyName) {
+      items.push({ label: companyName, onClick: () => handleNavigate('company') });
+    }
+
+    if (storeId && storeName) {
+      items.push({ label: storeName });
+    } else {
+      items.push({ label: 'New Store' });
+    }
+
+    return items;
+  };
+
   if (loading && storeId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -313,13 +350,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 transition-colors font-medium"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
+            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">

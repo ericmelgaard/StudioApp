@@ -802,6 +802,10 @@ export default function SiteConfiguration() {
             placementId={editingPlacement?.id}
             storeId={editingPlacement?.store_id || selectedStore?.id || undefined}
             parentId={parentForNewPlacement || editingPlacement?.parent_id}
+            conceptName={selectedConcept?.name}
+            companyName={selectedCompany?.name}
+            storeName={selectedStore?.name}
+            placementName={editingPlacement?.name}
             onBack={() => {
               setViewLevel('store');
               setEditingPlacement(null);
@@ -813,15 +817,44 @@ export default function SiteConfiguration() {
               setParentForNewPlacement(null);
               await loadStoreLevelData();
             }}
+            onNavigate={(level) => {
+              if (level === 'wand') {
+                setLocation({});
+              } else if (level === 'concept' && selectedConcept) {
+                setLocation({ concept: selectedConcept });
+              } else if (level === 'company' && selectedConcept && selectedCompany) {
+                setLocation({ concept: selectedConcept, company: selectedCompany });
+              } else if (level === 'store' && selectedConcept && selectedCompany && selectedStore) {
+                setLocation({ concept: selectedConcept, company: selectedCompany, store: selectedStore });
+              }
+              setViewLevel('store');
+              setEditingPlacement(null);
+              setParentForNewPlacement(null);
+            }}
           />
         ) : viewLevel === 'store-edit' && selectedStore && selectedCompany ? (
           <StoreEdit
             storeId={selectedStore.id}
             companyId={selectedCompany.id}
+            conceptName={selectedConcept?.name}
+            companyName={selectedCompany?.name}
+            storeName={selectedStore?.name}
             onBack={() => setViewLevel('store')}
             onSave={async () => {
               setViewLevel('store');
               await loadStoreLevelData();
+            }}
+            onNavigate={(level) => {
+              if (level === 'wand') {
+                setLocation({});
+              } else if (level === 'concept' && selectedConcept) {
+                setLocation({ concept: selectedConcept });
+              } else if (level === 'company' && selectedConcept && selectedCompany) {
+                setLocation({ concept: selectedConcept, company: selectedCompany });
+              } else if (level === 'store' && selectedConcept && selectedCompany && selectedStore) {
+                setLocation({ concept: selectedConcept, company: selectedCompany, store: selectedStore });
+              }
+              setViewLevel('store');
             }}
           />
         ) : hasStoreContext ? (
