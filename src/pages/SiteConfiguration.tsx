@@ -299,7 +299,7 @@ export default function SiteConfiguration() {
       .order('priority_level', { ascending: false });
 
     if (scheduleError) {
-      console.error('Error loading operation hours:', scheduleError);
+      console.error('Error loading power save schedules:', scheduleError);
     } else {
       setOperationSchedules(scheduleData || []);
     }
@@ -887,7 +887,7 @@ export default function SiteConfiguration() {
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Operating Hours</h3>
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Power Save Schedules</h3>
                       {operationSchedules.length > 0 ? (
                         <div className="space-y-2">
                           {operationSchedules.map((schedule) => {
@@ -915,7 +915,7 @@ export default function SiteConfiguration() {
                                   {schedule.schedule_name && <span className="text-slate-400 text-xs ml-1">({dayRange})</span>}
                                 </span>
                                 {schedule.is_closed ? (
-                                  <span className="text-slate-400 italic">Closed</span>
+                                  <span className="text-slate-400 italic">Power Save</span>
                                 ) : (
                                   <span className="text-slate-900 font-mono">
                                     {schedule.open_time?.substring(0, 5)} - {schedule.close_time?.substring(0, 5)}
@@ -926,7 +926,7 @@ export default function SiteConfiguration() {
                           })}
                         </div>
                       ) : (
-                        <div className="text-sm text-slate-400 italic">No operating hours configured</div>
+                        <div className="text-sm text-slate-400 italic">No power save schedules configured</div>
                       )}
                     </div>
                   </div>

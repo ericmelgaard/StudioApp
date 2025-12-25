@@ -254,7 +254,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
     ];
 
     if (storeId) {
-      sections.push({ id: 'operation-hours', label: 'Operation Hours', icon: Calendar });
+      sections.push({ id: 'operation-hours', label: 'Power Save', icon: Calendar });
       sections.push({ id: 'daypart-definitions', label: 'Daypart Definitions', icon: Clock });
     }
 
@@ -330,7 +330,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
                 </h1>
                 <p className="text-slate-600">
                   {storeId
-                    ? 'Update store details, operation hours, and daypart definitions'
+                    ? 'Update store details, power save schedules, and daypart definitions'
                     : 'Create a new store location'}
                 </p>
               </div>
@@ -444,7 +444,7 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
                       ))}
                     </select>
                     <p className="mt-1 text-xs text-slate-500">
-                      Used for operation hours and daypart scheduling
+                      Used for power save schedules and daypart scheduling
                     </p>
                   </div>
                 </div>

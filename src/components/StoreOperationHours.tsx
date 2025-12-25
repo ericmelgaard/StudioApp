@@ -98,8 +98,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
       setSchedules(sortedSchedules);
     } catch (err: any) {
-      console.error('Error loading operation hours:', err);
-      setError(err.message || 'Failed to load operation hours');
+      console.error('Error loading power save schedules:', err);
+      setError(err.message || 'Failed to load power save schedules');
     } finally {
       setLoading(false);
     }
@@ -259,11 +259,11 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-slate-900">Store Closed Hours</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Power Save Schedules</h3>
         </div>
       </div>
       <p className="text-sm text-slate-600 mb-4">
-        Define when devices should be turned off during store closures. Multiple schedules per day are allowed.
+        Define when devices should enter a power savings state. Multiple schedules per day are allowed.
         {eventCount > 0 && (
           <span className="ml-1 text-violet-600 font-medium">
             ({eventCount} {eventCount === 1 ? 'event' : 'events'})
@@ -290,7 +290,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
           <div className="text-center py-8 bg-white rounded-lg border border-slate-200">
             <Calendar className="w-12 h-12 mx-auto mb-2 text-slate-300" />
             <p className="text-sm text-slate-600 mb-4">
-              No closed hours set. Add a schedule to define when devices should be turned off.
+              No power save schedules set. Add a schedule to define when devices should enter a power savings state.
             </p>
           </div>
         ) : (
@@ -298,7 +298,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
             <div className="bg-blue-50 px-4 py-3 border-b border-blue-100">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-blue-600" />
-                <h4 className="font-semibold text-slate-900">Regular Closures</h4>
+                <h4 className="font-semibold text-slate-900">Regular Schedules</h4>
                 {eventSchedules.length > 0 && (
                   <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900 font-medium">
                     <Sparkles className="w-3 h-3" />
@@ -322,7 +322,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                             value={editingSchedule.schedule_name || ''}
                             onChange={(e) => setEditingSchedule({ ...editingSchedule, schedule_name: e.target.value })}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="e.g., Night Closure, Lunch Break"
+                            placeholder="e.g., Overnight, Extended Break"
                           />
                         </div>
                         <ScheduleGroupForm
@@ -351,7 +351,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                               {schedule.runs_on_days === false
                                 ? 'Does Not Run'
                                 : schedule.is_closed
-                                  ? 'Closed'
+                                  ? 'Power Save'
                                   : `${schedule.start_time} - ${schedule.end_time}`}
                             </span>
                           </div>
@@ -398,7 +398,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
               {regularSchedules.length === 0 && (
                 <div className="p-6 text-center">
                   <p className="text-slate-600 text-sm mb-4">
-                    No regular schedules yet. Add a schedule to define closed hours.
+                    No regular schedules yet. Add a schedule to define power save times.
                   </p>
                   <button
                     type="button"
@@ -478,7 +478,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                                     {schedule.runs_on_days === false
                                       ? 'Does Not Run'
                                       : schedule.is_closed
-                                        ? 'Closed'
+                                        ? 'Power Save'
                                         : `${schedule.start_time} - ${schedule.end_time}`}
                                   </div>
                                   {schedule.days_of_week.length > 0 && (
@@ -557,7 +557,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                       value={newSchedule.schedule_name || ''}
                       onChange={(e) => setNewSchedule({ ...newSchedule, schedule_name: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., Night Closure, Lunch Break"
+                      placeholder="e.g., Overnight, Extended Break"
                     />
                   </div>
                 )}
