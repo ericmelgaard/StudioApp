@@ -40,50 +40,77 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
   }, [product.id, product.policy_status]);
 
   async function loadCategories() {
-    const { data } = await supabase
-      .from('product_category_assignments')
-      .select(`
-        product_categories (
-          name,
-          display_name
-        )
-      `)
-      .eq('product_id', product.id);
+    try {
+      const { data, error } = await supabase
+        .from('product_category_assignments')
+        .select(`
+          product_categories (
+            name,
+            display_name
+          )
+        `)
+        .eq('product_id', product.id);
 
-    if (data) {
-      setCategories(data.map((d: any) => d.product_categories).filter(Boolean));
+      if (error) {
+        console.error('Error loading categories:', error);
+        return;
+      }
+
+      if (data) {
+        setCategories(data.map((d: any) => d.product_categories).filter(Boolean));
+      }
+    } catch (err) {
+      console.error('Exception loading categories:', err);
     }
   }
 
   async function checkPendingPublication() {
-    const { data } = await supabase
-      .from('product_publications')
-      .select('publish_at, status')
-      .eq('product_id', product.id)
-      .in('status', ['draft', 'scheduled'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('product_publications')
+        .select('publish_at, status')
+        .eq('product_id', product.id)
+        .in('status', ['draft', 'scheduled'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    setPendingPublication(data);
+      if (error) {
+        console.error('Error loading pending publication:', error);
+        return;
+      }
+
+      setPendingPublication(data);
+    } catch (err) {
+      console.error('Exception loading pending publication:', err);
+    }
   }
 
   async function loadPolicyViolations() {
-    const { data } = await supabase
-      .from('product_policy_evaluations')
-      .select(`
-        id,
-        status,
-        violation_details,
-        product_policies (
-          display_name,
-          severity
-        )
-      `)
-      .eq('product_id', product.id)
-      .eq('status', 'violation');
+    try {
+      const { data, error } = await supabase
+        .from('product_policy_evaluations')
+        .select(`
+          id,
+          status,
+          violation_details,
+          product_policies (
+            display_name,
+            severity
+          )
+        `)
+        .eq('product_id', product.id)
+        .eq('status', 'violation');
 
-    setPolicyViolations(data || []);
+      if (error) {
+        console.error('Error loading policy violations:', error);
+        return;
+      }
+
+      setPolicyViolations(data || []);
+    } catch (err) {
+      console.error('Exception loading policy violations:', err);
+    }
   }
 
   function stripHtmlTags(html: string): string {
