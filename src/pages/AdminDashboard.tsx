@@ -70,6 +70,17 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [editContext, setEditContext] = useState<{ contextId: number | string; contextLabel: string } | null>(null);
+
+  useEffect(() => {
+    const handleEditContext = (e: Event) => {
+      const customEvent = e as CustomEvent<{ contextId: number | string; contextLabel: string } | null>;
+      setEditContext(customEvent.detail);
+    };
+
+    window.addEventListener('editContext', handleEditContext);
+    return () => window.removeEventListener('editContext', handleEditContext);
+  }, []);
 
   // Local state synced with global location context
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
@@ -136,6 +147,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 userCompanyId={null}
                 userStoreId={null}
                 onOpenFullNavigator={() => setShowLocationSelector(true)}
+                contextId={editContext?.contextId}
+                contextLabel={editContext?.contextLabel}
               />
             </Suspense>
           </div>

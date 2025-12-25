@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search, ArrowUp } from 'lucide-react';
+import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search, ArrowUp, Copy, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 
@@ -26,6 +26,8 @@ interface HeaderNavigationProps {
   userStoreId?: number | null;
   onOpenFullNavigator: () => void;
   actionButton?: React.ReactNode;
+  contextId?: number | string;
+  contextLabel?: string;
 }
 
 interface ParentNavigationOption {
@@ -54,7 +56,9 @@ export default function HeaderNavigation({
   userCompanyId,
   userStoreId,
   onOpenFullNavigator,
-  actionButton
+  actionButton,
+  contextId,
+  contextLabel = 'ID'
 }: HeaderNavigationProps) {
   const { location, setLocation } = useLocation();
   const [concepts, setConcepts] = useState<Concept[]>([]);
@@ -62,6 +66,7 @@ export default function HeaderNavigation({
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterQuery, setFilterQuery] = useState('');
+  const [idCopied, setIdCopied] = useState(false);
 
   useEffect(() => {
     loadNavigationData();
@@ -222,6 +227,14 @@ export default function HeaderNavigation({
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const copyIdToClipboard = () => {
+    if (contextId) {
+      navigator.clipboard.writeText(String(contextId));
+      setIdCopied(true);
+      setTimeout(() => setIdCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <div className="relative">
@@ -346,6 +359,27 @@ export default function HeaderNavigation({
       >
         <Map className="w-4 h-4 text-slate-600" />
       </button>
+
+      {/* Context ID Badge */}
+      {contextId && (
+        <button
+          onClick={copyIdToClipboard}
+          className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg transition-colors text-xs font-mono border border-slate-200"
+          title="Click to copy ID"
+        >
+          {idCopied ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-green-600" />
+              <span>Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5" />
+              <span>{contextLabel}: {contextId}</span>
+            </>
+          )}
+        </button>
+      )}
 
       {/* Action Button */}
       {actionButton && actionButton}
