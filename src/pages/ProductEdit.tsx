@@ -1,12 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, AlertCircle, Info, Tag, Image, List, Copy, Check, Globe, ChevronDown, Link2, X } from 'lucide-react';
+import { Save, AlertCircle, Info, Tag, Image, List, Copy, Check, Globe, ChevronDown, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
-import ImageUploadField from '../components/ImageUploadField';
-import RichTextEditor from '../components/RichTextEditor';
-import TranslationEditor from '../components/TranslationEditor';
-import { ApiIntegrationSection } from '../components/ApiIntegrationSection';
-import { integrationLinkService } from '../lib/integrationLinkService';
 
 interface ProductData {
   id?: string;
@@ -69,9 +64,6 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [policyViolations, setPolicyViolations] = useState<any[]>([]);
-  const [linkedSources, setLinkedSources] = useState<any[]>([]);
-  const [viewingSourceId, setViewingSourceId] = useState<string | null>(null);
-  const [currentProduct, setCurrentProduct] = useState<any>(null);
 
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
@@ -132,44 +124,49 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   const loadData = async () => {
     setLoading(true);
 
-    const { data: templates } = await supabase
-      .from('attribute_templates')
-      .select('*')
-      .order('name');
-
-    if (templates) {
-      setAvailableTemplates(templates);
-    }
-
-    if (productId && mode === 'edit') {
-      const { data, error: fetchError } = await supabase
-        .from('products')
+    try {
+      const { data: templates, error: templatesError } = await supabase
+        .from('attribute_templates')
         .select('*')
-        .eq('id', productId)
-        .maybeSingle();
+        .order('name');
 
-      if (fetchError) {
-        console.error('Error loading product:', fetchError);
-        setError('Failed to load product');
-      } else if (data) {
-        setFormData(data);
-        setAttributes(data.attributes || {});
-        setSelectedTemplateId(data.attribute_template_id || '');
-        originalDataRef.current = { ...data, attributes: data.attributes || {} };
-
-        const { data: violations } = await supabase
-          .from('product_policy_violations')
-          .select('*, product_policies(display_name)')
-          .eq('product_id', productId)
-          .eq('status', 'active');
-
-        if (violations) {
-          setPolicyViolations(violations);
-        }
-
-        const sources = await integrationLinkService.getProductIntegrationSources(productId);
-        setLinkedSources(sources);
+      if (!templatesError && templates) {
+        setAvailableTemplates(templates);
       }
+
+      if (productId && mode === 'edit') {
+        const { data, error: fetchError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', productId)
+          .maybeSingle();
+
+        if (fetchError) {
+          console.error('Error loading product:', fetchError);
+          setError('Failed to load product');
+        } else if (data) {
+          setFormData(data);
+          setAttributes(data.attributes || {});
+          setSelectedTemplateId(data.attribute_template_id || '');
+          originalDataRef.current = { ...data, attributes: data.attributes || {} };
+
+          try {
+            const { data: violations } = await supabase
+              .from('product_policy_violations')
+              .select('*, product_policies(display_name)')
+              .eq('product_id', productId)
+              .eq('status', 'active');
+
+            if (violations) {
+              setPolicyViolations(violations);
+            }
+          } catch (err) {
+            console.log('Policy violations table not available');
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error loading data:', err);
     }
 
     setLoading(false);
@@ -299,15 +296,10 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   const getSections = () => {
     const sections = [
       { id: 'basic-info', label: 'Basic Information', icon: Info },
+      { id: 'attributes', label: 'Product Attributes', icon: Tag },
+      { id: 'images', label: 'Image Attributes', icon: Image },
+      { id: 'options', label: 'Options', icon: List },
     ];
-
-    if (mode === 'edit') {
-      sections.push({ id: 'api-integration', label: 'API Integration', icon: Link2 });
-    }
-
-    sections.push({ id: 'attributes', label: 'Product Attributes', icon: Tag });
-    sections.push({ id: 'images', label: 'Image Attributes', icon: Image });
-    sections.push({ id: 'options', label: 'Options', icon: List });
 
     return sections;
   };
@@ -601,34 +593,6 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
                   />
                 </div>
               </div>
-
-              {mode === 'edit' && productId && (
-                <div
-                  id="api-integration"
-                  ref={(el) => (sectionRefs.current['api-integration'] = el)}
-                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
-                >
-                  <ApiIntegrationSection
-                    mode={mode}
-                    linkedSources={linkedSources}
-                    viewingSourceId={viewingSourceId}
-                    currentItem={currentProduct || formData}
-                    onViewSource={(sourceId) => setViewingSourceId(sourceId)}
-                    onChangeLink={() => {}}
-                    onUnlink={async () => {
-                      try {
-                        await integrationLinkService.unlinkProduct(productId);
-                        alert('Product unlinked from API');
-                        loadData();
-                      } catch (error: any) {
-                        alert(error.message);
-                      }
-                    }}
-                    onClearCurrent={() => setCurrentProduct(null)}
-                    onLinkNew={() => {}}
-                  />
-                </div>
-              )}
 
               <div
                 id="attributes"
