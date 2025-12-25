@@ -439,43 +439,43 @@ export default function PlacementEdit({ placementId, storeId, parentId, conceptN
         </div>
       )}
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                {placementId
-                  ? (isStoreRoot ? 'Edit Store Configuration' : 'Edit Placement')
-                  : 'Create Placement'}
-              </h1>
-              <p className="text-slate-600">
-                {isStoreRoot
-                  ? 'Update store details, operating hours, and configuration'
-                  : placementId
-                    ? 'Update placement information and configuration'
-                    : 'Create a new placement for your store'}
-              </p>
-            </div>
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <Breadcrumb items={getBreadcrumbItems()} className="mb-0" />
             {placementId && (
               <button
                 onClick={copyIdToClipboard}
-                className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-mono border border-slate-300"
+                className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors text-xs font-mono border border-slate-300"
                 title="Click to copy ID"
               >
                 {idCopied ? (
                   <>
-                    <Check className="w-4 h-4 text-green-600" />
+                    <Check className="w-3.5 h-3.5 text-green-600" />
                     <span>Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4" />
+                    <Copy className="w-3.5 h-3.5" />
                     <span>ID: {placementId.slice(0, 8)}...</span>
                   </>
                 )}
               </button>
             )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">
+              {placementId
+                ? (isStoreRoot ? 'Edit Store Configuration' : 'Edit Placement')
+                : 'Create Placement'}
+            </h1>
+            <p className="text-sm text-slate-600">
+              {isStoreRoot
+                ? 'Update store details, operating hours, and configuration'
+                : placementId
+                  ? 'Update placement information and configuration'
+                  : 'Create a new placement for your store'}
+            </p>
           </div>
         </div>
 
