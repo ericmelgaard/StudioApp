@@ -616,7 +616,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                             className="w-full px-4 py-3 bg-violet-50 hover:bg-violet-100 transition-colors flex items-center justify-between group"
                           >
                             <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-violet-600" />
+                              <Sparkles className="w-4 h-4 text-violet-600" />
                               <span className="font-medium text-violet-900">
                                 Event & Holiday Schedules
                               </span>
