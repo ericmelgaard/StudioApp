@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree } from 'lucide-react';
+import { Package, RefreshCw, Search, Filter, Calendar, Menu, X, LayoutGrid, List, Plus, Settings, Link2, FolderTree } from 'lucide-react';
 import Breadcrumb from '../components/Breadcrumb';
 import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
@@ -41,7 +41,7 @@ interface ProductManagementProps {
 
 
 export default function ProductManagement({ onBack, showBackButton = true }: ProductManagementProps) {
-  const { location } = useLocation();
+  const { location, setLocation } = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -295,6 +295,34 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     return matchesSearch && matchesType && matchesCategory && matchesPeriod && matchesStation;
   });
 
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'WAND Digital', onClick: () => setLocation({}) }
+    ];
+
+    if (location.concept) {
+      items.push({
+        label: location.concept.name,
+        onClick: () => setLocation({ concept: location.concept })
+      });
+    }
+
+    if (location.company) {
+      items.push({
+        label: location.company.name,
+        onClick: () => setLocation({ concept: location.concept, company: location.company })
+      });
+    }
+
+    if (location.store) {
+      items.push({ label: location.store.name });
+    } else if (!location.concept && !location.company) {
+      items.push({ label: 'All Locations' });
+    }
+
+    return items;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Side Panel Overlay */}
@@ -377,33 +405,12 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              {showBackButton && onBack && (
-                <button
-                  onClick={onBack}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5 text-slate-600" />
-                </button>
-              )}
               <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
                 <Package className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-900">Product Management</h1>
-                {showBackButton ? (
-                  <p className="text-xs text-slate-500">
-                    {products.length} products in catalog
-                  </p>
-                ) : (
-                  <Breadcrumb
-                    items={[
-                      ...(location.concept ? [{ label: location.concept.name }] : []),
-                      ...(location.company ? [{ label: location.company.name }] : []),
-                      ...(location.store ? [{ label: location.store.name }] : []),
-                      ...(!location.concept && !location.company && !location.store ? [{ label: 'All Locations' }] : [])
-                    ]}
-                  />
-                )}
+                <Breadcrumb items={getBreadcrumbItems()} />
               </div>
             </div>
             <div className="flex items-center gap-2">

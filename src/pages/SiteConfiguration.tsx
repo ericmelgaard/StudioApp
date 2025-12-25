@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, ArrowLeft, Clock } from 'lucide-react';
+import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
+import Breadcrumb from '../components/Breadcrumb';
 import MetricsBar from '../components/MetricsBar';
 import ConceptsGrid from '../components/ConceptsGrid';
 import CompaniesGrid from '../components/CompaniesGrid';
@@ -399,65 +400,34 @@ export default function SiteConfiguration() {
     );
   }
 
-  const renderBreadcrumbs = () => (
-    <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-      <button
-        onClick={() => {
-          setLocation({});
-        }}
-        className="hover:text-blue-600 transition-colors"
-      >
-        WAND Digital
-      </button>
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'WAND Digital', onClick: () => setLocation({}) }
+    ];
 
-      {selectedConcept && (
-        <>
-          <span>›</span>
-          <button
-            onClick={() => {
-              setLocation({ concept: selectedConcept });
-            }}
-            className="flex items-center gap-2 hover:text-blue-600 transition-colors"
-          >
-            <div
-              className="p-1 rounded"
-              style={{
-                backgroundColor: selectedConcept.brand_primary_color || '#E5E7EB',
-                color: selectedConcept.brand_primary_color ? '#FFFFFF' : '#374151'
-              }}
-            >
-              {renderIcon(selectedConcept.icon)}
-            </div>
-            {selectedConcept.name}
-          </button>
-        </>
-      )}
+    if (selectedConcept) {
+      items.push({
+        label: selectedConcept.name,
+        onClick: () => setLocation({ concept: selectedConcept })
+      });
+    }
 
-      {selectedCompany && (
-        <>
-          <span>›</span>
-          <button
-            onClick={() => {
-              setLocation({
-                concept: selectedConcept || location.concept,
-                company: selectedCompany
-              });
-            }}
-            className="hover:text-blue-600 transition-colors"
-          >
-            {selectedCompany.name}
-          </button>
-        </>
-      )}
+    if (selectedCompany) {
+      items.push({
+        label: selectedCompany.name,
+        onClick: () => setLocation({
+          concept: selectedConcept || location.concept,
+          company: selectedCompany
+        })
+      });
+    }
 
-      {selectedStore && (
-        <>
-          <span>›</span>
-          <span className="font-medium text-slate-900">{selectedStore.name}</span>
-        </>
-      )}
-    </div>
-  );
+    if (selectedStore) {
+      items.push({ label: selectedStore.name });
+    }
+
+    return items;
+  };
 
   // WAND Digital Level View
   if (viewLevel === 'wand' && !location.concept && !location.company && !location.store) {
@@ -469,9 +439,9 @@ export default function SiteConfiguration() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
+            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Locations</h1>
             <p className="text-slate-600">Manage your organizational hierarchy and locations</p>
-            {renderBreadcrumbs()}
           </div>
 
           <MetricsBar
@@ -537,17 +507,7 @@ export default function SiteConfiguration() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
-            {canNavigateBack() && (
-              <button
-                onClick={() => {
-                  setLocation({});
-                }}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
-              >
-                <ArrowLeft size={18} />
-                WAND Digital
-              </button>
-            )}
+            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
 
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
@@ -575,7 +535,6 @@ export default function SiteConfiguration() {
                 Edit Concept
               </button>
             </div>
-            {renderBreadcrumbs()}
           </div>
 
           <MetricsBar
@@ -662,19 +621,7 @@ export default function SiteConfiguration() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
-            {canNavigateBack() && selectedConcept && (
-              <button
-                onClick={() => {
-                  setLocation({
-                    concept: selectedConcept || location.concept
-                  });
-                }}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
-              >
-                <ArrowLeft size={18} />
-                {selectedConcept?.name || 'Concept'}
-              </button>
-            )}
+            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
 
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -691,7 +638,6 @@ export default function SiteConfiguration() {
                 Edit Company
               </button>
             </div>
-            {renderBreadcrumbs()}
           </div>
 
           <MetricsBar
@@ -778,21 +724,7 @@ export default function SiteConfiguration() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
-          {cameFromCompanyLevel && selectedCompany && (
-            <button
-              onClick={() => {
-                setLocation({
-                  concept: selectedConcept || location.concept,
-                  company: selectedCompany || location.company
-                });
-              }}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
-            >
-              <ArrowLeft size={18} />
-              {selectedCompany.name}
-            </button>
-          )}
-
+          <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{currentStore?.name || 'Store Configuration'}</h1>
           <p className="text-slate-600">Manage store settings and placement groups</p>
         </div>
