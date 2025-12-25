@@ -600,20 +600,32 @@ export default function DaypartRoutineForm({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <TimeSelector
-            label={formData.runs_on_days ? "Start Time *" : "Start Time"}
-            value={formData.start_time || '06:00'}
-            onChange={(time) => setFormData({ ...formData, start_time: time })}
-            disabled={!formData.runs_on_days}
-          />
-          <TimeSelector
-            label={formData.runs_on_days ? "End Time *" : "End Time"}
-            value={formData.end_time || '11:00'}
-            onChange={(time) => setFormData({ ...formData, end_time: time })}
-            disabled={!formData.runs_on_days}
-          />
-        </div>
+        {formData.runs_on_days ? (
+          <div className="grid grid-cols-2 gap-3">
+            <TimeSelector
+              label="Start Time *"
+              value={formData.start_time || '06:00'}
+              onChange={(time) => setFormData({ ...formData, start_time: time })}
+            />
+            <TimeSelector
+              label="End Time *"
+              value={formData.end_time || '11:00'}
+              onChange={(time) => setFormData({ ...formData, end_time: time })}
+            />
+          </div>
+        ) : (
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-2">
+            <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-slate-700">
+                Schedule runs all day
+              </p>
+              <p className="text-xs text-slate-600 mt-0.5">
+                This schedule is active for the entire day on selected days, without specific time restrictions.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-2">
           <button
