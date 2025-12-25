@@ -72,31 +72,31 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
   }, [storeId]);
 
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: '-20% 0px -75% 0px',
-      threshold: 0,
-    };
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 150;
+      const sections = getSections();
 
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sectionRefs.current[sections[i].id];
+        if (section) {
+          const offsetTop = section.offsetTop;
+          if (scrollPosition >= offsetTop) {
+            setActiveSection(sections[i].id);
+            return;
+          }
         }
-      });
+      }
+
+      if (sections.length > 0) {
+        setActiveSection(sections[0].id);
+      }
     };
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-
-    const refs = Object.values(sectionRefs.current).filter(ref => ref !== null);
-    refs.forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
 
     return () => {
-      refs.forEach((ref) => {
-        if (ref) observer.unobserve(ref);
-      });
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [storeId]);
 
