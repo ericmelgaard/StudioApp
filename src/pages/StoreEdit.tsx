@@ -221,7 +221,6 @@ export default function StoreEdit({ storeId, companyId, onBack, onSave }: StoreE
   }, [isDirty]);
 
   const scrollToSection = (sectionId: string) => {
-    setActiveSection(sectionId);
     const element = sectionRefs.current[sectionId];
     if (element) {
       const offset = 100;

@@ -301,7 +301,6 @@ export default function PlacementEdit({ placementId, storeId, parentId, onBack, 
   };
 
   const scrollToSection = (sectionId: string) => {
-    setActiveSection(sectionId);
     const element = sectionRefs.current[sectionId];
     if (element) {
       const offset = 100;
