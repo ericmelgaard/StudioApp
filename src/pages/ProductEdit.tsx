@@ -501,6 +501,39 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
           } catch (err) {
             console.log('Policy violations table not available');
           }
+
+          try {
+            const links = await integrationLinkService.getProductLinks(productId);
+            setLinkedSources(links);
+            if (links.length > 0) {
+              setViewingSourceId(links[0].integration_source_id);
+
+              if (data.mapping_id && data.integration_source_id && data.integration_type) {
+                try {
+                  const integData = await integrationLinkService.getIntegrationData(
+                    data.integration_source_id,
+                    data.mapping_id,
+                    data.integration_type
+                  );
+                  setIntegrationData(integData);
+
+                  const manager = new SyncStateManager(
+                    data,
+                    integData,
+                    data.attribute_mappings || {},
+                    data.disabled_sync_fields || []
+                  );
+                  setSyncStateManager(manager);
+                  const status = manager.getSyncStatus();
+                  setSyncStatus(status);
+                } catch (err) {
+                  console.error('Error loading integration data:', err);
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Error loading integration links:', err);
+          }
         }
       } else if (mode === 'create') {
         originalDataRef.current = null;
