@@ -54,6 +54,8 @@ git clone https://github.com/ericmelgaard/StudioApp
 git clone --depth=100 https://github.com/ericmelgaard/StudioApp
 ```
 
+> **Note**: The examples above use this repository's URL. For other repositories, replace with the appropriate URL.
+
 ## When Shallow Clones Are Useful
 
 Shallow clones are beneficial in specific scenarios:
