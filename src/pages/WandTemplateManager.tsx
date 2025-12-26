@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Copy, Layers, Search, Package, Building2, Store, Globe, Eye, EyeOff, RefreshCw, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy, Layers, Search, Package, Building2, Store, Globe, Eye, EyeOff, RefreshCw, AlertCircle, CheckCircle, ChevronRight, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { TemplateSectionService, SectionSetting, Location } from '../lib/templateSectionService';
 import Toast from '../components/Toast';
+import Breadcrumb from '../components/Breadcrumb';
+import LocationSelector from '../components/LocationSelector';
 
 interface WandTemplateManagerProps {
   onBack: () => void;
@@ -33,6 +35,12 @@ interface TemplateUsageStats {
 
 type TabType = 'overview' | 'sections' | 'settings';
 
+interface LocationContext {
+  concept?: { id: number; name: string };
+  company?: { id: number; name: string };
+  store?: { id: number; name: string };
+}
+
 export default function WandTemplateManager({ onBack }: WandTemplateManagerProps) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +49,11 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [sectionSettings, setSectionSettings] = useState<SectionSetting[]>([]);
   const [loadingSections, setLoadingSections] = useState(false);
-  const [location, setLocation] = useState<Location>({});
+  const [locationContext, setLocationContext] = useState<LocationContext>({});
   const [usageStats, setUsageStats] = useState<TemplateUsageStats | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -54,7 +63,7 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
     if (selectedTemplate && activeTab === 'sections') {
       loadSectionSettings();
     }
-  }, [selectedTemplate, activeTab, location]);
+  }, [selectedTemplate, activeTab, locationContext]);
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -83,6 +92,11 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
 
     setLoadingSections(true);
     try {
+      const location: Location = {
+        concept_id: locationContext.concept?.id || null,
+        company_id: locationContext.company?.id || null,
+        store_id: locationContext.store?.id || null,
+      };
       const settings = await TemplateSectionService.getEffectiveSectionSettings(
         selectedTemplate.id,
         location
@@ -111,6 +125,11 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
 
     setSavingSection(sectionId);
     try {
+      const location: Location = {
+        concept_id: locationContext.concept?.id || null,
+        company_id: locationContext.company?.id || null,
+        store_id: locationContext.store?.id || null,
+      };
       await TemplateSectionService.updateSectionSetting({
         template_id: selectedTemplate.id,
         section_id: sectionId,
@@ -132,6 +151,11 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
 
     setSavingSection(sectionId);
     try {
+      const location: Location = {
+        concept_id: locationContext.concept?.id || null,
+        company_id: locationContext.company?.id || null,
+        store_id: locationContext.store?.id || null,
+      };
       await TemplateSectionService.resetToParent(selectedTemplate.id, sectionId, location);
       await loadSectionSettings();
       setToastMessage('Section reset to parent settings');
@@ -164,26 +188,71 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
     }
   };
 
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'WAND Digital', onClick: () => setLocationContext({}) }
+    ];
+
+    if (locationContext.concept) {
+      items.push({
+        label: locationContext.concept.name,
+        onClick: () => setLocationContext({ concept: locationContext.concept })
+      });
+    }
+
+    if (locationContext.company) {
+      items.push({
+        label: locationContext.company.name,
+        onClick: () => setLocationContext({ concept: locationContext.concept, company: locationContext.company })
+      });
+    }
+
+    if (locationContext.store) {
+      items.push({ label: locationContext.store.name });
+    }
+
+    return items;
+  };
+
   const getLocationLevelDisplay = () => {
-    if (location.store_id) return 'Store Level';
-    if (location.company_id) return 'Company Level';
-    if (location.concept_id) return 'Concept Level';
+    if (locationContext.store) return 'Store Level';
+    if (locationContext.company) return 'Company Level';
+    if (locationContext.concept) return 'Concept Level';
     return 'WAND Level (Global Default)';
   };
 
   return (
     <div className="max-w-[1800px] mx-auto h-[calc(100vh-200px)]">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Manage Templates</h1>
-          <p className="text-slate-600">
-            Create and manage global product attribute templates for different industry sectors
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+              <Layers className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Manage Templates</h1>
+              <Breadcrumb items={getBreadcrumbItems()} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowLocationSelector(true)}
+              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
+            >
+              <MapPin className="w-4 h-4" />
+              Change Location
+            </button>
+            <button className="px-4 py-2 bg-[#00adf0] text-white rounded-lg hover:bg-[#0099d6] transition-colors flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Template
+            </button>
+          </div>
+        </div>
+        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800">
+            <strong>Current Context:</strong> {getLocationLevelDisplay()} - Section visibility settings will be applied at this level and cascade down the hierarchy.
           </p>
         </div>
-        <button className="px-4 py-2 bg-[#00adf0] text-white rounded-lg hover:bg-[#0099d6] transition-colors flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Create Template
-        </button>
       </div>
 
       <div className="flex gap-6 h-full">
@@ -434,7 +503,7 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                  {section.is_inherited && location.concept_id && (
+                                  {section.is_inherited && (locationContext.concept || locationContext.company || locationContext.store) && (
                                     <button
                                       onClick={() => handleResetToParent(section.section_id)}
                                       disabled={isSaving}
@@ -517,6 +586,17 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
           message={toastMessage}
           onClose={() => setToastMessage(null)}
           duration={3000}
+        />
+      )}
+
+      {showLocationSelector && (
+        <LocationSelector
+          onClose={() => setShowLocationSelector(false)}
+          onSelect={(location) => {
+            setLocationContext(location);
+            setShowLocationSelector(false);
+          }}
+          selectedLocation={locationContext}
         />
       )}
     </div>
