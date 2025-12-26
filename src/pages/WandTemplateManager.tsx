@@ -78,9 +78,11 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
   }, []);
 
   useEffect(() => {
-    if (selectedTemplate && activeTab === 'sections') {
+    if (selectedTemplate && (activeTab === 'sections' || activeTab === 'overview')) {
       loadSectionSettings();
-      loadAvailableAttributes();
+      if (activeTab === 'sections') {
+        loadAvailableAttributes();
+      }
     }
   }, [selectedTemplate, activeTab, location]);
 
@@ -647,7 +649,117 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
 
               <div className="flex-1 overflow-y-auto p-6">
                 {activeTab === 'overview' && (
-                  <div>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-900">Section Visibility</h3>
+                          <p className="text-sm text-slate-600 mt-1">
+                            Control which sections are visible for products using this template
+                          </p>
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          {getLocationLevelDisplay()}
+                        </div>
+                      </div>
+
+                      {loadingSections ? (
+                        <div className="flex items-center justify-center py-12">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                          {sectionSettings.map((section) => {
+                            const SectionIcon = getSectionIcon(section.section_name);
+                            const isSaving = savingSection === section.section_id;
+                            const attributeCount = getAttributeCountForSection(section.section_name);
+
+                            return (
+                              <div
+                                key={section.section_id}
+                                className={`p-4 rounded-lg border-2 transition-all ${
+                                  section.is_enabled
+                                    ? 'bg-white border-[#00adf0] shadow-sm'
+                                    : 'bg-slate-50 border-slate-200'
+                                }`}
+                              >
+                                <div className="flex items-start gap-3 mb-3">
+                                  <div className={`p-2 rounded-lg ${
+                                    section.is_enabled ? 'bg-blue-50' : 'bg-slate-200'
+                                  }`}>
+                                    <SectionIcon className={`w-5 h-5 ${
+                                      section.is_enabled ? 'text-[#00adf0]' : 'text-slate-400'
+                                    }`} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className={`font-semibold ${
+                                        section.is_enabled ? 'text-slate-900' : 'text-slate-500'
+                                      }`}>
+                                        {section.section_label}
+                                      </h4>
+                                      {section.is_inherited && (
+                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded shrink-0">
+                                          Inherited
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-slate-600 mb-2">
+                                      {getSectionDescription(section.section_type)}
+                                    </p>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                                      <span>{attributeCount} attributes</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-sm font-medium ${
+                                      section.is_enabled ? 'text-[#00adf0]' : 'text-slate-500'
+                                    }`}>
+                                      {section.is_enabled ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                    {section.is_enabled ? (
+                                      <Eye className="w-4 h-4 text-[#00adf0]" />
+                                    ) : (
+                                      <EyeOff className="w-4 h-4 text-slate-400" />
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {section.is_inherited && (location.concept || location.company || location.store) && (
+                                      <button
+                                        onClick={() => handleResetToParent(section.section_id)}
+                                        disabled={isSaving}
+                                        className="text-xs text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50 flex items-center gap-1"
+                                        title="Reset to parent settings"
+                                      >
+                                        <RefreshCw className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => handleToggleSection(section.section_id, section.is_enabled)}
+                                      disabled={isSaving}
+                                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+                                        section.is_enabled ? 'bg-[#00adf0]' : 'bg-slate-300'
+                                      }`}
+                                      title={section.is_enabled ? 'Click to disable' : 'Click to enable'}
+                                    >
+                                      <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                          section.is_enabled ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                      />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold text-slate-900 mb-3">Core Attributes</h3>
                       <div className="grid grid-cols-2 gap-3">
@@ -672,7 +784,7 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
                       <h3 className="font-semibold text-blue-900 mb-2">About This Template</h3>
                       <p className="text-sm text-blue-800">
                         This template defines the core attribute structure for products across your organization.
-                        Use the Section Visibility tab to control which sections are visible at different location levels.
+                        Toggle sections above to control their visibility at the current location level.
                       </p>
                     </div>
                   </div>
