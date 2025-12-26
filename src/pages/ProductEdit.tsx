@@ -32,7 +32,7 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
         integration_source:wand_integration_sources!products_integration_source_id_fkey(
           id,
           name,
-          type
+          integration_type
         )
       `)
       .eq('id', productId)
@@ -53,7 +53,7 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
     const productWithSource = {
       ...data,
       integration_source_name: data.integration_source?.name || null,
-      integration_type: data.integration_source?.type || data.integration_type
+      integration_type: data.integration_source?.integration_type || data.integration_type
     };
 
     setProduct(productWithSource);
