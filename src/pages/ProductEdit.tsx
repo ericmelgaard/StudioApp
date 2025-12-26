@@ -27,15 +27,7 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
 
     const { data, error } = await supabase
       .from('products')
-      .select(`
-        *,
-        attribute_template:product_attribute_templates!products_attribute_template_id_fkey(
-          id,
-          name,
-          attribute_schema,
-          translations
-        )
-      `)
+      .select('*')
       .eq('id', productId)
       .maybeSingle();
 
