@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Info, Image, FileText, DollarSign, Globe, Link2, Copy, Check } from 'lucide-react';
 import EditProductModal from '../components/EditProductModal';
 import { supabase } from '../lib/supabase';
 import { LocationProductService } from '../lib/locationProductService';
+import Breadcrumb from '../components/Breadcrumb';
 
 interface ProductEditProps {
   productId: string;
@@ -14,6 +15,9 @@ interface ProductEditProps {
 export default function ProductEdit({ productId, mode, onBack, onSave }: ProductEditProps) {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('basic-info');
+  const [idCopied, setIdCopied] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (mode === 'edit') {
@@ -22,6 +26,88 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
       setLoading(false);
     }
   }, [productId, mode]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!contentRef.current) return;
+
+      const scrollPosition = window.scrollY + 200;
+      const sections = getSections();
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const element = document.querySelector(`[data-section="${sections[i].id}"]`);
+        if (element) {
+          const offsetTop = (element as HTMLElement).offsetTop;
+          if (scrollPosition >= offsetTop) {
+            setActiveSection(sections[i].id);
+            return;
+          }
+        }
+      }
+
+      if (sections.length > 0) {
+        setActiveSection(sections[0].id);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  const getSections = () => {
+    return [
+      { id: 'basic-info', label: 'Basic Information', icon: Info },
+      { id: 'images-media', label: 'Images & Media', icon: Image },
+      { id: 'description', label: 'Description & Details', icon: FileText },
+      { id: 'pricing', label: 'Pricing & Options', icon: DollarSign },
+      { id: 'translations', label: 'Translations', icon: Globe },
+      { id: 'integration', label: 'Integration Links', icon: Link2 }
+    ];
+  };
+
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'Product Management', onClick: onBack }
+    ];
+
+    if (mode === 'edit') {
+      items.push({ label: 'Edit Product' });
+    } else {
+      items.push({ label: 'Create Product' });
+    }
+
+    return items;
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.querySelector(`[data-section="${sectionId}"]`);
+    if (element) {
+      const offset = 100;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const copyIdToClipboard = async () => {
+    if (productId) {
+      try {
+        await navigator.clipboard.writeText(productId);
+        setIdCopied(true);
+        setTimeout(() => setIdCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
 
   const loadProduct = async () => {
     setLoading(true);
@@ -81,35 +167,94 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <div className="border-b border-slate-200 bg-white px-6 py-4 flex-shrink-0">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back to Products</span>
-        </button>
-      </div>
+  const productName = product?.attributes?.name || product?.name || 'Untitled Product';
 
-      <div className="flex-1">
-        <EditProductModal
-          isOpen={true}
-          onClose={onBack}
-          product={product}
-          onSuccess={() => {
-            onSave();
-          }}
-          mode={mode}
-          renderAsPage={true}
-        />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <Breadcrumb items={getBreadcrumbItems()} className="mb-0" />
+            {mode === 'edit' && productId && (
+              <button
+                onClick={copyIdToClipboard}
+                className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors text-xs font-mono border border-slate-300"
+                title="Click to copy ID"
+              >
+                {idCopied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>ID: {productId.slice(0, 8)}...</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">
+              {mode === 'edit' ? `Edit: ${productName.replace(/<[^>]*>/g, '')}` : 'Create Product'}
+            </h1>
+            <p className="text-sm text-slate-600">
+              {mode === 'edit'
+                ? 'Update product information, pricing, and settings'
+                : 'Create a new product for your menu'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-8">
+          <aside className="w-64 flex-shrink-0">
+            <div className="sticky top-[124px] z-10 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wide">
+                Sections
+              </h3>
+              <nav className="space-y-1">
+                {getSections().map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => scrollToSection(section.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeSection === section.id
+                          ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px pl-2.5'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-left">{section.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </aside>
+
+          <div ref={contentRef} className="flex-1">
+            <EditProductModal
+              isOpen={true}
+              onClose={onBack}
+              product={product}
+              onSuccess={() => {
+                onSave();
+              }}
+              mode={mode}
+              renderAsPage={true}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

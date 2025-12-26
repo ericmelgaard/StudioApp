@@ -2036,7 +2036,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* Template Selection (Create Mode Only) */}
           {mode === 'create' && (
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div data-section="basic-info" className="bg-slate-50 border border-slate-200 rounded-lg p-4 scroll-mt-20">
               <h3 className="text-sm font-semibold text-slate-900 mb-3">Product Attribute Template *</h3>
               <select
                 required
@@ -2060,28 +2060,30 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
             </div>
           )}
 
-          <ApiIntegrationSection
-            mode={mode}
-            linkedSources={linkedSources}
-            viewingSourceId={viewingSourceId}
-            currentItem={mode === 'create' ? currentProduct : product}
-            onViewSource={handleViewSource}
-            onChangeLink={handleChangeLink}
-            onUnlink={async () => {
-              try {
-                await integrationLinkService.unlinkProduct(product!.id);
-                alert('Product unlinked from API');
-                onSuccess();
-              } catch (error: any) {
-                alert(error.message);
-              }
-            }}
-            onClearCurrent={() => setCurrentProduct(null)}
-            onLinkNew={() => setShowProductApiLinkModal(true)}
-          />
+          <div data-section="integration" className="scroll-mt-20">
+            <ApiIntegrationSection
+              mode={mode}
+              linkedSources={linkedSources}
+              viewingSourceId={viewingSourceId}
+              currentItem={mode === 'create' ? currentProduct : product}
+              onViewSource={handleViewSource}
+              onChangeLink={handleChangeLink}
+              onUnlink={async () => {
+                try {
+                  await integrationLinkService.unlinkProduct(product!.id);
+                  alert('Product unlinked from API');
+                  onSuccess();
+                } catch (error: any) {
+                  alert(error.message);
+                }
+              }}
+              onClearCurrent={() => setCurrentProduct(null)}
+              onLinkNew={() => setShowProductApiLinkModal(true)}
+            />
+          </div>
 
           {/* Attributes Section */}
-          <div id="attributes-section">
+          <div id="attributes-section" data-section="basic-info" className="scroll-mt-20">
             <div className="flex items-center justify-between mb-4">
               <label className="block text-sm font-medium text-slate-700">
                 Product Attributes
@@ -2454,7 +2456,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                   if (imageKeys.length === 0) return null;
 
                   return (
-                    <div className="pt-4 border-t border-slate-200">
+                    <div data-section="images-media" className="pt-4 border-t border-slate-200 scroll-mt-20">
                       <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Images</h3>
                       <div className="grid grid-cols-2 gap-4">
                         {imageKeys.map(key => {
@@ -2530,7 +2532,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                   if (optionsKeys.length === 0) return null;
 
                   return (
-                    <div className="pt-4 border-t border-slate-200">
+                    <div data-section="pricing" className="pt-4 border-t border-slate-200 scroll-mt-20">
                       {optionsKeys.map(key => {
                         const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
                         const isOverridden = syncStatus?.overridden[key];
@@ -2562,7 +2564,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                   if (extendedKeys.length === 0) return null;
 
                   return (
-                    <div className="pt-4 border-t border-slate-200">
+                    <div data-section="description" className="pt-4 border-t border-slate-200 scroll-mt-20">
                       <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Extended Attributes</h3>
                       <div className="flex flex-wrap gap-3">
                         {extendedKeys.map(key => {
