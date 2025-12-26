@@ -731,11 +731,13 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   };
 
   useEffect(() => {
-    if (isOpen && mode === 'create') {
+    const shouldLoad = renderAsPage || isOpen;
+
+    if (shouldLoad && mode === 'create') {
       // Reset form first, then load available templates for create mode
       resetForm();
       loadAvailableTemplates();
-    } else if (product && mode === 'edit') {
+    } else if (product && mode === 'edit' && shouldLoad) {
       setCurrentProduct(product);
       setName(product.name);
       loadTemplateAttributes();
@@ -767,7 +769,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
       // Calculate any computed fields
       calculateComputedFields(mappings, product.attributes);
     }
-  }, [product?.id, isOpen, mode]);
+  }, [product?.id, isOpen, mode, renderAsPage]);
 
   async function loadAvailableTemplates() {
     const [templatesResult, orgSettingsResult] = await Promise.all([
@@ -1917,7 +1919,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   const innerContent = (
     <>
       <div
-        className={renderAsPage ? "bg-white w-full flex flex-col" : "bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[201]"}
+        className={renderAsPage ? "bg-white w-full flex flex-col h-full" : "bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[201]"}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">

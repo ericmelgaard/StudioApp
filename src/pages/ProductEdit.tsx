@@ -24,17 +24,34 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
 
   const loadProduct = async () => {
     setLoading(true);
+
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        attribute_template:product_attribute_templates!products_attribute_template_id_fkey(
+          id,
+          name,
+          attribute_schema,
+          translations
+        )
+      `)
       .eq('id', productId)
       .maybeSingle();
 
     if (error) {
       console.error('Error loading product:', error);
-    } else {
-      setProduct(data);
+      setLoading(false);
+      return;
     }
+
+    if (!data) {
+      console.error('Product not found');
+      setLoading(false);
+      return;
+    }
+
+    setProduct(data);
     setLoading(false);
   };
 
@@ -47,8 +64,8 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="border-b border-slate-200 bg-white px-6 py-4">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="border-b border-slate-200 bg-white px-6 py-4 flex-shrink-0">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
@@ -58,16 +75,18 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
         </button>
       </div>
 
-      <EditProductModal
-        isOpen={true}
-        onClose={onBack}
-        product={product}
-        onSuccess={() => {
-          onSave();
-        }}
-        mode={mode}
-        renderAsPage={true}
-      />
+      <div className="flex-1">
+        <EditProductModal
+          isOpen={true}
+          onClose={onBack}
+          product={product}
+          onSuccess={() => {
+            onSave();
+          }}
+          mode={mode}
+          renderAsPage={true}
+        />
+      </div>
     </div>
   );
 }
