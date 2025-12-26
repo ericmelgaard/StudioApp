@@ -7,6 +7,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import { useLocation } from '../hooks/useLocation';
 import AddAttributeModal from '../components/AddAttributeModal';
 import MoneyFormatSettings, { MoneyFormatConfig } from '../components/MoneyFormatSettings';
+import CalorieFormatSettings, { CalorieFormatConfig } from '../components/CalorieFormatSettings';
 
 interface WandTemplateManagerProps {
   onBack: () => void;
@@ -25,6 +26,7 @@ interface Template {
     }>;
   };
   money_format_settings?: MoneyFormatConfig;
+  calorie_format_settings?: CalorieFormatConfig;
   is_system: boolean;
   created_at: string;
 }
@@ -85,6 +87,16 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
     decimal_separator: '.',
     rounding_mode: 'round',
   });
+  const [calorieFormatSettings, setCalorieFormatSettings] = useState<CalorieFormatConfig>({
+    show_unit: true,
+    unit_label: 'Cal',
+    unit_position: 'after',
+    custom_unit: '',
+    thousands_separator: ',',
+    show_decimals: false,
+    decimal_places: 0,
+    rounding_mode: 'round',
+  });
 
   useEffect(() => {
     loadTemplates();
@@ -110,6 +122,9 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
       loadUsageStats();
       if (selectedTemplate.money_format_settings) {
         setMoneyFormatSettings(selectedTemplate.money_format_settings);
+      }
+      if (selectedTemplate.calorie_format_settings) {
+        setCalorieFormatSettings(selectedTemplate.calorie_format_settings);
       }
     }
   }, [selectedTemplate]);
@@ -499,6 +514,25 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
     } catch (error) {
       console.error('Error saving money format settings:', error);
       setToastMessage('Failed to save money format settings');
+    }
+  };
+
+  const handleSaveCalorieFormatSettings = async () => {
+    if (!selectedTemplate) return;
+
+    try {
+      const { error } = await supabase
+        .from('product_attribute_templates')
+        .update({ calorie_format_settings: calorieFormatSettings })
+        .eq('id', selectedTemplate.id);
+
+      if (error) throw error;
+
+      await loadTemplates();
+      setToastMessage('Calorie format settings saved successfully');
+    } catch (error) {
+      console.error('Error saving calorie format settings:', error);
+      setToastMessage('Failed to save calorie format settings');
     }
   };
 
@@ -1031,18 +1065,34 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
                 )}
 
                 {activeTab === 'settings' && (
-                  <div>
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">Money Display Format</h3>
-                      <p className="text-sm text-slate-600">
-                        Configure how monetary values are displayed for products using this template.
-                      </p>
+                  <div className="space-y-8">
+                    <div>
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">Money Display Format</h3>
+                        <p className="text-sm text-slate-600">
+                          Configure how monetary values are displayed for products using this template.
+                        </p>
+                      </div>
+                      <MoneyFormatSettings
+                        settings={moneyFormatSettings}
+                        onChange={setMoneyFormatSettings}
+                        onSave={handleSaveMoneyFormatSettings}
+                      />
                     </div>
-                    <MoneyFormatSettings
-                      settings={moneyFormatSettings}
-                      onChange={setMoneyFormatSettings}
-                      onSave={handleSaveMoneyFormatSettings}
-                    />
+
+                    <div className="border-t border-slate-200 pt-8">
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">Calorie Display Format</h3>
+                        <p className="text-sm text-slate-600">
+                          Configure how calorie values are displayed for products using this template.
+                        </p>
+                      </div>
+                      <CalorieFormatSettings
+                        settings={calorieFormatSettings}
+                        onChange={setCalorieFormatSettings}
+                        onSave={handleSaveCalorieFormatSettings}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
