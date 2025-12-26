@@ -6,6 +6,7 @@ import Toast from '../components/Toast';
 import Breadcrumb from '../components/Breadcrumb';
 import { useLocation } from '../hooks/useLocation';
 import AddAttributeModal from '../components/AddAttributeModal';
+import MoneyFormatSettings, { MoneyFormatConfig } from '../components/MoneyFormatSettings';
 
 interface WandTemplateManagerProps {
   onBack: () => void;
@@ -23,6 +24,7 @@ interface Template {
       required: boolean;
     }>;
   };
+  money_format_settings?: MoneyFormatConfig;
   is_system: boolean;
   created_at: string;
 }
@@ -72,6 +74,17 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
   const [availableAttributes, setAvailableAttributes] = useState<AvailableAttribute[]>([]);
   const [showAddAttributeModal, setShowAddAttributeModal] = useState(false);
   const [addAttributeTab, setAddAttributeTab] = useState<'library' | 'custom'>('library');
+  const [moneyFormatSettings, setMoneyFormatSettings] = useState<MoneyFormatConfig>({
+    show_currency_symbol: true,
+    currency_symbol: '$',
+    symbol_position: 'before',
+    symbol_style: 'normal',
+    decimal_places: 2,
+    show_cents: true,
+    thousands_separator: ',',
+    decimal_separator: '.',
+    rounding_mode: 'round',
+  });
 
   useEffect(() => {
     loadTemplates();
@@ -95,6 +108,9 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
   useEffect(() => {
     if (selectedTemplate) {
       loadUsageStats();
+      if (selectedTemplate.money_format_settings) {
+        setMoneyFormatSettings(selectedTemplate.money_format_settings);
+      }
     }
   }, [selectedTemplate]);
 
@@ -464,6 +480,25 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
     } catch (error) {
       console.error('Error removing attribute:', error);
       setToastMessage('Failed to remove attribute');
+    }
+  };
+
+  const handleSaveMoneyFormatSettings = async () => {
+    if (!selectedTemplate) return;
+
+    try {
+      const { error } = await supabase
+        .from('product_attribute_templates')
+        .update({ money_format_settings: moneyFormatSettings })
+        .eq('id', selectedTemplate.id);
+
+      if (error) throw error;
+
+      await loadTemplates();
+      setToastMessage('Money format settings saved successfully');
+    } catch (error) {
+      console.error('Error saving money format settings:', error);
+      setToastMessage('Failed to save money format settings');
     }
   };
 
@@ -997,15 +1032,17 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
 
                 {activeTab === 'settings' && (
                   <div>
-                    <div className="p-6 bg-slate-50 rounded-lg border border-slate-200">
-                      <h3 className="font-semibold text-slate-900 mb-2">Template Settings</h3>
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">Money Display Format</h3>
                       <p className="text-sm text-slate-600">
-                        Advanced settings and configuration options for this template.
-                      </p>
-                      <p className="text-sm text-slate-500 mt-4 italic">
-                        Additional settings coming soon...
+                        Configure how monetary values are displayed for products using this template.
                       </p>
                     </div>
+                    <MoneyFormatSettings
+                      settings={moneyFormatSettings}
+                      onChange={setMoneyFormatSettings}
+                      onSave={handleSaveMoneyFormatSettings}
+                    />
                   </div>
                 )}
               </div>
