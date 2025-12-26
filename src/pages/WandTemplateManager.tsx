@@ -760,31 +760,11 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
                       )}
                     </div>
 
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-3">Core Attributes</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedTemplate.attribute_schema.core_attributes.map((attr, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 bg-slate-50 border border-slate-200 rounded-lg"
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-slate-900">{attr.label}</span>
-                              {attr.required && (
-                                <span className="text-xs text-red-500 font-semibold">Required</span>
-                              )}
-                            </div>
-                            <span className="text-sm text-slate-500">Type: {attr.type}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <h3 className="font-semibold text-blue-900 mb-2">About This Template</h3>
                       <p className="text-sm text-blue-800">
                         This template defines the core attribute structure for products across your organization.
-                        Toggle sections above to control their visibility at the current location level.
+                        Toggle sections above to control their visibility at the current location level. Use the "Section Attributes" tab to manage the specific attributes within each section.
                       </p>
                     </div>
                   </div>
