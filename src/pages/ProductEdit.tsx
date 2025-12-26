@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import EditProductModal from '../components/EditProductModal';
 import { supabase } from '../lib/supabase';
+import { LocationProductService } from '../lib/locationProductService';
 
 interface ProductEditProps {
   productId: string;
@@ -50,8 +51,26 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
       return;
     }
 
+    let integrationDataMap: Map<string, any> | undefined;
+    if (data.integration_product_id) {
+      const { data: integrationData } = await supabase
+        .from('integration_products')
+        .select('*')
+        .eq('id', data.integration_product_id)
+        .maybeSingle();
+
+      if (integrationData) {
+        integrationDataMap = new Map([[integrationData.id, integrationData]]);
+      }
+    }
+
+    const resolvedProduct = await LocationProductService.resolveProductWithInheritance(
+      data,
+      integrationDataMap
+    );
+
     const productWithSource = {
-      ...data,
+      ...resolvedProduct,
       integration_source_name: data.integration_source?.name || null,
       integration_type: data.integration_source?.integration_type || data.integration_type
     };
