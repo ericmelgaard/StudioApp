@@ -43,6 +43,7 @@ interface EditProductModalProps {
   product: Product | null;
   onSuccess: () => void;
   mode?: 'create' | 'edit';
+  renderAsPage?: boolean;
 }
 
 interface SyncStatus {
@@ -632,7 +633,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   );
 });
 
-export default function EditProductModal({ isOpen, onClose, product, onSuccess, mode = 'edit' }: EditProductModalProps) {
+export default function EditProductModal({ isOpen, onClose, product, onSuccess, mode = 'edit', renderAsPage = false }: EditProductModalProps) {
   const { location } = useLocation();
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [name, setName] = useState('');
@@ -1840,7 +1841,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
     );
   }
 
-  if (!isOpen) return null;
+  if (!renderAsPage && !isOpen) return null;
   if (mode === 'edit' && !product) return null;
 
   // Show edit choice modal if there's a pending publication
@@ -1911,15 +1912,12 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
     );
   }
 
-  if (!isOpen) return null;
+  if (!renderAsPage && !isOpen) return null;
 
-  return (
-    <div
-      className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+  const innerContent = (
+    <>
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[201]"
+        className={renderAsPage ? "bg-white w-full flex flex-col" : "bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[201]"}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
@@ -2872,6 +2870,19 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (renderAsPage) {
+    return innerContent;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      {innerContent}
     </div>
   );
 }
