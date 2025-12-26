@@ -1,7 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { Save, AlertCircle, Info, Tag, Image, List, Copy, Check, Globe, ChevronDown, X } from 'lucide-react';
+import { useState, useEffect, useRef, memo } from 'react';
+import { Save, AlertCircle, Info, Tag, Image as ImageIcon, List, Copy, Check, Globe, ChevronDown, X, Plus, Link, Link2, Unlink, Pencil, Lock, GripVertical, FileText, Calculator, Calendar, Clock, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
+import ImageUploadField from '../components/ImageUploadField';
+import RichTextEditor from '../components/RichTextEditor';
+import FieldLinkModal, { FieldLinkData } from '../components/FieldLinkModal';
+import PriceConfigModal, { PriceConfig } from '../components/PriceConfigModal';
+import TranslationEditor from '../components/TranslationEditor';
+import { StateBadge } from '../components/StateBadge';
+import ApiLinkModal from '../components/ApiLinkModal';
+import { productValueResolver } from '../lib/productValueResolver';
+import { integrationLinkService } from '../lib/integrationLinkService';
+import { LocationProductService } from '../lib/locationProductService';
+import { useLocation } from '../hooks/useLocation';
+import { ApiIntegrationSection } from '../components/ApiIntegrationSection';
 
 interface ProductData {
   id?: string;
@@ -11,7 +23,7 @@ interface ProductData {
   display_template_id: string | null;
   integration_product_id: string | null;
   attribute_overrides?: Record<string, boolean>;
-  attribute_mappings?: Record<string, any>;
+  attribute_mappings?: Record<string, FieldLinkData>;
   disabled_sync_fields?: string[];
   active_integration_source_id?: string;
   last_sync_metadata?: Record<string, any>;
@@ -19,8 +31,9 @@ interface ProductData {
   integration_source_id?: string | null;
   integration_type?: 'product' | 'modifier' | 'discount' | null;
   local_fields?: string[];
-  price_calculations?: Record<string, any>;
+  price_calculations?: Record<string, PriceConfig>;
   last_synced_at?: string | null;
+  parent_product_id?: string | null;
 }
 
 interface ProductEditProps {
@@ -43,30 +56,309 @@ interface Option {
     integration_source_id: string;
   };
   local_fields?: string[];
-  price_calculation?: any;
+  price_calculation?: PriceConfig;
 }
 
+interface OptionsEditorProps {
+  options: Option[];
+  onChange: (options: Option[]) => void;
+  integrationSourceId?: string | null;
+  expandedRichTextFields: Set<string>;
+  setExpandedRichTextFields: (fields: Set<string>) => void;
+}
+
+const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrationSourceId, expandedRichTextFields, setExpandedRichTextFields }: OptionsEditorProps) {
+  const [showPriceCalcModal, setShowPriceCalcModal] = useState(false);
+  const [linkingOptionId, setLinkingOptionId] = useState<string | null>(null);
+  const [showApiLinkModal, setShowApiLinkModal] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [openOptionDropdown, setOpenOptionDropdown] = useState<string | null>(null);
+
+  const addOption = () => {
+    const maxSortOrder = options.length > 0 ? Math.max(...options.map(o => o.sort_order)) : 0;
+    const newOption: Option = {
+      id: crypto.randomUUID(),
+      label: '',
+      description: '',
+      price: 0,
+      calories: 0,
+      sort_order: maxSortOrder + 1,
+    };
+    onChange([...options, newOption]);
+  };
+
+  const updateOption = (id: string, updates: Partial<Option>) => {
+    onChange(options.map(option => option.id === id ? { ...option, ...updates } : option));
+  };
+
+  const removeOption = (id: string) => {
+    onChange(options.filter(option => option.id !== id));
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const newOptions = [...options];
+    const draggedOption = newOptions[draggedIndex];
+    newOptions.splice(draggedIndex, 1);
+    newOptions.splice(index, 0, draggedOption);
+
+    newOptions.forEach((opt, idx) => {
+      opt.sort_order = idx + 1;
+    });
+
+    onChange(newOptions);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleIntegrationLink = (mapping_id: string, integration_type: 'product' | 'modifier' | 'discount') => {
+    if (linkingOptionId && integrationSourceId) {
+      updateOption(linkingOptionId, {
+        integration_link: {
+          mapping_id,
+          integration_type,
+          integration_source_id: integrationSourceId
+        }
+      });
+    }
+    setShowApiLinkModal(false);
+  };
+
+  const handleIntegrationUnlink = (optionId: string) => {
+    updateOption(optionId, { integration_link: undefined, local_fields: undefined });
+  };
+
+  const enableLocalOverride = (optionId: string, field: string) => {
+    const option = options.find(o => o.id === optionId);
+    if (!option) return;
+
+    const localFields = option.local_fields || [];
+    if (!localFields.includes(field)) {
+      updateOption(optionId, {
+        local_fields: [...localFields, field]
+      });
+    }
+  };
+
+  const clearLocalOverride = (optionId: string, field: string) => {
+    const option = options.find(o => o.id === optionId);
+    if (!option) return;
+
+    const localFields = option.local_fields || [];
+    updateOption(optionId, {
+      local_fields: localFields.filter(f => f !== field)
+    });
+  };
+
+  const sortedOptions = [...options].sort((a, b) => a.sort_order - b.sort_order);
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-slate-700">Options</h3>
+        <button
+          type="button"
+          onClick={addOption}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Option
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {sortedOptions.map((option, index) => {
+          const hasIntegrationLink = !!option.integration_link;
+          const localFields = option.local_fields || [];
+
+          return (
+            <div
+              key={option.id}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`bg-slate-50 border border-slate-200 rounded-lg p-4 transition-all ${
+                draggedIndex === index ? 'opacity-50' : 'opacity-100'
+              } hover:border-slate-300`}
+            >
+              <div className="flex gap-3">
+                <div className="flex items-start pt-2 cursor-grab active:cursor-grabbing">
+                  <GripVertical className="w-5 h-5 text-slate-400" />
+                </div>
+
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-slate-500">#{option.sort_order}</span>
+                      {hasIntegrationLink && (
+                        <div className="flex items-center gap-2">
+                          <StateBadge variant="api" text="Linked to API" />
+                          <button
+                            type="button"
+                            onClick={() => handleIntegrationUnlink(option.id)}
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Unlink from integration"
+                          >
+                            <Unlink className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                      {!hasIntegrationLink && integrationSourceId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLinkingOptionId(option.id);
+                            setShowApiLinkModal(true);
+                          }}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors flex items-center gap-1"
+                        >
+                          <Link className="w-3 h-3" />
+                          Link to API
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeOption(option.id)}
+                      className="text-red-600 hover:text-red-700 p-1"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1.5">Label</label>
+                      <input
+                        type="text"
+                        value={option.label}
+                        onChange={(e) => {
+                          if (hasIntegrationLink && !localFields.includes('label')) {
+                            enableLocalOverride(option.id, 'label');
+                          }
+                          updateOption(option.id, { label: e.target.value });
+                        }}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="e.g., Small, Medium, Large"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1.5">Description</label>
+                      <input
+                        type="text"
+                        value={option.description || ''}
+                        onChange={(e) => {
+                          if (hasIntegrationLink && !localFields.includes('description')) {
+                            enableLocalOverride(option.id, 'description');
+                          }
+                          updateOption(option.id, { description: e.target.value });
+                        }}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Optional description"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1.5">Price</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={option.price}
+                            onChange={(e) => {
+                              if (hasIntegrationLink && !localFields.includes('price')) {
+                                enableLocalOverride(option.id, 'price');
+                              }
+                              const value = e.target.value;
+                              if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                updateOption(option.id, { price: parseFloat(value) || 0 });
+                              }
+                            }}
+                            className="w-full pl-7 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1.5">Calories</label>
+                        <input
+                          type="number"
+                          value={option.calories || 0}
+                          onChange={(e) => {
+                            if (hasIntegrationLink && !localFields.includes('calories')) {
+                              enableLocalOverride(option.id, 'calories');
+                            }
+                            updateOption(option.id, { calories: parseInt(e.target.value) || 0 });
+                          }}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {showApiLinkModal && (
+        <ApiLinkModal
+          isOpen={showApiLinkModal}
+          onClose={() => {
+            setShowApiLinkModal(false);
+            setLinkingOptionId(null);
+          }}
+          onLink={handleIntegrationLink}
+          integrationSourceId={integrationSourceId}
+          title="Link Option to API"
+          searchType="all"
+        />
+      )}
+    </>
+  );
+});
+
 export default function ProductEdit({ productId, mode, onBack, onSave }: ProductEditProps) {
+  const { location } = useLocation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<ProductData>({
-    name: '',
-    attributes: {},
-    attribute_template_id: null,
-    display_template_id: null,
-    integration_product_id: null,
-    local_fields: [],
-  });
-
+  const [name, setName] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [templateSchema, setTemplateSchema] = useState<any>(null);
+  const [template, setTemplate] = useState<any>(null);
   const [policyViolations, setPolicyViolations] = useState<any[]>([]);
+  const [currentProduct, setCurrentProduct] = useState<ProductData | null>(null);
+  const [linkedSources, setLinkedSources] = useState<any[]>([]);
+  const [viewingSourceId, setViewingSourceId] = useState<string | null>(null);
 
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [showLocaleDropdown, setShowLocaleDropdown] = useState(false);
+  const [expandedRichTextFields, setExpandedRichTextFields] = useState<Set<string>>(new Set());
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [fieldLinks, setFieldLinks] = useState<Record<string, FieldLinkData>>({});
+  const [showPriceCaloriesLinkModal, setShowPriceCaloriesLinkModal] = useState(false);
+  const [linkingFieldKey, setLinkingFieldKey] = useState<string | null>(null);
+  const [showProductApiLinkModal, setShowProductApiLinkModal] = useState(false);
 
   const [activeSection, setActiveSection] = useState('basic-info');
   const [idCopied, setIdCopied] = useState(false);
@@ -74,7 +366,7 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   const [isDirty, setIsDirty] = useState(false);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const originalDataRef = useRef<ProductData | null>(null);
+  const originalDataRef = useRef<{ name: string; attributes: Record<string, any> } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -111,15 +403,15 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
 
   const checkIfDirty = () => {
     if (!originalDataRef.current) {
-      return mode === 'create' ? false : true;
+      return mode === 'create' ? (name !== '' || Object.keys(attributes).length > 0) : true;
     }
 
-    return JSON.stringify({ ...formData, attributes }) !== JSON.stringify({ ...originalDataRef.current, attributes: originalDataRef.current.attributes });
+    return JSON.stringify({ name, attributes }) !== JSON.stringify(originalDataRef.current);
   };
 
   useEffect(() => {
     setIsDirty(checkIfDirty());
-  }, [formData, attributes]);
+  }, [name, attributes]);
 
   const loadData = async () => {
     setLoading(true);
@@ -145,10 +437,15 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
           console.error('Error loading product:', fetchError);
           setError('Failed to load product');
         } else if (data) {
-          setFormData(data);
+          setName(data.name);
           setAttributes(data.attributes || {});
           setSelectedTemplateId(data.attribute_template_id || '');
-          originalDataRef.current = { ...data, attributes: data.attributes || {} };
+          setCurrentProduct(data);
+          originalDataRef.current = { name: data.name, attributes: data.attributes || {} };
+
+          if (data.attribute_template_id) {
+            await loadTemplateForEdit(data.attribute_template_id);
+          }
 
           try {
             const { data: violations } = await supabase
@@ -164,6 +461,8 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
             console.log('Policy violations table not available');
           }
         }
+      } else if (mode === 'create') {
+        originalDataRef.current = null;
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -172,10 +471,70 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
     setLoading(false);
   };
 
+  const loadTemplateForEdit = async (templateId: string) => {
+    try {
+      const { data: templateData, error: templateError } = await supabase
+        .from('attribute_templates')
+        .select('*')
+        .eq('id', templateId)
+        .maybeSingle();
+
+      if (templateError) throw templateError;
+      if (!templateData) return;
+
+      setTemplate(templateData);
+      setTemplateSchema(templateData.schema);
+    } catch (err) {
+      console.error('Error loading template:', err);
+    }
+  };
+
+  const loadTemplateForCreate = async (templateId: string) => {
+    if (!templateId) return;
+
+    try {
+      const { data: templateData, error: templateError } = await supabase
+        .from('attribute_templates')
+        .select('*')
+        .eq('id', templateId)
+        .maybeSingle();
+
+      if (templateError) throw templateError;
+      if (!templateData) return;
+
+      setTemplate(templateData);
+      setTemplateSchema(templateData.schema);
+
+      const schema = templateData.schema;
+      const defaultAttrs: Record<string, any> = {};
+
+      const allAttrs = [
+        ...(schema.core_attributes || []),
+        ...(schema.extended_attributes || [])
+      ];
+
+      allAttrs.forEach((attr: any) => {
+        if (attr.type === 'multiselect') {
+          defaultAttrs[attr.name] = [];
+        } else if (attr.type === 'boolean') {
+          defaultAttrs[attr.name] = false;
+        } else if (attr.type === 'sizes') {
+          defaultAttrs[attr.name] = [];
+        } else {
+          defaultAttrs[attr.name] = '';
+        }
+      });
+
+      setAttributes(defaultAttrs);
+    } catch (err) {
+      console.error('Error loading template:', err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
+    if (!name.trim()) {
       setError('Product name is required');
       return;
     }
@@ -189,11 +548,17 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
     setError(null);
 
     try {
-      const saveData = {
-        ...formData,
+      const saveData: any = {
+        name,
         attributes,
-        attribute_template_id: selectedTemplateId || formData.attribute_template_id,
+        attribute_template_id: selectedTemplateId || currentProduct?.attribute_template_id,
       };
+
+      if (currentProduct?.mapping_id) {
+        saveData.mapping_id = currentProduct.mapping_id;
+        saveData.integration_source_id = currentProduct.integration_source_id;
+        saveData.integration_type = currentProduct.integration_type;
+      }
 
       if (productId && mode === 'edit') {
         const { error: updateError } = await supabase
@@ -202,6 +567,7 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
           .eq('id', productId);
 
         if (updateError) throw updateError;
+        saveData.id = productId;
       } else {
         const { data: newProduct, error: insertError } = await supabase
           .from('products')
@@ -213,7 +579,7 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
         saveData.id = newProduct.id;
       }
 
-      originalDataRef.current = { ...saveData };
+      originalDataRef.current = { name, attributes };
       setIsDirty(false);
       onSave(saveData);
     } catch (err: any) {
@@ -296,10 +662,17 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   const getSections = () => {
     const sections = [
       { id: 'basic-info', label: 'Basic Information', icon: Info },
-      { id: 'attributes', label: 'Product Attributes', icon: Tag },
-      { id: 'images', label: 'Image Attributes', icon: Image },
-      { id: 'options', label: 'Options', icon: List },
     ];
+
+    if (mode === 'edit') {
+      sections.push({ id: 'api-integration', label: 'API Integration', icon: Link });
+    }
+
+    sections.push(
+      { id: 'attributes', label: 'Product Attributes', icon: Tag },
+      { id: 'images', label: 'Images', icon: ImageIcon },
+      { id: 'options', label: 'Options', icon: List }
+    );
 
     return sections;
   };
@@ -319,26 +692,248 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   };
 
   const availableLanguages = () => {
-    return [
-      { code: 'en', name: 'English' },
-      { code: 'fr-CA', name: 'French (Canada)' },
-      { code: 'es', name: 'Spanish' },
+    const langs = [{ code: 'en', name: 'English' }];
+    if (template?.translations && Array.isArray(template.translations)) {
+      template.translations.forEach((t: any) => {
+        langs.push({ code: t.locale, name: t.locale_name });
+      });
+    }
+    return langs;
+  };
+
+  const getFieldLabel = (fieldName: string): string => {
+    if (currentLanguage === 'en') {
+      const meta = getAttributeMeta(fieldName);
+      return meta?.label || fieldName;
+    }
+
+    const translation = template?.translations?.find((t: any) => t.locale === currentLanguage);
+    const translatedLabel = translation?.field_labels?.[fieldName];
+
+    if (translatedLabel) {
+      return translatedLabel;
+    }
+
+    const meta = getAttributeMeta(fieldName);
+    return meta?.label || fieldName;
+  };
+
+  const getAttributeMeta = (attributeName: string): any => {
+    if (!templateSchema) return null;
+
+    const allAttrs = [
+      ...(templateSchema.core_attributes || []),
+      ...(templateSchema.extended_attributes || [])
     ];
+
+    return allAttrs.find((attr: any) => attr.name === attributeName);
+  };
+
+  const updateAttribute = (key: string, value: any) => {
+    setAttributes(prev => ({ ...prev, [key]: value }));
   };
 
   const addAttribute = () => {
     const newKey = `custom_${Date.now()}`;
-    setAttributes({ ...attributes, [newKey]: { value: '', type: 'text' } });
-  };
-
-  const updateAttribute = (key: string, value: any) => {
-    setAttributes({ ...attributes, [key]: value });
+    setAttributes(prev => ({ ...prev, [newKey]: '' }));
   };
 
   const removeAttribute = (key: string) => {
     const newAttrs = { ...attributes };
     delete newAttrs[key];
     setAttributes(newAttrs);
+  };
+
+  const handleViewSource = async (sourceId: string) => {
+    setViewingSourceId(sourceId);
+  };
+
+  const handleChangeLink = () => {
+    setShowProductApiLinkModal(true);
+  };
+
+  const renderAttributeField = (key: string, value: any) => {
+    const meta = getAttributeMeta(key);
+
+    if (!meta) {
+      return (
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => updateAttribute(key, e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        />
+      );
+    }
+
+    if (meta.type === 'richtext') {
+      return (
+        <div className="relative">
+          {!expandedRichTextFields.has(key) ? (
+            <>
+              <input
+                type="text"
+                value={value ? value.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
+                readOnly
+                onClick={() => {
+                  const newExpanded = new Set(expandedRichTextFields);
+                  newExpanded.add(key);
+                  setExpandedRichTextFields(newExpanded);
+                }}
+                placeholder={`Enter ${getFieldLabel(key)}`}
+                className="w-full px-3 py-2 pr-10 border border-slate-300 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm cursor-pointer"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newExpanded = new Set(expandedRichTextFields);
+                  newExpanded.add(key);
+                  setExpandedRichTextFields(newExpanded);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                title="Expand rich text editor"
+              >
+                <FileText className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <div className="border border-blue-500 rounded-lg p-3 bg-blue-50/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-slate-700">Editing {getFieldLabel(key)}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newExpanded = new Set(expandedRichTextFields);
+                    newExpanded.delete(key);
+                    setExpandedRichTextFields(newExpanded);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                  title="Collapse editor"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <RichTextEditor
+                value={value || ''}
+                onChange={(newValue) => updateAttribute(key, newValue)}
+                placeholder={`Enter ${getFieldLabel(key)}`}
+                minHeight="200px"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (meta.type === 'image') {
+      return (
+        <ImageUploadField
+          value={value || ''}
+          onChange={(newValue) => updateAttribute(key, newValue)}
+          label={getFieldLabel(key)}
+        />
+      );
+    }
+
+    if (meta.type === 'sizes') {
+      return (
+        <OptionsEditor
+          options={Array.isArray(value) ? value : []}
+          onChange={(newOptions) => updateAttribute(key, newOptions)}
+          integrationSourceId={currentProduct?.integration_source_id}
+          expandedRichTextFields={expandedRichTextFields}
+          setExpandedRichTextFields={setExpandedRichTextFields}
+        />
+      );
+    }
+
+    if (meta.type === 'boolean') {
+      const boolValue = value === true || value === 'true';
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => updateAttribute(key, !boolValue)}
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              boolValue ? 'bg-blue-600' : 'bg-slate-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${
+                boolValue ? 'translate-x-7' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+      );
+    }
+
+    if (meta.type === 'multiselect') {
+      return (
+        <select
+          multiple
+          value={Array.isArray(value) ? value : []}
+          onChange={(e) => {
+            const selected = Array.from(e.target.selectedOptions, option => option.value);
+            updateAttribute(key, selected);
+          }}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        >
+          {meta.options?.map((option: string) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (meta.type === 'select') {
+      return (
+        <select
+          value={value || ''}
+          onChange={(e) => updateAttribute(key, e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        >
+          <option value="">Select...</option>
+          {meta.options?.map((option: string) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      );
+    }
+
+    return (
+      <input
+        type={meta.type === 'number' ? 'number' : 'text'}
+        value={value || ''}
+        onChange={(e) => updateAttribute(key, e.target.value)}
+        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        placeholder={`Enter ${getFieldLabel(key)}`}
+      />
+    );
+  };
+
+  const getCoreAttributes = () => {
+    if (!templateSchema) return [];
+    return Object.keys(attributes).filter(key => {
+      const meta = getAttributeMeta(key);
+      return meta && templateSchema.core_attributes?.some((attr: any) => attr.name === key);
+    });
+  };
+
+  const getImageAttributes = () => {
+    if (!templateSchema) return [];
+    return Object.keys(attributes).filter(key => {
+      const meta = getAttributeMeta(key);
+      return meta?.type === 'image';
+    });
+  };
+
+  const getOptionsAttributes = () => {
+    if (!templateSchema) return [];
+    return Object.keys(attributes).filter(key => {
+      const meta = getAttributeMeta(key);
+      return meta?.type === 'sizes';
+    });
   };
 
   if (loading && mode === 'edit') {
@@ -563,7 +1158,10 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
                     <select
                       required
                       value={selectedTemplateId}
-                      onChange={(e) => setSelectedTemplateId(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedTemplateId(e.target.value);
+                        loadTemplateForCreate(e.target.value);
+                      }}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select a template...</option>
@@ -586,13 +1184,43 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
                   <input
                     type="text"
                     required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Classic Burger"
                   />
                 </div>
               </div>
+
+              {mode === 'edit' && (
+                <div
+                  id="api-integration"
+                  ref={(el) => (sectionRefs.current['api-integration'] = el)}
+                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+                >
+                  <ApiIntegrationSection
+                    mode={mode}
+                    linkedSources={linkedSources}
+                    viewingSourceId={viewingSourceId}
+                    currentItem={currentProduct}
+                    onViewSource={handleViewSource}
+                    onChangeLink={handleChangeLink}
+                    onUnlink={async () => {
+                      if (currentProduct?.id) {
+                        try {
+                          await integrationLinkService.unlinkProduct(currentProduct.id);
+                          alert('Product unlinked from API');
+                          loadData();
+                        } catch (error: any) {
+                          alert(error.message);
+                        }
+                      }
+                    }}
+                    onClearCurrent={() => setCurrentProduct(null)}
+                    onLinkNew={() => setShowProductApiLinkModal(true)}
+                  />
+                </div>
+              )}
 
               <div
                 id="attributes"
@@ -601,51 +1229,40 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
               >
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-slate-900">Product Attributes</h2>
-                  <button
-                    type="button"
-                    onClick={addAttribute}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    + Add Attribute
-                  </button>
+                  {(!currentProduct || !currentProduct.integration_product_id) && (
+                    <button
+                      type="button"
+                      onClick={addAttribute}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      + Add Attribute
+                    </button>
+                  )}
                 </div>
 
-                {Object.keys(attributes).length === 0 ? (
+                {getCoreAttributes().length === 0 ? (
                   <p className="text-sm text-slate-500 text-center py-4">
-                    No attributes yet. Click "Add Attribute" to get started.
+                    No attributes yet. {mode === 'create' ? 'Select a template to get started.' : 'Click "Add Attribute" to get started.'}
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {Object.entries(attributes).map(([key, value]) => (
-                      <div key={key} className="flex gap-3 items-start p-4 border border-slate-200 rounded-lg">
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={key}
-                            onChange={(e) => {
-                              const newAttrs = { ...attributes };
-                              delete newAttrs[key];
-                              newAttrs[e.target.value] = value;
-                              setAttributes(newAttrs);
-                            }}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
-                            placeholder="Attribute name"
-                          />
-                          <input
-                            type="text"
-                            value={typeof value === 'object' && value !== null ? value.value || '' : value}
-                            onChange={(e) => updateAttribute(key, { value: e.target.value, type: 'text' })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Attribute value"
-                          />
+                    {getCoreAttributes().map((key) => (
+                      <div key={key}>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-slate-700">
+                            {getFieldLabel(key)}
+                          </label>
+                          {!getAttributeMeta(key) && (
+                            <button
+                              type="button"
+                              onClick={() => removeAttribute(key)}
+                              className="text-red-600 hover:text-red-700 text-sm"
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeAttribute(key)}
-                          className="text-red-600 hover:text-red-700 p-2"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
+                        {renderAttributeField(key, attributes[key])}
                       </div>
                     ))}
                   </div>
@@ -657,10 +1274,23 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
                 ref={(el) => (sectionRefs.current['images'] = el)}
                 className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
               >
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Image Attributes</h2>
-                <p className="text-sm text-slate-500 text-center py-4">
-                  Image upload functionality will be added here
-                </p>
+                <h2 className="text-lg font-semibold text-slate-900 mb-4">Images</h2>
+                {getImageAttributes().length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4">
+                    No image fields defined in template
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {getImageAttributes().map((key) => (
+                      <div key={key}>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {getFieldLabel(key)}
+                        </label>
+                        {renderAttributeField(key, attributes[key])}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div
@@ -669,9 +1299,19 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
                 className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
               >
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">Options</h2>
-                <p className="text-sm text-slate-500 text-center py-4">
-                  Options management will be added here
-                </p>
+                {getOptionsAttributes().length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4">
+                    No option fields defined in template
+                  </p>
+                ) : (
+                  <div className="space-y-6">
+                    {getOptionsAttributes().map((key) => (
+                      <div key={key}>
+                        {renderAttributeField(key, attributes[key])}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {isDirty && (
@@ -708,6 +1348,82 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
           </div>
         </div>
       </div>
+
+      {showProductApiLinkModal && (
+        <ApiLinkModal
+          isOpen={showProductApiLinkModal}
+          onClose={() => setShowProductApiLinkModal(false)}
+          onLink={async (mapping_id, integration_type) => {
+            if (mode === 'create') {
+              setCurrentProduct({
+                id: '',
+                name: name,
+                attributes: attributes,
+                attribute_template_id: selectedTemplateId,
+                display_template_id: null,
+                integration_product_id: null,
+                mapping_id: mapping_id,
+                integration_source_id: location?.active_integration_source_id || null,
+                integration_type: integration_type,
+              });
+            } else if (productId) {
+              try {
+                await integrationLinkService.linkProduct(
+                  productId,
+                  mapping_id,
+                  location?.active_integration_source_id || '',
+                  integration_type
+                );
+                alert('Product linked successfully');
+                loadData();
+              } catch (error: any) {
+                alert(error.message);
+              }
+            }
+            setShowProductApiLinkModal(false);
+          }}
+          integrationSourceId={location?.active_integration_source_id || null}
+          title="Link Product to API"
+          searchType="all"
+        />
+      )}
+
+      {showPriceCaloriesLinkModal && linkingFieldKey && (
+        <FieldLinkModal
+          isOpen={showPriceCaloriesLinkModal}
+          onClose={() => {
+            setShowPriceCaloriesLinkModal(false);
+            setLinkingFieldKey(null);
+          }}
+          onLink={(linkData) => {
+            if (linkingFieldKey) {
+              const newFieldLinks = {
+                ...fieldLinks,
+                [linkingFieldKey]: linkData
+              };
+              setFieldLinks(newFieldLinks);
+
+              if (linkData.type === 'calculation' && linkData.calculation) {
+                let total = 0;
+                for (const part of linkData.calculation) {
+                  const value = typeof part.value === 'number' ? part.value : parseFloat(part.value) || 0;
+                  if (part.operation === 'subtract') {
+                    total -= value;
+                  } else {
+                    total += value;
+                  }
+                }
+                updateAttribute(linkingFieldKey, total.toFixed(2));
+              }
+            }
+            setShowPriceCaloriesLinkModal(false);
+            setLinkingFieldKey(null);
+          }}
+          fieldName={linkingFieldKey}
+          fieldLabel={linkingFieldKey === 'price' ? 'Price' : 'Calories'}
+          currentLink={linkingFieldKey ? fieldLinks[linkingFieldKey] : null}
+        />
+      )}
     </>
   );
 }
