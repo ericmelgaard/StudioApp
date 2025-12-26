@@ -27,7 +27,14 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
 
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        integration_source:wand_integration_sources!products_integration_source_id_fkey(
+          id,
+          name,
+          type
+        )
+      `)
       .eq('id', productId)
       .maybeSingle();
 
@@ -43,7 +50,13 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
       return;
     }
 
-    setProduct(data);
+    const productWithSource = {
+      ...data,
+      integration_source_name: data.integration_source?.name || null,
+      integration_type: data.integration_source?.type || data.integration_type
+    };
+
+    setProduct(productWithSource);
     setLoading(false);
   };
 

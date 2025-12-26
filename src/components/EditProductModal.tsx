@@ -733,20 +733,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   useEffect(() => {
     const shouldLoad = renderAsPage || isOpen;
 
-    console.log('EditProductModal useEffect triggered:', {
-      productId: product?.id,
-      mode,
-      shouldLoad,
-      hasAttributes: !!product?.attributes,
-      attributeKeys: product?.attributes ? Object.keys(product.attributes) : []
-    });
-
     if (shouldLoad && mode === 'create') {
       // Reset form first, then load available templates for create mode
       resetForm();
       loadAvailableTemplates();
     } else if (product && mode === 'edit' && shouldLoad) {
-      console.log('Loading product data for edit mode', product);
       setCurrentProduct(product);
       setName(product.name);
       loadTemplateAttributes();
@@ -965,17 +956,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   }
 
   async function loadTemplateAttributes() {
-    if (!product) {
-      console.log('loadTemplateAttributes: no product');
-      return;
-    }
-
-    console.log('loadTemplateAttributes: starting with product', {
-      productId: product.id,
-      hasAttributes: !!product.attributes,
-      attributeKeys: product.attributes ? Object.keys(product.attributes) : [],
-      templateId: product.attribute_template_id
-    });
+    if (!product) return;
 
     // Start with actual product attributes
     const productAttrs = product.attributes || {};
@@ -988,8 +969,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
           .select('*')
           .eq('id', product.attribute_template_id)
           .maybeSingle();
-
-        console.log('loadTemplateAttributes: template data loaded', templateData);
 
         if (templateData?.attribute_schema) {
           setTemplate(templateData);
@@ -1005,7 +984,6 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
 
           // Merge template attributes with existing product attributes
           const mergedAttributes = { ...productAttrs };
-          console.log('loadTemplateAttributes: merging', { productAttrs, allTemplateAttrs: allTemplateAttrs.length });
 
           // Special handling for 'name' - use top-level product.name if attributes.name doesn't exist
           if (!mergedAttributes.name && product.name) {
