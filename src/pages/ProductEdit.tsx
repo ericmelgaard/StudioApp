@@ -14,6 +14,8 @@ import { integrationLinkService } from '../lib/integrationLinkService';
 import { LocationProductService } from '../lib/locationProductService';
 import { useLocation } from '../hooks/useLocation';
 import { ApiIntegrationSection } from '../components/ApiIntegrationSection';
+import SyncBadge from '../components/SyncBadge';
+import { SyncStateManager, ProductSyncState } from '../lib/syncStateManager';
 
 interface ProductData {
   id?: string;
@@ -359,6 +361,11 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   const [showPriceCaloriesLinkModal, setShowPriceCaloriesLinkModal] = useState(false);
   const [linkingFieldKey, setLinkingFieldKey] = useState<string | null>(null);
   const [showProductApiLinkModal, setShowProductApiLinkModal] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<any>(null);
+  const [integrationData, setIntegrationData] = useState<any>(null);
+  const [translationData, setTranslationData] = useState<Record<string, Record<string, any>>>({});
+  const [syncStateManager, setSyncStateManager] = useState<SyncStateManager | null>(null);
+  const [disabledSyncFields, setDisabledSyncFields] = useState<string[]>([]);
 
   const [activeSection, setActiveSection] = useState('basic-info');
   const [idCopied, setIdCopied] = useState(false);
@@ -367,6 +374,30 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const originalDataRef = useRef<{ name: string; attributes: Record<string, any> } | null>(null);
+
+  const isFieldTranslatable = (fieldName: string): boolean => {
+    if (!templateSchema) return false;
+    const allAttrs = [...(templateSchema.core_attributes || []), ...(templateSchema.extended_attributes || [])];
+    const attr = allAttrs.find((a: any) => a.name === fieldName);
+    return attr && (attr.type === 'text' || attr.type === 'number' || attr.type === 'richtext');
+  };
+
+  const getTranslationStatus = (fieldName: string): 'complete' | 'missing' | null => {
+    if (currentLanguage === 'en' || !isFieldTranslatable(fieldName)) return null;
+    const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
+    const value = translationData[translationKey]?.[fieldName];
+    const hasValue = value !== undefined && value !== null && value !== '';
+    const isRequired = ['name', 'description'].includes(fieldName);
+    if (!hasValue && isRequired) return 'missing';
+    if (hasValue) return 'complete';
+    return null;
+  };
+
+  const isAttributeInCoreSchema = (key: string): boolean => {
+    if (!templateSchema) return false;
+    const coreAttrs = templateSchema.core_attributes || [];
+    return coreAttrs.some((attr: any) => attr.name === key);
+  };
 
   useEffect(() => {
     loadData();
@@ -442,6 +473,16 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
           setSelectedTemplateId(data.attribute_template_id || '');
           setCurrentProduct(data);
           originalDataRef.current = { name: data.name, attributes: data.attributes || {} };
+          setFieldLinks(data.attribute_mappings || {});
+          setDisabledSyncFields(data.disabled_sync_fields || []);
+
+          const translations: Record<string, Record<string, any>> = {};
+          Object.keys(data.attributes || {}).forEach(key => {
+            if (key.startsWith('translations_')) {
+              translations[key] = data.attributes[key] || {};
+            }
+          });
+          setTranslationData(translations);
 
           if (data.attribute_template_id) {
             await loadTemplateForEdit(data.attribute_template_id);
@@ -730,7 +771,27 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   };
 
   const updateAttribute = (key: string, value: any) => {
-    setAttributes(prev => ({ ...prev, [key]: value }));
+    if (currentLanguage === 'en') {
+      setAttributes(prev => ({ ...prev, [key]: value }));
+    } else {
+      const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
+      setTranslationData(prev => ({
+        ...prev,
+        [translationKey]: {
+          ...(prev[translationKey] || {}),
+          [key]: value
+        }
+      }));
+    }
+  };
+
+  const getAttributeValue = (key: string): any => {
+    if (currentLanguage === 'en') {
+      return attributes[key];
+    } else {
+      const translationKey = `translations_${currentLanguage.replace('-', '_').toLowerCase()}`;
+      return translationData[translationKey]?.[key];
+    }
   };
 
   const addAttribute = () => {
@@ -1240,31 +1301,397 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
                   )}
                 </div>
 
-                {getCoreAttributes().length === 0 ? (
+                {Object.keys(attributes).length === 0 ? (
                   <p className="text-sm text-slate-500 text-center py-4">
                     No attributes yet. {mode === 'create' ? 'Select a template to get started.' : 'Click "Add Attribute" to get started.'}
                   </p>
                 ) : (
-                  <div className="space-y-4">
-                    {getCoreAttributes().map((key) => (
-                      <div key={key}>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-sm font-medium text-slate-700">
-                            {getFieldLabel(key)}
-                          </label>
-                          {!getAttributeMeta(key) && (
-                            <button
-                              type="button"
-                              onClick={() => removeAttribute(key)}
-                              className="text-red-600 hover:text-red-700 text-sm"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                        {renderAttributeField(key, attributes[key])}
+                  <div className="space-y-6">
+                    {/* Name and Description - Full Width */}
+                    <div className="space-y-4">
+                      {['name', 'description'].map(key => {
+                        if (!(key in attributes)) return null;
+                        const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
+                        const actualValue = value ?? '';
+                        const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                        const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+                        const translationStatus = getTranslationStatus(key);
+
+                        return (
+                          <div key={key}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{getFieldLabel(key)}</label>
+                                {translationStatus === 'complete' && (
+                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                    <Check className="w-3 h-3" />
+                                    Translated
+                                  </span>
+                                )}
+                                {translationStatus === 'missing' && (
+                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                                    <AlertCircle className="w-3 h-3" />
+                                    Translation needed
+                                  </span>
+                                )}
+                              </div>
+                              {hasApiLink && (
+                                <div className="relative">
+                                  {isLocalOverride ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => setOpenDropdown(openDropdown === `attr-${key}` ? null : `attr-${key}`)}
+                                        className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                        Custom
+                                        <ChevronDown className="w-3 h-3" />
+                                      </button>
+                                      {openDropdown === `attr-${key}` && (
+                                        <>
+                                          <div
+                                            className="fixed inset-0 z-10"
+                                            onClick={() => setOpenDropdown(null)}
+                                          />
+                                          <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                            <button
+                                              type="button"
+                                              onClick={async () => {
+                                                setOpenDropdown(null);
+                                                if (currentProduct) {
+                                                  if (currentProduct.parent_product_id) {
+                                                    await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                                  } else {
+                                                    await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                                  }
+                                                  await loadData();
+                                                }
+                                              }}
+                                              className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                            >
+                                              {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                      <Link2 className="w-3 h-3" />
+                                      Syncing
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {renderAttributeField(key, actualValue)}
+                          </div>
+                        );
+                      })}
+
+                      {/* Price and Calories - Side by Side */}
+                      <div className="grid grid-cols-2 gap-4">
+                        {['price', 'calories'].map(key => {
+                          if (!(key in attributes)) return null;
+                          const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
+                          const fieldLink = fieldLinks[key];
+                          const hasCalculation = fieldLink?.type === 'calculation';
+                          const actualValue = value ?? '';
+                          const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                          const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+
+                          return (
+                            <div key={key}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">{getFieldLabel(key)}</label>
+                                {hasApiLink && (
+                                  <div className="relative">
+                                    {isLocalOverride ? (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => setOpenDropdown(openDropdown === `price-cal-${key}` ? null : `price-cal-${key}`)}
+                                          className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
+                                        >
+                                          <Pencil className="w-3 h-3" />
+                                          Custom
+                                          <ChevronDown className="w-3 h-3" />
+                                        </button>
+                                        {openDropdown === `price-cal-${key}` && (
+                                          <>
+                                            <div
+                                              className="fixed inset-0 z-10"
+                                              onClick={() => setOpenDropdown(null)}
+                                            />
+                                            <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                              <button
+                                                type="button"
+                                                onClick={async () => {
+                                                  setOpenDropdown(null);
+                                                  if (currentProduct) {
+                                                    if (currentProduct.parent_product_id) {
+                                                      await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                                    } else {
+                                                      await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                                    }
+                                                    await loadData();
+                                                  }
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                              >
+                                                {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                              </button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                        <Link2 className="w-3 h-3" />
+                                        Syncing
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  value={actualValue}
+                                  onChange={async (e) => {
+                                    const newValue = e.target.value;
+                                    if (hasApiLink && !isLocalOverride && currentProduct) {
+                                      const success = await LocationProductService.enableLocationOverride(
+                                        currentProduct.id,
+                                        key,
+                                        newValue,
+                                        location
+                                      );
+                                      if (success) {
+                                        await loadData();
+                                      }
+                                    } else {
+                                      updateAttribute(key, newValue);
+                                    }
+                                  }}
+                                  disabled={hasCalculation}
+                                  className={`w-full px-4 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:text-slate-500 ${key === 'price' && hasApiLink ? 'pr-10' : ''}`}
+                                  placeholder={getFieldLabel(key)}
+                                />
+                                {key === 'price' && hasApiLink && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setLinkingFieldKey(key);
+                                      setShowPriceCaloriesLinkModal(true);
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    title="Add price calculation"
+                                  >
+                                    <Calculator className={`w-4 h-4 ${hasCalculation ? 'text-blue-600' : ''}`} />
+                                  </button>
+                                )}
+                              </div>
+                              {key === 'price' && hasCalculation && fieldLink.calculation && (
+                                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
+                                  <p className="text-xs font-medium text-slate-600 mb-2">Combo Pricing:</p>
+                                  <div className="space-y-1">
+                                    {fieldLink.calculation.map((part: any, index: number) => {
+                                      const isSubtract = index > 0 && part.operation === 'subtract';
+                                      return (
+                                        <div key={part.id} className="flex items-center gap-2 text-sm">
+                                          {index > 0 && (
+                                            <span className={`font-bold w-4 text-center ${
+                                              part.operation === 'subtract' ? 'text-red-600' : 'text-slate-600'
+                                            }`}>
+                                              {part.operation === 'add' ? '+' : '−'}
+                                            </span>
+                                          )}
+                                          {index === 0 && <span className="w-4"></span>}
+                                          <div className="flex-1 flex items-center justify-between bg-white px-3 py-1.5 rounded border border-slate-200">
+                                            <span className={`font-medium ${isSubtract ? 'text-red-700' : 'text-slate-700'}`}>
+                                              {part.productName}
+                                            </span>
+                                            <span className={`font-semibold ${isSubtract ? 'text-red-700' : 'text-slate-900'}`}>
+                                              ${typeof part.value === 'number' ? part.value.toFixed(2) : part.value}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
+
+                      {/* Other Core Attributes - Flexible Grid */}
+                      {(() => {
+                        const otherCoreKeys = Object.keys(attributes).filter(k => {
+                          if (!isAttributeInCoreSchema(k)) return false;
+                          if (['name', 'description', 'price', 'calories', 'translations', 'attribute_overrides'].includes(k)) return false;
+                          const meta = getAttributeMeta(k);
+                          if (meta?.type === 'image' || meta?.type === 'sizes' || meta?.type === 'translation') return false;
+                          return true;
+                        });
+                        if (otherCoreKeys.length === 0) return null;
+
+                        return (
+                          <div className="flex flex-wrap gap-3 pt-4">
+                            {otherCoreKeys.map(key => {
+                              const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
+                              const actualValue = value ?? '';
+                              const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                              const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+
+                              return (
+                                <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
+                                    {hasApiLink && (
+                                      <div className="relative">
+                                        {isLocalOverride ? (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() => setOpenDropdown(openDropdown === `other-${key}` ? null : `other-${key}`)}
+                                              className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
+                                            >
+                                              <Pencil className="w-3 h-3" />
+                                              Custom
+                                              <ChevronDown className="w-3 h-3" />
+                                            </button>
+                                            {openDropdown === `other-${key}` && (
+                                              <>
+                                                <div
+                                                  className="fixed inset-0 z-10"
+                                                  onClick={() => setOpenDropdown(null)}
+                                                />
+                                                <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                                  <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                      setOpenDropdown(null);
+                                                      if (currentProduct) {
+                                                        if (currentProduct.parent_product_id) {
+                                                          await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                                        } else {
+                                                          await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                                        }
+                                                        await loadData();
+                                                      }
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                                  >
+                                                    {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                                  </button>
+                                                </div>
+                                              </>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                            <Link2 className="w-3 h-3" />
+                                            Syncing
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {renderAttributeField(key, actualValue)}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Extended Attributes - Flexible Grid */}
+                    {(() => {
+                      const extendedKeys = Object.keys(attributes).filter(k => {
+                        const meta = getAttributeMeta(k);
+                        if (['translations', 'attribute_overrides'].includes(k)) return false;
+                        if (meta?.type === 'image' || meta?.type === 'sizes') return false;
+                        return !isAttributeInCoreSchema(k);
+                      });
+                      if (extendedKeys.length === 0) return null;
+
+                      return (
+                        <div className="pt-4 border-t border-slate-200">
+                          <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Extended Attributes</h3>
+                          <div className="flex flex-wrap gap-3">
+                            {extendedKeys.map(key => {
+                              const value = currentLanguage === 'en' ? attributes[key] : getAttributeValue(key);
+                              const actualValue = value ?? '';
+                              const isLocalOverride = currentProduct?.local_fields?.includes(key);
+                              const hasApiLink = currentProduct?.mapping_id && currentProduct?.integration_source_id;
+
+                              return (
+                                <div key={key} className="flex-1 min-w-[200px] max-w-[300px]">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-xs font-medium text-slate-600">{getFieldLabel(key)}</label>
+                                    {hasApiLink && (
+                                      <div className="relative">
+                                        {isLocalOverride ? (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() => setOpenDropdown(openDropdown === `extended-${key}` ? null : `extended-${key}`)}
+                                              className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
+                                            >
+                                              <Pencil className="w-3 h-3" />
+                                              Custom
+                                              <ChevronDown className="w-3 h-3" />
+                                            </button>
+                                            {openDropdown === `extended-${key}` && (
+                                              <>
+                                                <div
+                                                  className="fixed inset-0 z-10"
+                                                  onClick={() => setOpenDropdown(null)}
+                                                />
+                                                <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                                                  <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                      setOpenDropdown(null);
+                                                      if (currentProduct) {
+                                                        if (currentProduct.parent_product_id) {
+                                                          await LocationProductService.clearLocationOverride(currentProduct.id, key);
+                                                        } else {
+                                                          await integrationLinkService.clearLocalOverride(currentProduct.id, key);
+                                                        }
+                                                        await loadData();
+                                                      }
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
+                                                  >
+                                                    {currentProduct?.parent_product_id ? 'Inherit from Parent' : 'Inherit from API'}
+                                                  </button>
+                                                </div>
+                                              </>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
+                                            <Link2 className="w-3 h-3" />
+                                            Syncing
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {renderAttributeField(key, actualValue)}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
