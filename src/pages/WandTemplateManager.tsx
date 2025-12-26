@@ -5,6 +5,7 @@ import { TemplateSectionService, SectionSetting, Location } from '../lib/templat
 import Toast from '../components/Toast';
 import Breadcrumb from '../components/Breadcrumb';
 import { useLocation } from '../hooks/useLocation';
+import AddAttributeModal from '../components/AddAttributeModal';
 
 interface WandTemplateManagerProps {
   onBack: () => void;
@@ -35,6 +36,26 @@ interface TemplateUsageStats {
 
 type TabType = 'overview' | 'sections' | 'settings';
 
+interface AttributeField {
+  name: string;
+  type: string;
+  label: string;
+  required: boolean;
+  section_id?: string;
+}
+
+interface AvailableAttribute {
+  id: string;
+  name: string;
+  label: string;
+  type: string;
+  default_required: boolean;
+  description: string | null;
+  category: string | null;
+  section_id: string | null;
+  is_system: boolean;
+}
+
 export default function WandTemplateManager({ onBack }: WandTemplateManagerProps) {
   const { location, setLocation } = useLocation();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -47,6 +68,10 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
   const [usageStats, setUsageStats] = useState<TemplateUsageStats | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [availableAttributes, setAvailableAttributes] = useState<AvailableAttribute[]>([]);
+  const [showAddAttributeModal, setShowAddAttributeModal] = useState(false);
+  const [addAttributeTab, setAddAttributeTab] = useState<'library' | 'custom'>('library');
 
   useEffect(() => {
     loadTemplates();
@@ -55,8 +80,15 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
   useEffect(() => {
     if (selectedTemplate && activeTab === 'sections') {
       loadSectionSettings();
+      loadAvailableAttributes();
     }
   }, [selectedTemplate, activeTab, location]);
+
+  useEffect(() => {
+    if (sectionSettings.length > 0 && !selectedSectionId) {
+      setSelectedSectionId(sectionSettings[0].section_id);
+    }
+  }, [sectionSettings]);
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -110,6 +142,21 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
       setUsageStats(stats);
     } catch (error) {
       console.error('Error loading usage stats:', error);
+    }
+  };
+
+  const loadAvailableAttributes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('available_attributes')
+        .select('*')
+        .order('category, name');
+
+      if (error) throw error;
+      if (data) setAvailableAttributes(data);
+    } catch (error) {
+      console.error('Error loading available attributes:', error);
+      setToastMessage('Failed to load available attributes');
     }
   };
 
@@ -212,6 +259,210 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
     if (location.company) return 'Company Level';
     if (location.concept) return 'Concept Level';
     return 'WAND Level (Global Default)';
+  };
+
+  const getAttributeCountForSection = (sectionName: string): number => {
+    if (!selectedTemplate) return 0;
+
+    const schema = selectedTemplate.attribute_schema;
+    switch (sectionName) {
+      case 'core_attributes':
+        return schema.core_attributes?.length || 0;
+      case 'extended_attributes':
+        return schema.extended_attributes?.length || 0;
+      case 'images':
+        return schema.core_attributes?.filter(a => a.type === 'image').length || 0;
+      case 'options':
+        return schema.core_attributes?.filter(a => a.type === 'options' || a.type === 'sizes').length || 0;
+      case 'nutrition':
+        return schema.core_attributes?.filter(a => a.name.includes('nutrition') || a.name.includes('calorie')).length || 0;
+      default:
+        return 0;
+    }
+  };
+
+  const getAttributesForSection = (sectionName: string): AttributeField[] => {
+    if (!selectedTemplate) return [];
+
+    const schema = selectedTemplate.attribute_schema;
+    switch (sectionName) {
+      case 'core_attributes':
+        return schema.core_attributes || [];
+      case 'extended_attributes':
+        return schema.extended_attributes || [];
+      case 'images':
+        return schema.core_attributes?.filter(a => a.type === 'image') || [];
+      case 'options':
+        return schema.core_attributes?.filter(a => a.type === 'options' || a.type === 'sizes') || [];
+      case 'nutrition':
+        return schema.core_attributes?.filter(a => a.name.includes('nutrition') || a.name.includes('calorie')) || [];
+      default:
+        return [];
+    }
+  };
+
+  const getSectionDescription = (sectionType: string): string => {
+    switch (sectionType) {
+      case 'core':
+        return 'Essential product information used across all product types';
+      case 'extended':
+        return 'Custom attributes specific to this template';
+      case 'images':
+        return 'Product images and visual assets';
+      case 'options':
+        return 'Product variations and modifiers (e.g., sizes, add-ons)';
+      case 'nutrition':
+        return 'Nutritional information and dietary data';
+      default:
+        return 'Custom section attributes';
+    }
+  };
+
+  const getSectionGuidance = (sectionType: string): React.ReactNode | null => {
+    switch (sectionType) {
+      case 'images':
+        return (
+          <ul className="space-y-1">
+            <li>Image attributes allow file uploads in the product editor</li>
+            <li>Supported formats: JPG, PNG, WebP</li>
+            <li>Images are automatically optimized and stored in CDN</li>
+            <li>Recommended maximum size: 5MB per image</li>
+          </ul>
+        );
+      case 'options':
+        return (
+          <ul className="space-y-1">
+            <li>Option attributes create product variations with their own attribute schema</li>
+            <li>Use "sizes" type for size selection UI components</li>
+            <li>Use "options" type for modifiers and add-ons</li>
+            <li>Each option can have its own price, SKU, and availability</li>
+          </ul>
+        );
+      case 'nutrition':
+        return (
+          <ul className="space-y-1">
+            <li>Nutrition attributes store dietary and nutritional information</li>
+            <li>Include fields like calories, protein, carbs, allergens</li>
+            <li>Use boolean types for dietary flags (vegan, gluten-free, etc.)</li>
+          </ul>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const handleAddFromLibrary = async (attributeId: string) => {
+    if (!selectedTemplate || !selectedSectionId) return;
+
+    const selectedSection = sectionSettings.find(s => s.section_id === selectedSectionId);
+    if (!selectedSection) return;
+
+    const attribute = availableAttributes.find(a => a.id === attributeId);
+    if (!attribute) return;
+
+    try {
+      const newAttribute = {
+        name: attribute.name,
+        label: attribute.label,
+        type: attribute.type,
+        required: attribute.default_required,
+      };
+
+      const updatedSchema = { ...selectedTemplate.attribute_schema };
+      const sectionName = selectedSection.section_name;
+
+      if (sectionName === 'core_attributes') {
+        updatedSchema.core_attributes = [...updatedSchema.core_attributes, newAttribute];
+      } else if (sectionName === 'extended_attributes') {
+        updatedSchema.extended_attributes = [...(updatedSchema.extended_attributes || []), newAttribute];
+      }
+
+      const { error } = await supabase
+        .from('product_attribute_templates')
+        .update({ attribute_schema: updatedSchema })
+        .eq('id', selectedTemplate.id);
+
+      if (error) throw error;
+
+      await loadTemplates();
+      setToastMessage('Attribute added successfully');
+    } catch (error) {
+      console.error('Error adding attribute:', error);
+      setToastMessage('Failed to add attribute');
+      throw error;
+    }
+  };
+
+  const handleCreateCustomAttribute = async (attribute: {
+    name: string;
+    label: string;
+    type: string;
+    required: boolean;
+  }) => {
+    if (!selectedTemplate || !selectedSectionId) return;
+
+    const selectedSection = sectionSettings.find(s => s.section_id === selectedSectionId);
+    if (!selectedSection) return;
+
+    try {
+      const updatedSchema = { ...selectedTemplate.attribute_schema };
+      const sectionName = selectedSection.section_name;
+
+      if (sectionName === 'core_attributes') {
+        updatedSchema.core_attributes = [...updatedSchema.core_attributes, attribute];
+      } else if (sectionName === 'extended_attributes') {
+        updatedSchema.extended_attributes = [...(updatedSchema.extended_attributes || []), attribute];
+      }
+
+      const { error } = await supabase
+        .from('product_attribute_templates')
+        .update({ attribute_schema: updatedSchema })
+        .eq('id', selectedTemplate.id);
+
+      if (error) throw error;
+
+      await loadTemplates();
+      setToastMessage('Custom attribute created successfully');
+    } catch (error) {
+      console.error('Error creating attribute:', error);
+      setToastMessage('Failed to create attribute');
+      throw error;
+    }
+  };
+
+  const handleRemoveAttribute = async (attributeName: string) => {
+    if (!selectedTemplate || !selectedSectionId) return;
+
+    const selectedSection = sectionSettings.find(s => s.section_id === selectedSectionId);
+    if (!selectedSection) return;
+
+    if (!confirm(`Remove attribute "${attributeName}"? This will affect all products using this template.`)) {
+      return;
+    }
+
+    try {
+      const updatedSchema = { ...selectedTemplate.attribute_schema };
+      const sectionName = selectedSection.section_name;
+
+      if (sectionName === 'core_attributes') {
+        updatedSchema.core_attributes = updatedSchema.core_attributes.filter(a => a.name !== attributeName);
+      } else if (sectionName === 'extended_attributes') {
+        updatedSchema.extended_attributes = (updatedSchema.extended_attributes || []).filter(a => a.name !== attributeName);
+      }
+
+      const { error } = await supabase
+        .from('product_attribute_templates')
+        .update({ attribute_schema: updatedSchema })
+        .eq('id', selectedTemplate.id);
+
+      if (error) throw error;
+
+      await loadTemplates();
+      setToastMessage('Attribute removed successfully');
+    } catch (error) {
+      console.error('Error removing attribute:', error);
+      setToastMessage('Failed to remove attribute');
+    }
   };
 
   return (
@@ -379,7 +630,7 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
                         : 'text-slate-600 border-transparent hover:text-slate-900'
                     }`}
                   >
-                    Section Visibility
+                    Section Attributes
                   </button>
                   <button
                     onClick={() => setActiveTab('settings')}
@@ -428,113 +679,226 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
                 )}
 
                 {activeTab === 'sections' && (
-                  <div>
-                    <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-slate-900 mb-1">Location Context</h3>
-                          <p className="text-sm text-slate-600">{getLocationLevelDisplay()}</p>
+                  <div className="flex gap-6 h-full">
+                    <div className="w-64 flex flex-col bg-slate-50 rounded-lg border border-slate-200 p-4">
+                      <div className="mb-4">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-1">Sections</h3>
+                        <p className="text-xs text-slate-600">{getLocationLevelDisplay()}</p>
+                      </div>
+
+                      {loadingSections ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                         </div>
-                        <button
-                          onClick={loadSectionSettings}
-                          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-colors"
-                          title="Refresh"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {sectionSettings.map((section) => {
+                            const SectionIcon = getSectionIcon(section.section_name);
+                            const isSelected = selectedSectionId === section.section_id;
+                            const attributeCount = getAttributeCountForSection(section.section_name);
 
-                    {loadingSections ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {sectionSettings.map((section) => {
-                          const SectionIcon = getSectionIcon(section.section_name);
-                          const isSaving = savingSection === section.section_id;
-
-                          return (
-                            <div
-                              key={section.section_id}
-                              className={`p-4 rounded-lg border transition-colors ${
-                                section.is_enabled
-                                  ? 'bg-white border-slate-200'
-                                  : 'bg-slate-50 border-slate-200 opacity-60'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 flex-1">
-                                  <div className={`p-2 rounded-lg ${
-                                    section.is_enabled ? 'bg-blue-50' : 'bg-slate-200'
+                            return (
+                              <button
+                                key={section.section_id}
+                                onClick={() => setSelectedSectionId(section.section_id)}
+                                className={`w-full text-left p-3 rounded-lg transition-colors ${
+                                  isSelected
+                                    ? 'bg-white border-2 border-[#00adf0] shadow-sm'
+                                    : 'bg-white border border-slate-200 hover:border-slate-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`p-1.5 rounded ${
+                                    isSelected ? 'bg-blue-50' : 'bg-slate-100'
                                   }`}>
-                                    <SectionIcon className={`w-5 h-5 ${
-                                      section.is_enabled ? 'text-[#00adf0]' : 'text-slate-400'
+                                    <SectionIcon className={`w-4 h-4 ${
+                                      isSelected ? 'text-[#00adf0]' : 'text-slate-600'
                                     }`} />
                                   </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-medium text-slate-900">{section.section_label}</h4>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`text-sm font-medium truncate ${
+                                        isSelected ? 'text-[#00adf0]' : 'text-slate-900'
+                                      }`}>
+                                        {section.section_label}
+                                      </span>
+                                      {!section.is_enabled && (
+                                        <EyeOff className="w-3 h-3 text-slate-400 shrink-0" />
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-xs text-slate-500">{attributeCount} attrs</span>
                                       {section.is_inherited && (
-                                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">
-                                          Inherited from {section.inherited_from}
+                                        <span className="px-1 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">
+                                          Inherited
                                         </span>
                                       )}
                                     </div>
-                                    <p className="text-sm text-slate-600">Type: {section.section_type}</p>
                                   </div>
                                 </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
 
-                                <div className="flex items-center gap-3">
-                                  {section.is_inherited && (location.concept || location.company || location.store) && (
-                                    <button
-                                      onClick={() => handleResetToParent(section.section_id)}
-                                      disabled={isSaving}
-                                      className="text-xs text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50"
-                                    >
-                                      Reset to Parent
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => handleToggleSection(section.section_id, section.is_enabled)}
-                                    disabled={isSaving}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                                      section.is_enabled ? 'bg-[#00adf0]' : 'bg-slate-300'
-                                    }`}
-                                  >
-                                    <span
-                                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        section.is_enabled ? 'translate-x-6' : 'translate-x-1'
-                                      }`}
-                                    />
-                                  </button>
-                                  {section.is_enabled ? (
-                                    <Eye className="w-5 h-5 text-[#00adf0]" />
-                                  ) : (
-                                    <EyeOff className="w-5 h-5 text-slate-400" />
+                    <div className="flex-1 flex flex-col">
+                      {selectedSectionId && !loadingSections ? (
+                        <div className="h-full flex flex-col">
+                          {(() => {
+                            const selectedSection = sectionSettings.find(s => s.section_id === selectedSectionId);
+                            if (!selectedSection) return null;
+
+                            const SectionIcon = getSectionIcon(selectedSection.section_name);
+                            const isSaving = savingSection === selectedSection.section_id;
+                            const sectionAttributes = getAttributesForSection(selectedSection.section_name);
+
+                            return (
+                              <>
+                                <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                  <div className="flex items-start justify-between mb-3">
+                                    <div className="flex items-start gap-3">
+                                      <div className="p-2 bg-white rounded-lg border border-slate-200">
+                                        <SectionIcon className="w-5 h-5 text-[#00adf0]" />
+                                      </div>
+                                      <div>
+                                        <h3 className="font-semibold text-slate-900">{selectedSection.section_label}</h3>
+                                        <p className="text-sm text-slate-600 mt-1">
+                                          {getSectionDescription(selectedSection.section_type)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      {selectedSection.is_inherited && (location.concept || location.company || location.store) && (
+                                        <button
+                                          onClick={() => handleResetToParent(selectedSection.section_id)}
+                                          disabled={isSaving}
+                                          className="text-xs text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50"
+                                        >
+                                          Reset to Parent
+                                        </button>
+                                      )}
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm text-slate-600">
+                                          {selectedSection.is_enabled ? 'Enabled' : 'Disabled'}
+                                        </span>
+                                        <button
+                                          onClick={() => handleToggleSection(selectedSection.section_id, selectedSection.is_enabled)}
+                                          disabled={isSaving}
+                                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+                                            selectedSection.is_enabled ? 'bg-[#00adf0]' : 'bg-slate-300'
+                                          }`}
+                                        >
+                                          <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                              selectedSection.is_enabled ? 'translate-x-6' : 'translate-x-1'
+                                            }`}
+                                          />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {selectedSection.is_inherited && (
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded">
+                                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                                      <span className="text-xs text-amber-800">
+                                        Settings inherited from {selectedSection.inherited_from} level
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
 
-                    <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                      <div className="flex gap-3">
-                        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-semibold text-amber-900 mb-1">Section Visibility Rules</h4>
-                          <ul className="text-sm text-amber-800 space-y-1">
-                            <li>Disabled sections will not appear in the product editor</li>
-                            <li>At least one section must remain enabled</li>
-                            <li>Changes cascade down the location hierarchy (WAND → Concept → Company → Store)</li>
-                            <li>Child locations can override parent settings</li>
-                          </ul>
+                                <div className="flex-1 overflow-y-auto">
+                                  <div className="mb-4 flex items-center justify-between">
+                                    <h4 className="font-medium text-slate-900">Attributes ({sectionAttributes.length})</h4>
+                                    <button
+                                      onClick={() => setShowAddAttributeModal(true)}
+                                      className="flex items-center gap-2 px-3 py-2 bg-[#00adf0] text-white rounded-lg hover:bg-[#0099d6] transition-colors text-sm font-medium"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                      Add Attribute
+                                    </button>
+                                  </div>
+
+                                  {sectionAttributes.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                                      <Layers className="w-12 h-12 text-slate-300 mb-3" />
+                                      <p className="text-slate-600 font-medium mb-1">No attributes yet</p>
+                                      <p className="text-sm text-slate-500">Add attributes to this section to get started</p>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {sectionAttributes.map((attr, index) => (
+                                        <div
+                                          key={attr.name}
+                                          className="p-4 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors"
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                              <div className="flex items-center gap-3 mb-2">
+                                                <span className="font-medium text-slate-900">{attr.label}</span>
+                                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded">
+                                                  {attr.type}
+                                                </span>
+                                                {attr.required && (
+                                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded">
+                                                    Required
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <p className="text-sm text-slate-500">Field name: {attr.name}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <button
+                                                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                                                title="Edit attribute"
+                                              >
+                                                <Pencil className="w-4 h-4" />
+                                              </button>
+                                              <button
+                                                onClick={() => handleRemoveAttribute(attr.name)}
+                                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Remove attribute"
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {getSectionGuidance(selectedSection.section_type) && (
+                                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div className="flex gap-3">
+                                      <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                                      <div>
+                                        <h4 className="font-semibold text-blue-900 mb-1">
+                                          {selectedSection.section_label} Guidance
+                                        </h4>
+                                        <div className="text-sm text-blue-800">
+                                          {getSectionGuidance(selectedSection.section_type)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <div className="text-center">
+                            <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                            <p className="text-slate-500">Select a section to manage attributes</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -570,6 +934,21 @@ export default function WandTemplateManager({ onBack }: WandTemplateManagerProps
           message={toastMessage}
           onClose={() => setToastMessage(null)}
           duration={3000}
+        />
+      )}
+
+      {showAddAttributeModal && selectedTemplate && selectedSectionId && (
+        <AddAttributeModal
+          isOpen={showAddAttributeModal}
+          onClose={() => setShowAddAttributeModal(false)}
+          availableAttributes={availableAttributes}
+          existingAttributeNames={[
+            ...selectedTemplate.attribute_schema.core_attributes.map(a => a.name),
+            ...(selectedTemplate.attribute_schema.extended_attributes || []).map(a => a.name),
+          ]}
+          sectionType={sectionSettings.find(s => s.section_id === selectedSectionId)?.section_type || 'custom'}
+          onAddFromLibrary={handleAddFromLibrary}
+          onCreateCustom={handleCreateCustomAttribute}
         />
       )}
     </div>

@@ -218,4 +218,84 @@ export class TemplateSectionService {
         return 'Unknown Level';
     }
   }
+
+  static async getAttributeSections(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('attribute_sections')
+      .select('*')
+      .order('display_order');
+
+    if (error) {
+      console.error('Error fetching attribute sections:', error);
+      throw error;
+    }
+
+    return data || [];
+  }
+
+  static async addAttributeToTemplate(
+    templateId: string,
+    sectionId: string,
+    attribute: {
+      name: string;
+      label: string;
+      type: string;
+      required: boolean;
+    }
+  ): Promise<void> {
+    const { data: template, error: fetchError } = await supabase
+      .from('product_attribute_templates')
+      .select('attribute_schema')
+      .eq('id', templateId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const updatedSchema = { ...template.attribute_schema };
+
+    const { error: updateError } = await supabase
+      .from('product_attribute_templates')
+      .update({ attribute_schema: updatedSchema })
+      .eq('id', templateId);
+
+    if (updateError) throw updateError;
+  }
+
+  static async removeAttributeFromTemplate(
+    templateId: string,
+    sectionId: string,
+    attributeName: string
+  ): Promise<void> {
+    const { data: template, error: fetchError } = await supabase
+      .from('product_attribute_templates')
+      .select('attribute_schema')
+      .eq('id', templateId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const updatedSchema = { ...template.attribute_schema };
+
+    const { error: updateError } = await supabase
+      .from('product_attribute_templates')
+      .update({ attribute_schema: updatedSchema })
+      .eq('id', templateId);
+
+    if (updateError) throw updateError;
+  }
+
+  static async linkAttributeToSection(
+    attributeId: string,
+    sectionId: string
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('available_attributes')
+      .update({ section_id: sectionId })
+      .eq('id', attributeId);
+
+    if (error) {
+      console.error('Error linking attribute to section:', error);
+      throw error;
+    }
+  }
 }
