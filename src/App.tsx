@@ -2,7 +2,7 @@ import { useState, lazy, Suspense } from 'react';
 import { UserRole } from './lib/supabase';
 import RoleSelection from './components/RoleSelection';
 import AuthForm from './components/AuthForm';
-import { useAuth } from './contexts/AuthContext';
+import { useUser } from './hooks/useUser';
 
 const CreatorDashboard = lazy(() => import('./pages/CreatorDashboard'));
 const OperatorDashboard = lazy(() => import('./pages/OperatorDashboard'));
@@ -21,44 +21,47 @@ function LoadingFallback() {
 
 function App() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
-  const { profile, loading } = useAuth();
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const { user, loading } = useUser(selectedRole);
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
+    setShowAuthForm(true);
   };
 
   const handleBack = () => {
     setSelectedRole(null);
+    setShowAuthForm(false);
   };
 
   if (loading) {
     return <LoadingFallback />;
   }
 
-  if (!profile && selectedRole) {
+  if (showAuthForm && !user && selectedRole) {
     return <AuthForm role={selectedRole} onBack={handleBack} />;
   }
 
-  if (profile?.role === 'creator') {
+  if (selectedRole === 'creator' && user) {
     return (
       <Suspense fallback={<LoadingFallback />}>
-        <CreatorDashboard onBack={handleBack} user={profile} />
+        <CreatorDashboard onBack={handleBack} user={user} />
       </Suspense>
     );
   }
 
-  if (profile?.role === 'operator') {
+  if (selectedRole === 'operator' && user) {
     return (
       <Suspense fallback={<LoadingFallback />}>
-        <OperatorDashboard onBack={handleBack} user={profile} />
+        <OperatorDashboard onBack={handleBack} user={user} />
       </Suspense>
     );
   }
 
-  if (profile?.role === 'admin') {
+  if (selectedRole === 'admin' && user) {
     return (
       <Suspense fallback={<LoadingFallback />}>
-        <AdminDashboard onBack={handleBack} user={profile} />
+        <AdminDashboard onBack={handleBack} user={user} />
       </Suspense>
     );
   }
