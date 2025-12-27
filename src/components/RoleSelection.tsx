@@ -51,8 +51,11 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
             return (
               <button
                 key={role.id}
-                onClick={() => onSelectRole(role.id)}
-                className="group relative bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200"
+                onClick={() => {
+                  console.log('Button clicked:', role.id);
+                  onSelectRole(role.id);
+                }}
+                className="group relative bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-slate-200 cursor-pointer"
               >
                 <div className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${role.color} mb-6 shadow-md group-hover:shadow-lg transition-shadow`}>
                   <Icon className="w-8 h-8 text-white" />
@@ -68,7 +71,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                   {role.scope}
                 </p>
 
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-transparent to-slate-50 opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-transparent to-slate-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </button>
             );
           })}

@@ -9,6 +9,9 @@ export interface UserProfile {
   concept_id: number | null;
   company_id: number | null;
   store_id: number | null;
+  status: string;
+  created_at: string;
+  last_login_at?: string | null;
 }
 
 const USER_ID_MAP: Record<UserRole, string> = {
