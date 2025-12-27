@@ -147,11 +147,11 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
 
   return (
     <div
-      className={`border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative ${
-        isCustomProduct ? 'bg-blue-50' : 'bg-white'
-      } ${
+      className={`border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative bg-white ${
         hasPolicyViolation
           ? 'border-amber-400 shadow-amber-100 shadow-md'
+          : isCustomProduct
+          ? 'border-2 border-blue-300'
           : 'border-slate-200'
       }`}
       onMouseEnter={() => setIsHovered(true)}

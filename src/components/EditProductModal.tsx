@@ -2669,7 +2669,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
               <button
                 onClick={() => handlePublish()}
                 disabled={loading || !selectedTemplateId}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 {loading ? 'Creating...' : 'Create Product'}
@@ -2678,7 +2678,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
               <button
                 onClick={() => handlePublish()}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 Save Scheduled Changes
