@@ -136,6 +136,8 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
   const hasPolicyViolation = product.policy_status === 'violation';
   const productType = getProductType(product);
   const isCustomProduct = productType === 'custom';
+  const isLinkedOrImported = product.integration_product_id || product.mapping_id;
+  const hasGreyBackground = product.id === 'c6104727-94f8-40b3-b044-abb0fa385b8f';
 
   const getViolationSummary = () => {
     if (policyViolations.length === 0) return 'Policy violation';
@@ -147,11 +149,15 @@ export default memo(function ProductTile({ product, onClick }: ProductTileProps)
 
   return (
     <div
-      className={`border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative bg-white ${
+      className={`border-2 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col relative ${
+        hasGreyBackground
+          ? 'bg-slate-50'
+          : 'bg-white'
+      } ${
         hasPolicyViolation
           ? 'border-amber-400 shadow-amber-100 shadow-md'
-          : isCustomProduct
-          ? 'border-2 border-blue-300'
+          : isLinkedOrImported
+          ? 'border-[#00adf0]'
           : 'border-slate-200'
       }`}
       onMouseEnter={() => setIsHovered(true)}
