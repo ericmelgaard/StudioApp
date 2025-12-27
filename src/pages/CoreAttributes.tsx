@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Shield, Tag, X, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Shield, Tag, X, AlertCircle, List, Grid3x3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface CoreAttributesProps {
@@ -16,6 +16,12 @@ interface Attribute {
   category: string | null;
   is_system: boolean;
   created_at: string;
+}
+
+interface TemplateUsage {
+  template_id: string;
+  template_name: string;
+  usage_type: 'core' | 'option' | 'extended';
 }
 
 const ATTRIBUTE_TYPES = [
@@ -48,9 +54,12 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
   const [selectedAttribute, setSelectedAttribute] = useState<Attribute | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [templateUsage, setTemplateUsage] = useState<Record<string, TemplateUsage[]>>({});
 
   useEffect(() => {
     loadAttributes();
+    loadTemplateUsage();
   }, []);
 
   const loadAttributes = async () => {
@@ -67,6 +76,40 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
       setAttributes(data);
     }
     setLoading(false);
+  };
+
+  const loadTemplateUsage = async () => {
+    const { data, error } = await supabase
+      .from('product_attribute_templates')
+      .select('id, name, attribute_schema');
+
+    if (error) {
+      console.error('Error loading template usage:', error);
+      return;
+    }
+
+    const usageMap: Record<string, TemplateUsage[]> = {};
+
+    data?.forEach(template => {
+      const schema = template.attribute_schema as any;
+
+      ['core_attributes', 'option_attributes', 'extended_attributes'].forEach(attrType => {
+        const attrs = schema?.[attrType] || [];
+        attrs.forEach((attr: any) => {
+          if (!usageMap[attr.name]) {
+            usageMap[attr.name] = [];
+          }
+          usageMap[attr.name].push({
+            template_id: template.id,
+            template_name: template.name,
+            usage_type: attrType === 'core_attributes' ? 'core' :
+                       attrType === 'option_attributes' ? 'option' : 'extended'
+          });
+        });
+      });
+    });
+
+    setTemplateUsage(usageMap);
   };
 
   const handleDelete = async (attribute: Attribute) => {
@@ -152,6 +195,30 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
             <option key={cat.value} value={cat.value}>{cat.label}</option>
           ))}
         </select>
+        <div className="flex border border-slate-300 rounded-lg overflow-hidden">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-4 py-2 flex items-center gap-2 transition-colors ${
+              viewMode === 'grid'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Grid3x3 className="w-4 h-4" />
+            Grid
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 flex items-center gap-2 transition-colors border-l border-slate-300 ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <List className="w-4 h-4" />
+            List
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -162,6 +229,112 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
         <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
           <Tag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <p className="text-slate-600">No attributes found</p>
+        </div>
+      ) : viewMode === 'list' ? (
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Attribute
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Used In Templates
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {filteredAttributes.map(attr => {
+                const usage = templateUsage[attr.name] || [];
+                return (
+                  <tr key={attr.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-slate-900">{attr.label}</span>
+                            {attr.is_system && (
+                              <Shield className="w-4 h-4 text-blue-600" title="System attribute" />
+                            )}
+                            {attr.default_required && (
+                              <span className="text-red-500 text-sm">*</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">
+                            {attr.name}
+                          </div>
+                        </div>
+                      </div>
+                      {attr.description && (
+                        <p className="text-xs text-slate-600 mt-2">{attr.description}</p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-700">
+                        {ATTRIBUTE_TYPES.find(t => t.value === attr.type)?.label || attr.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-700">
+                        {getCategoryLabel(attr.category || '')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {usage.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {usage.map((template, idx) => (
+                            <div
+                              key={`${template.template_id}-${idx}`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                            >
+                              <span>{template.template_name}</span>
+                              <span className="text-blue-500 text-[10px] uppercase font-semibold">
+                                ({template.usage_type})
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Not used in any template</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => {
+                            setSelectedAttribute(attr);
+                            setShowEditModal(true);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                          disabled={attr.is_system}
+                          title="Edit attribute"
+                        >
+                          <Edit2 className={`w-4 h-4 ${attr.is_system ? 'text-slate-300' : 'text-slate-600'}`} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(attr)}
+                          className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                          disabled={attr.is_system}
+                          title="Delete attribute"
+                        >
+                          <Trash2 className={`w-4 h-4 ${attr.is_system ? 'text-slate-300' : 'text-red-600'}`} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="space-y-6">
