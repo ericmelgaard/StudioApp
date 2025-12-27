@@ -14,6 +14,7 @@ import CycleSettingsCard from '../components/CycleSettingsCard';
 import StoreEdit from './StoreEdit';
 import PlacementEdit from './PlacementEdit';
 import CompanyEdit from './CompanyEdit';
+import ConceptEdit from './ConceptEdit';
 import * as Icons from 'lucide-react';
 
 interface PlacementGroup {
@@ -73,7 +74,7 @@ export default function SiteConfiguration() {
   const { location, setLocation, canNavigateBack, getPreviousLocation } = useLocation();
 
   // Navigation state
-  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'company-edit' | 'store' | 'store-edit' | 'placement-edit'>('wand');
+  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'concept-edit' | 'company' | 'company-edit' | 'store' | 'store-edit' | 'placement-edit'>('wand');
   const [selectedConcept, setSelectedConcept] = useState<ConceptData | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
@@ -315,8 +316,7 @@ export default function SiteConfiguration() {
 
   const handleEditConcept = () => {
     if (selectedConcept) {
-      setEditingItem(selectedConcept);
-      setShowConceptModal(true);
+      setViewLevel('concept-edit');
     }
   };
 
@@ -457,8 +457,8 @@ export default function SiteConfiguration() {
               <h2 className="text-xl font-bold text-slate-900">Concepts</h2>
               <button
                 onClick={() => {
-                  setEditingItem(null);
-                  setShowConceptModal(true);
+                  setSelectedConcept(null);
+                  setViewLevel('concept-edit');
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
@@ -470,8 +470,8 @@ export default function SiteConfiguration() {
             <ConceptsGrid
               concepts={concepts}
               onEdit={(concept) => {
-                setEditingItem(concept);
-                setShowConceptModal(true);
+                setSelectedConcept(concept);
+                setViewLevel('concept-edit');
               }}
               onSelect={(concept) => {
                 setLocation({ concept });
@@ -495,6 +495,38 @@ export default function SiteConfiguration() {
           />
         )}
       </div>
+    );
+  }
+
+  // Concept Edit View
+  if (viewLevel === 'concept-edit') {
+    return (
+      <ConceptEdit
+        conceptId={selectedConcept?.id}
+        conceptName={selectedConcept?.name}
+        onBack={() => {
+          if (selectedConcept) {
+            setViewLevel('concept');
+          } else {
+            setViewLevel('wand');
+          }
+        }}
+        onSave={(concept) => {
+          if (concept.id) {
+            setSelectedConcept(concept);
+            setViewLevel('concept');
+            loadConceptLevelData();
+          } else {
+            setViewLevel('wand');
+            loadWandLevelData();
+          }
+        }}
+        onDelete={() => {
+          setSelectedConcept(null);
+          setViewLevel('wand');
+          loadWandLevelData();
+        }}
+      />
     );
   }
 
