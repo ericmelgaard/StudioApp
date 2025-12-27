@@ -33,6 +33,7 @@ interface StoreData {
   latitude?: number;
   longitude?: number;
   timezone?: string;
+  locale?: string;
 }
 
 interface StoreEditProps {
@@ -61,9 +62,11 @@ export default function StoreEdit({ storeId, companyId, conceptName, companyName
     phone: '',
     latitude: undefined,
     longitude: undefined,
-    timezone: 'America/New_York'
+    timezone: 'America/New_York',
+    locale: undefined
   });
 
+  const [companyLanguages, setCompanyLanguages] = useState<Array<{ locale: string; locale_name: string; sort_order: number }>>([]);
   const [activeSection, setActiveSection] = useState('basic-info');
   const [idCopied, setIdCopied] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -117,8 +120,29 @@ export default function StoreEdit({ storeId, companyId, conceptName, companyName
     setIsDirty(checkIfDirty());
   }, [formData]);
 
+  const loadCompanyLanguages = async () => {
+    const { data, error } = await supabase
+      .from('company_languages')
+      .select('locale, locale_name, sort_order')
+      .eq('company_id', companyId)
+      .order('sort_order');
+
+    if (error) {
+      console.error('Error loading company languages:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setCompanyLanguages(data);
+    } else {
+      setCompanyLanguages([{ locale: 'en', locale_name: 'English', sort_order: 0 }]);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
+
+    await loadCompanyLanguages();
 
     if (storeId) {
       const { data, error: fetchError } = await supabase
@@ -263,6 +287,7 @@ export default function StoreEdit({ storeId, companyId, conceptName, companyName
     const sections = [
       { id: 'basic-info', label: 'Basic Information', icon: Info },
       { id: 'store-location', label: 'Store Location', icon: MapPin },
+      { id: 'language', label: 'Language', icon: Globe },
     ];
 
     if (storeId) {
@@ -563,6 +588,61 @@ export default function StoreEdit({ storeId, companyId, conceptName, companyName
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div
+                id="language"
+                ref={(el) => (sectionRefs.current['language'] = el)}
+                className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-slate-900">Language</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Store Language
+                    </label>
+                    <select
+                      value={formData.locale || ''}
+                      onChange={(e) => setFormData({ ...formData, locale: e.target.value || undefined })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Use Company Default</option>
+                      {companyLanguages.map((lang) => (
+                        <option key={lang.locale} value={lang.locale}>
+                          {lang.locale_name} ({lang.locale})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {formData.locale
+                        ? `This store will use ${companyLanguages.find(l => l.locale === formData.locale)?.locale_name || formData.locale}.`
+                        : companyLanguages.length > 0
+                          ? `This store will inherit the company's default language: ${companyLanguages[0].locale_name}.`
+                          : 'No languages configured for this company.'}
+                    </p>
+                  </div>
+
+                  {companyLanguages.length > 1 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">Available Company Languages</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        {companyLanguages.map((lang, index) => (
+                          <li key={lang.locale} className="flex items-center gap-2">
+                            <span className="w-5 h-5 flex items-center justify-center bg-blue-100 rounded-full text-xs font-medium">
+                              {index + 1}
+                            </span>
+                            {lang.locale_name} ({lang.locale})
+                            {index === 0 && <span className="text-xs text-blue-600 font-medium">(Company Default)</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
 

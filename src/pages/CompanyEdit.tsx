@@ -135,11 +135,11 @@ export default function CompanyEdit({ companyId, conceptId, conceptName, company
         };
         setFormData(loadedFormData);
 
-        await loadLanguages();
+        const loadedLanguages = await loadLanguages();
 
         originalDataRef.current = {
           formData: loadedFormData,
-          languages: []
+          languages: loadedLanguages
         };
       }
     } else {
@@ -154,7 +154,7 @@ export default function CompanyEdit({ companyId, conceptId, conceptName, company
   };
 
   const loadLanguages = async () => {
-    if (!companyId) return;
+    if (!companyId) return [];
 
     const { data, error } = await supabase
       .from('company_languages')
@@ -164,20 +164,16 @@ export default function CompanyEdit({ companyId, conceptId, conceptName, company
 
     if (error) {
       console.error('Error loading languages:', error);
-      return;
+      return [];
     }
 
     if (data && data.length > 0) {
       setLanguages(data);
-      if (originalDataRef.current) {
-        originalDataRef.current.languages = data;
-      }
+      return data;
     } else {
       const defaultLangs = [{ locale: 'en', locale_name: 'English', sort_order: 0 }];
       setLanguages(defaultLangs);
-      if (originalDataRef.current) {
-        originalDataRef.current.languages = defaultLangs;
-      }
+      return defaultLangs;
     }
   };
 
