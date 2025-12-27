@@ -19,7 +19,7 @@ const USER_ID_MAP: Record<UserRole, string> = {
 
 export function useUser(role: UserRole | null) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(role !== null);
 
   useEffect(() => {
     if (!role) {
