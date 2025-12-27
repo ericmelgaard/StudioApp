@@ -54,8 +54,10 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
   const [selectedAttribute, setSelectedAttribute] = useState<Attribute | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [templateFilter, setTemplateFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [templateUsage, setTemplateUsage] = useState<Record<string, TemplateUsage[]>>({});
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     loadAttributes();
@@ -86,6 +88,10 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
     if (error) {
       console.error('Error loading template usage:', error);
       return;
+    }
+
+    if (data) {
+      setTemplates(data.map(t => ({ id: t.id, name: t.name })));
     }
 
     const usageMap: Record<string, TemplateUsage[]> = {};
@@ -140,7 +146,13 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
 
     const matchesCategory = categoryFilter === 'all' || attr.category === categoryFilter;
 
-    return matchesSearch && matchesCategory;
+    const usage = templateUsage[attr.name] || [];
+    const matchesTemplate =
+      templateFilter === 'all' ||
+      (templateFilter === 'unused' && usage.length === 0) ||
+      usage.some(u => u.template_id === templateFilter);
+
+    return matchesSearch && matchesCategory && matchesTemplate;
   });
 
   const groupedAttributes = filteredAttributes.reduce((acc, attr) => {
@@ -193,6 +205,17 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
           <option value="all">All Categories</option>
           {CATEGORIES.map(cat => (
             <option key={cat.value} value={cat.value}>{cat.label}</option>
+          ))}
+        </select>
+        <select
+          value={templateFilter}
+          onChange={(e) => setTemplateFilter(e.target.value)}
+          className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
+        >
+          <option value="all">All Templates</option>
+          <option value="unused">Unused</option>
+          {templates.map(template => (
+            <option key={template.id} value={template.id}>{template.name}</option>
           ))}
         </select>
         <div className="flex border border-slate-300 rounded-lg overflow-hidden">
