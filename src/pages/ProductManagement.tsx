@@ -387,18 +387,18 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
 
           {/* Panel Content */}
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-4">
+            <div className="space-y-3">
               <button
                 onClick={() => {
                   setShowMapper(true);
                   setSidePanelOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                className="w-full flex items-center gap-3 px-4 py-3 border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 text-blue-900 rounded-lg font-medium transition-colors"
               >
-                <Link2 className="w-5 h-5" />
+                <Link2 className="w-5 h-5 text-blue-600" />
                 <div className="text-left">
                   <div className="font-semibold">Map Integration Products</div>
-                  <div className="text-xs text-blue-100">Link integration data to products</div>
+                  <div className="text-xs text-blue-700">Link integration data to products</div>
                 </div>
               </button>
 
@@ -407,12 +407,12 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   setShowTemplateManager(true);
                   setSidePanelOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                className="w-full flex items-center gap-3 px-4 py-3 border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 text-blue-900 rounded-lg font-medium transition-colors"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="w-5 h-5 text-blue-600" />
                 <div className="text-left">
                   <div className="font-semibold">Manage Templates</div>
-                  <div className="text-xs text-purple-100">Set default attribute template</div>
+                  <div className="text-xs text-blue-700">Set default attribute template</div>
                 </div>
               </button>
 
@@ -421,12 +421,12 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   setShowCategoryManager(true);
                   setSidePanelOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                className="w-full flex items-center gap-3 px-4 py-3 border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 text-blue-900 rounded-lg font-medium transition-colors"
               >
-                <FolderTree className="w-5 h-5" />
+                <FolderTree className="w-5 h-5 text-blue-600" />
                 <div className="text-left">
                   <div className="font-semibold">Manage Categories</div>
-                  <div className="text-xs text-green-100">Create and organize product categories</div>
+                  <div className="text-xs text-blue-700">Create and organize product categories</div>
                 </div>
               </button>
 
@@ -439,7 +439,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
                 <Package className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -453,16 +453,16 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   setSelectedProduct(null);
                   setViewLevel('product-create');
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Create Product
               </button>
               <button
                 onClick={() => setSidePanelOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
+                className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-4 h-4" />
                 Actions
               </button>
             </div>
@@ -481,7 +481,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
