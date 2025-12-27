@@ -453,14 +453,14 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   setSelectedProduct(null);
                   setViewLevel('product-create');
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#00adf0] text-white rounded-lg font-medium hover:bg-[#0099d6] transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Create Product
               </button>
               <button
                 onClick={() => setSidePanelOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border-2 border-[#00adf0] bg-white hover:bg-slate-50 text-[#00adf0] rounded-lg font-medium transition-colors"
               >
                 <Menu className="w-4 h-4" />
                 Actions
