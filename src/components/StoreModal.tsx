@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Trash2, MapPin } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Store {
@@ -31,6 +31,7 @@ export default function StoreModal({ store, companyId, onClose, onSave }: StoreM
   const [phone, setPhone] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [inheritedLanguages, setInheritedLanguages] = useState<Array<{ locale: string; locale_name: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +46,25 @@ export default function StoreModal({ store, companyId, onClose, onSave }: StoreM
       setLatitude(store.latitude?.toString() || '');
       setLongitude(store.longitude?.toString() || '');
     }
-  }, [store]);
+    loadInheritedLanguages();
+  }, [store, companyId]);
+
+  const loadInheritedLanguages = async () => {
+    const { data, error } = await supabase
+      .from('company_languages')
+      .select('locale, locale_name')
+      .eq('company_id', companyId)
+      .order('sort_order');
+
+    if (error) {
+      console.error('Error loading languages:', error);
+      return;
+    }
+
+    if (data) {
+      setInheritedLanguages(data);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,6 +312,38 @@ export default function StoreModal({ store, companyId, onClose, onSave }: StoreM
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 Coordinates are used to display the store on the map. Use the "Geocode Address" button to automatically find coordinates, or enter them manually.
+              </p>
+            </div>
+
+            <div className="border-t pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe size={20} className="text-gray-700" />
+                <h3 className="text-sm font-medium text-gray-700">Languages (inherited from Company)</h3>
+              </div>
+
+              {inheritedLanguages.length > 0 ? (
+                <div className="space-y-2">
+                  {inheritedLanguages.map((lang) => (
+                    <div
+                      key={lang.locale}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div>
+                        <div className="font-medium text-gray-900">{lang.locale_name}</div>
+                        <div className="text-xs text-gray-500">{lang.locale}</div>
+                      </div>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                        Inherited
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No languages configured for this company.</p>
+              )}
+
+              <p className="text-xs text-gray-500 mt-2">
+                Languages are managed at the company level. To add or remove languages, edit the company settings.
               </p>
             </div>
           </div>

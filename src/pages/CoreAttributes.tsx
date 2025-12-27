@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Shield, Tag, X, AlertCircle, List, Grid3x3 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Shield, Tag, X, AlertCircle, List, Grid3x3, Globe, ChevronDown, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useLocation } from '../hooks/useLocation';
 
 interface CoreAttributesProps {
   onBack: () => void;
@@ -28,6 +29,8 @@ const ATTRIBUTE_TYPES = [
   { value: 'text', label: 'Text' },
   { value: 'richtext', label: 'Rich Text' },
   { value: 'number', label: 'Number' },
+  { value: 'price', label: 'Price' },
+  { value: 'calories', label: 'Calories' },
   { value: 'boolean', label: 'Boolean' },
   { value: 'image', label: 'Image' },
   { value: 'sizes', label: 'Sizes' }
@@ -47,6 +50,7 @@ const CATEGORIES = [
 ];
 
 export default function CoreAttributes({ onBack }: CoreAttributesProps) {
+  const { selectedStore, selectedCompany } = useLocation();
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -58,11 +62,22 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [templateUsage, setTemplateUsage] = useState<Record<string, TemplateUsage[]>>({});
   const [templates, setTemplates] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [availableLanguages, setAvailableLanguages] = useState<Array<{ locale: string; locale_name: string }>>([]);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [translations, setTranslations] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadAttributes();
     loadTemplateUsage();
-  }, []);
+    loadLanguages();
+  }, [selectedCompany, selectedStore]);
+
+  useEffect(() => {
+    if (selectedLanguage !== 'en') {
+      loadTranslations();
+    }
+  }, [selectedLanguage, attributes]);
 
   const loadAttributes = async () => {
     setLoading(true);
@@ -118,6 +133,56 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
     setTemplateUsage(usageMap);
   };
 
+  const loadLanguages = async () => {
+    const companyId = selectedStore?.company_id || selectedCompany?.id;
+
+    if (!companyId) {
+      setAvailableLanguages([{ locale: 'en', locale_name: 'English' }]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('company_languages')
+      .select('locale, locale_name')
+      .eq('company_id', companyId)
+      .order('sort_order');
+
+    if (error) {
+      console.error('Error loading languages:', error);
+      setAvailableLanguages([{ locale: 'en', locale_name: 'English' }]);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setAvailableLanguages(data);
+    } else {
+      setAvailableLanguages([{ locale: 'en', locale_name: 'English' }]);
+    }
+  };
+
+  const loadTranslations = async () => {
+    const attributeIds = attributes.map(a => a.id);
+
+    if (attributeIds.length === 0) return;
+
+    const { data, error } = await supabase
+      .from('attribute_translations')
+      .select('*')
+      .eq('locale', selectedLanguage)
+      .in('attribute_id', attributeIds);
+
+    if (error) {
+      console.error('Error loading translations:', error);
+      return;
+    }
+
+    const translationMap: Record<string, any> = {};
+    data?.forEach(t => {
+      translationMap[t.attribute_id] = t;
+    });
+    setTranslations(translationMap);
+  };
+
   const handleDelete = async (attribute: Attribute) => {
     if (attribute.is_system) {
       alert('System attributes cannot be deleted');
@@ -168,6 +233,10 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
     return CATEGORIES.find(c => c.value === category)?.label || category;
   };
 
+  const currentLanguage = availableLanguages.find(l => l.locale === selectedLanguage);
+  const translatedCount = Object.keys(translations).length;
+  const totalCount = attributes.length;
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
@@ -177,14 +246,59 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
             Manage the library of available product attributes used throughout the system
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Attribute
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <button
+              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Globe className="w-4 h-4" />
+              <span>{currentLanguage?.locale_name || 'English'}</span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {showLanguageDropdown && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                {availableLanguages.map(lang => (
+                  <button
+                    key={lang.locale}
+                    onClick={() => {
+                      setSelectedLanguage(lang.locale);
+                      setShowLanguageDropdown(false);
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-slate-50 flex items-center justify-between"
+                  >
+                    <span>{lang.locale_name}</span>
+                    {lang.locale === selectedLanguage && (
+                      <Check className="w-4 h-4 text-blue-600" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Attribute
+          </button>
+        </div>
       </div>
+
+      {selectedLanguage !== 'en' && (
+        <div className="mb-6 border-b border-blue-200 px-6 py-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center gap-2 mb-1">
+            <Globe className="w-5 h-5 text-blue-600" />
+            <h3 className="font-semibold text-blue-900">
+              Editing {currentLanguage?.locale_name} translations
+            </h3>
+          </div>
+          <p className="text-sm text-blue-700">
+            Only labels can be edited in translation mode. {translatedCount} of {totalCount} attributes translated.
+          </p>
+        </div>
+      )}
 
       <div className="mb-6 flex gap-4">
         <div className="flex-1 relative">
@@ -449,10 +563,15 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
 
       {showAddModal && (
         <AddAttributeModal
+          selectedLanguage={selectedLanguage}
+          languageName={currentLanguage?.locale_name || 'English'}
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             setShowAddModal(false);
             loadAttributes();
+            if (selectedLanguage !== 'en') {
+              loadTranslations();
+            }
           }}
         />
       )}
@@ -460,6 +579,9 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
       {showEditModal && selectedAttribute && (
         <EditAttributeModal
           attribute={selectedAttribute}
+          translation={translations[selectedAttribute.id]}
+          selectedLanguage={selectedLanguage}
+          languageName={currentLanguage?.locale_name || 'English'}
           onClose={() => {
             setShowEditModal(false);
             setSelectedAttribute(null);
@@ -468,6 +590,9 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
             setShowEditModal(false);
             setSelectedAttribute(null);
             loadAttributes();
+            if (selectedLanguage !== 'en') {
+              loadTranslations();
+            }
           }}
         />
       )}
@@ -475,15 +600,39 @@ export default function CoreAttributes({ onBack }: CoreAttributesProps) {
   );
 }
 
-function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+const UNIT_OPTIONS = [
+  { value: '', label: 'None' },
+  { value: 'kg', label: 'Kilograms (kg)' },
+  { value: 'g', label: 'Grams (g)' },
+  { value: 'mg', label: 'Milligrams (mg)' },
+  { value: 'lb', label: 'Pounds (lb)' },
+  { value: 'oz', label: 'Ounces (oz)' },
+  { value: 'mL', label: 'Milliliters (mL)' },
+  { value: 'L', label: 'Liters (L)' },
+  { value: 'fl oz', label: 'Fluid Ounces (fl oz)' },
+  { value: 'cup', label: 'Cups' },
+  { value: 'tbsp', label: 'Tablespoons (tbsp)' },
+  { value: 'tsp', label: 'Teaspoons (tsp)' },
+  { value: 'in', label: 'Inches (in)' },
+  { value: 'cm', label: 'Centimeters (cm)' },
+  { value: 'm', label: 'Meters (m)' },
+  { value: 'ft', label: 'Feet (ft)' },
+  { value: 'count', label: 'Count' },
+  { value: '%', label: 'Percent (%)' },
+  { value: 'custom', label: 'Custom' }
+];
+
+function AddAttributeModal({ selectedLanguage, languageName, onClose, onSuccess }: { selectedLanguage: string; languageName: string; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     name: '',
     label: '',
     type: 'text',
     default_required: false,
     description: '',
-    category: 'basic'
+    category: 'basic',
+    unit_of_measure: ''
   });
+  const [customUnit, setCustomUnit] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -491,6 +640,8 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
     e.preventDefault();
     setError('');
     setSaving(true);
+
+    const finalUnit = formData.unit_of_measure === 'custom' ? customUnit : formData.unit_of_measure;
 
     const { error: saveError } = await supabase
       .from('available_attributes')
@@ -501,6 +652,7 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
         default_required: formData.default_required,
         description: formData.description || null,
         category: formData.category,
+        unit_of_measure: finalUnit || null,
         is_system: false
       });
 
@@ -512,6 +664,18 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
       onSuccess();
     }
   };
+
+  const handleTypeChange = (newType: string) => {
+    let defaultUnit = formData.unit_of_measure;
+    if (newType === 'price' && !formData.unit_of_measure) {
+      defaultUnit = '$';
+    } else if (newType === 'calories' && !formData.unit_of_measure) {
+      defaultUnit = 'kcal';
+    }
+    setFormData({ ...formData, type: newType, unit_of_measure: defaultUnit });
+  };
+
+  const showUnitField = ['number', 'price', 'calories'].includes(formData.type);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -569,7 +733,7 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
               </label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                onChange={(e) => handleTypeChange(e.target.value)}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {ATTRIBUTE_TYPES.map(type => (
@@ -593,6 +757,32 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
               </select>
             </div>
           </div>
+
+          {showUnitField && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Unit of Measure
+              </label>
+              <select
+                value={formData.unit_of_measure}
+                onChange={(e) => setFormData({ ...formData, unit_of_measure: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {UNIT_OPTIONS.map(unit => (
+                  <option key={unit.value} value={unit.value}>{unit.label}</option>
+                ))}
+              </select>
+              {formData.unit_of_measure === 'custom' && (
+                <input
+                  type="text"
+                  value={customUnit}
+                  onChange={(e) => setCustomUnit(e.target.value)}
+                  placeholder="Enter custom unit (e.g., servings)"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-2"
+                />
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
@@ -640,14 +830,18 @@ function AddAttributeModal({ onClose, onSuccess }: { onClose: () => void; onSucc
   );
 }
 
-function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attribute; onClose: () => void; onSuccess: () => void }) {
+function EditAttributeModal({ attribute, translation, selectedLanguage, languageName, onClose, onSuccess }: { attribute: Attribute; translation?: any; selectedLanguage: string; languageName: string; onClose: () => void; onSuccess: () => void }) {
+  const isTranslationMode = selectedLanguage !== 'en';
+
   const [formData, setFormData] = useState({
-    label: attribute.label,
+    label: isTranslationMode && translation?.label ? translation.label : attribute.label,
     type: attribute.type,
     default_required: attribute.default_required,
-    description: attribute.description || '',
-    category: attribute.category || 'basic'
+    description: isTranslationMode && translation?.description ? translation.description : (attribute.description || ''),
+    category: attribute.category || 'basic',
+    unit_of_measure: (attribute as any).unit_of_measure || ''
   });
+  const [customUnit, setCustomUnit] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -656,37 +850,89 @@ function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attr
     setError('');
     setSaving(true);
 
-    const { error: saveError } = await supabase
-      .from('available_attributes')
-      .update({
-        label: formData.label,
-        type: formData.type,
-        default_required: formData.default_required,
-        description: formData.description || null,
-        category: formData.category
-      })
-      .eq('id', attribute.id);
+    try {
+      if (isTranslationMode) {
+        const translationData = {
+          attribute_id: attribute.id,
+          locale: selectedLanguage,
+          label: formData.label,
+          description: formData.description || null
+        };
 
-    setSaving(false);
+        if (translation) {
+          const { error: updateError } = await supabase
+            .from('attribute_translations')
+            .update(translationData)
+            .eq('id', translation.id);
 
-    if (saveError) {
-      setError(saveError.message);
-    } else {
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('attribute_translations')
+            .insert([translationData]);
+
+          if (insertError) throw insertError;
+        }
+      } else {
+        const finalUnit = formData.unit_of_measure === 'custom' ? customUnit : formData.unit_of_measure;
+
+        const { error: updateError } = await supabase
+          .from('available_attributes')
+          .update({
+            label: formData.label,
+            type: formData.type,
+            default_required: formData.default_required,
+            description: formData.description || null,
+            category: formData.category,
+            unit_of_measure: finalUnit || null
+          })
+          .eq('id', attribute.id);
+
+        if (updateError) throw updateError;
+      }
+
       onSuccess();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
   };
+
+  const handleTypeChange = (newType: string) => {
+    let defaultUnit = formData.unit_of_measure;
+    if (newType === 'price' && !formData.unit_of_measure) {
+      defaultUnit = '$';
+    } else if (newType === 'calories' && !formData.unit_of_measure) {
+      defaultUnit = 'kcal';
+    }
+    setFormData({ ...formData, type: newType, unit_of_measure: defaultUnit });
+  };
+
+  const showUnitField = ['number', 'price', 'calories'].includes(formData.type);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-xl font-bold text-slate-900">Edit Core Attribute</h2>
+          <h2 className="text-xl font-bold text-slate-900">
+            {isTranslationMode ? `Edit Attribute Translation - ${languageName}` : 'Edit Core Attribute'}
+          </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {isTranslationMode && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
+              <Globe className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                Translating to {languageName}. Only the label and description can be edited in translation mode.
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -706,6 +952,11 @@ function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attr
           </div>
 
           <div>
+            {isTranslationMode && (
+              <div className="mb-2 text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                English Default: {attribute.label}
+              </div>
+            )}
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Display Label <span className="text-red-500">*</span>
             </label>
@@ -714,64 +965,103 @@ function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attr
               required
               value={formData.label}
               onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+              placeholder={isTranslationMode ? attribute.label : ''}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Data Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {ATTRIBUTE_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
+          {!isTranslationMode && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Data Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => handleTypeChange(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {ATTRIBUTE_TYPES.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {CATEGORIES.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {CATEGORIES.map(cat => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {showUnitField && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Unit of Measure
+                  </label>
+                  <select
+                    value={formData.unit_of_measure}
+                    onChange={(e) => setFormData({ ...formData, unit_of_measure: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {UNIT_OPTIONS.map(unit => (
+                      <option key={unit.value} value={unit.value}>{unit.label}</option>
+                    ))}
+                  </select>
+                  {formData.unit_of_measure === 'custom' && (
+                    <input
+                      type="text"
+                      value={customUnit}
+                      onChange={(e) => setCustomUnit(e.target.value)}
+                      placeholder="Enter custom unit (e.g., servings)"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-2"
+                    />
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
           <div>
+            {isTranslationMode && attribute.description && (
+              <div className="mb-2 text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                English Default: {attribute.description}
+              </div>
+            )}
             <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
+              placeholder={isTranslationMode ? attribute.description || '' : 'Brief description of what this attribute represents'}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="edit_default_required"
-              checked={formData.default_required}
-              onChange={(e) => setFormData({ ...formData, default_required: e.target.checked })}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <label htmlFor="edit_default_required" className="text-sm text-slate-700">
-              Required by default in templates
-            </label>
-          </div>
+          {!isTranslationMode && (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="edit_default_required"
+                checked={formData.default_required}
+                onChange={(e) => setFormData({ ...formData, default_required: e.target.checked })}
+                className="w-4 h-4 text-blue-600 rounded"
+              />
+              <label htmlFor="edit_default_required" className="text-sm text-slate-700">
+                Required by default in templates
+              </label>
+            </div>
+          )}
 
           <div className="border-t border-slate-200 pt-4 flex justify-end gap-3">
             <button
@@ -786,7 +1076,7 @@ function EditAttributeModal({ attribute, onClose, onSuccess }: { attribute: Attr
               disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving...' : (isTranslationMode ? 'Save Translation' : 'Save Changes')}
             </button>
           </div>
         </form>

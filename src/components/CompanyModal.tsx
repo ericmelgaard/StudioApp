@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Trash2 } from 'lucide-react';
+import { X, Save, Trash2, Globe, Plus, GripVertical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import LanguagePickerModal from './LanguagePickerModal';
 
 interface Company {
   id: number;
@@ -31,6 +32,8 @@ export default function CompanyModal({ company, conceptId, onClose, onSave }: Co
   const [zipCode, setZipCode] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [languages, setLanguages] = useState<Array<{ id?: string; locale: string; locale_name: string; sort_order: number }>>([]);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,8 +47,32 @@ export default function CompanyModal({ company, conceptId, onClose, onSave }: Co
       setZipCode(company.zip_code || '');
       setPhone(company.phone || '');
       setEmail(company.email || '');
+      loadLanguages();
+    } else {
+      setLanguages([{ locale: 'en', locale_name: 'English', sort_order: 0 }]);
     }
   }, [company]);
+
+  const loadLanguages = async () => {
+    if (!company) return;
+
+    const { data, error } = await supabase
+      .from('company_languages')
+      .select('*')
+      .eq('company_id', company.id)
+      .order('sort_order');
+
+    if (error) {
+      console.error('Error loading languages:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setLanguages(data);
+    } else {
+      setLanguages([{ locale: 'en', locale_name: 'English', sort_order: 0 }]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +92,8 @@ export default function CompanyModal({ company, conceptId, onClose, onSave }: Co
         email: email || null
       };
 
+      let companyId = company?.id;
+
       if (company) {
         const { error: updateError } = await supabase
           .from('companies')
@@ -73,11 +102,18 @@ export default function CompanyModal({ company, conceptId, onClose, onSave }: Co
 
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase
+        const { data: newCompany, error: insertError } = await supabase
           .from('companies')
-          .insert([companyData]);
+          .insert([companyData])
+          .select()
+          .single();
 
         if (insertError) throw insertError;
+        companyId = newCompany.id;
+      }
+
+      if (companyId) {
+        await saveLanguages(companyId);
       }
 
       onSave();
@@ -87,6 +123,28 @@ export default function CompanyModal({ company, conceptId, onClose, onSave }: Co
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveLanguages = async (companyId: number) => {
+    const { error: deleteError } = await supabase
+      .from('company_languages')
+      .delete()
+      .eq('company_id', companyId);
+
+    if (deleteError) throw deleteError;
+
+    const languageData = languages.map((lang, index) => ({
+      company_id: companyId,
+      locale: lang.locale,
+      locale_name: lang.locale_name,
+      sort_order: index
+    }));
+
+    const { error: insertError } = await supabase
+      .from('company_languages')
+      .insert(languageData);
+
+    if (insertError) throw insertError;
   };
 
   const handleDelete = async () => {
@@ -113,6 +171,38 @@ export default function CompanyModal({ company, conceptId, onClose, onSave }: Co
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddLanguages = (newLanguages: { locale: string; locale_name: string }[]) => {
+    const updatedLanguages = [...languages];
+    newLanguages.forEach(newLang => {
+      if (!updatedLanguages.find(l => l.locale === newLang.locale)) {
+        updatedLanguages.push({
+          locale: newLang.locale,
+          locale_name: newLang.locale_name,
+          sort_order: updatedLanguages.length
+        });
+      }
+    });
+    setLanguages(updatedLanguages);
+  };
+
+  const handleRemoveLanguage = (locale: string) => {
+    if (locale === 'en') {
+      alert('English cannot be removed as it is the default language.');
+      return;
+    }
+    setLanguages(languages.filter(l => l.locale !== locale));
+  };
+
+  const moveLanguage = (index: number, direction: 'up' | 'down') => {
+    const newLanguages = [...languages];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= newLanguages.length) return;
+
+    [newLanguages[index], newLanguages[targetIndex]] = [newLanguages[targetIndex], newLanguages[index]];
+    setLanguages(newLanguages);
   };
 
   return (
@@ -244,8 +334,75 @@ export default function CompanyModal({ company, conceptId, onClose, onSave }: Co
                 />
               </div>
             </div>
+
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Globe size={20} className="text-gray-700" />
+                  <h3 className="text-sm font-medium text-gray-700">Languages</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLanguagePicker(true)}
+                  className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                >
+                  <Plus size={14} />
+                  Add Language
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {languages.map((lang, index) => (
+                  <div
+                    key={lang.locale}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveLanguage(index, 'up')}
+                          disabled={index === 0}
+                          className="text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <GripVertical size={14} />
+                        </button>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{lang.locale_name}</div>
+                        <div className="text-xs text-gray-500">{lang.locale}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLanguage(lang.locale)}
+                      disabled={lang.locale === 'en'}
+                      className={`text-sm px-3 py-1 rounded transition-colors ${
+                        lang.locale === 'en'
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-red-600 hover:bg-red-50'
+                      }`}
+                    >
+                      {lang.locale === 'en' ? 'Default' : 'Remove'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-gray-500 mt-2">
+                {languages.length} language{languages.length !== 1 ? 's' : ''} configured. English is the default language and cannot be removed.
+              </p>
+            </div>
           </div>
         </form>
+
+        {showLanguagePicker && (
+          <LanguagePickerModal
+            existingLanguages={languages.map(l => l.locale)}
+            onClose={() => setShowLanguagePicker(false)}
+            onAdd={handleAddLanguages}
+          />
+        )}
 
         <div className="flex items-center justify-between p-6 border-t bg-gray-50">
           <div>
