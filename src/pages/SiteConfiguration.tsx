@@ -13,6 +13,7 @@ import StoreModal from '../components/StoreModal';
 import CycleSettingsCard from '../components/CycleSettingsCard';
 import StoreEdit from './StoreEdit';
 import PlacementEdit from './PlacementEdit';
+import CompanyEdit from './CompanyEdit';
 import * as Icons from 'lucide-react';
 
 interface PlacementGroup {
@@ -72,7 +73,7 @@ export default function SiteConfiguration() {
   const { location, setLocation, canNavigateBack, getPreviousLocation } = useLocation();
 
   // Navigation state
-  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'store' | 'store-edit' | 'placement-edit'>('wand');
+  const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'company' | 'company-edit' | 'store' | 'store-edit' | 'placement-edit'>('wand');
   const [selectedConcept, setSelectedConcept] = useState<ConceptData | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
@@ -321,8 +322,7 @@ export default function SiteConfiguration() {
 
   const handleEditCompany = () => {
     if (selectedCompany) {
-      setEditingItem(selectedCompany);
-      setShowCompanyModal(true);
+      setViewLevel('company-edit');
     }
   };
 
@@ -540,8 +540,8 @@ export default function SiteConfiguration() {
               <h2 className="text-xl font-bold text-slate-900">Companies</h2>
               <button
                 onClick={() => {
-                  setEditingItem(null);
-                  setShowCompanyModal(true);
+                  setSelectedCompany(null);
+                  setViewLevel('company-edit');
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
@@ -553,8 +553,8 @@ export default function SiteConfiguration() {
             <CompaniesGrid
               companies={companies}
               onEdit={(company) => {
-                setEditingItem(company);
-                setShowCompanyModal(true);
+                setSelectedCompany(company);
+                setViewLevel('company-edit');
               }}
               onSelect={(company) => {
                 setLocation({
@@ -597,6 +597,40 @@ export default function SiteConfiguration() {
           />
         )}
       </div>
+    );
+  }
+
+  // Company Edit View
+  if (viewLevel === 'company-edit') {
+    return (
+      <CompanyEdit
+        companyId={selectedCompany?.id}
+        conceptId={selectedConcept?.id || location.concept?.id || 0}
+        conceptName={selectedConcept?.name || location.concept?.name}
+        companyName={selectedCompany?.name}
+        onBack={() => {
+          if (selectedCompany) {
+            setViewLevel('company');
+          } else {
+            setViewLevel('concept');
+          }
+        }}
+        onSave={(company) => {
+          if (company.id) {
+            setSelectedCompany(company);
+            setViewLevel('company');
+            loadCompanyLevelData();
+          } else {
+            setViewLevel('concept');
+            loadConceptLevelData();
+          }
+        }}
+        onDelete={() => {
+          setSelectedCompany(null);
+          setViewLevel('concept');
+          loadConceptLevelData();
+        }}
+      />
     );
   }
 
