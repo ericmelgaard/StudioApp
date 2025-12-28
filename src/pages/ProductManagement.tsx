@@ -563,6 +563,17 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
                   <span>
                     Last updated: {new Date(products[0].updated_at).toLocaleString()}
                   </span>
+                  <div className="w-px h-4 bg-slate-300" />
+                  <div className="flex items-center gap-3 text-xs text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 bg-blue-50 border border-blue-200 rounded-sm" />
+                      <span>Custom/API Product</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 bg-amber-50 border border-amber-300 rounded-sm" />
+                      <span>Policy Issue</span>
+                    </div>
+                  </div>
                 </>
               ) : null}
             </div>
