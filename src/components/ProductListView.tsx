@@ -865,12 +865,12 @@ export default function ProductListView({
               const pinnedBg = isSelected
                 ? 'bg-purple-50'
                 : hasPolicyViolation
-                ? 'bg-amber-50/30'
+                ? 'bg-amber-50'
                 : isLinkedOrImported
                 ? 'bg-blue-50'
                 : isEven
                 ? 'bg-white'
-                : 'bg-slate-50/30';
+                : 'bg-slate-50';
 
               return (
                 <tr
