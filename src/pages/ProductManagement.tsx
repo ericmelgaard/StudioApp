@@ -322,6 +322,13 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     return items;
   };
 
+  const getLocationLevelDisplay = () => {
+    if (location.store) return 'Store Level';
+    if (location.company) return 'Company Level';
+    if (location.concept) return 'Concept Level';
+    return 'WAND Level (Global Default)';
+  };
+
   if (viewLevel === 'product-create') {
     return (
       <ProductEdit
@@ -358,7 +365,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="max-w-[1800px] mx-auto h-[calc(100vh-200px)]">
       {/* Side Panel Overlay */}
       {sidePanelOpen && (
         <div
@@ -435,44 +442,46 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
         </div>
       </div>
 
-      <nav className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
-                <Package className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-slate-900">Product Management</h1>
-                <Breadcrumb items={getBreadcrumbItems()} />
-              </div>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+              <Package className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setSelectedProduct(null);
-                  setViewLevel('product-create');
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-[#00adf0] text-white rounded-lg font-medium hover:bg-[#0099d6] transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Create Product
-              </button>
-              <button
-                onClick={() => setSidePanelOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 border-2 border-[#00adf0] bg-white hover:bg-slate-50 text-[#00adf0] rounded-lg font-medium transition-colors"
-              >
-                <Menu className="w-4 h-4" />
-                Actions
-              </button>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Product Management</h1>
+              <Breadcrumb items={getBreadcrumbItems()} />
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setSelectedProduct(null);
+                setViewLevel('product-create');
+              }}
+              className="px-4 py-2 bg-[#00adf0] text-white rounded-lg hover:bg-[#0099d6] transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Product
+            </button>
+            <button
+              onClick={() => setSidePanelOpen(true)}
+              className="px-4 py-2 border-2 border-[#00adf0] bg-white hover:bg-slate-50 text-[#00adf0] rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Menu className="w-4 h-4" />
+              Actions
+            </button>
+          </div>
         </div>
-      </nav>
+        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800">
+            <strong>Current Context:</strong> {getLocationLevelDisplay()} - Products visible at this level and can be customized down the hierarchy.
+          </p>
+        </div>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-6 border-b border-slate-200">
+      <div className="flex flex-col bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden h-[calc(100%-120px)]">
+        <div className="p-6 border-b border-slate-200">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -559,88 +568,87 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
             </div>
           </div>
 
-          <div className={viewMode === 'tile' ? 'p-6' : ''}>
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                  {products.length === 0 ? 'No products yet' : 'No products found'}
-                </h3>
-                <p className="text-slate-600">
-                  {products.length === 0
-                    ? 'Load sample data to get started, or manage integrations to sync products from external sources'
-                    : 'Try adjusting your search or filters'}
-                </p>
-              </div>
-            ) : viewMode === 'list' ? (
-              <div className="p-6">
-                <ProductListView
-                  products={filteredProducts}
-                  onProductClick={(product) => {
-                    setSelectedProduct(product);
+        <div className={`flex-1 overflow-y-auto ${viewMode === 'tile' ? 'p-6' : ''}`}>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                {products.length === 0 ? 'No products yet' : 'No products found'}
+              </h3>
+              <p className="text-slate-600">
+                {products.length === 0
+                  ? 'Load sample data to get started, or manage integrations to sync products from external sources'
+                  : 'Try adjusting your search or filters'}
+              </p>
+            </div>
+          ) : viewMode === 'list' ? (
+            <div className="p-6">
+              <ProductListView
+                products={filteredProducts}
+                onProductClick={(product) => {
+                  setSelectedProduct(product);
+                  setViewLevel('product-edit');
+                }}
+                selectedProductIds={selectedProductIds}
+                onSelectionChange={setSelectedProductIds}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                advancedFilterComponent={
+                  <AdvancedFilter
+                    sections={filterSections}
+                    value={filterState}
+                    onChange={setFilterState}
+                  />
+                }
+                conceptId={location.concept?.id}
+                companyId={location.company?.id}
+                siteId={location.store?.id}
+                onProductsRefresh={loadProducts}
+                onShowHierarchy={() => setShowHierarchyModal(true)}
+                onShowCategoryAssign={() => setShowBulkCategoryAssign(true)}
+                totalProductCount={filteredProducts.length}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredProducts.map((product) => (
+                <ProductTile
+                  key={product.id}
+                  product={product}
+                  onClick={async () => {
+                    let productToEdit = product;
+
+                    if (!product.parent_product_id && (location.concept || location.company || location.store)) {
+                      const locationProduct = await LocationProductService.getOrCreateLocationProduct(
+                        product.id,
+                        location
+                      );
+                      if (locationProduct) {
+                        productToEdit = locationProduct;
+                      }
+                    }
+
+                    setSelectedProduct(productToEdit);
                     setViewLevel('product-edit');
                   }}
-                  selectedProductIds={selectedProductIds}
-                  onSelectionChange={setSelectedProductIds}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  advancedFilterComponent={
-                    <AdvancedFilter
-                      sections={filterSections}
-                      value={filterState}
-                      onChange={setFilterState}
-                    />
-                  }
-                  conceptId={location.concept?.id}
-                  companyId={location.company?.id}
-                  siteId={location.store?.id}
-                  onProductsRefresh={loadProducts}
-                  onShowHierarchy={() => setShowHierarchyModal(true)}
-                  onShowCategoryAssign={() => setShowBulkCategoryAssign(true)}
-                  totalProductCount={filteredProducts.length}
                 />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredProducts.map((product) => (
-                  <ProductTile
-                    key={product.id}
-                    product={product}
-                    onClick={async () => {
-                      let productToEdit = product;
-
-                      if (!product.parent_product_id && (location.concept || location.company || location.store)) {
-                        const locationProduct = await LocationProductService.getOrCreateLocationProduct(
-                          product.id,
-                          location
-                        );
-                        if (locationProduct) {
-                          productToEdit = locationProduct;
-                        }
-                      }
-
-                      setSelectedProduct(productToEdit);
-                      setViewLevel('product-edit');
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {!loading && filteredProducts.length > 0 && (
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
-              <p className="text-sm text-slate-600">
-                Showing {filteredProducts.length} of {products.length} products
-              </p>
+              ))}
             </div>
           )}
         </div>
-      </main>
+
+        {!loading && filteredProducts.length > 0 && (
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
+            <p className="text-sm text-slate-600">
+              Showing {filteredProducts.length} of {products.length} products
+            </p>
+          </div>
+        )}
+      </div>
 
       <AttributeTemplateManager
         isOpen={showTemplateManager}
