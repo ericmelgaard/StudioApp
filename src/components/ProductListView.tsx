@@ -842,13 +842,13 @@ export default function ProductListView({
               const isSelected = selectedProductIds.has(product.id);
               const hasPolicyViolation = (product as any).policy_status === 'violation';
               const productType = getProductType(product as any);
-              const isCustomProduct = productType === 'custom';
+              const isLinkedOrImported = productType === 'imported' || productType === 'linked';
 
               const rowBg = isSelected
                 ? 'bg-purple-50'
                 : hasPolicyViolation
                 ? 'bg-amber-50/30'
-                : isCustomProduct
+                : isLinkedOrImported
                 ? 'bg-blue-50'
                 : isEven
                 ? 'bg-white'
@@ -858,7 +858,7 @@ export default function ProductListView({
                 ? 'hover:bg-purple-100'
                 : hasPolicyViolation
                 ? 'hover:bg-amber-100/50'
-                : isCustomProduct
+                : isLinkedOrImported
                 ? 'hover:bg-blue-100'
                 : 'hover:bg-blue-50';
 
@@ -866,7 +866,7 @@ export default function ProductListView({
                 ? 'bg-purple-50'
                 : hasPolicyViolation
                 ? 'bg-amber-50/30'
-                : isCustomProduct
+                : isLinkedOrImported
                 ? 'bg-blue-50'
                 : isEven
                 ? 'bg-white'
