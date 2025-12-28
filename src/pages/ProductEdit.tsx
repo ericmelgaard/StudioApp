@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Info, Image, FileText, DollarSign, Globe, Link2, Copy, Check } from 'lucide-react';
+import { Info, Image, FileText, DollarSign, Globe, Link2, Copy, Check, Package } from 'lucide-react';
 import EditProductModal from '../components/EditProductModal';
 import { supabase } from '../lib/supabase';
 import { LocationProductService } from '../lib/locationProductService';
@@ -167,7 +167,7 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
       </div>
     );
@@ -176,73 +176,73 @@ export default function ProductEdit({ productId, mode, onBack, onSave }: Product
   const productName = product?.attributes?.name || product?.name || 'Untitled Product';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <Breadcrumb items={getBreadcrumbItems()} className="mb-0" />
-            {mode === 'edit' && productId && (
-              <button
-                onClick={copyIdToClipboard}
-                className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors text-xs font-mono border border-slate-300"
-                title="Click to copy ID"
-              >
-                {idCopied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-green-600" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>ID: {productId.slice(0, 8)}...</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">
-              {mode === 'edit' ? `Edit: ${productName.replace(/<[^>]*>/g, '')}` : 'Create Product'}
-            </h1>
-            <p className="text-sm text-slate-600">
-              {mode === 'edit'
-                ? 'Update product information, pricing, and settings'
-                : 'Create a new product for your menu'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex gap-8">
-          <aside className="w-64 flex-shrink-0">
-            <div className="sticky top-[124px] z-10 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wide">
-                Sections
-              </h3>
-              <nav className="space-y-1">
-                {getSections().map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <button
-                      key={section.id}
-                      type="button"
-                      onClick={() => scrollToSection(section.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        activeSection === section.id
-                          ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px pl-2.5'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 flex-shrink-0" />
-                      <span className="text-left">{section.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
+    <div className="max-w-[1800px] mx-auto h-[calc(100vh-200px)]">
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+              <Package className="w-6 h-6 text-white" />
             </div>
-          </aside>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">
+                {mode === 'edit' ? `Edit: ${productName.replace(/<[^>]*>/g, '')}` : 'Create Product'}
+              </h1>
+              <Breadcrumb items={getBreadcrumbItems()} />
+            </div>
+          </div>
+          {mode === 'edit' && productId && (
+            <button
+              onClick={copyIdToClipboard}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-xs font-mono border border-slate-300"
+              title="Click to copy ID"
+            >
+              {idCopied ? (
+                <>
+                  <Check className="w-4 h-4 text-green-600" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>ID: {productId.slice(0, 8)}...</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
 
-          <div ref={contentRef} className="flex-1">
+      <div className="flex gap-6 h-[calc(100%-80px)]">
+        <aside className="w-56 flex-shrink-0">
+          <div className="sticky top-4 bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
+            <h3 className="text-xs font-semibold text-slate-900 mb-2 uppercase tracking-wide px-2">
+              Sections
+            </h3>
+            <nav className="space-y-0.5">
+              {getSections().map((section) => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => scrollToSection(section.id)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      activeSection === section.id
+                        ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px pl-1.5'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-left">{section.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        <div ref={contentRef} className="flex-1 overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-full overflow-y-auto">
             <EditProductModal
               isOpen={true}
               onClose={onBack}

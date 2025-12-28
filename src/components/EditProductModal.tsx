@@ -1919,10 +1919,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
   const innerContent = (
     <>
       <div
-        className={renderAsPage ? "bg-white w-full flex flex-col h-full" : "bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[201]"}
+        className={renderAsPage ? "w-full flex flex-col h-full" : "bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-[201]"}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+        {!renderAsPage && (
+          <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-slate-900">{mode === 'create' ? 'Create Product' : 'Edit Product'}</h2>
@@ -1992,6 +1993,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
             </button>
           </div>
         </div>
+        )}
 
         {/* Policy Violations Banner */}
         {policyViolations.length > 0 && (
@@ -2033,7 +2035,7 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
+        <div className={renderAsPage ? "flex-1 px-5 py-4 space-y-6" : "flex-1 overflow-y-auto px-6 py-6 space-y-8"}>
           {/* Template Selection (Create Mode Only) */}
           {mode === 'create' && (
             <div data-section="basic-info" className="bg-slate-50 border border-slate-200 rounded-lg p-4 scroll-mt-20">
