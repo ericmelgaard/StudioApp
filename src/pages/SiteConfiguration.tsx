@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, Clock, Grid3x3, Settings, BarChart3, Copy, Check, HelpCircle, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 import Breadcrumb from '../components/Breadcrumb';
@@ -97,6 +97,9 @@ export default function SiteConfiguration() {
 
   // Loading state
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('overview');
+  const [idCopied, setIdCopied] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Determine view level and load data based on location context
   useEffect(() => {
@@ -388,6 +391,33 @@ export default function SiteConfiguration() {
     availableParents.unshift(storeRoot);
   }
 
+  const getSections = () => {
+    return [
+      { id: 'overview', label: 'Overview', icon: Grid3x3 },
+      { id: 'settings', label: 'Settings', icon: Settings },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+    ];
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  };
+
+  const copyIdToClipboard = async () => {
+    if (selectedCompany?.id) {
+      try {
+        await navigator.clipboard.writeText(selectedCompany.id.toString());
+        setIdCopied(true);
+        setTimeout(() => setIdCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -671,95 +701,184 @@ export default function SiteConfiguration() {
     const totalStores = stores.length;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="mb-6">
-            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
-
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Company Configuration</h1>
-                <p className="text-slate-600">Manage stores and settings</p>
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-[1800px] mx-auto h-screen">
+          <div className="px-4 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+                  <Store className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900">Company Configuration</h1>
+                  <Breadcrumb items={getBreadcrumbItems()} />
+                </div>
               </div>
-              <button
-                onClick={handleEditCompany}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit Company
-              </button>
+              {selectedCompany && (
+                <button
+                  onClick={copyIdToClipboard}
+                  className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-xs font-mono border border-slate-300"
+                  title="Click to copy Company ID"
+                >
+                  {idCopied ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>ID: {selectedCompany.id.toString().slice(0, 8)}...</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
-          <MetricsBar
-            metrics={[
-              { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
-            ]}
-          />
+          <div className="flex gap-6 h-[calc(100%-80px)] px-4">
+            <aside className="w-56 flex-shrink-0">
+              <div className="sticky top-4 bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
+                <h3 className="text-xs font-semibold text-slate-900 mb-2 uppercase tracking-wide px-2">
+                  Sections
+                </h3>
+                <nav className="space-y-0.5">
+                  {getSections().map((section) => {
+                    const Icon = section.icon;
+                    return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => scrollToSection(section.id)}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium transition-all ${
+                          activeSection === section.id
+                            ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px pl-1.5'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-left">{section.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+            </aside>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-slate-900">Stores</h2>
-              <button
-                onClick={() => {
-                  setEditingItem(null);
-                  setShowStoreModal(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus size={18} />
-                Add Store
-              </button>
+            <div ref={contentRef} className="flex-1 overflow-hidden">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-full overflow-y-auto">
+                {activeSection === 'overview' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className="text-lg font-bold text-slate-900">Stores</h2>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {totalStores} {totalStores === 1 ? 'store' : 'stores'} in this company
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditingItem(null);
+                          setShowStoreModal(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Plus size={18} />
+                        Add Store
+                      </button>
+                    </div>
+
+                    <StoresGrid
+                      stores={stores}
+                      onEdit={(store) => {
+                        setEditingItem(store);
+                        setShowStoreModal(true);
+                      }}
+                      onSelect={(store) => {
+                        setLocation({
+                          concept: selectedConcept || location.concept,
+                          company: selectedCompany || location.company,
+                          store
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+
+                {activeSection === 'settings' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className="text-lg font-bold text-slate-900">Company Settings</h2>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Manage company-level configuration and preferences
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleEditCompany}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Edit Company
+                      </button>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-8 text-center">
+                      <Settings className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                      <p className="text-slate-600">Company settings content will appear here</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'analytics' && (
+                  <div className="p-6">
+                    <div className="mb-6">
+                      <h2 className="text-lg font-bold text-slate-900">Analytics</h2>
+                      <p className="text-sm text-slate-600 mt-1">
+                        View store performance and usage metrics
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-8 text-center">
+                      <BarChart3 className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                      <p className="text-slate-600">Analytics content will appear here</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
 
-            <StoresGrid
-              stores={stores}
-              onEdit={(store) => {
-                setEditingItem(store);
-                setShowStoreModal(true);
+          {showCompanyModal && (
+            <CompanyModal
+              company={editingItem}
+              conceptId={selectedCompany.concept_id}
+              onClose={() => {
+                setShowCompanyModal(false);
+                setEditingItem(null);
               }}
-              onSelect={(store) => {
-                setLocation({
-                  concept: selectedConcept || location.concept,
-                  company: selectedCompany || location.company,
-                  store
-                });
+              onSave={() => {
+                setShowCompanyModal(false);
+                setEditingItem(null);
+                loadCompanyLevelData();
               }}
             />
-          </div>
+          )}
+
+          {showStoreModal && (
+            <StoreModal
+              store={editingItem}
+              companyId={selectedCompany.id}
+              onClose={() => {
+                setShowStoreModal(false);
+                setEditingItem(null);
+              }}
+              onSave={() => {
+                setShowStoreModal(false);
+                setEditingItem(null);
+                loadCompanyLevelData();
+              }}
+            />
+          )}
         </div>
-
-        {showCompanyModal && (
-          <CompanyModal
-            company={editingItem}
-            conceptId={selectedCompany.concept_id}
-            onClose={() => {
-              setShowCompanyModal(false);
-              setEditingItem(null);
-            }}
-            onSave={() => {
-              setShowCompanyModal(false);
-              setEditingItem(null);
-              loadCompanyLevelData();
-            }}
-          />
-        )}
-
-        {showStoreModal && (
-          <StoreModal
-            store={editingItem}
-            companyId={selectedCompany.id}
-            onClose={() => {
-              setShowStoreModal(false);
-              setEditingItem(null);
-            }}
-            onSave={() => {
-              setShowStoreModal(false);
-              setEditingItem(null);
-              loadCompanyLevelData();
-            }}
-          />
-        )}
       </div>
     );
   }
