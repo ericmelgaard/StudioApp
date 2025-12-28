@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Layers, HelpCircle, FileText } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Layers, HelpCircle, FileText, Grid3x3, Settings, BarChart3, Copy, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
-import MetricsBar from '../components/MetricsBar';
 import StoresGrid from '../components/StoresGrid';
 import StoreModal from '../components/StoreModal';
 import CompanyModal from '../components/CompanyModal';
 import { useLocation } from '../hooks/useLocation';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
+import Breadcrumb from '../components/Breadcrumb';
 
 interface PlacementGroup {
   id: string;
@@ -67,6 +67,9 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   const [parentForNewPlacement, setParentForNewPlacement] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('overview');
+  const [idCopied, setIdCopied] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     determineViewLevel();
@@ -218,30 +221,54 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     availableParents.unshift(storeRoot);
   }
 
-  const renderBreadcrumbs = () => (
-    <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-      {company && (
-        <>
-          <button
-            onClick={() => {
-              if (location.company) {
-                setLocation({ company: location.company });
-              }
-            }}
-            className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            {company.name}
-          </button>
-          {location.store && (
-            <>
-              <span>›</span>
-              <span className="font-medium text-slate-900">{location.store.name}</span>
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
+  const getSections = () => {
+    return [
+      { id: 'overview', label: 'Overview', icon: Grid3x3 },
+      { id: 'settings', label: 'Settings', icon: Settings },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+    ];
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  };
+
+  const copyIdToClipboard = async () => {
+    if (company?.id) {
+      try {
+        await navigator.clipboard.writeText(company.id.toString());
+        setIdCopied(true);
+        setTimeout(() => setIdCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
+
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'Dashboard', onClick: onBack }
+    ];
+
+    if (viewLevel === 'company' && company) {
+      items.push({ label: company.name });
+    } else if (viewLevel === 'store') {
+      if (company) {
+        items.push({
+          label: company.name,
+          onClick: () => setLocation({ company: location.company })
+        });
+      }
+      if (location.store) {
+        items.push({ label: location.store.name });
+      }
+    }
+
+    return items;
+  };
 
   if (loading) {
     return (
@@ -256,8 +283,6 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   }
 
   if (viewLevel === 'company') {
-    const totalStores = stores.length;
-
     return (
       <div className="min-h-screen bg-slate-50">
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
@@ -293,63 +318,143 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="mb-6">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
-            >
-              <ArrowLeft size={18} />
-              Dashboard
-            </button>
-
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Store Management</h1>
-                <p className="text-slate-600 mt-1">Manage store locations and settings</p>
+        <div className="max-w-[1800px] mx-auto h-[calc(100vh-64px)]">
+          <div className="px-4 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+                  <Store className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900">Store Management</h1>
+                  <Breadcrumb items={getBreadcrumbItems()} />
+                </div>
               </div>
               {company && (
                 <button
-                  onClick={handleEditCompany}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  onClick={copyIdToClipboard}
+                  className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-xs font-mono border border-slate-300"
+                  title="Click to copy Company ID"
                 >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Company
+                  {idCopied ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>ID: {company.id.toString().slice(0, 8)}...</span>
+                    </>
+                  )}
                 </button>
               )}
             </div>
-            {renderBreadcrumbs()}
           </div>
 
-          <MetricsBar
-            metrics={[
-              { label: 'Total Stores', value: totalStores, icon: Store, color: 'bg-purple-500' }
-            ]}
-          />
+          <div className="flex gap-6 h-[calc(100%-80px)] px-4">
+            <aside className="w-56 flex-shrink-0">
+              <div className="sticky top-4 bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
+                <h3 className="text-xs font-semibold text-slate-900 mb-2 uppercase tracking-wide px-2">
+                  Sections
+                </h3>
+                <nav className="space-y-0.5">
+                  {getSections().map((section) => {
+                    const Icon = section.icon;
+                    return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => scrollToSection(section.id)}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium transition-all ${
+                          activeSection === section.id
+                            ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-px pl-1.5'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-left">{section.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+            </aside>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-slate-900">Stores</h2>
-              <button
-                onClick={() => {
-                  setEditingItem(null);
-                  setShowStoreModal(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus size={18} />
-                Add Store
-              </button>
+            <div ref={contentRef} className="flex-1 overflow-hidden">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-full overflow-y-auto">
+                {activeSection === 'overview' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className="text-lg font-bold text-slate-900">Stores</h2>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {stores.length} {stores.length === 1 ? 'store' : 'stores'} in this company
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditingItem(null);
+                          setShowStoreModal(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Plus size={18} />
+                        Add Store
+                      </button>
+                    </div>
+
+                    <StoresGrid
+                      stores={stores}
+                      onEdit={(store) => {
+                        setEditingItem(store);
+                        setShowStoreModal(true);
+                      }}
+                      onSelect={handleSelectStore}
+                    />
+                  </div>
+                )}
+
+                {activeSection === 'settings' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className="text-lg font-bold text-slate-900">Company Settings</h2>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Manage company-level configuration and preferences
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleEditCompany}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Edit Company
+                      </button>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-8 text-center">
+                      <Settings className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                      <p className="text-slate-600">Company settings content will appear here</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'analytics' && (
+                  <div className="p-6">
+                    <div className="mb-6">
+                      <h2 className="text-lg font-bold text-slate-900">Analytics</h2>
+                      <p className="text-sm text-slate-600 mt-1">
+                        View store performance and usage metrics
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-8 text-center">
+                      <BarChart3 className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                      <p className="text-slate-600">Analytics content will appear here</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-
-            <StoresGrid
-              stores={stores}
-              onEdit={(store) => {
-                setEditingItem(store);
-                setShowStoreModal(true);
-              }}
-              onSelect={handleSelectStore}
-            />
           </div>
 
           {showCompanyModal && (
@@ -423,8 +528,8 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="mb-6">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="mb-4">
           {canNavigateBack() ? (
             <button
               onClick={handleBackToCompany}
@@ -443,14 +548,20 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
             </button>
           )}
 
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
-          <p className="text-slate-600">Manage store settings and placement groups</p>
-          {renderBreadcrumbs()}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+              <Store className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Store Configuration</h1>
+              <Breadcrumb items={getBreadcrumbItems()} />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
+            <div className="p-4 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 mb-1">Store Configuration</h2>
@@ -469,7 +580,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-4">
               {storeRoot ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -539,7 +650,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-amber-50 to-slate-50">
+            <div className="p-4 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 mb-1">Placements</h2>
@@ -550,7 +661,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
                 <button
                   onClick={() => handleAddPlacement(storeRoot?.id || null)}
                   disabled={!storeRoot}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
                   Add Placement Group
@@ -558,7 +669,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-4">
               {placements.length === 0 ? (
                 <div className="text-center py-4">
                   <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
