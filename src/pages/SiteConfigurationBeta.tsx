@@ -401,6 +401,20 @@ export default function SiteConfigurationBeta() {
   }
 
   const getBreadcrumbItems = () => {
+    if (viewLevel === 'store-edit') {
+      return [
+        { label: 'Site Configuration', onClick: () => setViewLevel('store') },
+        { label: 'Edit Store' }
+      ];
+    }
+
+    if (viewLevel === 'placement-edit') {
+      return [
+        { label: 'Site Configuration', onClick: () => setViewLevel('store') },
+        { label: 'Edit Placement' }
+      ];
+    }
+
     const items = [
       { label: 'WAND Digital', onClick: () => setLocation({}) }
     ];
@@ -425,7 +439,7 @@ export default function SiteConfigurationBeta() {
     if (selectedStore) {
       items.push({
         label: selectedStore.name,
-        onClick: viewLevel === 'store-edit' || viewLevel === 'placement-edit' ? () => setViewLevel('store') : undefined
+        onClick: undefined
       });
     }
 
