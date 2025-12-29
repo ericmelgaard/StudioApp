@@ -423,7 +423,16 @@ export default function SiteConfigurationBeta() {
     }
 
     if (selectedStore) {
-      items.push({ label: selectedStore.name });
+      items.push({
+        label: selectedStore.name,
+        onClick: viewLevel === 'store-edit' || viewLevel === 'placement-edit' ? () => setViewLevel('store') : undefined
+      });
+    }
+
+    if (viewLevel === 'store-edit') {
+      items.push({ label: 'Store Settings' });
+    } else if (viewLevel === 'placement-edit') {
+      items.push({ label: editingPlacement?.name || 'Edit Placement' });
     }
 
     return items;
@@ -786,20 +795,45 @@ export default function SiteConfigurationBeta() {
   const previousLocation = getPreviousLocation();
   const cameFromCompanyLevel = previousLocation?.company && !previousLocation?.store;
 
+  const getHeaderContent = () => {
+    if (viewLevel === 'store-edit') {
+      return {
+        icon: Store,
+        title: selectedStore?.name || 'Store Settings',
+        subtitle: 'Configure store details, operating hours, and daypart schedules'
+      };
+    } else if (viewLevel === 'placement-edit') {
+      return {
+        icon: MapPin,
+        title: editingPlacement?.name || 'Placement Configuration',
+        subtitle: 'Configure placement settings and menu assignments'
+      };
+    } else {
+      return {
+        icon: Store,
+        title: 'Store Configuration',
+        subtitle: 'Manage store settings and placement groups'
+      };
+    }
+  };
+
+  const headerContent = getHeaderContent();
+  const HeaderIcon = headerContent.icon;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-[1800px] mx-auto px-6 py-6">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
-              <Store className="w-6 h-6 text-white" />
+              <HeaderIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Store Configuration</h1>
+              <h1 className="text-xl font-bold text-slate-900">{headerContent.title}</h1>
               <Breadcrumb items={getBreadcrumbItems()} />
             </div>
           </div>
-          <p className="text-slate-600">Manage store settings and placement groups</p>
+          <p className="text-slate-600">{headerContent.subtitle}</p>
         </div>
 
         {viewLevel === 'placement-edit' ? (

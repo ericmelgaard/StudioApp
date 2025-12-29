@@ -1,7 +1,6 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { Save, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe, X, Info, Copy, Check } from 'lucide-react';
+import { Save, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe, X, Info } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import Breadcrumb from '../components/Breadcrumb';
 import SiteDaypartManager from '../components/SiteDaypartManager';
 import PlacementDaypartOverrides from '../components/PlacementDaypartOverrides';
 import TimeSelector from '../components/TimeSelector';
@@ -61,7 +60,6 @@ export default function PlacementEditBeta({ placementId, storeId, parentId, conc
   const [newMealStation, setNewMealStation] = useState('');
   const [isStoreRoot, setIsStoreRoot] = useState(false);
   const [activeSection, setActiveSection] = useState('basic-info');
-  const [idCopied, setIdCopied] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -328,18 +326,6 @@ export default function PlacementEditBeta({ placementId, storeId, parentId, conc
     }
   };
 
-  const copyIdToClipboard = async () => {
-    if (placementId) {
-      try {
-        await navigator.clipboard.writeText(placementId);
-        setIdCopied(true);
-        setTimeout(() => setIdCopied(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
-    }
-  };
-
   const getSections = () => {
     const sections = [
       { id: 'basic-info', label: 'Basic Information', icon: Info },
@@ -367,36 +353,6 @@ export default function PlacementEditBeta({ placementId, storeId, parentId, conc
     );
 
     return sections;
-  };
-
-  const getBreadcrumbItems = () => {
-    const items = [
-      { label: 'Location Manager (Beta)', onClick: onBack }
-    ];
-
-    if (conceptName) {
-      items.push({ label: conceptName });
-    }
-
-    if (companyName) {
-      items.push({ label: companyName });
-    }
-
-    if (storeName) {
-      items.push({ label: storeName });
-    }
-
-    if (placementId) {
-      if (isStoreRoot) {
-        items.push({ label: 'Edit Store Configuration' });
-      } else {
-        items.push({ label: placementName || 'Edit Placement' });
-      }
-    } else {
-      items.push({ label: 'Create Placement' });
-    }
-
-    return items;
   };
 
   if (loading) {
@@ -450,45 +406,8 @@ export default function PlacementEditBeta({ placementId, storeId, parentId, conc
           </div>
         </div>
       )}
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
-                <MapPin className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">
-                  {placementId
-                    ? (isStoreRoot ? 'Edit Store Configuration' : (placementName || 'Edit Placement'))
-                    : 'Create Placement'}
-                </h1>
-                <Breadcrumb items={getBreadcrumbItems()} />
-              </div>
-            </div>
-            {placementId && (
-              <button
-                onClick={copyIdToClipboard}
-                className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors text-xs font-mono border border-slate-300"
-                title="Click to copy ID"
-              >
-                {idCopied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-green-600" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>ID: {placementId.slice(0, 8)}...</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-
+    <div>
+      <div className="max-w-[1800px] mx-auto">
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />

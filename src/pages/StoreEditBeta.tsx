@@ -1,7 +1,6 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { Save, AlertCircle, MapPin, Clock, Info, Copy, Check, Calendar, Globe, Store } from 'lucide-react';
+import { Save, AlertCircle, Clock, Info, Calendar, Globe, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import Breadcrumb from '../components/Breadcrumb';
 import StoreDaypartDefinitions from '../components/StoreDaypartDefinitions';
 import StoreOperationHours from '../components/StoreOperationHours';
 
@@ -68,7 +67,6 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
 
   const [companyLanguages, setCompanyLanguages] = useState<Array<{ locale: string; locale_name: string; sort_order: number }>>([]);
   const [activeSection, setActiveSection] = useState('basic-info');
-  const [idCopied, setIdCopied] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -271,18 +269,6 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
     }
   };
 
-  const copyIdToClipboard = async () => {
-    if (storeId) {
-      try {
-        await navigator.clipboard.writeText(storeId.toString());
-        setIdCopied(true);
-        setTimeout(() => setIdCopied(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
-    }
-  };
-
   const getSections = () => {
     const sections = [
       { id: 'basic-info', label: 'Basic Information', icon: Info },
@@ -296,28 +282,6 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
     }
 
     return sections;
-  };
-
-  const getBreadcrumbItems = () => {
-    const items = [
-      { label: 'Location Manager (Beta)', onClick: onBack }
-    ];
-
-    if (conceptName) {
-      items.push({ label: conceptName });
-    }
-
-    if (companyName) {
-      items.push({ label: companyName });
-    }
-
-    if (storeId) {
-      items.push({ label: 'Edit Store' });
-    } else {
-      items.push({ label: 'Create Store' });
-    }
-
-    return items;
   };
 
   if (loading && storeId) {
@@ -372,43 +336,8 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
         </div>
       )}
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-[1800px] mx-auto px-6 py-6">
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
-                  <Store className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900">
-                    {storeId ? (storeName || 'Edit Store') : 'Create Store'}
-                  </h1>
-                  <Breadcrumb items={getBreadcrumbItems()} />
-                </div>
-              </div>
-              {storeId && (
-                <button
-                  onClick={copyIdToClipboard}
-                  className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors text-xs font-mono border border-slate-300"
-                  title="Click to copy ID"
-                >
-                  {idCopied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-green-600" />
-                      <span>Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>ID: {storeId}</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-
+      <div>
+        <div className="max-w-[1800px] mx-auto">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
