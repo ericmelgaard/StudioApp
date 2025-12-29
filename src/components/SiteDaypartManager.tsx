@@ -229,10 +229,12 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
                           <div className="flex flex-wrap gap-1">
                             {routine.days_of_week.sort().map(day => {
                               const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                              const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                              const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
                               return (
                                 <span
                                   key={day}
-                                  className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded font-medium"
+                                  className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
                                 >
                                   {dayInfo?.short}
                                 </span>
