@@ -357,7 +357,7 @@ export default function PlacementEdit({ placementId, storeId, parentId, conceptN
     }
 
     if (!isStoreRoot && placementId) {
-      sections.push({ id: 'daypart-overrides', label: 'Daypart Overrides', icon: Clock });
+      sections.push({ id: 'daypart-overrides', label: 'Placement Schedules', icon: Clock });
     }
 
     sections.push(
