@@ -20,6 +20,7 @@ const CoreAttributes = lazy(() => import('./CoreAttributes'));
 const WandProducts = lazy(() => import('./WandProducts'));
 const UserManagement = lazy(() => import('./UserManagement'));
 const SiteConfiguration = lazy(() => import('./SiteConfiguration'));
+const SiteConfigurationBeta = lazy(() => import('./SiteConfigurationBeta'));
 const DaypartManagement = lazy(() => import('./DaypartManagement'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
@@ -61,7 +62,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites' | 'dayparts';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites' | 'dayparts' | 'sites-beta';
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay } = useLocation();
@@ -84,7 +85,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   }, [location]);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [activeMenu, setActiveMenu] = useState<'setup' | 'control' | 'access' | 'wand' | null>(null);
+  const [activeMenu, setActiveMenu] = useState<'setup' | 'control' | 'access' | 'wand' | 'beta' | null>(null);
 
   const navigationMenus = {
     setup: [
@@ -110,6 +111,9 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       { id: 'core-attributes' as ViewType, label: 'Core Attributes', icon: Sliders },
       { id: 'wand-templates' as ViewType, label: 'Manage Templates', icon: Layers },
       { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
+    ],
+    beta: [
+      { id: 'sites-beta' as ViewType, label: 'Location Manager (Beta)', icon: MapPin },
     ],
   };
 
@@ -308,6 +312,43 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               </div>
             )}
           </div>
+
+          {/* Beta Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setActiveMenu(activeMenu === 'beta' ? null : 'beta')}
+              className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
+                activeMenu === 'beta' || ['sites-beta'].includes(currentView)
+                  ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
+                  : 'text-[#002e5e] hover:text-[#00adf0]'
+              }`}
+            >
+              Beta
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {activeMenu === 'beta' && (
+              <div className="absolute top-full left-0 mt-0 w-72 bg-white rounded-b-lg shadow-lg border border-slate-200 py-1 z-50">
+                {navigationMenus.beta.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id);
+                        setActiveMenu(null);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 ${
+                        currentView === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -342,6 +383,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             />
           )}
           {currentView === 'sites' && <SiteConfiguration />}
+          {currentView === 'sites-beta' && <SiteConfigurationBeta />}
         </Suspense>
 
         {currentView === 'dashboard' && (
