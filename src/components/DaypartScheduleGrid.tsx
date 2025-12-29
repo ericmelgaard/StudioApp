@@ -59,6 +59,7 @@ interface DaypartScheduleGridProps {
   onEdit: (schedule: UnifiedScheduleRow) => void;
   onDelete: (schedule: UnifiedScheduleRow) => void;
   onSaveTimeChanges: (changes: Array<{ id: string; start_time: string; end_time: string }>) => void;
+  use24Hour?: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -71,6 +72,14 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Sat' }
 ];
 
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:${minutes} ${ampm}`;
+}
+
 export default function DaypartScheduleGrid({
   schedules,
   filterOptions,
@@ -78,6 +87,7 @@ export default function DaypartScheduleGrid({
   onEdit,
   onDelete,
   onSaveTimeChanges,
+  use24Hour = false,
 }: DaypartScheduleGridProps) {
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -369,9 +379,9 @@ export default function DaypartScheduleGrid({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 text-sm text-slate-900 font-medium">
-                        <span>{schedule.start_time}</span>
+                        <span>{use24Hour ? schedule.start_time : formatTime(schedule.start_time || '')}</span>
                         <span className="text-slate-400">→</span>
-                        <span>{schedule.end_time}</span>
+                        <span>{use24Hour ? schedule.end_time : formatTime(schedule.end_time || '')}</span>
                       </div>
                     )}
                   </td>

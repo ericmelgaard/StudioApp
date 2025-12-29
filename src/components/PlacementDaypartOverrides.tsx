@@ -27,6 +27,14 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Saturday', short: 'Sat' }
 ];
 
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:${minutes} ${ampm}`;
+}
+
 export default function PlacementDaypartOverrides({ placementGroupId }: PlacementDaypartOverridesProps) {
   const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
   const [siteRoutines, setSiteRoutines] = useState<SiteRoutine[]>([]);
@@ -366,7 +374,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                             <span className={`text-sm ${routine.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
                               {routine.runs_on_days === false
                                 ? 'Does Not Run'
-                                : `${routine.start_time} - ${routine.end_time}`}
+                                : `${formatTime(routine.start_time)} - ${formatTime(routine.end_time)}`}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-1">
@@ -509,7 +517,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                       <Clock className="w-3.5 h-3.5 inline mr-1" />
                                       {routine.runs_on_days === false
                                         ? 'Does Not Run'
-                                        : `${routine.start_time} - ${routine.end_time}`}
+                                        : `${formatTime(routine.start_time)} - ${formatTime(routine.end_time)}`}
                                     </div>
                                     {routine.days_of_week.length > 0 && (
                                       <div className="flex flex-wrap gap-1">

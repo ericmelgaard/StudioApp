@@ -496,6 +496,7 @@ export default function DaypartAdvancedView({ locationId, conceptId, onClose }: 
               onEdit={handleEdit}
               onDelete={handleDelete}
               onSaveTimeChanges={handleSaveTimeChanges}
+              use24Hour={true}
             />
           </div>
 
