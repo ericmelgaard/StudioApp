@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Layers, Clock } from 'lucide-react';
+import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Building, Layers, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 import Breadcrumb from '../components/Breadcrumb';
@@ -437,10 +437,17 @@ export default function SiteConfigurationBeta() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-[1800px] mx-auto px-6 py-6">
           <div className="mb-6">
-            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Locations</h1>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+                <Layers className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">Locations</h1>
+                <Breadcrumb items={getBreadcrumbItems()} />
+              </div>
+            </div>
             <p className="text-slate-600">Manage your organizational hierarchy and locations</p>
           </div>
 
@@ -537,14 +544,17 @@ export default function SiteConfigurationBeta() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-[1800px] mx-auto px-6 py-6">
           <div className="mb-6">
-            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
-
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Concept Configuration</h1>
-                <p className="text-slate-600">Manage companies and settings</p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900">Concept Configuration</h1>
+                  <Breadcrumb items={getBreadcrumbItems()} />
+                </div>
               </div>
               <button
                 onClick={handleEditConcept}
@@ -554,6 +564,7 @@ export default function SiteConfigurationBeta() {
                 Edit Concept
               </button>
             </div>
+            <p className="text-slate-600">Manage companies and settings</p>
           </div>
 
           <MetricsBar
@@ -672,14 +683,17 @@ export default function SiteConfigurationBeta() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-[1800px] mx-auto px-6 py-6">
           <div className="mb-6">
-            <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
-
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Company Configuration</h1>
-                <p className="text-slate-600">Manage stores and settings</p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+                  <Building className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900">Company Configuration</h1>
+                  <Breadcrumb items={getBreadcrumbItems()} />
+                </div>
               </div>
               <button
                 onClick={handleEditCompany}
@@ -689,6 +703,7 @@ export default function SiteConfigurationBeta() {
                 Edit Company
               </button>
             </div>
+            <p className="text-slate-600">Manage stores and settings</p>
           </div>
 
           <MetricsBar
@@ -773,10 +788,17 @@ export default function SiteConfigurationBeta() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="max-w-[1800px] mx-auto px-6 py-6">
         <div className="mb-6">
-          <Breadcrumb items={getBreadcrumbItems()} className="mb-4" />
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Store Configuration</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+              <Store className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Store Configuration</h1>
+              <Breadcrumb items={getBreadcrumbItems()} />
+            </div>
+          </div>
           <p className="text-slate-600">Manage store settings and placement groups</p>
         </div>
 
