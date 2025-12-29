@@ -429,12 +429,6 @@ export default function SiteConfigurationBeta() {
       });
     }
 
-    if (viewLevel === 'store-edit') {
-      items.push({ label: 'Store Settings' });
-    } else if (viewLevel === 'placement-edit') {
-      items.push({ label: editingPlacement?.name || 'Edit Placement' });
-    }
-
     return items;
   };
 
