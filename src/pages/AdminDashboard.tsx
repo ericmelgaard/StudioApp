@@ -89,7 +89,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   const navigationMenus = {
     setup: [
-      { id: 'sites' as ViewType, label: 'Location Manager', icon: MapPin },
+      { id: 'sites-beta' as ViewType, label: 'Location Manager', icon: MapPin },
       { id: 'users' as ViewType, label: 'Users', icon: Users },
     ],
     control: [
@@ -113,7 +113,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
     ],
     beta: [
-      { id: 'sites-beta' as ViewType, label: 'Location Manager (Beta)', icon: MapPin },
+      { id: 'sites' as ViewType, label: 'Location Manager (Legacy)', icon: MapPin },
     ],
   };
 
@@ -170,7 +170,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'setup' ? null : 'setup')}
               className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
-                activeMenu === 'setup' || ['sites', 'users'].includes(currentView)
+                activeMenu === 'setup' || ['sites-beta', 'users'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
@@ -318,7 +318,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'beta' ? null : 'beta')}
               className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
-                activeMenu === 'beta' || ['sites-beta'].includes(currentView)
+                activeMenu === 'beta' || ['sites'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
