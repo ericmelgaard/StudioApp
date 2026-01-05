@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, Wrench,
+  ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, Sparkles,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
   RotateCw, RefreshCw, Trash, Eye, Settings
 } from 'lucide-react';
@@ -18,7 +18,7 @@ interface MediaPlayer {
   name: string;
   ip_address: string;
   mac_address: string;
-  status: 'online' | 'offline' | 'error' | 'maintenance';
+  status: 'online' | 'offline' | 'error' | 'identify';
   last_heartbeat: string;
   firmware_version: string;
   placement_group_id: string | null;
@@ -58,7 +58,7 @@ interface DisplayCard {
   groupInfo?: PlacementGroup;
 }
 
-type OperationStatus = 'open' | 'closed' | 'maintenance';
+type OperationStatus = 'open' | 'closed' | 'identify';
 type ViewMode = 'list' | 'grid';
 
 export default function DisplayManagement({ storeId, storeName, onBack }: DisplayManagementProps) {
@@ -275,7 +275,7 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
     const colors = {
       open: 'border-green-500 bg-green-100 text-green-700',
       closed: 'border-red-500 bg-red-100 text-red-700',
-      maintenance: 'border-amber-500 bg-amber-100 text-amber-700'
+      identify: 'border-amber-500 bg-amber-100 text-amber-700'
     };
 
     return (
@@ -330,11 +330,11 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
           <div className="flex items-center justify-around gap-4">
             <StatusButton status="open" icon={Unlock} label="Open" active={operationStatus === 'open'} />
             <StatusButton status="closed" icon={Lock} label="Closed" active={operationStatus === 'closed'} />
-            <StatusButton status="maintenance" icon={Wrench} label="Maintenance" active={operationStatus === 'maintenance'} />
+            <StatusButton status="identify" icon={Sparkles} label="Identify" active={operationStatus === 'identify'} />
           </div>
         </div>
 
-        <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white">
+        <div className="px-4 py-4 flex flex-wrap gap-3 bg-white">
           <div className="flex-shrink-0 bg-white border border-slate-200 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <Monitor className="w-4 h-4 text-blue-600" />
