@@ -12,10 +12,11 @@ const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
 const StoreManagement = lazy(() => import('./StoreManagement'));
 const ProductManagement = lazy(() => import('./ProductManagement'));
+const DisplayManagement = lazy(() => import('./DisplayManagement'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
 
-type DashboardView = 'home' | 'signage' | 'labels' | 'store' | 'products';
+type DashboardView = 'home' | 'displays' | 'signage' | 'labels' | 'store' | 'products';
 
 interface UserProfile {
   id: string;
@@ -473,6 +474,28 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
         return null;
     }
   };
+
+  if (currentView === 'displays') {
+    if (!selectedStore) {
+      return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+          <div className="text-center">
+            <Monitor className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+            <p className="text-lg">Please select a store to view displays</p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div></div>}>
+        <DisplayManagement
+          storeId={selectedStore.id}
+          storeName={selectedStore.name}
+          onBack={() => setCurrentView('home')}
+        />
+      </Suspense>
+    );
+  }
 
   if (currentView === 'signage') {
     return (
