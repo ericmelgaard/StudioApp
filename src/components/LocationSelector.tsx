@@ -1,7 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Building2, Layers, MapPin, Sparkles, Search, ArrowUp, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronDown, ChevronRight, Search, X, Building2, Layers, MapPin, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useLocation } from '../hooks/useLocation';
+
+const getLocationIcon = (level: 'wand' | 'concept' | 'company' | 'store', className = "w-5 h-5") => {
+  switch (level) {
+    case 'wand':
+      return <Sparkles className={className} />;
+    case 'concept':
+      return <Building2 className={className} />;
+    case 'company':
+      return <Layers className={className} />;
+    case 'store':
+      return <MapPin className={className} />;
+  }
+};
 
 interface Concept {
   id: number;
@@ -21,397 +33,269 @@ interface Store {
 }
 
 interface LocationSelectorProps {
-  userConceptId?: number | null;
-  userCompanyId?: number | null;
-  userStoreId?: number | null;
+  onClose: () => void;
+  onSelect: (location: {
+    concept?: Concept;
+    company?: Company;
+    store?: Store;
+  }) => void;
+  selectedLocation?: {
+    concept?: Concept;
+    company?: Company;
+    store?: Store;
+  };
 }
 
-interface ParentNavigationOption {
-  type: 'wand' | 'concept' | 'company';
-  label: string;
-  icon: JSX.Element;
-  onClick: () => void;
-}
-
-const getLocationIcon = (level: 'wand' | 'concept' | 'company' | 'store', className = "w-4 h-4") => {
-  switch (level) {
-    case 'wand':
-      return <Sparkles className={className} />;
-    case 'concept':
-      return <Building2 className={className} />;
-    case 'company':
-      return <Layers className={className} />;
-    case 'store':
-      return <MapPin className={className} />;
-  }
-};
-
-export default function LocationSelector({
-  userConceptId,
-  userCompanyId,
-  userStoreId
-}: LocationSelectorProps) {
-  const { location, setLocation } = useLocation();
+export default function LocationSelector({ onClose, onSelect, selectedLocation }: LocationSelectorProps) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
+  const [expandedCompany, setExpandedCompany] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filterQuery, setFilterQuery] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    loadData();
+    if (selectedLocation?.concept) {
+      setExpandedConcept(selectedLocation.concept.id);
+    }
+    if (selectedLocation?.company) {
+      setExpandedCompany(selectedLocation.company.id);
+    }
   }, []);
 
-  useEffect(() => {
-    loadNavigationData();
-  }, [userConceptId, userCompanyId, userStoreId, location]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen && !isMobile) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen, isMobile]);
-
-  useEffect(() => {
-    if (isOpen && isMobile) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, isMobile]);
-
-  const loadNavigationData = async () => {
+  const loadData = async () => {
     setLoading(true);
 
-    if (userStoreId) {
-      const { data: userStore } = await supabase
+    const conceptsPromise = supabase.from('concepts').select('*').order('name');
+    const companiesPromise = supabase.from('companies').select('*').order('name');
+
+    let allStores: Store[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
         .from('stores')
-        .select('id, name, company_id')
-        .eq('id', userStoreId)
-        .maybeSingle();
+        .select('*')
+        .order('name')
+        .range(from, from + pageSize - 1);
 
-      if (userStore) {
-        const { data: storeData } = await supabase
-          .from('stores')
-          .select('id, name, company_id')
-          .eq('company_id', userStore.company_id)
-          .order('name');
-
-        if (storeData) setStores(storeData);
+      if (error) {
+        console.error('Error loading stores:', error);
+        hasMore = false;
+      } else if (data) {
+        allStores = [...allStores, ...data];
+        hasMore = data.length === pageSize;
+        from += pageSize;
+      } else {
+        hasMore = false;
       }
-    } else if (userCompanyId && !location.concept) {
-      const { data: storeData } = await supabase
-        .from('stores')
-        .select('id, name, company_id')
-        .eq('company_id', userCompanyId)
-        .order('name');
-
-      if (storeData) setStores(storeData);
-    } else if (userConceptId && !location.concept) {
-      const { data: companyData } = await supabase
-        .from('companies')
-        .select('id, name, concept_id')
-        .eq('concept_id', userConceptId)
-        .order('name');
-
-      if (companyData) setCompanies(companyData);
-    } else if (!location.concept && !location.company && !location.store) {
-      const { data: conceptData } = await supabase
-        .from('concepts')
-        .select('id, name')
-        .order('name');
-
-      if (conceptData) setConcepts(conceptData);
-    } else if (location.concept && !location.company) {
-      const { data: companyData } = await supabase
-        .from('companies')
-        .select('id, name, concept_id')
-        .eq('concept_id', location.concept.id)
-        .order('name');
-
-      if (companyData) setCompanies(companyData);
-    } else if (location.company && !location.store) {
-      const { data: storeData } = await supabase
-        .from('stores')
-        .select('id, name, company_id')
-        .eq('company_id', location.company.id)
-        .order('name');
-
-      if (storeData) setStores(storeData);
     }
 
+    const [conceptsData, companiesData] = await Promise.all([conceptsPromise, companiesPromise]);
+
+    if (conceptsData.data) setConcepts(conceptsData.data);
+    if (companiesData.data) setCompanies(companiesData.data);
+    setStores(allStores);
     setLoading(false);
   };
 
-  const getCurrentDisplayName = (): string => {
-    if (location.store) return location.store.name;
-    if (location.company) return location.company.name;
-    if (location.concept) return location.concept.name;
-    return 'WAND Digital';
-  };
+  const searchLower = searchQuery.toLowerCase();
 
-  const getBreadcrumb = (): string => {
-    const parts: string[] = ['WAND'];
-    if (location.concept) parts.push(location.concept.name);
-    if (location.company) parts.push(location.company.name);
-    if (location.store) parts.push(location.store.name);
-    return parts.join(' > ');
-  };
-
-  const getCurrentIcon = () => {
-    if (location.store) return getLocationIcon('store', "w-4 h-4 text-slate-600");
-    if (location.company) return getLocationIcon('company', "w-4 h-4 text-slate-600");
-    if (location.concept) return getLocationIcon('concept', "w-4 h-4 text-slate-600");
-    return getLocationIcon('wand', "w-4 h-4 text-slate-600");
-  };
-
-  const getParentNavigationOptions = (): ParentNavigationOption[] => {
-    const options: ParentNavigationOption[] = [];
-
-    if (location.store && location.company) {
-      if (!userStoreId || userCompanyId || userConceptId || (!userConceptId && !userCompanyId && !userStoreId)) {
-        options.push({
-          type: 'company',
-          label: `Go to ${location.company.name}`,
-          icon: getLocationIcon('company', "w-4 h-4 flex-shrink-0"),
-          onClick: () => setLocation({ concept: location.concept, company: location.company })
-        });
+  const getCompaniesForConcept = (conceptId: number) => {
+    return companies.filter(c => {
+      if (c.concept_id !== conceptId) return false;
+      if (searchQuery && !c.name.toLowerCase().includes(searchLower)) {
+        const companyStores = stores.filter(s => s.company_id === c.id);
+        const hasMatchingStore = companyStores.some(s => s.name.toLowerCase().includes(searchLower));
+        if (!hasMatchingStore) return false;
       }
-    }
+      return true;
+    });
+  };
 
-    if (location.company && location.concept && !location.store) {
-      if (!userCompanyId || userConceptId || (!userConceptId && !userCompanyId && !userStoreId)) {
-        options.push({
-          type: 'concept',
-          label: `Go to ${location.concept.name}`,
-          icon: getLocationIcon('concept', "w-4 h-4 flex-shrink-0"),
-          onClick: () => setLocation({ concept: location.concept })
-        });
+  const getStoresForCompany = (companyId: number) => {
+    return stores.filter(s => {
+      if (s.company_id !== companyId) return false;
+      if (searchQuery && !s.name.toLowerCase().includes(searchLower)) {
+        return false;
       }
+      return true;
+    });
+  };
+
+  const filteredConcepts = concepts.filter(c => {
+    if (searchQuery) {
+      const conceptMatches = c.name.toLowerCase().includes(searchLower);
+      if (conceptMatches) return true;
+
+      const conceptCompanies = companies.filter(comp => comp.concept_id === c.id);
+      const hasMatchingCompany = conceptCompanies.some(comp => {
+        const companyMatches = comp.name.toLowerCase().includes(searchLower);
+        if (companyMatches) return true;
+
+        const companyStores = stores.filter(s => s.company_id === comp.id);
+        return companyStores.some(s => s.name.toLowerCase().includes(searchLower));
+      });
+
+      if (!hasMatchingCompany) return false;
     }
+    return true;
+  });
 
-    if (location.concept && !location.company && !location.store) {
-      if (!userConceptId && !userCompanyId && !userStoreId) {
-        options.push({
-          type: 'wand',
-          label: 'Go to WAND Digital',
-          icon: getLocationIcon('wand', "w-4 h-4 flex-shrink-0"),
-          onClick: () => setLocation({})
-        });
-      }
-    }
-
-    return options;
+  const handleSelectConcept = (concept: Concept) => {
+    onSelect({ concept });
   };
 
-  const showConcepts = concepts.length > 0;
-  const showCompanies = companies.length > 0;
-  const showStores = stores.length > 0;
-
-  const hasLocationContent = showConcepts || showCompanies || showStores;
-  const parentNavOptions = getParentNavigationOptions();
-  const hasDropdownContent = hasLocationContent || parentNavOptions.length > 0;
-
-  const hasMultipleLocations =
-    (showConcepts && concepts.length > 1) ||
-    (showCompanies && companies.length > 1) ||
-    (showStores && stores.length > 1);
-
-  const filterLower = filterQuery.toLowerCase();
-  const filteredConcepts = concepts.filter(c => c.name.toLowerCase().includes(filterLower));
-  const filteredCompanies = companies.filter(c => c.name.toLowerCase().includes(filterLower));
-  const filteredStores = stores.filter(s => s.name.toLowerCase().includes(filterLower));
-
-  const handleLocationSelect = (newLocation: any) => {
-    setLocation(newLocation);
-    setIsOpen(false);
-    setFilterQuery('');
+  const handleSelectCompany = (company: Company, concept: Concept) => {
+    onSelect({ concept, company });
   };
 
-  const handleParentNav = (option: ParentNavigationOption) => {
-    option.onClick();
-    setIsOpen(false);
-    setFilterQuery('');
+  const handleSelectStore = (store: Store, company: Company, concept: Concept) => {
+    onSelect({ concept, company, store });
   };
 
-  const renderLocationList = () => (
-    <>
-      {showConcepts && filteredConcepts.map((concept) => (
-        <button
-          key={concept.id}
-          onClick={() => handleLocationSelect({ concept })}
-          className={`w-full text-left px-4 py-3 md:py-2 text-base md:text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 md:gap-2 min-h-[44px] md:min-h-0 ${
-            location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-          }`}
-        >
-          {getLocationIcon('concept', "w-5 h-5 md:w-4 md:h-4 flex-shrink-0")}
-          <span className="truncate">{concept.name}</span>
-        </button>
-      ))}
-
-      {showCompanies && filteredCompanies.map((company) => (
-        <button
-          key={company.id}
-          onClick={() => handleLocationSelect({ concept: location.concept, company })}
-          className={`w-full text-left px-4 py-3 md:py-2 text-base md:text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 md:gap-2 min-h-[44px] md:min-h-0 ${
-            location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-          }`}
-        >
-          {getLocationIcon('company', "w-5 h-5 md:w-4 md:h-4 flex-shrink-0")}
-          <span className="truncate">{company.name}</span>
-        </button>
-      ))}
-
-      {showStores && filteredStores.map((store) => (
-        <button
-          key={store.id}
-          onClick={() => handleLocationSelect({ concept: location.concept, company: location.company, store })}
-          className={`w-full text-left px-4 py-3 md:py-2 text-base md:text-sm hover:bg-slate-50 transition-colors flex items-center gap-3 md:gap-2 min-h-[44px] md:min-h-0 ${
-            location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-          }`}
-        >
-          {getLocationIcon('store', "w-5 h-5 md:w-4 md:h-4 flex-shrink-0")}
-          <span className="truncate">{store.name}</span>
-        </button>
-      ))}
-    </>
-  );
-
-  const renderMobileModal = () => (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold text-slate-900 truncate">Select Location</h2>
-          <p className="text-sm text-slate-600 truncate">{getBreadcrumb()}</p>
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200]">
+        <div className="relative z-[201] bg-white rounded-lg shadow-xl p-8">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-slate-700">Loading locations...</span>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            setIsOpen(false);
-            setFilterQuery('');
-          }}
-          className="ml-4 p-2 hover:bg-slate-200 rounded-lg transition-colors flex-shrink-0"
-        >
-          <X className="w-6 h-6 text-slate-600" />
-        </button>
       </div>
+    );
+  }
 
-      {parentNavOptions.length > 0 && (
-        <div className="p-3 border-b border-slate-200 bg-slate-50">
-          {parentNavOptions.map((option) => (
-            <button
-              key={option.type}
-              onClick={() => handleParentNav(option)}
-              className="w-full text-left px-4 py-3 text-base hover:bg-white rounded-lg transition-colors flex items-center gap-3 text-blue-600 font-medium min-h-[44px]"
-            >
-              <ArrowUp className="w-5 h-5 flex-shrink-0" />
-              {option.icon}
-              <span className="truncate">{option.label}</span>
-            </button>
-          ))}
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
+      <div className="relative z-[201] bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[85vh] flex flex-col">
+        <div className="p-4 md:p-6 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900">Select Location</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
         </div>
-      )}
 
-      {hasMultipleLocations && (
-        <div className="p-4 border-b border-slate-200 bg-slate-50">
-          <div className="relative">
+        <div className="p-4 md:p-6 border-b border-slate-200 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <button
+              onClick={() => onSelect({})}
+              className="text-sm text-slate-500 hover:text-blue-600 hover:underline transition-colors text-left"
+            >
+              Return to WAND Digital
+            </button>
+          </div>
+
+          <div className="relative mt-3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search locations..."
-              value={filterQuery}
-              onChange={(e) => setFilterQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Search concepts, companies, or stores..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 md:py-2 text-base md:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
-      )}
 
-      {hasLocationContent && (
-        <div className="flex-1 overflow-y-auto">
-          {renderLocationList()}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
+          {filteredConcepts.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">No locations found</div>
+          ) : (
+            <div className="space-y-2">
+              {filteredConcepts.map((concept) => {
+                const conceptCompanies = getCompaniesForConcept(concept.id);
+                const isExpanded = expandedConcept === concept.id;
+                const isSelected = selectedLocation?.concept?.id === concept.id && !selectedLocation.company && !selectedLocation.store;
+
+                return (
+                  <div key={concept.id} className="border border-slate-200 rounded-lg overflow-hidden">
+                    <div className={`flex items-center gap-2 p-3 hover:bg-slate-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}>
+                      <button
+                        onClick={() => setExpandedConcept(isExpanded ? null : concept.id)}
+                        className="p-1 hover:bg-slate-200 rounded transition-colors flex-shrink-0"
+                      >
+                        {conceptCompanies.length > 0 && (
+                          isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+                        )}
+                      </button>
+                      {getLocationIcon('concept', "w-5 h-5 text-blue-600 flex-shrink-0")}
+                      <button
+                        onClick={() => handleSelectConcept(concept)}
+                        className={`flex-1 text-left font-medium hover:text-blue-600 transition-colors min-w-0 ${isSelected ? 'text-blue-700' : 'text-slate-900'}`}
+                      >
+                        <span className="truncate block">{concept.name}</span>
+                      </button>
+                      <span className="text-sm text-slate-500 flex-shrink-0">{conceptCompanies.length} companies</span>
+                    </div>
+
+                    {isExpanded && conceptCompanies.length > 0 && (
+                      <div className="bg-slate-50 pl-8 pr-3 pb-2 space-y-1">
+                        {conceptCompanies.map((company) => {
+                          const companyStores = getStoresForCompany(company.id);
+                          const isCompanyExpanded = expandedCompany === company.id;
+                          const isCompanySelected = selectedLocation?.company?.id === company.id && !selectedLocation.store;
+
+                          return (
+                            <div key={company.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                              <div className={`flex items-center gap-2 p-2.5 hover:bg-slate-50 transition-colors ${isCompanySelected ? 'bg-blue-50' : ''}`}>
+                                <button
+                                  onClick={() => setExpandedCompany(isCompanyExpanded ? null : company.id)}
+                                  className="p-1 hover:bg-slate-200 rounded transition-colors flex-shrink-0"
+                                >
+                                  {companyStores.length > 0 && (
+                                    isCompanyExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+                                  )}
+                                </button>
+                                {getLocationIcon('company', "w-4 h-4 text-green-600 flex-shrink-0")}
+                                <button
+                                  onClick={() => handleSelectCompany(company, concept)}
+                                  className={`flex-1 text-left text-sm hover:text-blue-600 transition-colors min-w-0 ${isCompanySelected ? 'text-blue-700 font-medium' : 'text-slate-700'}`}
+                                >
+                                  <span className="truncate block">{company.name}</span>
+                                </button>
+                                <span className="text-xs text-slate-500 flex-shrink-0">{companyStores.length} stores</span>
+                              </div>
+
+                              {isCompanyExpanded && companyStores.length > 0 && (
+                                <div className="bg-slate-50 pl-8 pr-2 pb-1 space-y-1">
+                                  {companyStores.map((store) => {
+                                    const isStoreSelected = selectedLocation?.store?.id === store.id;
+                                    return (
+                                      <button
+                                        key={store.id}
+                                        onClick={() => handleSelectStore(store, company, concept)}
+                                        className={`flex items-center gap-2 p-2 rounded w-full text-left transition-colors ${
+                                          isStoreSelected ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-white text-slate-600'
+                                        }`}
+                                      >
+                                        {getLocationIcon('store', "w-4 h-4 text-red-600 flex-shrink-0")}
+                                        <span className="text-sm truncate">{store.name}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  );
-
-  const renderDesktopDropdown = () => (
-    <div className="absolute top-full left-0 mt-1 w-[360px] bg-white rounded-lg shadow-lg border border-slate-200 max-h-[32rem] overflow-hidden z-50">
-      {parentNavOptions.length > 0 && (
-        <div className="p-2 border-b border-slate-200 bg-slate-50">
-          {parentNavOptions.map((option) => (
-            <button
-              key={option.type}
-              onClick={() => handleParentNav(option)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-white rounded transition-colors flex items-center gap-2 text-blue-600 font-medium"
-            >
-              <ArrowUp className="w-4 h-4 flex-shrink-0" />
-              {option.icon}
-              <span className="truncate">{option.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {hasMultipleLocations && (
-        <div className="p-3 border-b border-slate-200 bg-slate-50">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={filterQuery}
-              onChange={(e) => setFilterQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
-
-      {hasLocationContent && (
-        <div className="max-h-80 overflow-y-auto py-1">
-          {renderLocationList()}
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 md:px-4 py-2 bg-slate-50 rounded-lg transition-colors border border-slate-200 hover:bg-slate-100"
-      >
-        {getCurrentIcon()}
-        <span className="text-sm font-medium text-slate-900 max-w-[120px] md:max-w-[200px] truncate">
-          {loading ? 'Loading...' : getCurrentDisplayName()}
-        </span>
-        {hasDropdownContent && <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0" />}
-      </button>
-
-      {hasDropdownContent && isOpen && (
-        isMobile ? renderMobileModal() : renderDesktopDropdown()
-      )}
+      </div>
     </div>
   );
 }

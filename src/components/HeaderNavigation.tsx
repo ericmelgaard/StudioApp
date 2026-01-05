@@ -1,5 +1,5 @@
 import { Map } from 'lucide-react';
-import LocationSelector from './LocationSelector';
+import QuickLocationNav from './QuickLocationNav';
 
 interface HeaderNavigationProps {
   userConceptId?: number | null;
@@ -18,7 +18,7 @@ export default function HeaderNavigation({
 }: HeaderNavigationProps) {
   return (
     <div className="flex items-center gap-2">
-      <LocationSelector
+      <QuickLocationNav
         userConceptId={userConceptId}
         userCompanyId={userCompanyId}
         userStoreId={userStoreId}
