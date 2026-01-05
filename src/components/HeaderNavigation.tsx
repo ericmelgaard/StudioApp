@@ -160,13 +160,23 @@ export default function HeaderNavigation({
 
       if (companyData) setCompanies(companyData);
     } else if (!location.concept && !location.company && !location.store) {
-      // Admin at root: show all concepts
-      const { data: conceptData } = await supabase
-        .from('concepts')
-        .select('id, name')
-        .order('name');
+      // At root: If all user IDs are null (operator mode), show all companies
+      // Otherwise show concepts (admin mode)
+      if (userConceptId === null && userCompanyId === null && userStoreId === null) {
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('id, name, concept_id')
+          .order('name');
 
-      if (conceptData) setConcepts(conceptData);
+        if (companyData) setCompanies(companyData);
+      } else {
+        const { data: conceptData } = await supabase
+          .from('concepts')
+          .select('id, name')
+          .order('name');
+
+        if (conceptData) setConcepts(conceptData);
+      }
     } else if (location.concept && !location.company) {
       // At concept level: show child companies
       const { data: companyData } = await supabase
@@ -277,8 +287,23 @@ export default function HeaderNavigation({
     setFilterQuery('');
   };
 
-  const handleSelectLocation = (newLocation: { concept?: Concept; company?: Company; store?: Store }) => {
-    setLocation(newLocation);
+  const handleSelectLocation = async (newLocation: { concept?: Concept; company?: Company; store?: Store }) => {
+    // If selecting a company without a concept, fetch the concept data
+    if (newLocation.company && !newLocation.concept) {
+      const { data: conceptData } = await supabase
+        .from('concepts')
+        .select('id, name')
+        .eq('id', newLocation.company.concept_id)
+        .maybeSingle();
+
+      if (conceptData) {
+        setLocation({ concept: conceptData, company: newLocation.company, store: newLocation.store });
+      } else {
+        setLocation(newLocation);
+      }
+    } else {
+      setLocation(newLocation);
+    }
     handleCloseDropdown();
   };
 
@@ -365,7 +390,7 @@ export default function HeaderNavigation({
                 {showCompanies && filteredCompanies.map((company) => (
                   <button
                     key={company.id}
-                    onClick={() => handleSelectLocation({ concept: location.concept, company })}
+                    onClick={() => handleSelectLocation({ company })}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
                       location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                     }`}
@@ -485,7 +510,7 @@ export default function HeaderNavigation({
               {showCompanies && filteredCompanies.map((company) => (
                 <button
                   key={company.id}
-                  onClick={() => handleSelectLocation({ concept: location.concept, company })}
+                  onClick={() => handleSelectLocation({ company })}
                   className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
                     location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                   }`}
