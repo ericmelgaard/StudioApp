@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search, ArrowUp } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search, ArrowUp, X, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 
@@ -62,10 +62,62 @@ export default function HeaderNavigation({
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterQuery, setFilterQuery] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadNavigationData();
   }, [userConceptId, userCompanyId, userStoreId, location]);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Click-outside detection for desktop
+  useEffect(() => {
+    if (!isMobile && isDropdownOpen) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsDropdownOpen(false);
+          setFilterQuery('');
+        }
+      };
+
+      const handleEscape = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          setIsDropdownOpen(false);
+          setFilterQuery('');
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [isDropdownOpen, isMobile]);
+
+  // Body scroll lock for mobile modal
+  useEffect(() => {
+    if (isMobile && isDropdownOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isMobile, isDropdownOpen]);
 
   const loadNavigationData = async () => {
     setLoading(true);
@@ -220,24 +272,43 @@ export default function HeaderNavigation({
   const filteredCompanies = companies.filter(c => c.name.toLowerCase().includes(filterLower));
   const filteredStores = stores.filter(s => s.name.toLowerCase().includes(filterLower));
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const handleCloseDropdown = () => {
+    setIsDropdownOpen(false);
+    setFilterQuery('');
+  };
+
+  const handleSelectLocation = (newLocation: { concept?: Concept; company?: Company; store?: Store }) => {
+    setLocation(newLocation);
+    handleCloseDropdown();
+  };
+
+  // Build breadcrumb for mobile
+  const getBreadcrumb = () => {
+    const parts = [];
+    parts.push('WAND Digital');
+    if (location.concept) parts.push(location.concept.name);
+    if (location.company) parts.push(location.company.name);
+    if (location.store) parts.push(location.store.name);
+    return parts;
+  };
 
   return (
     <div className="flex items-center gap-2">
-      <div className="relative">
+      <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg transition-colors border border-slate-200"
         >
           {getCurrentIcon()}
-          <span className="text-sm font-medium text-slate-900 max-w-[360px] truncate">
+          <span className="text-sm font-medium text-slate-900 max-w-[200px] truncate">
             {loading ? 'Loading...' : getCurrentDisplayName()}
           </span>
           {hasDropdownContent && <ChevronDown className="w-4 h-4 text-slate-500" />}
         </button>
 
-        {hasDropdownContent && isDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 w-[960px] bg-white rounded-lg shadow-lg border border-slate-200 transition-all max-h-[32rem] overflow-hidden z-50">
+        {/* Desktop Dropdown */}
+        {!isMobile && hasDropdownContent && isDropdownOpen && (
+          <div className="absolute top-full left-0 mt-1 w-[360px] bg-white rounded-lg shadow-lg border border-slate-200 transition-all max-h-[32rem] overflow-hidden z-50">
             {/* Parent Navigation Options */}
             {parentNavOptions.length > 0 && (
               <div className="p-2 border-b border-slate-200 bg-slate-50">
@@ -246,7 +317,7 @@ export default function HeaderNavigation({
                     key={option.type}
                     onClick={() => {
                       option.onClick();
-                      setIsDropdownOpen(false);
+                      handleCloseDropdown();
                     }}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-white rounded transition-colors flex items-center gap-2 text-blue-600 font-medium"
                   >
@@ -281,10 +352,7 @@ export default function HeaderNavigation({
                 {showConcepts && filteredConcepts.map((concept) => (
                   <button
                     key={concept.id}
-                    onClick={() => {
-                      setLocation({ concept });
-                      setIsDropdownOpen(false);
-                    }}
+                    onClick={() => handleSelectLocation({ concept })}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
                       location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                     }`}
@@ -297,13 +365,7 @@ export default function HeaderNavigation({
                 {showCompanies && filteredCompanies.map((company) => (
                   <button
                     key={company.id}
-                    onClick={() => {
-                      setLocation({
-                        concept: location.concept,
-                        company
-                      });
-                      setIsDropdownOpen(false);
-                    }}
+                    onClick={() => handleSelectLocation({ concept: location.concept, company })}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
                       location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                     }`}
@@ -316,14 +378,7 @@ export default function HeaderNavigation({
                 {showStores && filteredStores.map((store) => (
                   <button
                     key={store.id}
-                    onClick={() => {
-                      setLocation({
-                        concept: location.concept,
-                        company: location.company,
-                        store
-                      });
-                      setIsDropdownOpen(false);
-                    }}
+                    onClick={() => handleSelectLocation({ concept: location.concept, company: location.company, store })}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
                       location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
                     }`}
@@ -338,10 +393,131 @@ export default function HeaderNavigation({
         )}
       </div>
 
-      {/* Map Icon Button */}
+      {/* Mobile Full-Screen Modal */}
+      {isMobile && hasDropdownContent && isDropdownOpen && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {getCurrentIcon()}
+              <span className="text-base font-semibold text-slate-900 truncate">
+                {getCurrentDisplayName()}
+              </span>
+            </div>
+            <button
+              onClick={handleCloseDropdown}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
+
+          {/* Non-clickable Breadcrumb */}
+          {(location.concept || location.company || location.store) && (
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <div className="flex items-center gap-2 text-sm text-slate-600 flex-wrap">
+                {getBreadcrumb().map((part, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    {index > 0 && <ChevronRight className="w-4 h-4 text-slate-400" />}
+                    <span className={index === getBreadcrumb().length - 1 ? 'font-medium text-slate-900' : ''}>
+                      {part}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Parent Navigation Options */}
+          {parentNavOptions.length > 0 && (
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 space-y-2">
+              {parentNavOptions.map((option) => (
+                <button
+                  key={option.type}
+                  onClick={() => {
+                    option.onClick();
+                    handleCloseDropdown();
+                  }}
+                  className="w-full text-left px-4 py-3 bg-white hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-3 text-blue-600 font-medium border border-slate-200"
+                  style={{ minHeight: '44px' }}
+                >
+                  <ArrowUp className="w-5 h-5 flex-shrink-0" />
+                  {getLocationIcon(option.type, "w-5 h-5")}
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Filter Input - Only show if there are locations to filter */}
+          {hasMultipleLocations && (
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Filter locations..."
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Scrollable Content */}
+          {hasLocationContent && (
+            <div className="flex-1 overflow-y-auto">
+              {showConcepts && filteredConcepts.map((concept) => (
+                <button
+                  key={concept.id}
+                  onClick={() => handleSelectLocation({ concept })}
+                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
+                    location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  }`}
+                  style={{ minHeight: '44px' }}
+                >
+                  {getLocationIcon('concept', "w-5 h-5 flex-shrink-0")}
+                  <span className="text-base">{concept.name}</span>
+                </button>
+              ))}
+
+              {showCompanies && filteredCompanies.map((company) => (
+                <button
+                  key={company.id}
+                  onClick={() => handleSelectLocation({ concept: location.concept, company })}
+                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
+                    location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  }`}
+                  style={{ minHeight: '44px' }}
+                >
+                  {getLocationIcon('company', "w-5 h-5 flex-shrink-0")}
+                  <span className="text-base">{company.name}</span>
+                </button>
+              ))}
+
+              {showStores && filteredStores.map((store) => (
+                <button
+                  key={store.id}
+                  onClick={() => handleSelectLocation({ concept: location.concept, company: location.company, store })}
+                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
+                    location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  }`}
+                  style={{ minHeight: '44px' }}
+                >
+                  {getLocationIcon('store', "w-5 h-5 flex-shrink-0")}
+                  <span className="text-base">{store.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Map Icon Button - Hidden on mobile */}
       <button
         onClick={onOpenFullNavigator}
-        className="flex items-center justify-center p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+        className="hidden md:flex items-center justify-center p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
         title="Open full navigation"
       >
         <Map className="w-4 h-4 text-slate-600" />
