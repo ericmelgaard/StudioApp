@@ -478,16 +478,16 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   if (currentView === 'displays') {
     if (!selectedStore) {
       return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
           <div className="text-center">
-            <Monitor className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <p className="text-lg">Please select a store to view displays</p>
+            <Monitor className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <p className="text-lg text-slate-900">Please select a store to view Operator Hub</p>
           </div>
         </div>
       );
     }
     return (
-      <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div></div>}>
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
         <DisplayManagement
           storeId={selectedStore.id}
           storeName={selectedStore.name}

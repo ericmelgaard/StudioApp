@@ -273,9 +273,9 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
     active: boolean;
   }) => {
     const colors = {
-      open: 'border-green-500 bg-green-500/20 text-green-400',
-      closed: 'border-red-500 bg-red-500/20 text-red-400',
-      maintenance: 'border-amber-500 bg-amber-500/20 text-amber-400'
+      open: 'border-green-500 bg-green-100 text-green-700',
+      closed: 'border-red-500 bg-red-100 text-red-700',
+      maintenance: 'border-amber-500 bg-amber-100 text-amber-700'
     };
 
     return (
@@ -286,11 +286,11 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
         <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-all ${
           active
             ? colors[status]
-            : 'border-slate-600 bg-slate-800 text-slate-400 hover:border-slate-500'
+            : 'border-slate-300 bg-white text-slate-400 hover:border-slate-400'
         }`}>
           <Icon className="w-8 h-8" />
         </div>
-        <span className={`text-sm font-medium ${active ? 'text-white' : 'text-slate-400'}`}>
+        <span className={`text-sm font-medium ${active ? 'text-slate-900' : 'text-slate-500'}`}>
           {label}
         </span>
       </button>
@@ -298,31 +298,33 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white pb-20">
-      <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-700">
+    <div className="min-h-screen bg-slate-50 pb-20">
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-              <ArrowLeft className="w-5 h-5" />
+            <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
             </button>
-            <Monitor className="w-6 h-6 text-blue-400" />
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+              <Monitor className="w-5 h-5 text-white" />
+            </div>
             <div>
-              <h1 className="text-lg font-bold">Displays</h1>
-              <p className="text-xs text-slate-400">{storeName}</p>
+              <h1 className="text-lg font-bold text-slate-900">Operator Hub</h1>
+              <p className="text-xs text-slate-500">{storeName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-              <ShoppingCart className="w-5 h-5" />
+            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+              <ShoppingCart className="w-5 h-5 text-slate-600" />
             </button>
-            <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-              <Moon className="w-5 h-5" />
+            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+              <Moon className="w-5 h-5 text-slate-600" />
             </button>
           </div>
         </div>
 
-        <div className="px-4 py-6 border-b border-slate-800">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 text-center">
+        <div className="px-4 py-6 border-b border-slate-200 bg-slate-50">
+          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-4 text-center">
             Store Status
           </p>
           <div className="flex items-center justify-around gap-4">
@@ -332,44 +334,44 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
           </div>
         </div>
 
-        <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar">
-          <div className="flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 min-w-[140px]">
+        <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white">
+          <div className="flex-shrink-0 bg-white border border-slate-200 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Monitor className="w-4 h-4 text-blue-400" />
-              <span className="text-xs font-semibold text-slate-400">Devices</span>
+              <Monitor className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-semibold text-slate-600">Devices</span>
             </div>
-            <p className="text-2xl font-bold">{stats.totalDevices}</p>
-            <p className="text-xs text-slate-400">{stats.onlineDevices} online</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.totalDevices}</p>
+            <p className="text-xs text-slate-500">{stats.onlineDevices} online</p>
           </div>
 
-          <div className="flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 min-w-[140px]">
+          <div className="flex-shrink-0 bg-white border border-slate-200 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Layers className="w-4 h-4 text-purple-400" />
-              <span className="text-xs font-semibold text-slate-400">Groups</span>
+              <Layers className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-semibold text-slate-600">Groups</span>
             </div>
-            <p className="text-2xl font-bold">{stats.totalGroups}</p>
-            <p className="text-xs text-slate-400">placement groups</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.totalGroups}</p>
+            <p className="text-xs text-slate-500">placement groups</p>
           </div>
 
-          <div className="flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 min-w-[140px]">
+          <div className="flex-shrink-0 bg-white border border-slate-200 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <History className="w-4 h-4 text-green-400" />
-              <span className="text-xs font-semibold text-slate-400">Activity</span>
+              <History className="w-4 h-4 text-green-600" />
+              <span className="text-xs font-semibold text-slate-600">Activity</span>
             </div>
-            <p className="text-2xl font-bold">{stats.recentActions}</p>
-            <p className="text-xs text-slate-400">recent actions</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.recentActions}</p>
+            <p className="text-xs text-slate-500">recent actions</p>
           </div>
         </div>
       </div>
 
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Displays</h2>
+          <h2 className="text-lg font-bold text-slate-900">Displays</h2>
           <button
             onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            {viewMode === 'list' ? <Grid3x3 className="w-5 h-5" /> : <List className="w-5 h-5" />}
+            {viewMode === 'list' ? <Grid3x3 className="w-5 h-5 text-slate-600" /> : <List className="w-5 h-5 text-slate-600" />}
           </button>
         </div>
 
@@ -380,30 +382,30 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
             placeholder="Search displays..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <p className="mt-4 text-slate-400">Loading displays...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-slate-600">Loading displays...</p>
           </div>
         ) : filteredDisplays.length === 0 ? (
           <div className="text-center py-12">
-            <Monitor className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No displays found</p>
+            <Monitor className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-600">No displays found</p>
           </div>
         ) : (
           <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
             {filteredDisplays.map((card) => (
               <div
                 key={card.id}
-                className="relative bg-slate-800 border border-slate-700 rounded-lg overflow-hidden"
+                className="relative bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
                 {actionLoading === card.id && (
-                  <div className="absolute inset-0 bg-slate-900/80 z-10 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
                 )}
 
@@ -411,14 +413,14 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Layers className="w-5 h-5 text-purple-400" />
-                        <h3 className="font-semibold">{card.name}</h3>
+                        <Layers className="w-5 h-5 text-purple-600" />
+                        <h3 className="font-semibold text-slate-900">{card.name}</h3>
                       </div>
                       <span className={`w-3 h-3 rounded-full ${getStatusColor(card.status)}`}></span>
                     </div>
-                    <p className="text-sm text-slate-400 mb-3">{card.uptime}</p>
+                    <p className="text-sm text-slate-600 mb-3">{card.uptime}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
                         {card.groupInfo?.playerCount} devices
                       </span>
                       <ChevronRight className="w-5 h-5 text-slate-400" />
@@ -426,17 +428,17 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
                   </div>
                 ) : (
                   <>
-                    <div className="relative aspect-video bg-slate-700">
+                    <div className="relative aspect-video bg-slate-200">
                       {card.thumbnail ? (
                         <img src={card.thumbnail} alt={card.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Monitor className="w-12 h-12 text-slate-600" />
+                          <Monitor className="w-12 h-12 text-slate-400" />
                         </div>
                       )}
                       <div className="absolute top-2 left-2 flex items-center gap-2">
                         <span className={`w-3 h-3 rounded-full ${getStatusColor(card.status)}`}></span>
-                        <span className="text-xs bg-slate-900/80 px-2 py-1 rounded">{card.uptime}</span>
+                        <span className="text-xs bg-white/90 text-slate-700 px-2 py-1 rounded shadow-sm">{card.uptime}</span>
                       </div>
                       <div className="absolute top-2 right-2">
                         <button
@@ -444,43 +446,43 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
                             e.stopPropagation();
                             setActiveMenu(activeMenu === card.id ? null : card.id);
                           }}
-                          className="p-1.5 bg-slate-900/80 rounded-lg hover:bg-slate-900 transition-colors"
+                          className="p-1.5 bg-white/90 rounded-lg hover:bg-white transition-colors shadow-sm"
                         >
-                          <MoreVertical className="w-4 h-4" />
+                          <MoreVertical className="w-4 h-4 text-slate-600" />
                         </button>
 
                         {activeMenu === card.id && (
-                          <div className="absolute top-full right-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-20">
+                          <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden z-20">
                             <button
                               onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'reboot')}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left text-slate-700"
                             >
                               <RotateCw className="w-4 h-4" />
                               <span className="text-sm">Reboot</span>
                             </button>
                             <button
                               onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'refresh')}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left text-slate-700"
                             >
                               <RefreshCw className="w-4 h-4" />
                               <span className="text-sm">Refresh Content</span>
                             </button>
                             <button
                               onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'clear_storage')}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left text-slate-700"
                             >
                               <Trash className="w-4 h-4" />
                               <span className="text-sm">Clear Storage</span>
                             </button>
-                            <div className="border-t border-slate-700"></div>
+                            <div className="border-t border-slate-200"></div>
                             <button
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left text-slate-700"
                             >
                               <Eye className="w-4 h-4" />
                               <span className="text-sm">View Details</span>
                             </button>
                             <button
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left text-slate-700"
                             >
                               <Settings className="w-4 h-4" />
                               <span className="text-sm">Settings</span>
@@ -490,15 +492,15 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
                       </div>
                       {card.displays.length > 1 && (
                         <div className="absolute bottom-2 left-2">
-                          <span className="text-xs bg-blue-500/80 text-white px-2 py-1 rounded">
+                          <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded shadow-sm">
                             Dual Display
                           </span>
                         </div>
                       )}
                     </div>
                     <div className="p-3">
-                      <h3 className="font-semibold text-sm mb-1">{card.name}</h3>
-                      <p className="text-xs text-slate-400">
+                      <h3 className="font-semibold text-sm mb-1 text-slate-900">{card.name}</h3>
+                      <p className="text-xs text-slate-600">
                         {card.displays.map(d => d.display_type?.name).filter(Boolean).join(' + ') || 'No display type'}
                       </p>
                     </div>

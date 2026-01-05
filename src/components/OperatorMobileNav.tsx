@@ -25,7 +25,7 @@ export default function OperatorMobileNav({
 }: OperatorMobileNavProps) {
   const navigationItems = [
     { id: 'home', label: 'Dashboard', icon: Home },
-    { id: 'displays', label: 'Displays', icon: Monitor },
+    { id: 'displays', label: 'Operator Hub', icon: Monitor },
     { id: 'signage', label: 'Digital Signage', icon: Monitor },
     { id: 'labels', label: 'Shelf Labels', icon: Tag },
     { id: 'products', label: 'Products', icon: Package },
