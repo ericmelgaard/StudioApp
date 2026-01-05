@@ -334,7 +334,7 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
           </div>
         </div>
 
-        <div className="px-4 py-4 flex flex-wrap gap-3 bg-white">
+        <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white max-h-[180px] md:max-h-none">
           <div className="flex-shrink-0 bg-white border border-slate-200 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <Monitor className="w-4 h-4 text-blue-600" />
