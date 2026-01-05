@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Monitor, Plus, Search, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Monitor, Plus, Search, MoreVertical, Menu } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import OperatorMobileNav from '../components/OperatorMobileNav';
 
 interface Signage {
   id: string;
@@ -19,6 +20,7 @@ export default function SignageManagement({ onBack }: SignageManagementProps) {
   const [signageList, setSignageList] = useState<Signage[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     loadSignage();
@@ -46,6 +48,12 @@ export default function SignageManagement({ onBack }: SignageManagementProps) {
       signage.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleNavigate = (view: string) => {
+    if (view === 'home') {
+      onBack();
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online':
@@ -61,9 +69,24 @@ export default function SignageManagement({ onBack }: SignageManagementProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <OperatorMobileNav
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        currentView="signage"
+        onNavigate={handleNavigate}
+        userRole="Store Operator"
+      />
+
       <nav className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-6 h-6 text-slate-700" />
+            </button>
             <button
               onClick={onBack}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"

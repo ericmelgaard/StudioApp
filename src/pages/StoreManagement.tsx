@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Layers, HelpCircle, FileText, Grid3x3, Settings, BarChart3, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Store, Edit2, Trash2, MapPin, Building2, Layers, HelpCircle, FileText, Grid3x3, Settings, BarChart3, Copy, Check, Menu } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PlacementGroupModal from '../components/PlacementGroupModal';
 import StoresGrid from '../components/StoresGrid';
@@ -9,6 +9,7 @@ import { useLocation } from '../hooks/useLocation';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Breadcrumb from '../components/Breadcrumb';
+import OperatorMobileNav from '../components/OperatorMobileNav';
 
 interface PlacementGroup {
   id: string;
@@ -70,6 +71,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   const [activeSection, setActiveSection] = useState('overview');
   const [idCopied, setIdCopied] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     determineViewLevel();
@@ -236,6 +238,12 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
     }
   };
 
+  const handleNavigate = (view: string) => {
+    if (view === 'home') {
+      onBack();
+    }
+  };
+
   const copyIdToClipboard = async () => {
     if (company?.id) {
       try {
@@ -285,20 +293,24 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
   if (viewLevel === 'company') {
     return (
       <div className="min-h-screen bg-slate-50">
+        <OperatorMobileNav
+          isOpen={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          currentView="store"
+          onNavigate={handleNavigate}
+          userRole="Store Operator"
+          locationName={company?.name}
+        />
+
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <img
-                src="/WandLogoNoText.png"
-                alt="WAND"
-                className="h-8 w-8"
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-                <span className="text-slate-400">|</span>
-                <span className="text-base font-semibold text-slate-700">Studio</span>
-              </div>
-            </div>
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-6 h-6 text-slate-700" />
+            </button>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -495,20 +507,24 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <OperatorMobileNav
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        currentView="store"
+        onNavigate={handleNavigate}
+        userRole="Store Operator"
+        locationName={location.store?.name || company?.name}
+      />
+
       <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <img
-              src="/WandLogoNoText.png"
-              alt="WAND"
-              className="h-8 w-8"
-            />
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-              <span className="text-slate-400">|</span>
-              <span className="text-base font-semibold text-slate-700">Studio</span>
-            </div>
-          </div>
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-6 h-6 text-slate-700" />
+          </button>
         </div>
         <div className="flex items-center gap-1">
           <button

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Tag, Plus, Search, Cpu, Layers, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Tag, Plus, Search, Cpu, Layers, RefreshCw, Menu } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { LabelPositionWithDevice } from '../types/labels';
 import AddPositionModal from '../components/AddPositionModal';
 import BulkAddPositionsModal from '../components/BulkAddPositionsModal';
 import HardwareDevicesModal from '../components/HardwareDevicesModal';
+import OperatorMobileNav from '../components/OperatorMobileNav';
 
 interface ShelfLabelManagementProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [showHardwareModal, setShowHardwareModal] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     loadPositions();
@@ -55,6 +57,12 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
     setAssigning(false);
   };
 
+  const handleNavigate = (view: string) => {
+    if (view === 'home') {
+      onBack();
+    }
+  };
+
   const filteredPositions = positions.filter(
     (position) =>
       position.position_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -86,9 +94,24 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <OperatorMobileNav
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        currentView="labels"
+        onNavigate={handleNavigate}
+        userRole="Store Operator"
+      />
+
       <nav className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-6 h-6 text-slate-700" />
+            </button>
             <button
               onClick={onBack}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"

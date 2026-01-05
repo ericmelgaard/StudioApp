@@ -1,8 +1,9 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2, ChevronDown, Map } from 'lucide-react';
+import { Settings, Monitor, Tag, ArrowRight, TrendingUp, Store, Package, HelpCircle, FileText, GripVertical, CheckCircle2, AlertCircle, Clock, Building2, ChevronDown, Map, Menu } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import SystemStatus from '../components/SystemStatus';
+import OperatorMobileNav from '../components/OperatorMobileNav';
 import { supabase } from '../lib/supabase';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
@@ -80,6 +81,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   ]);
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (currentView === 'home') {
@@ -506,20 +508,25 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <OperatorMobileNav
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        currentView={currentView}
+        onNavigate={(view) => setCurrentView(view as DashboardView)}
+        userName={user.display_name}
+        userRole="Store Operator"
+        locationName={selectedStore?.name || selectedCompany?.name}
+      />
+
       <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-[100]">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <img
-              src="/WandLogoNoText.png"
-              alt="WAND"
-              className="h-8 w-8"
-            />
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-slate-900">WAND Digital</span>
-              <span className="text-slate-400">|</span>
-              <span className="text-base font-semibold text-slate-700">Studio</span>
-            </div>
-          </div>
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-6 h-6 text-slate-700" />
+          </button>
           <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
             <HeaderNavigation
               userConceptId={user.concept_id}
