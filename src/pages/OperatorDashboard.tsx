@@ -98,18 +98,11 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   const loadCompaniesAndStores = async () => {
     setLoading(true);
 
-    // Load companies based on user access
-    let companiesQuery = supabase.from('companies').select('id, name, concept_id');
-
-    if (user.concept_id) {
-      companiesQuery = companiesQuery.eq('concept_id', user.concept_id);
-    }
-
-    if (user.company_id) {
-      companiesQuery = companiesQuery.eq('id', user.company_id);
-    }
-
-    const { data: companiesData, error: companiesError } = await companiesQuery.order('name');
+    // Load all companies (removed restrictions for QA/collaboration)
+    const { data: companiesData, error: companiesError } = await supabase
+      .from('companies')
+      .select('id, name, concept_id')
+      .order('name');
 
     if (companiesError) {
       console.error('Error loading companies:', companiesError);
@@ -119,20 +112,15 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
     setCompanies(companiesData || []);
 
-    // Load stores for each company
+    // Load all stores (removed restrictions for QA/collaboration)
     if (companiesData && companiesData.length > 0) {
       const companyIds = companiesData.map(c => c.id);
 
-      let storesQuery = supabase
+      const { data: storesData, error: storesError } = await supabase
         .from('stores')
         .select('id, name, company_id')
-        .in('company_id', companyIds);
-
-      if (user.store_id) {
-        storesQuery = storesQuery.eq('id', user.store_id);
-      }
-
-      const { data: storesData, error: storesError } = await storesQuery.order('name');
+        .in('company_id', companyIds)
+        .order('name');
 
       if (storesError) {
         console.error('Error loading stores:', storesError);
@@ -553,9 +541,9 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
           </button>
           <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
             <HeaderNavigation
-              userConceptId={user.concept_id}
-              userCompanyId={user.company_id}
-              userStoreId={user.store_id}
+              userConceptId={null}
+              userCompanyId={null}
+              userStoreId={null}
               onOpenFullNavigator={() => setShowLocationSelector(true)}
             />
           </Suspense>
