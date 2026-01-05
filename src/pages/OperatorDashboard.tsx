@@ -516,13 +516,14 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
         userName={user.display_name}
         userRole="Store Operator"
         locationName={selectedStore?.name || selectedCompany?.name}
+        onBackToRoles={onBack}
       />
 
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-[100]">
-        <div className="flex items-center gap-6">
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 sticky top-0 z-[100]">
+        <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0">
           <button
             onClick={() => setMobileNavOpen(true)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation flex-shrink-0"
             aria-label="Open navigation menu"
           >
             <Menu className="w-6 h-6 text-slate-700" />
@@ -536,20 +537,20 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
             />
           </Suspense>
         </div>
-        <div className="flex items-center gap-1">
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Help"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Documentation"
-              >
-                <FileText className="w-5 h-5" />
-              </button>
-              <NotificationPanel />
+        <div className="hidden md:flex items-center gap-1">
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Help"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+          <button
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Documentation"
+          >
+            <FileText className="w-5 h-5" />
+          </button>
+          <NotificationPanel />
           <UserMenu role="operator" onBackToRoles={onBack} />
         </div>
       </header>
