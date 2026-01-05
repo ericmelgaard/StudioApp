@@ -99,7 +99,7 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
 
     const { data: mediaPlayers, error: mpError } = await supabase
       .from('media_players')
-      .select('*')
+      .select('*, hardware_devices(*)')
       .eq('store_id', storeId);
 
     if (mpError) {
@@ -112,7 +112,7 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
       .from('displays')
       .select(`
         *,
-        display_type:display_types(name, category)
+        display_types(id, name, category, specifications)
       `)
       .in('media_player_id', mediaPlayers?.map(mp => mp.id) || []);
 
