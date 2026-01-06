@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Edit, Trash2, Search, Monitor, Grid, List, Layers } from 'lucide-react';
 import BulkAddDisplaysModal from '../components/BulkAddDisplaysModal';
+import LocationRequired from '../components/LocationRequired';
 import { useLocation } from '../hooks/useLocation';
 
 interface Display {
@@ -274,6 +275,22 @@ export default function DisplaysManagement() {
   }
 
   const groupedDisplays = getDisplayTypesByCategory();
+
+  if (!location.store) {
+    return (
+      <div className="p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Displays</h1>
+          <p className="text-gray-600 mt-1">Manage display configurations and assignments</p>
+        </div>
+        <LocationRequired
+          requiredLevel="store"
+          resourceName="displays"
+          message="Displays are associated with media players at specific store locations. Please select a store to view and manage displays."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
