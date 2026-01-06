@@ -130,11 +130,28 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
       }
 
       const startNum = parseInt(formData.start_number);
-      const mediaPlayers = [];
+      const deviceIdsToCreate: string[] = [];
 
       for (let i = 0; i < count; i++) {
         const num = startNum + i;
         const deviceId = `${formData.prefix}${num.toString().padStart(3, '0')}`;
+        deviceIdsToCreate.push(deviceId);
+      }
+
+      const { data: existingPlayers } = await supabase
+        .from('media_players')
+        .select('device_id')
+        .in('device_id', deviceIdsToCreate);
+
+      if (existingPlayers && existingPlayers.length > 0) {
+        const conflictingIds = existingPlayers.map(p => p.device_id).join(', ');
+        throw new Error(`The following device IDs already exist: ${conflictingIds}. Please adjust the prefix or start number.`);
+      }
+
+      const mediaPlayers = [];
+
+      for (let i = 0; i < count; i++) {
+        const deviceId = deviceIdsToCreate[i];
 
         const player: any = {
           device_id: deviceId,
