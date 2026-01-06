@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers } from 'lucide-react';
+import BulkAddMediaPlayersModal from '../components/BulkAddMediaPlayersModal';
 
 interface MediaPlayer {
   id: string;
@@ -58,6 +59,7 @@ export default function MediaPlayersManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showModal, setShowModal] = useState(false);
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<MediaPlayer | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -291,13 +293,22 @@ export default function MediaPlayersManagement() {
             <h1 className="text-2xl font-bold text-gray-900">Media Players</h1>
             <p className="text-gray-600 mt-1">Manage logical media player configurations</p>
           </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4" />
-            Create Media Player
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowBulkAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <Layers className="w-4 h-4" />
+              Bulk Add
+            </button>
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              Create Media Player
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-4">
@@ -566,6 +577,13 @@ export default function MediaPlayersManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {showBulkAddModal && (
+        <BulkAddMediaPlayersModal
+          onClose={() => setShowBulkAddModal(false)}
+          onSuccess={loadData}
+        />
       )}
     </div>
   );
