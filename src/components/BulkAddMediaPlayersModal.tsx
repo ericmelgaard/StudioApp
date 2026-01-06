@@ -10,6 +10,12 @@ interface BulkAddMediaPlayersModalProps {
   currentLocation: LocationState;
 }
 
+interface DisplayType {
+  id: string;
+  name: string;
+  category: string;
+}
+
 interface ValidationError {
   row: number;
   field: string;
@@ -52,6 +58,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
   const [availableDevices, setAvailableDevices] = useState<HardwareDevice[]>([]);
   const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
   const [filteredPlacementGroups, setFilteredPlacementGroups] = useState<PlacementGroup[]>([]);
+  const [displayTypes, setDisplayTypes] = useState<DisplayType[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<ParsedRow[]>([]);
@@ -64,6 +71,8 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
     store_id: currentLocation.store ? currentLocation.store.id.toString() : '',
     placement_group_id: '',
     auto_assign_hardware: false,
+    create_displays: false,
+    display_type_id: '',
   });
 
   useEffect(() => {
@@ -84,13 +93,15 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
   }, [formData.store_id, placementGroups]);
 
   const loadData = async () => {
-    const [devicesRes, groupsRes] = await Promise.all([
+    const [devicesRes, groupsRes, typesRes] = await Promise.all([
       supabase.from('hardware_devices').select('*').eq('status', 'available').order('device_id'),
-      supabase.from('placement_groups').select('id, name, store_id').order('name')
+      supabase.from('placement_groups').select('id, name, store_id').order('name'),
+      supabase.from('display_types').select('*').eq('status', 'active').order('name')
     ]);
 
     if (devicesRes.data) setAvailableDevices(devicesRes.data);
     if (groupsRes.data) setPlacementGroups(groupsRes.data);
+    if (typesRes.data) setDisplayTypes(typesRes.data);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -111,6 +122,10 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
 
       if (formData.auto_assign_hardware && count > availableDevices.length) {
         throw new Error(`Only ${availableDevices.length} hardware devices available. Cannot create ${count} media players with auto-assign enabled.`);
+      }
+
+      if (formData.create_displays && !formData.display_type_id) {
+        throw new Error('Display type is required when creating displays');
       }
 
       const startNum = parseInt(formData.start_number);
@@ -135,9 +150,10 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
         mediaPlayers.push(player);
       }
 
-      const { error: insertError } = await supabase
+      const { data: insertedPlayers, error: insertError } = await supabase
         .from('media_players')
-        .insert(mediaPlayers);
+        .insert(mediaPlayers)
+        .select();
 
       if (insertError) throw insertError;
 
@@ -147,6 +163,22 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
           .from('hardware_devices')
           .update({ status: 'assigned' })
           .in('id', deviceIds);
+      }
+
+      if (formData.create_displays && insertedPlayers) {
+        const displays = insertedPlayers.map(player => ({
+          name: `${player.name} Display`,
+          media_player_id: player.id,
+          display_type_id: formData.display_type_id,
+          position: 1,
+          status: 'active'
+        }));
+
+        const { error: displaysError } = await supabase
+          .from('displays')
+          .insert(displays);
+
+        if (displaysError) throw displaysError;
       }
 
       onSuccess();
@@ -741,6 +773,46 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Display Creation
+              </label>
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.create_displays}
+                    onChange={(e) => setFormData({ ...formData, create_displays: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-slate-900">Create a display for each media player</span>
+                </label>
+                {formData.create_displays && (
+                  <div className="ml-6 space-y-2">
+                    <label className="block text-xs font-medium text-slate-700">
+                      Display Type *
+                    </label>
+                    <select
+                      required={formData.create_displays}
+                      value={formData.display_type_id}
+                      onChange={(e) => setFormData({ ...formData, display_type_id: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="">Select display type</option>
+                      {displayTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name} ({type.category})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-slate-500">
+                      One display will be created at position 1 for each media player
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {previewCount > 0 && formData.prefix && (
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <p className="text-sm font-medium text-slate-900 mb-3">
@@ -796,18 +868,18 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
               </button>
               <button
                 type="submit"
-                disabled={loading || (formData.auto_assign_hardware && availableDevices.length === 0)}
+                disabled={loading || (formData.auto_assign_hardware && availableDevices.length === 0) || (formData.create_displays && !formData.display_type_id)}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Creating {formData.count} media players...
+                    Creating {formData.count} media players{formData.create_displays ? ' and displays' : ''}...
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4" />
-                    Create {formData.count} Media Players
+                    Create {formData.count} Media Players{formData.create_displays ? ' + Displays' : ''}
                   </>
                 )}
               </button>

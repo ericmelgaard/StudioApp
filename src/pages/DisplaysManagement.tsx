@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Search, Monitor, Grid, List, Layers } from 'lucide-react';
-import BulkAddDisplaysModal from '../components/BulkAddDisplaysModal';
+import { Plus, Edit, Trash2, Search, Monitor, Grid, List } from 'lucide-react';
 import LocationRequired from '../components/LocationRequired';
 import { useLocation } from '../hooks/useLocation';
 
@@ -60,7 +59,6 @@ export default function DisplaysManagement() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [showModal, setShowModal] = useState(false);
-  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [editingDisplay, setEditingDisplay] = useState<Display | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -315,13 +313,6 @@ export default function DisplaysManagement() {
                 <Grid className="w-4 h-4" />
               </button>
             </div>
-            <button
-              onClick={() => setShowBulkAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              <Layers className="w-4 h-4" />
-              Bulk Add
-            </button>
             <button
               onClick={() => handleOpenModal()}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -605,15 +596,6 @@ export default function DisplaysManagement() {
             </form>
           </div>
         </div>
-      )}
-
-      {showBulkAddModal && (
-        <BulkAddDisplaysModal
-          onClose={() => setShowBulkAddModal(false)}
-          onSuccess={loadData}
-          availableMediaPlayers={mediaPlayers}
-          currentLocation={location}
-        />
       )}
     </div>
   );
