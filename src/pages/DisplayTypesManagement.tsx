@@ -34,6 +34,7 @@ export default function DisplayTypesManagement() {
     orientation: 'horizontal',
     status: 'active'
   });
+  const [customResolution, setCustomResolution] = useState(false);
 
   useEffect(() => {
     loadDisplayTypes();
@@ -96,16 +97,20 @@ export default function DisplayTypesManagement() {
   const handleOpenModal = (type?: DisplayType) => {
     if (type) {
       setEditingType(type);
+      const resolution = type.specifications?.resolution || '1920x1080';
+      const isCustom = !['1920x1080', '1080x1920', '3840x2160', '2160x3840'].includes(resolution);
+      setCustomResolution(isCustom);
       setFormData({
         name: type.name,
         description: type.description || '',
         category: type.category,
-        resolution: type.specifications?.resolution || '1920x1080',
+        resolution: resolution,
         orientation: type.specifications?.orientation || 'horizontal',
         status: type.status
       });
     } else {
       setEditingType(null);
+      setCustomResolution(false);
       setFormData({
         name: '',
         description: '',
@@ -121,6 +126,7 @@ export default function DisplayTypesManagement() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingType(null);
+    setCustomResolution(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -404,17 +410,50 @@ export default function DisplayTypesManagement() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Resolution *
                 </label>
-                <select
-                  value={formData.resolution}
-                  onChange={(e) => setFormData({ ...formData, resolution: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="1920x1080">1920x1080 (Horizontal)</option>
-                  <option value="1080x1920">1080x1920 (Vertical)</option>
-                  <option value="3840x2160">3840x2160 (4K Horizontal)</option>
-                  <option value="2160x3840">2160x3840 (4K Vertical)</option>
-                </select>
+                {!customResolution ? (
+                  <div className="space-y-2">
+                    <select
+                      value={formData.resolution}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') {
+                          setCustomResolution(true);
+                          setFormData({ ...formData, resolution: '' });
+                        } else {
+                          setFormData({ ...formData, resolution: e.target.value });
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="1920x1080">1920x1080 (Horizontal)</option>
+                      <option value="1080x1920">1080x1920 (Vertical)</option>
+                      <option value="3840x2160">3840x2160 (4K Horizontal)</option>
+                      <option value="2160x3840">2160x3840 (4K Vertical)</option>
+                      <option value="custom">Custom Resolution...</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={formData.resolution}
+                      onChange={(e) => setFormData({ ...formData, resolution: e.target.value })}
+                      placeholder="e.g., 1366x768"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomResolution(false);
+                        setFormData({ ...formData, resolution: '1920x1080' });
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-700"
+                    >
+                      Use standard resolutions
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>
