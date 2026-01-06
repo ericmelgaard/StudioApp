@@ -1,10 +1,13 @@
 import { useState, useEffect, FormEvent, useRef, ChangeEvent } from 'react';
 import { X, Plus, AlertCircle, Monitor, Download, Upload, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { LocationState } from '../hooks/useLocation';
 
 interface BulkAddMediaPlayersModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  availableStores: Store[];
+  currentLocation: LocationState;
 }
 
 interface ValidationError {
@@ -42,13 +45,13 @@ interface PlacementGroup {
   name: string;
 }
 
-export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAddMediaPlayersModalProps) {
+export default function BulkAddMediaPlayersModal({ onClose, onSuccess, availableStores, currentLocation }: BulkAddMediaPlayersModalProps) {
   const [activeTab, setActiveTab] = useState<'spreadsheet' | 'sequential'>('spreadsheet');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableDevices, setAvailableDevices] = useState<HardwareDevice[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
   const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
+  const [filteredPlacementGroups, setFilteredPlacementGroups] = useState<PlacementGroup[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<ParsedRow[]>([]);
@@ -58,7 +61,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
     prefix: 'MP-',
     start_number: '1',
     count: '10',
-    store_id: '',
+    store_id: currentLocation.store ? currentLocation.store.id.toString() : '',
     placement_group_id: '',
     auto_assign_hardware: false,
   });
@@ -67,15 +70,26 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (formData.store_id) {
+      const filtered = placementGroups.filter(g => g.store_id === parseInt(formData.store_id));
+      setFilteredPlacementGroups(filtered);
+      if (!filtered.find(g => g.id === formData.placement_group_id)) {
+        setFormData(prev => ({ ...prev, placement_group_id: '' }));
+      }
+    } else {
+      setFilteredPlacementGroups([]);
+      setFormData(prev => ({ ...prev, placement_group_id: '' }));
+    }
+  }, [formData.store_id, placementGroups]);
+
   const loadData = async () => {
-    const [devicesRes, storesRes, groupsRes] = await Promise.all([
+    const [devicesRes, groupsRes] = await Promise.all([
       supabase.from('hardware_devices').select('*').eq('status', 'available').order('device_id'),
-      supabase.from('stores').select('id, name').order('name'),
-      supabase.from('placement_groups').select('id, name').order('name')
+      supabase.from('placement_groups').select('id, name, store_id').order('name')
     ]);
 
     if (devicesRes.data) setAvailableDevices(devicesRes.data);
-    if (storesRes.data) setStores(storesRes.data);
     if (groupsRes.data) setPlacementGroups(groupsRes.data);
   };
 
@@ -146,7 +160,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
 
   const downloadTemplate = () => {
     const headers = ['name', 'store_id', 'hardware_device_id', 'placement_group_id', 'ip_address', 'firmware_version'];
-    const exampleRow = ['Front Counter Display', stores[0]?.id || 'REQUIRED', '', placementGroups[0]?.id || '', '192.168.1.100', 'v1.0.0'];
+    const exampleRow = ['Front Counter Display', availableStores[0]?.id || 'REQUIRED', '', placementGroups[0]?.id || '', '192.168.1.100', 'v1.0.0'];
 
     const csv = [headers.join(','), exampleRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -187,8 +201,12 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
         .select('device_id, name, store_id');
 
       const existingDeviceIds = new Set(existingPlayers?.map(p => p.device_id.toLowerCase()) || []);
-      const storeIds = new Set(stores.map(s => s.id.toString()));
-      const placementGroupIds = new Set(placementGroups.map(g => g.id));
+      const storeIds = new Set(availableStores.map(s => s.id.toString()));
+      const placementGroupsByStore = placementGroups.reduce((acc, g) => {
+        if (!acc[g.store_id]) acc[g.store_id] = [];
+        acc[g.store_id].push(g.id);
+        return acc;
+      }, {} as Record<number, string[]>);
 
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim());
@@ -219,8 +237,12 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
           }
         }
 
-        if (rowData.placement_group_id && !placementGroupIds.has(rowData.placement_group_id)) {
-          errors.push({ row: rowNum, field: 'placement_group_id', message: 'Placement group ID does not exist' });
+        if (rowData.placement_group_id && rowData.store_id) {
+          const storeId = parseInt(rowData.store_id);
+          const storeGroups = placementGroupsByStore[storeId] || [];
+          if (!storeGroups.includes(rowData.placement_group_id)) {
+            errors.push({ row: rowNum, field: 'placement_group_id', message: 'Placement group does not belong to the selected store' });
+          }
         }
 
         rows.push({
@@ -648,17 +670,20 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
                 required
                 value={formData.store_id}
                 onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={!!currentLocation.store}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
               >
                 <option value="">Select a store</option>
-                {stores.map((store) => (
+                {availableStores.map((store) => (
                   <option key={store.id} value={store.id}>
                     {store.name}
                   </option>
                 ))}
               </select>
               <p className="text-xs text-slate-500 mt-1">
-                Media players are unique to each store
+                {currentLocation.store
+                  ? 'Store is set based on your current location'
+                  : 'Media players are unique to each store'}
               </p>
             </div>
 
@@ -669,15 +694,21 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
               <select
                 value={formData.placement_group_id}
                 onChange={(e) => setFormData({ ...formData, placement_group_id: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={!formData.store_id}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
               >
                 <option value="">No placement group</option>
-                {placementGroups.map((group) => (
+                {filteredPlacementGroups.map((group) => (
                   <option key={group.id} value={group.id}>
                     {group.name}
                   </option>
                 ))}
               </select>
+              {!formData.store_id && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Select a store first to see available placement groups
+                </p>
+              )}
             </div>
 
             <div>

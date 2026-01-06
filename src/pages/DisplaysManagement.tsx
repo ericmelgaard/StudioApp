@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Edit, Trash2, Search, Monitor, Grid, List, Layers } from 'lucide-react';
 import BulkAddDisplaysModal from '../components/BulkAddDisplaysModal';
+import { useLocation } from '../hooks/useLocation';
 
 interface Display {
   id: string;
@@ -48,6 +49,7 @@ interface DisplayType {
 }
 
 export default function DisplaysManagement() {
+  const { location } = useLocation();
   const [displays, setDisplays] = useState<Display[]>([]);
   const [filteredDisplays, setFilteredDisplays] = useState<Display[]>([]);
   const [mediaPlayers, setMediaPlayers] = useState<MediaPlayer[]>([]);
@@ -76,9 +78,19 @@ export default function DisplaysManagement() {
 
   const loadData = async () => {
     try {
+      let playersQuery = supabase.from('media_players').select('*, stores(id, name, location_group_id, location_groups(company_id), companies!inner(id, name, concept_id))').order('name');
+
+      if (location.store) {
+        playersQuery = playersQuery.eq('store_id', location.store.id);
+      } else if (location.company) {
+        playersQuery = playersQuery.eq('stores.companies.id', location.company.id);
+      } else if (location.concept) {
+        playersQuery = playersQuery.eq('stores.companies.concept_id', location.concept.id);
+      }
+
       const [displaysRes, playersRes, typesRes] = await Promise.all([
         supabase.from('displays').select('*, media_players(*, stores(id, name)), display_types(*)').order('name'),
-        supabase.from('media_players').select('*, stores(name)').order('name'),
+        playersQuery,
         supabase.from('display_types').select('*').eq('status', 'active').order('name')
       ]);
 
@@ -582,6 +594,8 @@ export default function DisplaysManagement() {
         <BulkAddDisplaysModal
           onClose={() => setShowBulkAddModal(false)}
           onSuccess={loadData}
+          availableMediaPlayers={mediaPlayers}
+          currentLocation={location}
         />
       )}
     </div>

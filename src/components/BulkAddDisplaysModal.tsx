@@ -1,10 +1,13 @@
 import { useState, useEffect, FormEvent, useRef, ChangeEvent } from 'react';
 import { X, Plus, AlertCircle, Monitor, Download, Upload, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { LocationState } from '../hooks/useLocation';
 
 interface BulkAddDisplaysModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  availableMediaPlayers: MediaPlayer[];
+  currentLocation: LocationState;
 }
 
 interface ValidationError {
@@ -36,11 +39,10 @@ interface DisplayType {
   category: string;
 }
 
-export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisplaysModalProps) {
+export default function BulkAddDisplaysModal({ onClose, onSuccess, availableMediaPlayers, currentLocation }: BulkAddDisplaysModalProps) {
   const [activeTab, setActiveTab] = useState<'spreadsheet' | 'sequential'>('spreadsheet');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mediaPlayers, setMediaPlayers] = useState<MediaPlayer[]>([]);
   const [displayTypes, setDisplayTypes] = useState<DisplayType[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -61,27 +63,7 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
   }, []);
 
   const loadData = async () => {
-    const [playersRes, typesRes, displaysRes] = await Promise.all([
-      supabase.from('media_players').select('*').order('name'),
-      supabase.from('display_types').select('*').eq('status', 'active').order('name'),
-      supabase.from('displays').select('media_player_id')
-    ]);
-
-    if (displaysRes.data) {
-      const displayCounts = displaysRes.data.reduce((acc, display) => {
-        acc[display.media_player_id] = (acc[display.media_player_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      if (playersRes.data) {
-        const playersWithCounts = playersRes.data.map(player => ({
-          ...player,
-          display_count: displayCounts[player.id] || 0
-        }));
-        setMediaPlayers(playersWithCounts);
-      }
-    }
-
+    const typesRes = await supabase.from('display_types').select('*').eq('status', 'active').order('name');
     if (typesRes.data) setDisplayTypes(typesRes.data);
   };
 
@@ -101,7 +83,7 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
         throw new Error('Please select a media player');
       }
 
-      const selectedPlayer = mediaPlayers.find(p => p.id === formData.media_player_id);
+      const selectedPlayer = availableMediaPlayers.find(p => p.id === formData.media_player_id);
       if (!selectedPlayer) {
         throw new Error('Selected media player not found');
       }
@@ -161,7 +143,7 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
 
   const downloadTemplate = () => {
     const headers = ['name', 'media_player_id', 'display_type_id', 'position'];
-    const exampleRow = ['Front Display', mediaPlayers[0]?.id || '', displayTypes[0]?.id || '', '1'];
+    const exampleRow = ['Front Display', availableMediaPlayers[0]?.id || '', displayTypes[0]?.id || '', '1'];
 
     const csv = [headers.join(','), exampleRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -201,7 +183,7 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
         .from('displays')
         .select('name, media_player_id, position');
 
-      const mediaPlayerIds = new Set(mediaPlayers.map(p => p.id));
+      const mediaPlayerIds = new Set(availableMediaPlayers.map(p => p.id));
       const displayTypeIds = new Set(displayTypes.map(t => t.id));
 
       const positionsByPlayer = existingDisplays?.reduce((acc, display) => {
@@ -256,7 +238,7 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
           }
         }
 
-        const player = mediaPlayers.find(p => p.id === rowData.media_player_id);
+        const player = availableMediaPlayers.find(p => p.id === rowData.media_player_id);
         if (player && (player.display_count || 0) >= 2) {
           errors.push({ row: rowNum, field: 'media_player_id', message: 'Media player already has 2 displays (maximum)' });
         }
@@ -356,7 +338,7 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
 
   const previewCount = Math.min(parseInt(formData.count) || 0, 5);
   const previewStart = parseInt(formData.start_number) || 1;
-  const selectedPlayer = mediaPlayers.find(p => p.id === formData.media_player_id);
+  const selectedPlayer = availableMediaPlayers.find(p => p.id === formData.media_player_id);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -683,14 +665,16 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select a media player</option>
-                {mediaPlayers.map((player) => (
+                {availableMediaPlayers.map((player) => (
                   <option key={player.id} value={player.id}>
                     {player.name} ({player.display_count || 0}/2 displays)
                   </option>
                 ))}
               </select>
               <p className="text-xs text-slate-500 mt-1">
-                Each media player can have up to 2 displays
+                {currentLocation.store
+                  ? 'Only media players from your current store are available'
+                  : 'Each media player can have up to 2 displays'}
               </p>
             </div>
 

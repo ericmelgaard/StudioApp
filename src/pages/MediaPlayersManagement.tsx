@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers } from 'lucide-react';
 import BulkAddMediaPlayersModal from '../components/BulkAddMediaPlayersModal';
+import { useLocation } from '../hooks/useLocation';
 
 interface MediaPlayer {
   id: string;
@@ -50,6 +51,7 @@ interface PlacementGroup {
 }
 
 export default function MediaPlayersManagement() {
+  const { location } = useLocation();
   const [mediaPlayers, setMediaPlayers] = useState<MediaPlayer[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<MediaPlayer[]>([]);
   const [availableDevices, setAvailableDevices] = useState<HardwareDevice[]>([]);
@@ -80,11 +82,21 @@ export default function MediaPlayersManagement() {
 
   const loadData = async () => {
     try {
+      let storesQuery = supabase.from('stores').select('id, name, location_group_id, location_groups(company_id), companies!inner(id, name, concept_id)').order('name');
+
+      if (location.store) {
+        storesQuery = storesQuery.eq('id', location.store.id);
+      } else if (location.company) {
+        storesQuery = storesQuery.eq('companies.id', location.company.id);
+      } else if (location.concept) {
+        storesQuery = storesQuery.eq('companies.concept_id', location.concept.id);
+      }
+
       const [playersRes, devicesRes, storesRes, groupsRes, displaysRes] = await Promise.all([
         supabase.from('media_players').select('*, hardware_devices(*), stores(id, name), placement_groups(id, name)').order('name'),
         supabase.from('hardware_devices').select('*').in('status', ['available']).order('device_id'),
-        supabase.from('stores').select('id, name').order('name'),
-        supabase.from('placement_groups').select('id, name').order('name'),
+        storesQuery,
+        supabase.from('placement_groups').select('id, name, store_id').order('name'),
         supabase.from('displays').select('media_player_id')
       ]);
 
@@ -592,6 +604,8 @@ export default function MediaPlayersManagement() {
         <BulkAddMediaPlayersModal
           onClose={() => setShowBulkAddModal(false)}
           onSuccess={loadData}
+          availableStores={stores}
+          currentLocation={location}
         />
       )}
     </div>
