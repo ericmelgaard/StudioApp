@@ -201,7 +201,6 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
         .from('displays')
         .select('name, media_player_id, position');
 
-      const existingNames = new Set(existingDisplays?.map(d => d.name.toLowerCase()) || []);
       const mediaPlayerIds = new Set(mediaPlayers.map(p => p.id));
       const displayTypeIds = new Set(displayTypes.map(t => t.id));
 
@@ -226,8 +225,14 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess }: BulkAddDisp
 
         if (!rowData.name) {
           errors.push({ row: rowNum, field: 'name', message: 'Name is required' });
-        } else if (existingNames.has(rowData.name.toLowerCase())) {
-          errors.push({ row: rowNum, field: 'name', message: 'Display name already exists' });
+        } else if (rowData.media_player_id) {
+          const duplicateInPlayer = existingDisplays?.find(
+            d => d.name.toLowerCase() === rowData.name.toLowerCase() &&
+                 d.media_player_id === rowData.media_player_id
+          );
+          if (duplicateInPlayer) {
+            errors.push({ row: rowNum, field: 'name', message: 'Display name already exists on this media player' });
+          }
         }
 
         if (!rowData.media_player_id) {

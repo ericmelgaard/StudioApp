@@ -91,6 +91,10 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
         throw new Error('Maximum 100 media players can be created at once');
       }
 
+      if (!formData.store_id) {
+        throw new Error('Store is required for all media players');
+      }
+
       if (formData.auto_assign_hardware && count > availableDevices.length) {
         throw new Error(`Only ${availableDevices.length} hardware devices available. Cannot create ${count} media players with auto-assign enabled.`);
       }
@@ -105,7 +109,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
         const player: any = {
           device_id: deviceId,
           name: `Media Player ${deviceId}`,
-          store_id: formData.store_id ? parseInt(formData.store_id) : null,
+          store_id: parseInt(formData.store_id),
           placement_group_id: formData.placement_group_id || null,
           status: 'offline',
         };
@@ -141,8 +145,8 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
   };
 
   const downloadTemplate = () => {
-    const headers = ['name', 'hardware_device_id', 'store_id', 'placement_group_id', 'ip_address', 'firmware_version'];
-    const exampleRow = ['Front Counter Display', '', stores[0]?.id || '', placementGroups[0]?.id || '', '192.168.1.100', 'v1.0.0'];
+    const headers = ['name', 'store_id', 'hardware_device_id', 'placement_group_id', 'ip_address', 'firmware_version'];
+    const exampleRow = ['Front Counter Display', stores[0]?.id || 'REQUIRED', '', placementGroups[0]?.id || '', '192.168.1.100', 'v1.0.0'];
 
     const csv = [headers.join(','), exampleRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -180,10 +184,9 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
 
       const { data: existingPlayers } = await supabase
         .from('media_players')
-        .select('device_id, name');
+        .select('device_id, name, store_id');
 
       const existingDeviceIds = new Set(existingPlayers?.map(p => p.device_id.toLowerCase()) || []);
-      const existingNames = new Set(existingPlayers?.map(p => p.name.toLowerCase()) || []);
       const storeIds = new Set(stores.map(s => s.id.toString()));
       const placementGroupIds = new Set(placementGroups.map(g => g.id));
 
@@ -200,12 +203,20 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
 
         if (!rowData.name) {
           errors.push({ row: rowNum, field: 'name', message: 'Name is required' });
-        } else if (existingNames.has(rowData.name.toLowerCase())) {
-          errors.push({ row: rowNum, field: 'name', message: 'Name already exists' });
         }
 
-        if (rowData.store_id && !storeIds.has(rowData.store_id)) {
+        if (!rowData.store_id) {
+          errors.push({ row: rowNum, field: 'store_id', message: 'Store ID is required' });
+        } else if (!storeIds.has(rowData.store_id)) {
           errors.push({ row: rowNum, field: 'store_id', message: 'Store ID does not exist' });
+        } else if (rowData.name) {
+          const duplicateInStore = existingPlayers?.find(
+            p => p.name.toLowerCase() === rowData.name.toLowerCase() &&
+                 p.store_id.toString() === rowData.store_id
+          );
+          if (duplicateInStore) {
+            errors.push({ row: rowNum, field: 'name', message: 'Name already exists in this store' });
+          }
         }
 
         if (rowData.placement_group_id && !placementGroupIds.has(rowData.placement_group_id)) {
@@ -249,7 +260,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
         device_id: `MP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: row.name,
         hardware_device_id: row.hardware_device_id || null,
-        store_id: row.store_id ? parseInt(row.store_id) : null,
+        store_id: parseInt(row.store_id),
         placement_group_id: row.placement_group_id || null,
         ip_address: row.ip_address || null,
         firmware_version: row.firmware_version || null,
@@ -631,20 +642,24 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess }: BulkAdd
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Store (Optional)
+                Store *
               </label>
               <select
+                required
                 value={formData.store_id}
                 onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">No store assigned</option>
+                <option value="">Select a store</option>
                 {stores.map((store) => (
                   <option key={store.id} value={store.id}>
                     {store.name}
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-slate-500 mt-1">
+                Media players are unique to each store
+              </p>
             </div>
 
             <div>

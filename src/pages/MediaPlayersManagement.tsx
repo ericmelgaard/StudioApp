@@ -170,13 +170,18 @@ export default function MediaPlayersManagement() {
     e.preventDefault();
 
     try {
+      if (!formData.store_id) {
+        alert('Store is required');
+        return;
+      }
+
       const deviceId = `MP-${Date.now()}`;
 
       if (editingPlayer) {
         const updates: any = {
           name: formData.name,
           hardware_device_id: formData.hardware_device_id || null,
-          store_id: formData.store_id ? parseInt(formData.store_id) : null,
+          store_id: parseInt(formData.store_id),
           placement_group_id: formData.placement_group_id || null,
           ip_address: formData.ip_address || null,
           firmware_version: formData.firmware_version || null,
@@ -210,7 +215,7 @@ export default function MediaPlayersManagement() {
             device_id: deviceId,
             name: formData.name,
             hardware_device_id: formData.hardware_device_id || null,
-            store_id: formData.store_id ? parseInt(formData.store_id) : null,
+            store_id: parseInt(formData.store_id),
             placement_group_id: formData.placement_group_id || null,
             ip_address: formData.ip_address || null,
             firmware_version: formData.firmware_version || null,
@@ -499,20 +504,24 @@ export default function MediaPlayersManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Store
+                  Store *
                 </label>
                 <select
+                  required
                   value={formData.store_id}
                   onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">No store assigned</option>
+                  <option value="">Select a store</option>
                   {stores.map(store => (
                     <option key={store.id} value={store.id}>
                       {store.name}
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Media players are unique to each store
+                </p>
               </div>
 
               <div>
