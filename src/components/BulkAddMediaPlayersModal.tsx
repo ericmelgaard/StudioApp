@@ -49,6 +49,7 @@ interface Store {
 interface PlacementGroup {
   id: string;
   name: string;
+  store_id: number;
 }
 
 export default function BulkAddMediaPlayersModal({ onClose, onSuccess, availableStores, currentLocation }: BulkAddMediaPlayersModalProps) {
