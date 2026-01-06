@@ -673,7 +673,7 @@ export default function BulkAddDisplaysModal({ onClose, onSuccess, availableMedi
               </select>
               <p className="text-xs text-slate-500 mt-1">
                 {currentLocation.store
-                  ? 'Only media players from your current store are available'
+                  ? `Displays will be added to a media player at ${currentLocation.store.name}`
                   : 'Each media player can have up to 2 displays'}
               </p>
             </div>

@@ -666,23 +666,28 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Store *
               </label>
-              <select
-                required
-                value={formData.store_id}
-                onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
-                disabled={!!currentLocation.store}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
-              >
-                <option value="">Select a store</option>
-                {availableStores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
+              {currentLocation.store ? (
+                <div className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-blue-50 text-slate-900 font-medium">
+                  {currentLocation.store.name}
+                </div>
+              ) : (
+                <select
+                  required
+                  value={formData.store_id}
+                  onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select a store</option>
+                  {availableStores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+              )}
               <p className="text-xs text-slate-500 mt-1">
                 {currentLocation.store
-                  ? 'Store is set based on your current location'
+                  ? 'Media players will be added to this store'
                   : 'Media players are unique to each store'}
               </p>
             </div>
