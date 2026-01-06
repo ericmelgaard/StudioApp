@@ -82,7 +82,7 @@ export default function MediaPlayersManagement() {
 
   const loadData = async () => {
     try {
-      let storesQuery = supabase.from('stores').select('id, name, location_group_id, location_groups(company_id), companies!inner(id, name, concept_id)').order('name');
+      let storesQuery = supabase.from('stores').select('id, name, company_id, companies!inner(id, name, concept_id)').order('name');
 
       if (location.store) {
         storesQuery = storesQuery.eq('id', location.store.id);

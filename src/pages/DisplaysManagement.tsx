@@ -77,7 +77,7 @@ export default function DisplaysManagement() {
 
   const loadData = async () => {
     try {
-      let playersQuery = supabase.from('media_players').select('*, stores(id, name, location_group_id, location_groups(company_id), companies!inner(id, name, concept_id))').order('name');
+      let playersQuery = supabase.from('media_players').select('*, stores(id, name, company_id, companies!inner(id, name, concept_id))').order('name');
 
       if (location.store) {
         playersQuery = playersQuery.eq('store_id', location.store.id);
