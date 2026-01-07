@@ -50,9 +50,10 @@ interface LocationSelectorProps {
     company?: Company;
     store?: Store;
   };
+  filterByConceptId?: number;
 }
 
-export default function LocationSelector({ onClose, onSelect, selectedLocation }: LocationSelectorProps) {
+export default function LocationSelector({ onClose, onSelect, selectedLocation, filterByConceptId }: LocationSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -82,36 +83,51 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation }
 
   const loadData = async () => {
     setLoading(true);
-    console.log('LocationSelector: Loading all stores with pagination');
+    console.log('LocationSelector: Loading stores with pagination', filterByConceptId ? `(filtered by concept ${filterByConceptId})` : '');
 
-    const conceptsPromise = supabase.from('concepts').select('*').order('name');
-    const companiesPromise = supabase.from('companies').select('*').order('name');
+    let conceptsQuery = supabase.from('concepts').select('*').order('name');
+    if (filterByConceptId) {
+      conceptsQuery = conceptsQuery.eq('id', filterByConceptId);
+    }
+
+    let companiesQuery = supabase.from('companies').select('*').order('name');
+    if (filterByConceptId) {
+      companiesQuery = companiesQuery.eq('concept_id', filterByConceptId);
+    }
+
+    const conceptsPromise = conceptsQuery;
+    const companiesPromise = companiesQuery;
 
     let allStores: Store[] = [];
     let from = 0;
     const pageSize = 1000;
     let hasMore = true;
 
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('*')
-        .order('name')
-        .range(from, from + pageSize - 1);
+    const [conceptsData, companiesData] = await Promise.all([conceptsPromise, companiesPromise]);
 
-      if (error) {
-        console.error('Error loading stores:', error);
-        hasMore = false;
-      } else if (data) {
-        allStores = [...allStores, ...data];
-        hasMore = data.length === pageSize;
-        from += pageSize;
-      } else {
-        hasMore = false;
+    if (companiesData.data && companiesData.data.length > 0) {
+      const companyIds = companiesData.data.map(c => c.id);
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('stores')
+          .select('*')
+          .in('company_id', companyIds)
+          .order('name')
+          .range(from, from + pageSize - 1);
+
+        if (error) {
+          console.error('Error loading stores:', error);
+          hasMore = false;
+        } else if (data) {
+          allStores = [...allStores, ...data];
+          hasMore = data.length === pageSize;
+          from += pageSize;
+        } else {
+          hasMore = false;
+        }
       }
     }
-
-    const [conceptsData, companiesData] = await Promise.all([conceptsPromise, companiesPromise]);
 
     console.log('LocationSelector: Loaded stores count:', allStores.length);
     if (conceptsData.data) setConcepts(conceptsData.data);

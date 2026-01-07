@@ -160,12 +160,13 @@ export default function HeaderNavigation({
 
       if (companyData) setCompanies(companyData);
     } else if (!location.concept && !location.company && !location.store) {
-      // At root: If all user IDs are null (operator mode), show all companies
+      // At root: If all user IDs are null (operator mode), show only WAND Demos companies
       // Otherwise show concepts (admin mode)
       if (userConceptId === null && userCompanyId === null && userStoreId === null) {
         const { data: companyData } = await supabase
           .from('companies')
           .select('id, name, concept_id')
+          .eq('concept_id', 209)
           .order('name');
 
         if (companyData) setCompanies(companyData);

@@ -98,10 +98,11 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   const loadCompaniesAndStores = async () => {
     setLoading(true);
 
-    // Load all companies (removed restrictions for QA/collaboration)
+    // Operator role only sees WAND Demos concept (concept_id = 209)
     const { data: companiesData, error: companiesError } = await supabase
       .from('companies')
       .select('id, name, concept_id')
+      .eq('concept_id', 209)
       .order('name');
 
     if (companiesError) {
@@ -112,7 +113,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
     setCompanies(companiesData || []);
 
-    // Load all stores (removed restrictions for QA/collaboration)
+    // Load stores only for WAND Demos companies
     if (companiesData && companiesData.length > 0) {
       const companyIds = companiesData.map(c => c.id);
 
@@ -590,6 +591,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               company: selectedCompany || undefined,
               store: selectedStore || undefined
             }}
+            filterByConceptId={209}
           />
         </Suspense>
       )}
