@@ -29,7 +29,7 @@ async function applyMigration() {
   console.log('\n🚀 Applying CCGS Import to Database\n');
   console.log('=' .repeat(60));
 
-  const sql = fs.readFileSync('./ccgs_import.sql', 'utf8');
+  const sql = fs.readFileSync('./ccgs_import_final.sql', 'utf8');
 
   // Split into three main sections
   const conceptsMatch = sql.match(/CREATE TEMP TABLE temp_ccgs_concepts[\s\S]*?DROP TABLE temp_ccgs_concepts;/);
