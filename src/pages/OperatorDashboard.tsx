@@ -592,6 +592,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               store: selectedStore || undefined
             }}
             filterByConceptId={209}
+            userId={user.id}
           />
         </Suspense>
       )}

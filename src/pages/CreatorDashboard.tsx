@@ -369,6 +369,7 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
               setShowLocationSelector(false);
             }}
             selectedLocation={{}}
+            userId={user.id}
           />
         </Suspense>
       )}

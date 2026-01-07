@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Search, X, Building2, Layers, MapPin, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useStoreAccess } from '../hooks/useStoreAccess';
 
 // Standardized icon mapping for location hierarchy
 const getLocationIcon = (level: 'wand' | 'concept' | 'company' | 'store', className = "w-5 h-5") => {
@@ -51,9 +52,11 @@ interface LocationSelectorProps {
     store?: Store;
   };
   filterByConceptId?: number;
+  userId?: string;
 }
 
-export default function LocationSelector({ onClose, onSelect, selectedLocation, filterByConceptId }: LocationSelectorProps) {
+export default function LocationSelector({ onClose, onSelect, selectedLocation, filterByConceptId, userId }: LocationSelectorProps) {
+  const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId });
   const [searchQuery, setSearchQuery] = useState('');
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -79,60 +82,50 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
     if (selectedLocation?.company) {
       setExpandedCompany(selectedLocation.company.id);
     }
-  }, []);
+  }, [accessibleStores, storesLoading]);
 
   const loadData = async () => {
-    setLoading(true);
-    console.log('LocationSelector: Loading stores with pagination', filterByConceptId ? `(filtered by concept ${filterByConceptId})` : '');
+    if (storesLoading) return;
 
-    let conceptsQuery = supabase.from('concepts').select('*').order('name');
+    setLoading(true);
+    console.log('LocationSelector: Loading data for accessible stores:', accessibleStores.length);
+
+    const accessibleStoreIds = accessibleStores.map(s => s.id);
+    const accessibleCompanyIds = [...new Set(accessibleStores.map(s => s.company_id))];
+    const accessibleConceptIds = [...new Set(accessibleStores.map(s => s.company?.concept_id).filter(Boolean))];
+
+    let conceptsQuery = supabase
+      .from('concepts')
+      .select('*')
+      .in('id', accessibleConceptIds)
+      .order('name');
+
     if (filterByConceptId) {
       conceptsQuery = conceptsQuery.eq('id', filterByConceptId);
     }
 
-    let companiesQuery = supabase.from('companies').select('*').order('name');
+    let companiesQuery = supabase
+      .from('companies')
+      .select('*')
+      .in('id', accessibleCompanyIds)
+      .order('name');
+
     if (filterByConceptId) {
       companiesQuery = companiesQuery.eq('concept_id', filterByConceptId);
     }
 
-    const conceptsPromise = conceptsQuery;
-    const companiesPromise = companiesQuery;
+    const [conceptsData, companiesData] = await Promise.all([conceptsQuery, companiesQuery]);
 
-    let allStores: Store[] = [];
-    let from = 0;
-    const pageSize = 1000;
-    let hasMore = true;
+    const formattedStores: Store[] = accessibleStores.map(s => ({
+      id: s.id,
+      name: s.name,
+      company_id: s.company_id
+    }));
 
-    const [conceptsData, companiesData] = await Promise.all([conceptsPromise, companiesPromise]);
-
-    if (companiesData.data && companiesData.data.length > 0) {
-      const companyIds = companiesData.data.map(c => c.id);
-
-      while (hasMore) {
-        const { data, error } = await supabase
-          .from('stores')
-          .select('*')
-          .in('company_id', companyIds)
-          .order('name')
-          .range(from, from + pageSize - 1);
-
-        if (error) {
-          console.error('Error loading stores:', error);
-          hasMore = false;
-        } else if (data) {
-          allStores = [...allStores, ...data];
-          hasMore = data.length === pageSize;
-          from += pageSize;
-        } else {
-          hasMore = false;
-        }
-      }
-    }
-
-    console.log('LocationSelector: Loaded stores count:', allStores.length);
+    console.log('LocationSelector: Loaded stores count:', formattedStores.length);
     if (conceptsData.data) setConcepts(conceptsData.data);
     if (companiesData.data) setCompanies(companiesData.data);
-    setStores(allStores);
+    setStores(formattedStores);
     setLoading(false);
   };
 

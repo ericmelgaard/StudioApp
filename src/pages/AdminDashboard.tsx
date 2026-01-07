@@ -65,7 +65,7 @@ interface Store {
 
 type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays';
 
-export default function AdminDashboard({ onBack }: AdminDashboardProps) {
+export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay } = useLocation();
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -453,6 +453,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               company: selectedCompany || undefined,
               store: selectedStore || undefined,
             }}
+            userId={user.id}
           />
         </Suspense>
       )}
