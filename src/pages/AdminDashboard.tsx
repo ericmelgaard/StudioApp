@@ -27,7 +27,7 @@ const DevicesDisplaysDashboard = lazy(() => import('./DevicesDisplaysDashboard')
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
 const AddUserModal = lazy(() => import('../components/AddUserModal'));
-const EditUserModal = lazy(() => import('../components/EditUserModal'));
+const UserEdit = lazy(() => import('./UserEdit'));
 
 interface UserProfile {
   id: string;
@@ -64,15 +64,14 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays';
 
 export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay } = useLocation();
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   // Local state synced with global location context
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
@@ -382,8 +381,22 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             <UserManagement
               onAddUser={() => setShowAddUserModal(true)}
               onEditUser={(user) => {
-                setSelectedUser(user);
-                setShowEditUserModal(true);
+                setEditingUserId(user.id);
+                setCurrentView('edit-user');
+              }}
+            />
+          )}
+          {currentView === 'edit-user' && editingUserId && (
+            <UserEdit
+              userId={editingUserId}
+              onBack={() => {
+                setCurrentView('users');
+                setEditingUserId(null);
+              }}
+              onSuccess={() => {
+                setCurrentView('users');
+                setEditingUserId(null);
+                setToastMessage('User updated successfully');
               }}
             />
           )}
@@ -469,24 +482,6 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             onSuccess={() => {
               setShowAddUserModal(false);
               setToastMessage('User created successfully');
-            }}
-          />
-        </Suspense>
-      )}
-
-      {/* Edit User Modal */}
-      {showEditUserModal && selectedUser && (
-        <Suspense fallback={null}>
-          <EditUserModal
-            user={selectedUser}
-            onClose={() => {
-              setShowEditUserModal(false);
-              setSelectedUser(null);
-            }}
-            onSuccess={() => {
-              setShowEditUserModal(false);
-              setSelectedUser(null);
-              setToastMessage('User updated successfully');
             }}
           />
         </Suspense>
