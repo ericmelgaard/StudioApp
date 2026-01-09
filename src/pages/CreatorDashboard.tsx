@@ -332,6 +332,7 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
           </div>
           <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
             <HeaderNavigation
+              userId={user.id}
               userConceptId={user.concept_id}
               userCompanyId={user.company_id}
               userStoreId={user.store_id}

@@ -140,6 +140,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             </div>
             <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
               <HeaderNavigation
+                userId={user.id}
                 userConceptId={null}
                 userCompanyId={null}
                 userStoreId={null}
