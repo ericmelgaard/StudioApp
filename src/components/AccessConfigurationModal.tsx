@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, Loader2 } from 'lucide-react';
+import { X, Save, Loader2, AlertCircle } from 'lucide-react';
 import { useAccessConfiguration } from '../hooks/useAccessConfiguration';
 import { TreeBrowser } from './AccessConfiguration/TreeBrowser';
 import { DetailView } from './AccessConfiguration/DetailView';
@@ -37,6 +37,7 @@ export function AccessConfigurationModal({
   } = useAccessConfiguration(userId);
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<{
     type: 'concept' | 'company' | 'store' | null;
     id: number | null;
@@ -48,14 +49,18 @@ export function AccessConfigurationModal({
     if (!userId) return;
 
     setSaving(true);
+    setError(null);
     try {
       const result = await saveAccess(userId);
       if (result.success) {
         await onSave(selection);
         onClose();
+      } else {
+        setError(result.error?.message || 'Failed to save access configuration');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving access:', error);
+      setError(error.message || 'Failed to save access configuration');
     } finally {
       setSaving(false);
     }
@@ -145,31 +150,44 @@ export function AccessConfigurationModal({
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={handleCancel}
-            disabled={saving}
-            className="px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || getEffectiveStoreCount() === 0}
-            className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Access Configuration
-              </>
-            )}
-          </button>
+        <div className="border-t border-gray-200 bg-gray-50">
+          {error && (
+            <div className="px-6 pt-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-900">Failed to save</p>
+                  <p className="text-sm text-red-700 mt-0.5">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-3 px-6 py-4">
+            <button
+              onClick={handleCancel}
+              disabled={saving}
+              className="px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || getEffectiveStoreCount() === 0}
+              className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Access Configuration
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

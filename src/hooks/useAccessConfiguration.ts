@@ -273,10 +273,25 @@ export function useAccessConfiguration(userId?: string) {
 
   const saveAccess = async (uid: string) => {
     try {
-      await supabase.from('user_concept_access').delete().eq('user_id', uid);
-      await supabase.from('user_company_access').delete().eq('user_id', uid);
-      await supabase.from('user_store_access').delete().eq('user_id', uid);
+      console.log('Saving access for user:', uid, 'Selection:', {
+        concepts: Array.from(selection.concepts),
+        companies: Array.from(selection.companies),
+        stores: Array.from(selection.stores)
+      });
 
+      // Delete existing access
+      const { error: deleteConceptError } = await supabase.from('user_concept_access').delete().eq('user_id', uid);
+      if (deleteConceptError) throw deleteConceptError;
+
+      const { error: deleteCompanyError } = await supabase.from('user_company_access').delete().eq('user_id', uid);
+      if (deleteCompanyError) throw deleteCompanyError;
+
+      const { error: deleteStoreError } = await supabase.from('user_store_access').delete().eq('user_id', uid);
+      if (deleteStoreError) throw deleteStoreError;
+
+      console.log('Deleted existing access records');
+
+      // Insert new access
       const conceptInserts = Array.from(selection.concepts).map(concept_id => ({
         user_id: uid,
         concept_id
@@ -293,15 +308,24 @@ export function useAccessConfiguration(userId?: string) {
       }));
 
       if (conceptInserts.length > 0) {
-        await supabase.from('user_concept_access').insert(conceptInserts);
-      }
-      if (companyInserts.length > 0) {
-        await supabase.from('user_company_access').insert(companyInserts);
-      }
-      if (storeInserts.length > 0) {
-        await supabase.from('user_store_access').insert(storeInserts);
+        console.log('Inserting concept access:', conceptInserts);
+        const { error } = await supabase.from('user_concept_access').insert(conceptInserts);
+        if (error) throw error;
       }
 
+      if (companyInserts.length > 0) {
+        console.log('Inserting company access:', companyInserts);
+        const { error } = await supabase.from('user_company_access').insert(companyInserts);
+        if (error) throw error;
+      }
+
+      if (storeInserts.length > 0) {
+        console.log('Inserting store access:', storeInserts);
+        const { error } = await supabase.from('user_store_access').insert(storeInserts);
+        if (error) throw error;
+      }
+
+      console.log('Access saved successfully');
       return { success: true };
     } catch (error) {
       console.error('Error saving access:', error);
