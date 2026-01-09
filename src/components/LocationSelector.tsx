@@ -130,7 +130,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
       setIsMultiStoreUser((userAccess && userAccess.length > 0) || false);
     }
 
-    // For admin users, load all concepts AND companies upfront
+    // For admin users, load all concepts, companies, AND stores upfront
     if (isAdmin) {
       let conceptsQuery = supabase
         .from('concepts')
@@ -142,16 +142,33 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         .select('*')
         .order('name');
 
+      let storesQuery = supabase
+        .from('stores')
+        .select('id, name, company_id')
+        .order('name');
+
       if (filterByConceptId) {
         conceptsQuery = conceptsQuery.eq('id', filterByConceptId);
         companiesQuery = companiesQuery.eq('concept_id', filterByConceptId);
+        // For stores, we need to filter by companies that match the concept
+        if (filterByConceptId) {
+          const { data: conceptCompanies } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('concept_id', filterByConceptId);
+
+          if (conceptCompanies && conceptCompanies.length > 0) {
+            const companyIds = conceptCompanies.map(c => c.id);
+            storesQuery = storesQuery.in('company_id', companyIds);
+          }
+        }
       }
 
-      const [conceptsData, companiesData] = await Promise.all([conceptsQuery, companiesQuery]);
+      const [conceptsData, companiesData, storesData] = await Promise.all([conceptsQuery, companiesQuery, storesQuery]);
 
       if (conceptsData.data) setConcepts(conceptsData.data);
       if (companiesData.data) setCompanies(companiesData.data);
-      setStores([]);
+      if (storesData.data) setStores(storesData.data);
       setLoading(false);
       return;
     }
@@ -257,8 +274,12 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
       // Auto-expand all companies
       setExpandedCompanies(new Set(companyIds));
 
-      // Load stores for all companies in parallel
-      if (companyIds.length > 0) {
+      // Only load stores if they haven't been loaded yet (for backwards compatibility)
+      const hasStoresForCompanies = companyIds.some(companyId =>
+        stores.some(s => s.company_id === companyId)
+      );
+
+      if (companyIds.length > 0 && !hasStoresForCompanies) {
         const storePromises = companyIds.map(companyId =>
           supabase
             .from('stores')
@@ -295,8 +316,9 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
       return newSet;
     });
 
-    // Load stores if expanding and user is admin
-    if (!isExpanded && userRole === 'admin') {
+    // Load stores if expanding, user is admin, and stores not already loaded
+    const hasStores = stores.some(s => s.company_id === companyId);
+    if (!isExpanded && userRole === 'admin' && !hasStores) {
       await loadStoresForCompany(companyId);
     }
   };
