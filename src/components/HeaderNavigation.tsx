@@ -115,45 +115,70 @@ export default function HeaderNavigation({
     setLoading(true);
 
     // Quick nav shows sibling locations based on current context
-    if (accessibleStores.length > 0) {
-      let filteredStores = accessibleStores;
+    // Load from database so you can see all siblings of your current location
 
-      // Filter based on current location
-      if (location.store) {
-        // Show siblings: other stores in the same company
-        filteredStores = accessibleStores.filter(
-          store => store.company_id === location.company?.id
-        );
-      } else if (location.company) {
-        // Show stores in this company
-        filteredStores = accessibleStores.filter(
-          store => store.company_id === location.company?.id
-        );
-      } else if (location.concept) {
-        // Show stores in companies under this concept
-        filteredStores = accessibleStores.filter(
-          store => store.company?.concept_id === location.concept?.id
-        );
-      }
-      // At root level, show nothing or could show recent stores
-
-      const storeData = filteredStores.map(store => ({
-        id: store.id,
-        name: store.name,
-        company_id: store.company_id,
-      }));
-      setStores(storeData);
-
-      // Load unique companies for these stores for grouping
-      const uniqueCompanyIds = [...new Set(storeData.map(s => s.company_id).filter(Boolean))];
-      if (uniqueCompanyIds.length > 0) {
-        const { data: companiesData } = await supabase
-          .from('companies')
-          .select('id, name, concept_id')
-          .in('id', uniqueCompanyIds)
+    if (location.store || location.company) {
+      // Show siblings: other stores in the same company
+      const companyId = location.company?.id;
+      if (companyId) {
+        const { data: storesData } = await supabase
+          .from('stores')
+          .select('id, name, company_id')
+          .eq('company_id', companyId)
           .order('name');
 
-        if (companiesData) setCompanies(companiesData);
+        if (storesData) {
+          setStores(storesData);
+
+          const { data: companiesData } = await supabase
+            .from('companies')
+            .select('id, name, concept_id')
+            .eq('id', companyId)
+            .maybeSingle();
+
+          if (companiesData) setCompanies([companiesData]);
+        }
+      }
+    } else if (location.concept) {
+      // Show stores in companies under this concept
+      const { data: companiesData } = await supabase
+        .from('companies')
+        .select('id, name, concept_id')
+        .eq('concept_id', location.concept.id)
+        .order('name');
+
+      if (companiesData && companiesData.length > 0) {
+        setCompanies(companiesData);
+
+        const companyIds = companiesData.map(c => c.id);
+        const { data: storesData } = await supabase
+          .from('stores')
+          .select('id, name, company_id')
+          .in('company_id', companyIds)
+          .order('name');
+
+        if (storesData) setStores(storesData);
+      }
+    } else {
+      // At root level, show your accessible stores for quick access
+      if (accessibleStores.length > 0) {
+        const storeData = accessibleStores.map(store => ({
+          id: store.id,
+          name: store.name,
+          company_id: store.company_id,
+        }));
+        setStores(storeData);
+
+        const uniqueCompanyIds = [...new Set(storeData.map(s => s.company_id).filter(Boolean))];
+        if (uniqueCompanyIds.length > 0) {
+          const { data: companiesData } = await supabase
+            .from('companies')
+            .select('id, name, concept_id')
+            .in('id', uniqueCompanyIds)
+            .order('name');
+
+          if (companiesData) setCompanies(companiesData);
+        }
       }
     }
 
