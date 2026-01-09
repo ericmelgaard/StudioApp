@@ -57,7 +57,6 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showRoleWarning, setShowRoleWarning] = useState(false);
-  const [showAccessWarning, setShowAccessWarning] = useState(false);
   const [showAccessConfigModal, setShowAccessConfigModal] = useState(false);
   const [modalKey, setModalKey] = useState(0);
 
@@ -80,25 +79,8 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
       formData.role !== user.role ||
       formData.status !== user.status;
 
-    const accessChanged =
-      accessSelection.concepts.size !== initialAccessSelection.concepts.size ||
-      accessSelection.companies.size !== initialAccessSelection.companies.size ||
-      accessSelection.stores.size !== initialAccessSelection.stores.size ||
-      !areSetsEqual(accessSelection.concepts, initialAccessSelection.concepts) ||
-      !areSetsEqual(accessSelection.companies, initialAccessSelection.companies) ||
-      !areSetsEqual(accessSelection.stores, initialAccessSelection.stores);
-
-    setHasChanges(formChanged || accessChanged);
-    setShowAccessWarning(accessChanged);
-  }, [formData, accessSelection, user, initialAccessSelection]);
-
-  const areSetsEqual = (set1: Set<number>, set2: Set<number>) => {
-    if (set1.size !== set2.size) return false;
-    for (const item of set1) {
-      if (!set2.has(item)) return false;
-    }
-    return true;
-  };
+    setHasChanges(formChanged);
+  }, [formData, user]);
 
   const loadUserData = async () => {
     setLoading(true);
@@ -188,43 +170,6 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
         .eq('id', user.id);
 
       if (error) throw error;
-
-      // Update access configuration if not admin
-      if (formData.role !== 'admin') {
-        await supabase.from('user_concept_access').delete().eq('user_id', user.id);
-        await supabase.from('user_company_access').delete().eq('user_id', user.id);
-        await supabase.from('user_store_access').delete().eq('user_id', user.id);
-
-        const conceptInserts = Array.from(accessSelection.concepts).map(concept_id => ({
-          user_id: user.id,
-          concept_id
-        }));
-
-        const companyInserts = Array.from(accessSelection.companies).map(company_id => ({
-          user_id: user.id,
-          company_id
-        }));
-
-        const storeInserts = Array.from(accessSelection.stores).map(store_id => ({
-          user_id: user.id,
-          store_id
-        }));
-
-        if (conceptInserts.length > 0) {
-          const { error } = await supabase.from('user_concept_access').insert(conceptInserts);
-          if (error) throw error;
-        }
-
-        if (companyInserts.length > 0) {
-          const { error } = await supabase.from('user_company_access').insert(companyInserts);
-          if (error) throw error;
-        }
-
-        if (storeInserts.length > 0) {
-          const { error } = await supabase.from('user_store_access').insert(storeInserts);
-          if (error) throw error;
-        }
-      }
 
       onSuccess();
     } catch (error: any) {
@@ -402,19 +347,14 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
                 </div>
               )}
 
-              {(showRoleWarning || showAccessWarning) && (
+              {showRoleWarning && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3">
                   <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-yellow-900 mb-1">Warning: Permission Changes</p>
-                    <ul className="text-sm text-yellow-800 space-y-1">
-                      {showRoleWarning && (
-                        <li>• Changing the user's role will modify their system permissions</li>
-                      )}
-                      {showAccessWarning && (
-                        <li>• Changing the access configuration will affect which data they can access</li>
-                      )}
-                    </ul>
+                    <p className="font-medium text-yellow-900 mb-1">Warning: Role Change</p>
+                    <p className="text-sm text-yellow-800">
+                      Changing the user's role will modify their system permissions
+                    </p>
                   </div>
                 </div>
               )}
@@ -523,11 +463,20 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
                           <h3 className="text-sm font-semibold text-slate-900">Access Summary</h3>
                           {(accessSelection.concepts.size + accessSelection.companies.size + accessSelection.stores.size > 0) && (
                             <button
-                              onClick={() => setAccessSelection({
-                                concepts: new Set(),
-                                companies: new Set(),
-                                stores: new Set()
-                              })}
+                              onClick={async () => {
+                                const emptySelection = {
+                                  concepts: new Set(),
+                                  companies: new Set(),
+                                  stores: new Set()
+                                };
+
+                                await supabase.from('user_concept_access').delete().eq('user_id', userId);
+                                await supabase.from('user_company_access').delete().eq('user_id', userId);
+                                await supabase.from('user_store_access').delete().eq('user_id', userId);
+
+                                setAccessSelection(emptySelection);
+                                setInitialAccessSelection(emptySelection);
+                              }}
                               className="text-xs text-red-600 hover:text-red-700 font-medium"
                             >
                               Clear All
@@ -661,7 +610,7 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
         userName={formData.displayName}
         onSave={async (selection) => {
           setAccessSelection(selection);
-          setShowAccessWarning(true);
+          setInitialAccessSelection(selection);
           setShowAccessConfigModal(false);
         }}
       />
