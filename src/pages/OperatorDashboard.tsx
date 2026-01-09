@@ -223,30 +223,32 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                 />
               </Suspense>
             </div>
-            <div className="hidden md:flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <a
                 href="https://shop.wanddigital.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
                 title="WAND Digital Shop"
               >
                 <ShoppingCart className="w-5 h-5" />
               </a>
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Help"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Documentation"
-              >
-                <FileText className="w-5 h-5" />
-              </button>
               <NotificationPanel />
-              <UserMenu role="operator" user={user} onBackToRoles={onBack} />
+              <div className="hidden md:flex items-center gap-1">
+                <button
+                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Help"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </button>
+                <button
+                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Documentation"
+                >
+                  <FileText className="w-5 h-5" />
+                </button>
+                <UserMenu role="operator" user={user} onBackToRoles={onBack} />
+              </div>
             </div>
           </header>
 
@@ -323,30 +325,32 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               />
             </Suspense>
           </div>
-          <div className="hidden md:flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <a
               href="https://shop.wanddigital.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
               title="WAND Digital Shop"
             >
               <ShoppingCart className="w-5 h-5" />
             </a>
-            <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Help"
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
-            <button
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Documentation"
-            >
-              <FileText className="w-5 h-5" />
-            </button>
             <NotificationPanel />
-            <UserMenu role="operator" user={user} onBackToRoles={onBack} />
+            <div className="hidden md:flex items-center gap-1">
+              <button
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Help"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </button>
+              <button
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Documentation"
+              >
+                <FileText className="w-5 h-5" />
+              </button>
+              <UserMenu role="operator" user={user} onBackToRoles={onBack} />
+            </div>
           </div>
         </header>
 
