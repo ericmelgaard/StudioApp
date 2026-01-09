@@ -28,8 +28,6 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
   const loadAccessibleStores = async () => {
     setLoading(true);
     try {
-      console.log('[useStoreAccess] Loading stores for userId:', userId);
-
       if (!userId) {
         // No user ID provided - show default demo stores
         const { data: stores, error } = await supabase
@@ -49,7 +47,6 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
 
         if (error) throw error;
 
-        console.log('[useStoreAccess] No userId - loaded default demo stores:', stores?.length);
         setAccessibleStores(
           stores?.map(store => ({
             ...store,
@@ -64,10 +61,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
           .eq('id', userId)
           .maybeSingle();
 
-        console.log('[useStoreAccess] Loaded profile:', profile);
-
         if (!profile) {
-          console.log('[useStoreAccess] No profile found');
           setAccessibleStores([]);
           return;
         }
@@ -101,21 +95,13 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
         }
 
         // Priority 2: Check user_store_access table (multi-store operators)
-        const { data: accessData, error: accessError } = await supabase
+        const { data: accessData } = await supabase
           .from('user_store_access')
           .select('store_id')
           .eq('user_id', userId);
 
-        console.log('[useStoreAccess] user_store_access query result:', {
-          accessData,
-          accessError,
-          count: accessData?.length
-        });
-
         if (accessData && accessData.length > 0) {
           const storeIds = accessData.map(a => a.store_id);
-          console.log('[useStoreAccess] Loading stores with IDs:', storeIds);
-
           const { data: stores, error } = await supabase
             .from('stores')
             .select(`
@@ -132,8 +118,6 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
             .order('name');
 
           if (error) throw error;
-
-          console.log('[useStoreAccess] Loaded stores from user_store_access:', stores?.length);
 
           setAccessibleStores(
             stores?.map(store => ({
