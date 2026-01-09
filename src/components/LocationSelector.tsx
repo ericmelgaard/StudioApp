@@ -458,6 +458,16 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         </div>
 
         <div className="p-4 border-b border-slate-200 space-y-3">
+          {/* Return to WAND Digital link for admins when in a context */}
+          {userRole === 'admin' && (viewContext?.concept || viewContext?.company) && (
+            <button
+              onClick={() => onSelect({})}
+              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              ← Return to WAND Digital
+            </button>
+          )}
+
           {/* Show navigation breadcrumb based on viewContext */}
           {(viewContext?.concept || viewContext?.company) && (
             <div className="flex items-center gap-2 text-sm">
