@@ -131,6 +131,7 @@ export default function HeaderNavigation({
     setLoading(true);
 
     // If userId is provided, use accessible stores from useStoreAccess hook
+    // This handles both operators (multi-store via user_store_access) and admins (all stores)
     if (userId && accessibleStores.length > 0) {
       const storeData = accessibleStores.map(store => ({
         id: store.id,

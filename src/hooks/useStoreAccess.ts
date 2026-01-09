@@ -181,8 +181,44 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
               setAccessibleStores([]);
             }
           } else {
-            // Admin or no specific access
-            setAccessibleStores([]);
+            // Check if user is admin - admins get all stores
+            if (profile) {
+              const { data: userProfile } = await supabase
+                .from('user_profiles')
+                .select('role')
+                .eq('id', userId)
+                .maybeSingle();
+
+              if (userProfile?.role === 'admin') {
+                // Admin gets all stores
+                const { data: stores, error } = await supabase
+                  .from('stores')
+                  .select(`
+                    id,
+                    name,
+                    company_id,
+                    companies (
+                      id,
+                      name,
+                      concept_id
+                    )
+                  `)
+                  .order('name');
+
+                if (error) throw error;
+
+                setAccessibleStores(
+                  stores?.map(store => ({
+                    ...store,
+                    company: Array.isArray(store.companies) ? store.companies[0] : store.companies
+                  })) || []
+                );
+              } else {
+                setAccessibleStores([]);
+              }
+            } else {
+              setAccessibleStores([]);
+            }
           }
         }
       }

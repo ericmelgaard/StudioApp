@@ -61,6 +61,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [isMultiStoreUser, setIsMultiStoreUser] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
   const [expandedCompany, setExpandedCompany] = useState<number | null>(null);
@@ -89,6 +91,23 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
 
     setLoading(true);
     console.log('LocationSelector: Loading data for accessible stores:', accessibleStores.length);
+
+    // Check if user has multi-store access via user_store_access table
+    if (userId) {
+      const { data: userAccess } = await supabase
+        .from('user_store_access')
+        .select('store_id')
+        .eq('user_id', userId);
+
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      setUserRole(profile?.role || null);
+      setIsMultiStoreUser((userAccess && userAccess.length > 0) || false);
+    }
 
     const accessibleStoreIds = accessibleStores.map(s => s.id);
     const accessibleCompanyIds = [...new Set(accessibleStores.map(s => s.company_id))];
@@ -198,6 +217,72 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
           <div className="flex items-center gap-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             <span className="text-slate-700">Loading locations...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For multi-store users (operators), show simplified flat view
+  if (isMultiStoreUser && userRole !== 'admin') {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200]">
+        <div className="relative z-[201] bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900">Select Store</h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-500" />
+            </button>
+          </div>
+
+          <div className="p-4 border-b border-slate-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search your stores..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-2">
+              {accessibleStores
+                .filter(store => !searchQuery || store.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map(store => {
+                  const concept = concepts.find(c => c.id === store.company?.concept_id);
+                  const company = companies.find(c => c.id === store.company_id);
+
+                  return (
+                    <button
+                      key={store.id}
+                      onClick={() => {
+                        if (concept && company) {
+                          handleSelectStore(store, company, concept);
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors text-left"
+                    >
+                      {getLocationIcon('store', 'w-5 h-5')}
+                      <div className="flex-1">
+                        <div className="font-medium text-slate-900">{store.name}</div>
+                        {company && (
+                          <div className="text-xs text-slate-500">{company.name}</div>
+                        )}
+                      </div>
+                      {selectedLocation?.store?.id === store.id && (
+                        <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
           </div>
         </div>
       </div>
