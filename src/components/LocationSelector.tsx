@@ -112,21 +112,27 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
       setIsMultiStoreUser((userAccess && userAccess.length > 0) || false);
     }
 
-    // For admin users, load all concepts directly without relying on accessibleStores
+    // For admin users, load all concepts AND companies upfront
     if (isAdmin) {
       let conceptsQuery = supabase
         .from('concepts')
         .select('*')
         .order('name');
 
+      let companiesQuery = supabase
+        .from('companies')
+        .select('*')
+        .order('name');
+
       if (filterByConceptId) {
         conceptsQuery = conceptsQuery.eq('id', filterByConceptId);
+        companiesQuery = companiesQuery.eq('concept_id', filterByConceptId);
       }
 
-      const { data: conceptsData } = await conceptsQuery;
+      const [conceptsData, companiesData] = await Promise.all([conceptsQuery, companiesQuery]);
 
-      if (conceptsData) setConcepts(conceptsData);
-      setCompanies([]);
+      if (conceptsData.data) setConcepts(conceptsData.data);
+      if (companiesData.data) setCompanies(companiesData.data);
       setStores([]);
       setLoading(false);
       return;
@@ -224,11 +230,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const handleExpandConcept = async (conceptId: number) => {
     const isExpanded = expandedConcept === conceptId;
     setExpandedConcept(isExpanded ? null : conceptId);
-
-    // Load companies if expanding and user is admin
-    if (!isExpanded && userRole === 'admin') {
-      await loadCompaniesForConcept(conceptId);
-    }
+    // Companies are already loaded for admin users, no need to fetch
   };
 
   const handleExpandCompany = async (companyId: number) => {
@@ -498,13 +500,10 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
 
                     {isExpanded && (
                       <div className="pl-8 pr-3 pb-2 space-y-1">
-                        {loadingCompanies.has(concept.id) && (
-                          <div className="p-2 text-sm text-slate-500 flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                            Loading companies...
-                          </div>
-                        )}
-                        {conceptCompanies.map((company) => {
+                        {conceptCompanies.length === 0 ? (
+                          <div className="p-2 text-sm text-slate-500">No companies found</div>
+                        ) : (
+                          conceptCompanies.map((company) => {
                           const companyStores = getStoresForCompany(company.id);
                           const isCompanyExpanded = expandedCompany === company.id;
 
@@ -553,7 +552,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                               )}
                             </div>
                           );
-                        })}
+                        })
+                        )}
                       </div>
                     )}
                   </div>
