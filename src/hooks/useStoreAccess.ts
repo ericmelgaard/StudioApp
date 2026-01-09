@@ -66,30 +66,10 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
           return;
         }
 
-        // Priority 1: Admin role gets all stores
+        // Priority 1: Admin role - return empty array
+        // Admin users should load locations hierarchically via LocationSelector
         if (profile.role === 'admin') {
-          const { data: stores, error } = await supabase
-            .from('stores')
-            .select(`
-              id,
-              name,
-              company_id,
-              companies (
-                id,
-                name,
-                concept_id
-              )
-            `)
-            .order('name');
-
-          if (error) throw error;
-
-          setAccessibleStores(
-            stores?.map(store => ({
-              ...store,
-              company: Array.isArray(store.companies) ? store.companies[0] : store.companies
-            })) || []
-          );
+          setAccessibleStores([]);
           return;
         }
 

@@ -74,6 +74,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   }>({});
 
   const [loading, setLoading] = useState(true);
+  const [loadingCompanies, setLoadingCompanies] = useState<Set<number>>(new Set());
+  const [loadingStores, setLoadingStores] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadData();
@@ -92,6 +94,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
     setLoading(true);
 
     // Check if user has multi-store access via user_store_access table
+    let isAdmin = false;
     if (userId) {
       const { data: userAccess } = await supabase
         .from('user_store_access')
@@ -104,10 +107,32 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         .eq('id', userId)
         .maybeSingle();
 
+      isAdmin = profile?.role === 'admin';
       setUserRole(profile?.role || null);
       setIsMultiStoreUser((userAccess && userAccess.length > 0) || false);
     }
 
+    // For admin users, load all concepts directly without relying on accessibleStores
+    if (isAdmin) {
+      let conceptsQuery = supabase
+        .from('concepts')
+        .select('*')
+        .order('name');
+
+      if (filterByConceptId) {
+        conceptsQuery = conceptsQuery.eq('id', filterByConceptId);
+      }
+
+      const { data: conceptsData } = await conceptsQuery;
+
+      if (conceptsData) setConcepts(conceptsData);
+      setCompanies([]);
+      setStores([]);
+      setLoading(false);
+      return;
+    }
+
+    // For non-admin users, derive locations from accessibleStores
     const accessibleStoreIds = accessibleStores.map(s => s.id);
     const accessibleCompanyIds = [...new Set(accessibleStores.map(s => s.company_id).filter(id => id !== null))];
     const accessibleConceptIds = [...new Set(accessibleStores.map(s => s.company?.concept_id).filter(Boolean))];
@@ -144,6 +169,76 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
     if (companiesData.data) setCompanies(companiesData.data);
     setStores(formattedStores);
     setLoading(false);
+  };
+
+  const loadCompaniesForConcept = async (conceptId: number) => {
+    if (loadingCompanies.has(conceptId)) return;
+
+    setLoadingCompanies(prev => new Set(prev).add(conceptId));
+
+    const { data: companiesData } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('concept_id', conceptId)
+      .order('name');
+
+    if (companiesData) {
+      setCompanies(prev => {
+        const existing = prev.filter(c => c.concept_id !== conceptId);
+        return [...existing, ...companiesData];
+      });
+    }
+
+    setLoadingCompanies(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(conceptId);
+      return newSet;
+    });
+  };
+
+  const loadStoresForCompany = async (companyId: number) => {
+    if (loadingStores.has(companyId)) return;
+
+    setLoadingStores(prev => new Set(prev).add(companyId));
+
+    const { data: storesData } = await supabase
+      .from('stores')
+      .select('id, name, company_id')
+      .eq('company_id', companyId)
+      .order('name');
+
+    if (storesData) {
+      setStores(prev => {
+        const existing = prev.filter(s => s.company_id !== companyId);
+        return [...existing, ...storesData];
+      });
+    }
+
+    setLoadingStores(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(companyId);
+      return newSet;
+    });
+  };
+
+  const handleExpandConcept = async (conceptId: number) => {
+    const isExpanded = expandedConcept === conceptId;
+    setExpandedConcept(isExpanded ? null : conceptId);
+
+    // Load companies if expanding and user is admin
+    if (!isExpanded && userRole === 'admin') {
+      await loadCompaniesForConcept(conceptId);
+    }
+  };
+
+  const handleExpandCompany = async (companyId: number) => {
+    const isExpanded = expandedCompany === companyId;
+    setExpandedCompany(isExpanded ? null : companyId);
+
+    // Load stores if expanding and user is admin
+    if (!isExpanded && userRole === 'admin') {
+      await loadStoresForCompany(companyId);
+    }
   };
 
   const searchLower = searchQuery.toLowerCase();
@@ -382,10 +477,10 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                   <div key={concept.id} className="border border-slate-200 rounded-lg">
                     <div className="flex items-center gap-2 p-3 hover:bg-slate-50">
                       <button
-                        onClick={() => setExpandedConcept(isExpanded ? null : concept.id)}
+                        onClick={() => handleExpandConcept(concept.id)}
                         className="p-1 hover:bg-slate-200 rounded transition-colors"
                       >
-                        {conceptCompanies.length > 0 && (
+                        {(conceptCompanies.length > 0 || userRole === 'admin') && (
                           isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
                         )}
                       </button>
@@ -396,11 +491,19 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                       >
                         {concept.name}
                       </button>
-                      <span className="text-sm text-slate-500">{conceptCompanies.length} companies</span>
+                      {conceptCompanies.length > 0 && (
+                        <span className="text-sm text-slate-500">{conceptCompanies.length} companies</span>
+                      )}
                     </div>
 
-                    {isExpanded && conceptCompanies.length > 0 && (
+                    {isExpanded && (
                       <div className="pl-8 pr-3 pb-2 space-y-1">
+                        {loadingCompanies.has(concept.id) && (
+                          <div className="p-2 text-sm text-slate-500 flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            Loading companies...
+                          </div>
+                        )}
                         {conceptCompanies.map((company) => {
                           const companyStores = getStoresForCompany(company.id);
                           const isCompanyExpanded = expandedCompany === company.id;
@@ -409,10 +512,10 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                             <div key={company.id} className="border-l-2 border-slate-200 pl-2">
                               <div className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded">
                                 <button
-                                  onClick={() => setExpandedCompany(isCompanyExpanded ? null : company.id)}
+                                  onClick={() => handleExpandCompany(company.id)}
                                   className="p-1 hover:bg-slate-200 rounded transition-colors"
                                 >
-                                  {companyStores.length > 0 && (
+                                  {(companyStores.length > 0 || userRole === 'admin') && (
                                     isCompanyExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
                                   )}
                                 </button>
@@ -423,11 +526,19 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                                 >
                                   {company.name}
                                 </button>
-                                <span className="text-xs text-slate-500">{companyStores.length} stores</span>
+                                {companyStores.length > 0 && (
+                                  <span className="text-xs text-slate-500">{companyStores.length} stores</span>
+                                )}
                               </div>
 
-                              {isCompanyExpanded && companyStores.length > 0 && (
+                              {isCompanyExpanded && (
                                 <div className="pl-6 space-y-1">
+                                  {loadingStores.has(company.id) && (
+                                    <div className="p-2 text-xs text-slate-500 flex items-center gap-2">
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                                      Loading stores...
+                                    </div>
+                                  )}
                                   {companyStores.map((store) => (
                                     <button
                                       key={store.id}
