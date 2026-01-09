@@ -62,19 +62,44 @@ export function useAccessConfiguration(userId?: string) {
 
   const loadHierarchy = async () => {
     try {
-      const [conceptsRes, companiesRes, storesRes] = await Promise.all([
-        supabase.from('concepts').select('*').order('name'),
-        supabase.from('companies').select('*').order('name'),
-        supabase.from('stores').select('*').order('name')
+      const fetchAllRecords = async (table: string, orderBy: string = 'name') => {
+        const pageSize = 1000;
+        let allData: any[] = [];
+        let page = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .order(orderBy)
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            allData = [...allData, ...data];
+            hasMore = data.length === pageSize;
+            page++;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        return allData;
+      };
+
+      const [concepts, companies, stores] = await Promise.all([
+        fetchAllRecords('concepts'),
+        fetchAllRecords('companies'),
+        fetchAllRecords('stores')
       ]);
 
-      if (conceptsRes.data && companiesRes.data && storesRes.data) {
-        setHierarchy({
-          concepts: conceptsRes.data,
-          companies: companiesRes.data,
-          stores: storesRes.data
-        });
-      }
+      setHierarchy({
+        concepts,
+        companies,
+        stores
+      });
     } catch (error) {
       console.error('Error loading hierarchy:', error);
     } finally {
@@ -84,16 +109,43 @@ export function useAccessConfiguration(userId?: string) {
 
   const loadUserAccess = async (uid: string) => {
     try {
+      const fetchAllAccessRecords = async (table: string, column: string) => {
+        const pageSize = 1000;
+        let allData: any[] = [];
+        let page = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from(table)
+            .select(column)
+            .eq('user_id', uid)
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            allData = [...allData, ...data];
+            hasMore = data.length === pageSize;
+            page++;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        return allData;
+      };
+
       const [conceptAccess, companyAccess, storeAccess] = await Promise.all([
-        supabase.from('user_concept_access').select('concept_id').eq('user_id', uid),
-        supabase.from('user_company_access').select('company_id').eq('user_id', uid),
-        supabase.from('user_store_access').select('store_id').eq('user_id', uid)
+        fetchAllAccessRecords('user_concept_access', 'concept_id'),
+        fetchAllAccessRecords('user_company_access', 'company_id'),
+        fetchAllAccessRecords('user_store_access', 'store_id')
       ]);
 
       setSelection({
-        concepts: new Set(conceptAccess.data?.map(a => a.concept_id) || []),
-        companies: new Set(companyAccess.data?.map(a => a.company_id) || []),
-        stores: new Set(storeAccess.data?.map(a => a.store_id) || [])
+        concepts: new Set(conceptAccess.map(a => a.concept_id)),
+        companies: new Set(companyAccess.map(a => a.company_id)),
+        stores: new Set(storeAccess.map(a => a.store_id))
       });
     } catch (error) {
       console.error('Error loading user access:', error);
