@@ -78,16 +78,20 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const [loadingStores, setLoadingStores] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    loadData();
-    setViewContext(selectedLocation || {});
-    if (selectedLocation?.concept) {
-      setExpandedConcept(selectedLocation.concept.id);
-    }
-    if (selectedLocation?.company) {
-      setExpandedCompanies(new Set([selectedLocation.company.id]));
-      // Auto-load stores for the current company
-      loadStoresForCompany(selectedLocation.company.id);
-    }
+    const initializeData = async () => {
+      await loadData();
+      setViewContext(selectedLocation || {});
+      if (selectedLocation?.concept) {
+        setExpandedConcept(selectedLocation.concept.id);
+      }
+      if (selectedLocation?.company) {
+        setExpandedCompanies(new Set([selectedLocation.company.id]));
+        // Auto-load stores for the current company after data is loaded
+        await loadStoresForCompany(selectedLocation.company.id);
+      }
+    };
+
+    initializeData();
   }, [accessibleStores, storesLoading]);
 
   const loadData = async () => {
