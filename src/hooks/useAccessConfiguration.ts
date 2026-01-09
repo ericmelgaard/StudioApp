@@ -65,35 +65,52 @@ export function useAccessConfiguration(userId?: string) {
       const fetchAllRecords = async (table: string, orderBy: string = 'name') => {
         const pageSize = 1000;
         let allData: any[] = [];
-        let page = 0;
-        let hasMore = true;
+        let from = 0;
 
-        while (hasMore) {
-          const { data, error } = await supabase
+        while (true) {
+          const to = from + pageSize - 1;
+          const { data, error, count } = await supabase
             .from(table)
-            .select('*')
+            .select('*', { count: 'exact' })
             .order(orderBy)
-            .range(page * pageSize, (page + 1) * pageSize - 1);
+            .range(from, to);
 
-          if (error) throw error;
-
-          if (data && data.length > 0) {
-            allData = [...allData, ...data];
-            hasMore = data.length === pageSize;
-            page++;
-          } else {
-            hasMore = false;
+          if (error) {
+            console.error(`Error fetching ${table}:`, error);
+            throw error;
           }
+
+          if (!data || data.length === 0) {
+            break;
+          }
+
+          allData = [...allData, ...data];
+          console.log(`Loaded ${allData.length} ${table} records${count ? ` of ${count} total` : ''}`);
+
+          // Stop if we've fetched all records
+          if (data.length < pageSize || (count && allData.length >= count)) {
+            break;
+          }
+
+          from += pageSize;
         }
 
+        console.log(`Final ${table} count: ${allData.length}`);
         return allData;
       };
 
+      console.log('Loading hierarchy...');
       const [concepts, companies, stores] = await Promise.all([
         fetchAllRecords('concepts'),
         fetchAllRecords('companies'),
         fetchAllRecords('stores')
       ]);
+
+      console.log('Hierarchy loaded:', {
+        concepts: concepts.length,
+        companies: companies.length,
+        stores: stores.length
+      });
 
       setHierarchy({
         concepts,
@@ -112,25 +129,33 @@ export function useAccessConfiguration(userId?: string) {
       const fetchAllAccessRecords = async (table: string, column: string) => {
         const pageSize = 1000;
         let allData: any[] = [];
-        let page = 0;
-        let hasMore = true;
+        let from = 0;
 
-        while (hasMore) {
-          const { data, error } = await supabase
+        while (true) {
+          const to = from + pageSize - 1;
+          const { data, error, count } = await supabase
             .from(table)
-            .select(column)
+            .select(column, { count: 'exact' })
             .eq('user_id', uid)
-            .range(page * pageSize, (page + 1) * pageSize - 1);
+            .range(from, to);
 
-          if (error) throw error;
-
-          if (data && data.length > 0) {
-            allData = [...allData, ...data];
-            hasMore = data.length === pageSize;
-            page++;
-          } else {
-            hasMore = false;
+          if (error) {
+            console.error(`Error fetching ${table}:`, error);
+            throw error;
           }
+
+          if (!data || data.length === 0) {
+            break;
+          }
+
+          allData = [...allData, ...data];
+
+          // Stop if we've fetched all records
+          if (data.length < pageSize || (count && allData.length >= count)) {
+            break;
+          }
+
+          from += pageSize;
         }
 
         return allData;
@@ -141,6 +166,12 @@ export function useAccessConfiguration(userId?: string) {
         fetchAllAccessRecords('user_company_access', 'company_id'),
         fetchAllAccessRecords('user_store_access', 'store_id')
       ]);
+
+      console.log('User access loaded:', {
+        concepts: conceptAccess.length,
+        companies: companyAccess.length,
+        stores: storeAccess.length
+      });
 
       setSelection({
         concepts: new Set(conceptAccess.map(a => a.concept_id)),
