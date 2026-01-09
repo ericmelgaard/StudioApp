@@ -33,24 +33,83 @@ export function TreeBrowser({
     if (!searchTerm.trim()) return hierarchy;
 
     const term = searchTerm.toLowerCase();
-    const matchingStores = hierarchy.stores.filter(s =>
-      s.name.toLowerCase().includes(term) ||
-      s.city?.toLowerCase().includes(term) ||
-      s.state?.toLowerCase().includes(term)
-    );
-    const matchingCompanies = hierarchy.companies.filter(c =>
-      c.name.toLowerCase().includes(term) ||
-      matchingStores.some(s => s.company_id === c.id)
-    );
-    const matchingConcepts = hierarchy.concepts.filter(co =>
-      co.name.toLowerCase().includes(term) ||
-      matchingCompanies.some(c => c.concept_id === co.id)
+
+    // Find items that directly match the search term
+    const directlyMatchingStores = new Set(
+      hierarchy.stores
+        .filter(s =>
+          s.name.toLowerCase().includes(term) ||
+          s.city?.toLowerCase().includes(term) ||
+          s.state?.toLowerCase().includes(term)
+        )
+        .map(s => s.id)
     );
 
+    const directlyMatchingCompanies = new Set(
+      hierarchy.companies
+        .filter(c => c.name.toLowerCase().includes(term))
+        .map(c => c.id)
+    );
+
+    const directlyMatchingConcepts = new Set(
+      hierarchy.concepts
+        .filter(co => co.name.toLowerCase().includes(term))
+        .map(co => co.id)
+    );
+
+    // Build the filtered hierarchy, including all children of matching parents
+    const matchingConceptIds = new Set<number>();
+    const matchingCompanyIds = new Set<number>();
+    const matchingStoreIds = new Set<number>();
+
+    // Add directly matching concepts and all their children
+    directlyMatchingConcepts.forEach(conceptId => {
+      matchingConceptIds.add(conceptId);
+      // Include ALL companies under this concept
+      hierarchy.companies
+        .filter(c => c.concept_id === conceptId)
+        .forEach(c => {
+          matchingCompanyIds.add(c.id);
+          // Include ALL stores under these companies
+          hierarchy.stores
+            .filter(s => s.company_id === c.id)
+            .forEach(s => matchingStoreIds.add(s.id));
+        });
+    });
+
+    // Add companies that match or have matching stores, plus their parent concepts
+    hierarchy.companies.forEach(company => {
+      const hasMatchingStore = hierarchy.stores.some(
+        s => s.company_id === company.id && directlyMatchingStores.has(s.id)
+      );
+
+      if (directlyMatchingCompanies.has(company.id) || hasMatchingStore) {
+        matchingCompanyIds.add(company.id);
+        matchingConceptIds.add(company.concept_id);
+        // Include ALL stores under this company
+        hierarchy.stores
+          .filter(s => s.company_id === company.id)
+          .forEach(s => matchingStoreIds.add(s.id));
+      }
+    });
+
+    // Add stores that match directly, plus their parent company and concept
+    directlyMatchingStores.forEach(storeId => {
+      matchingStoreIds.add(storeId);
+      const store = hierarchy.stores.find(s => s.id === storeId);
+      if (store) {
+        matchingCompanyIds.add(store.company_id);
+        const company = hierarchy.companies.find(c => c.id === store.company_id);
+        if (company) {
+          matchingConceptIds.add(company.concept_id);
+        }
+      }
+    });
+
     return {
-      concepts: matchingConcepts,
-      companies: matchingCompanies,
-      stores: matchingStores
+      concepts: hierarchy.concepts.filter(co => matchingConceptIds.has(co.id)),
+      companies: hierarchy.companies.filter(c => matchingCompanyIds.has(c.id)),
+      stores: hierarchy.stores.filter(s => matchingStoreIds.has(s.id))
     };
   }, [hierarchy, searchTerm]);
 
