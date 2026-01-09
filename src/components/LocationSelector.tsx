@@ -526,7 +526,55 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 min-h-[400px]">
-          {filteredConcepts.length === 0 ? (
+          {/* Render based on current view context */}
+          {viewContext?.company ? (
+            /* Company-level view: Show only this company and its stores */
+            (() => {
+              const company = viewContext.company;
+              const concept = viewContext.concept;
+              const companyStores = getStoresForCompany(company.id);
+              const isCompanyExpanded = true; // Always expanded when viewing at company level
+
+              return (
+                <div className="space-y-2">
+                  <div className="border border-slate-200 rounded-lg">
+                    <div className="flex items-center gap-2 p-3 bg-slate-50">
+                      {getLocationIcon('company', "w-5 h-5")}
+                      <span className="flex-1 text-left font-medium text-slate-900">
+                        {company.name}
+                      </span>
+                      {companyStores.length > 0 && (
+                        <span className="text-sm text-slate-500">{companyStores.length} stores</span>
+                      )}
+                    </div>
+
+                    <div className="pl-8 pr-3 pb-2 pt-2 space-y-1">
+                      {loadingStores.has(company.id) && (
+                        <div className="p-2 text-xs text-slate-500 flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                          Loading stores...
+                        </div>
+                      )}
+                      {companyStores.length === 0 && !loadingStores.has(company.id) ? (
+                        <div className="p-2 text-sm text-slate-500">No stores found</div>
+                      ) : (
+                        companyStores.map((store) => (
+                          <button
+                            key={store.id}
+                            onClick={() => handleSelectStore(store, company, concept!)}
+                            className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded w-full text-left"
+                          >
+                            {getLocationIcon('store', "w-4 h-4")}
+                            <span className="text-slate-600 hover:text-blue-600 text-sm">{store.name}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          ) : filteredConcepts.length === 0 ? (
             <div className="text-center py-4 text-slate-500">No locations found</div>
           ) : (
             <div className="space-y-2">
