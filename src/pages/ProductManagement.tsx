@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
+import { useAuth } from '../contexts/AuthContext';
 import { LocationProductService } from '../lib/locationProductService';
 import ProductTile from '../components/ProductTile';
 import ProductEdit from './ProductEdit';
@@ -42,6 +43,7 @@ interface ProductManagementProps {
 
 export default function ProductManagement({ onBack, showBackButton = true }: ProductManagementProps) {
   const { location, setLocation } = useLocation();
+  const { profile } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,7 +68,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       console.error('Error checking pending publications:', err);
       loadProducts();
     });
-  }, [location]);
+  }, [location, profile]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -74,19 +76,23 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     const conceptId = location.concept?.id || null;
     const companyId = location.company?.id || null;
     const siteId = location.store?.id || null;
+    const isAdmin = profile?.role === 'admin';
 
     let parentQuery = supabase
       .from('products')
       .select('*, policy_status, last_policy_check')
       .is('parent_product_id', null);
 
-    // Filter by location - show products that match the selected location
-    if (siteId !== null) {
-      parentQuery = parentQuery.eq('site_id', siteId);
-    } else if (companyId !== null) {
-      parentQuery = parentQuery.eq('company_id', companyId);
-    } else if (conceptId !== null) {
-      parentQuery = parentQuery.eq('concept_id', conceptId);
+    // Admins see all products regardless of location
+    // Operators and creators see only products for their selected location
+    if (!isAdmin) {
+      if (siteId !== null) {
+        parentQuery = parentQuery.eq('site_id', siteId);
+      } else if (companyId !== null) {
+        parentQuery = parentQuery.eq('company_id', companyId);
+      } else if (conceptId !== null) {
+        parentQuery = parentQuery.eq('concept_id', conceptId);
+      }
     }
 
     parentQuery = parentQuery.order('name');
