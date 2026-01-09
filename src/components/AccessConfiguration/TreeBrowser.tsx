@@ -85,6 +85,10 @@ export function TreeBrowser({
     return filteredHierarchy.stores.filter(s => s.company_id === companyId);
   };
 
+  const getConceptCompanyCount = (conceptId: number) => {
+    return hierarchy.companies.filter(c => c.concept_id === conceptId).length;
+  };
+
   const getConceptStoreCount = (conceptId: number) => {
     const companies = hierarchy.companies.filter(c => c.concept_id === conceptId);
     return hierarchy.stores.filter(s => companies.some(c => c.id === s.company_id)).length;
@@ -121,6 +125,7 @@ export function TreeBrowser({
             const companies = getCompaniesForConcept(concept.id);
             const isExpanded = expandedConcepts.has(concept.id);
             const isSelected = selection.concepts.has(concept.id);
+            const companyCount = getConceptCompanyCount(concept.id);
             const storeCount = getConceptStoreCount(concept.id);
 
             return (
@@ -173,7 +178,7 @@ export function TreeBrowser({
                       )}
                     </div>
                     <p className="text-xs text-gray-500">
-                      {companies.length} {companies.length === 1 ? 'company' : 'companies'} · {storeCount} {storeCount === 1 ? 'store' : 'stores'}
+                      {companyCount} {companyCount === 1 ? 'company' : 'companies'} · {storeCount} {storeCount === 1 ? 'store' : 'stores'}
                     </p>
                   </div>
                 </div>
