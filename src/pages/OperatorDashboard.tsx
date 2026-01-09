@@ -7,6 +7,7 @@ import OperatorMobileNav from '../components/OperatorMobileNav';
 import { supabase } from '../lib/supabase';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
+import { useStoreAccess } from '../hooks/useStoreAccess';
 import { UserProvider } from '../contexts/UserContext';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
@@ -56,6 +57,7 @@ interface DashboardCard {
 export default function OperatorDashboard({ onBack, user }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
   const { location, setLocation, clearHistory } = useLocation();
+  const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId: user.id });
   const [companies, setCompanies] = useState<Company[]>([]);
   const [storesByCompany, setStoresByCompany] = useState<Record<number, Store[]>>({});
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -92,18 +94,36 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
     checkAndApplyPendingPublications().catch(err => {
       console.error('Error checking pending publications:', err);
     });
-    loadCompaniesAndStores();
     loadStats();
   }, [location, currentView]);
 
+  useEffect(() => {
+    if (!storesLoading) {
+      loadCompaniesAndStores();
+    }
+  }, [accessibleStores, storesLoading]);
+
   const loadCompaniesAndStores = async () => {
+    if (storesLoading) return;
+
     setLoading(true);
 
-    // Operator role only sees WAND Demos concept (concept_id = 209)
+    console.log('OperatorDashboard: Loading with accessible stores:', accessibleStores.length);
+
+    // Get unique company IDs from accessible stores
+    const companyIds = [...new Set(accessibleStores.map(s => s.company_id))];
+
+    if (companyIds.length === 0) {
+      console.log('No accessible stores found for user');
+      setLoading(false);
+      return;
+    }
+
+    // Load companies for the accessible stores
     const { data: companiesData, error: companiesError } = await supabase
       .from('companies')
       .select('id, name, concept_id')
-      .eq('concept_id', 209)
+      .in('id', companyIds)
       .order('name');
 
     if (companiesError) {
@@ -114,39 +134,35 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
     setCompanies(companiesData || []);
 
-    // Load stores only for WAND Demos companies
-    if (companiesData && companiesData.length > 0) {
-      const companyIds = companiesData.map(c => c.id);
+    // Use accessible stores from useStoreAccess
+    const storesData = accessibleStores.map(store => ({
+      id: store.id,
+      name: store.name,
+      company_id: store.company_id,
+    }));
 
-      const { data: storesData, error: storesError } = await supabase
-        .from('stores')
-        .select('id, name, company_id')
-        .in('company_id', companyIds)
-        .order('name');
+    // Group stores by company
+    const grouped: Record<number, Store[]> = {};
+    storesData.forEach(store => {
+      if (!grouped[store.company_id]) {
+        grouped[store.company_id] = [];
+      }
+      grouped[store.company_id].push(store);
+    });
+    setStoresByCompany(grouped);
 
-      if (storesError) {
-        console.error('Error loading stores:', storesError);
-      } else if (storesData) {
-        // Group stores by company
-        const grouped: Record<number, Store[]> = {};
-        storesData.forEach(store => {
-          if (!grouped[store.company_id]) {
-            grouped[store.company_id] = [];
-          }
-          grouped[store.company_id].push(store);
-        });
-        setStoresByCompany(grouped);
-
-        // Set initial selection
-        if (location.store) {
-          setSelectedStore(location.store);
-          const company = companiesData.find(c => c.id === location.store?.company_id);
-          if (company) setSelectedCompany(company);
-        } else if (location.company) {
-          setSelectedCompany(location.company);
-        } else if (companiesData.length > 0) {
-          setSelectedCompany(companiesData[0]);
-        }
+    // Set initial selection
+    if (location.store && storesData.find(s => s.id === location.store?.id)) {
+      setSelectedStore(location.store);
+      const company = companiesData.find(c => c.id === location.store?.company_id);
+      if (company) setSelectedCompany(company);
+    } else if (location.company && companiesData.find(c => c.id === location.company?.id)) {
+      setSelectedCompany(location.company);
+    } else if (companiesData.length > 0) {
+      setSelectedCompany(companiesData[0]);
+      // Auto-select first store if available
+      if (grouped[companiesData[0].id]?.length > 0) {
+        setSelectedStore(grouped[companiesData[0].id][0]);
       }
     }
 
@@ -544,9 +560,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
           </button>
           <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
             <HeaderNavigation
-              userConceptId={null}
-              userCompanyId={null}
-              userStoreId={null}
+              userId={user.id}
               onOpenFullNavigator={() => setShowLocationSelector(true)}
             />
           </Suspense>

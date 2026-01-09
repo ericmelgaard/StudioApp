@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search, ArrowUp, X, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
+import { useStoreAccess } from '../hooks/useStoreAccess';
 
 interface Concept {
   id: number;
@@ -24,6 +25,7 @@ interface HeaderNavigationProps {
   userConceptId?: number | null;
   userCompanyId?: number | null;
   userStoreId?: number | null;
+  userId?: string | null;
   onOpenFullNavigator: () => void;
   actionButton?: React.ReactNode;
 }
@@ -53,10 +55,12 @@ export default function HeaderNavigation({
   userConceptId,
   userCompanyId,
   userStoreId,
+  userId,
   onOpenFullNavigator,
   actionButton
 }: HeaderNavigationProps) {
   const { location, setLocation } = useLocation();
+  const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId });
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -67,8 +71,10 @@ export default function HeaderNavigation({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    loadNavigationData();
-  }, [userConceptId, userCompanyId, userStoreId, location]);
+    if (!storesLoading) {
+      loadNavigationData();
+    }
+  }, [userConceptId, userCompanyId, userStoreId, userId, location, accessibleStores, storesLoading]);
 
   // Mobile detection
   useEffect(() => {
@@ -120,7 +126,21 @@ export default function HeaderNavigation({
   }, [isMobile, isDropdownOpen]);
 
   const loadNavigationData = async () => {
+    if (storesLoading) return;
+
     setLoading(true);
+
+    // If userId is provided, use accessible stores from useStoreAccess hook
+    if (userId && accessibleStores.length > 0) {
+      const storeData = accessibleStores.map(store => ({
+        id: store.id,
+        name: store.name,
+        company_id: store.company_id,
+      }));
+      setStores(storeData);
+      setLoading(false);
+      return;
+    }
 
     // Special case: Store-level users should see sibling stores
     if (userStoreId) {
