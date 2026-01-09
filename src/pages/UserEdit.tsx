@@ -59,6 +59,7 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
   const [showRoleWarning, setShowRoleWarning] = useState(false);
   const [showAccessWarning, setShowAccessWarning] = useState(false);
   const [showAccessConfigModal, setShowAccessConfigModal] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
 
   useEffect(() => {
     loadUserData();
@@ -567,7 +568,10 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
                       )}
 
                       <button
-                        onClick={() => setShowAccessConfigModal(true)}
+                        onClick={() => {
+                          setModalKey(prev => prev + 1);
+                          setShowAccessConfigModal(true);
+                        }}
                         className="w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
                       >
                         <Settings className="w-5 h-5" />
@@ -650,6 +654,7 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
       </div>
 
       <AccessConfigurationModal
+        key={modalKey}
         isOpen={showAccessConfigModal}
         onClose={() => setShowAccessConfigModal(false)}
         userId={userId}
