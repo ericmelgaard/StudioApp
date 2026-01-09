@@ -114,11 +114,30 @@ export default function HeaderNavigation({
 
     setLoading(true);
 
-    // Quick nav always shows all stores you have access to, regardless of current location
-    // This is a simple, flat list for quick navigation between stores
-    // It treats your accessible stores as the "root" level, just like the full nav
+    // Quick nav shows sibling locations based on current context
     if (accessibleStores.length > 0) {
-      const storeData = accessibleStores.map(store => ({
+      let filteredStores = accessibleStores;
+
+      // Filter based on current location
+      if (location.store) {
+        // Show siblings: other stores in the same company
+        filteredStores = accessibleStores.filter(
+          store => store.company_id === location.company?.id
+        );
+      } else if (location.company) {
+        // Show stores in this company
+        filteredStores = accessibleStores.filter(
+          store => store.company_id === location.company?.id
+        );
+      } else if (location.concept) {
+        // Show stores in companies under this concept
+        filteredStores = accessibleStores.filter(
+          store => store.company?.concept_id === location.concept?.id
+        );
+      }
+      // At root level, show nothing or could show recent stores
+
+      const storeData = filteredStores.map(store => ({
         id: store.id,
         name: store.name,
         company_id: store.company_id,
@@ -126,14 +145,16 @@ export default function HeaderNavigation({
       setStores(storeData);
 
       // Load unique companies for these stores for grouping
-      const uniqueCompanyIds = [...new Set(storeData.map(s => s.company_id))];
-      const { data: companiesData } = await supabase
-        .from('companies')
-        .select('id, name, concept_id')
-        .in('id', uniqueCompanyIds)
-        .order('name');
+      const uniqueCompanyIds = [...new Set(storeData.map(s => s.company_id).filter(Boolean))];
+      if (uniqueCompanyIds.length > 0) {
+        const { data: companiesData } = await supabase
+          .from('companies')
+          .select('id, name, concept_id')
+          .in('id', uniqueCompanyIds)
+          .order('name');
 
-      if (companiesData) setCompanies(companiesData);
+        if (companiesData) setCompanies(companiesData);
+      }
     }
 
     setLoading(false);
