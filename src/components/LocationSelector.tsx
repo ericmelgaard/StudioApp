@@ -527,7 +527,29 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
 
         <div className="flex-1 overflow-y-auto p-4 min-h-[400px]">
           {/* Render based on current view context */}
-          {viewContext?.company ? (
+          {viewContext?.store ? (
+            /* Store-level view: Show only this specific store */
+            (() => {
+              const store = viewContext.store;
+              const company = viewContext.company;
+
+              return (
+                <div className="space-y-2">
+                  <div className="border border-slate-200 rounded-lg">
+                    <div className="flex items-center gap-2 p-3 bg-slate-50">
+                      {getLocationIcon('store', "w-5 h-5")}
+                      <span className="flex-1 text-left font-medium text-slate-900">
+                        {store.name}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500 text-center py-2">
+                    Click "{company?.name}" above to see other stores
+                  </div>
+                </div>
+              );
+            })()
+          ) : viewContext?.company ? (
             /* Company-level view: Show only this company and its stores */
             (() => {
               const company = viewContext.company;
