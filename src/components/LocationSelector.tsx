@@ -65,7 +65,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const [userRole, setUserRole] = useState<string | null>(null);
 
   const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
-  const [expandedCompany, setExpandedCompany] = useState<number | null>(null);
+  const [expandedCompanies, setExpandedCompanies] = useState<Set<number>>(new Set());
 
   const [viewContext, setViewContext] = useState<{
     concept?: Concept;
@@ -84,7 +84,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
       setExpandedConcept(selectedLocation.concept.id);
     }
     if (selectedLocation?.company) {
-      setExpandedCompany(selectedLocation.company.id);
+      setExpandedCompanies(new Set([selectedLocation.company.id]));
     }
   }, [accessibleStores, storesLoading]);
 
@@ -230,12 +230,52 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const handleExpandConcept = async (conceptId: number) => {
     const isExpanded = expandedConcept === conceptId;
     setExpandedConcept(isExpanded ? null : conceptId);
-    // Companies are already loaded for admin users, no need to fetch
+
+    if (!isExpanded && userRole === 'admin') {
+      // Get all companies for this concept
+      const conceptCompanies = companies.filter(c => c.concept_id === conceptId);
+      const companyIds = conceptCompanies.map(c => c.id);
+
+      // Auto-expand all companies
+      setExpandedCompanies(new Set(companyIds));
+
+      // Load stores for all companies in parallel
+      if (companyIds.length > 0) {
+        const storePromises = companyIds.map(companyId =>
+          supabase
+            .from('stores')
+            .select('id, name, company_id')
+            .eq('company_id', companyId)
+            .order('name')
+        );
+
+        const results = await Promise.all(storePromises);
+        const allStores = results.flatMap(result => result.data || []);
+
+        setStores(prev => {
+          // Remove existing stores for these companies, then add new ones
+          const existing = prev.filter(s => !companyIds.includes(s.company_id));
+          return [...existing, ...allStores];
+        });
+      }
+    } else if (isExpanded) {
+      // Clear expanded companies when collapsing concept
+      setExpandedCompanies(new Set());
+    }
   };
 
   const handleExpandCompany = async (companyId: number) => {
-    const isExpanded = expandedCompany === companyId;
-    setExpandedCompany(isExpanded ? null : companyId);
+    const isExpanded = expandedCompanies.has(companyId);
+
+    setExpandedCompanies(prev => {
+      const newSet = new Set(prev);
+      if (isExpanded) {
+        newSet.delete(companyId);
+      } else {
+        newSet.add(companyId);
+      }
+      return newSet;
+    });
 
     // Load stores if expanding and user is admin
     if (!isExpanded && userRole === 'admin') {
@@ -505,7 +545,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                         ) : (
                           conceptCompanies.map((company) => {
                           const companyStores = getStoresForCompany(company.id);
-                          const isCompanyExpanded = expandedCompany === company.id;
+                          const isCompanyExpanded = expandedCompanies.has(company.id);
 
                           return (
                             <div key={company.id} className="border-l-2 border-slate-200 pl-2">
