@@ -565,7 +565,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
             <FileText className="w-5 h-5" />
           </button>
           <NotificationPanel />
-          <UserMenu role="operator" onBackToRoles={onBack} />
+          <UserMenu role="operator" user={user} onBackToRoles={onBack} />
         </div>
       </header>
 

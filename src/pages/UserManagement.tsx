@@ -54,20 +54,34 @@ export default function UserManagement({ onAddUser, onEditUser }: UserManagement
     loadData();
   }, []);
 
+  const [userStoreAccess, setUserStoreAccess] = useState<Record<string, number[]>>({});
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersRes, conceptsRes, companiesRes, storesRes] = await Promise.all([
+      const [usersRes, conceptsRes, companiesRes, storesRes, accessRes] = await Promise.all([
         supabase.from('user_profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('concepts').select('id, name'),
         supabase.from('companies').select('id, name, concept_id'),
         supabase.from('stores').select('id, name, company_id'),
+        supabase.from('user_store_access').select('user_id, store_id'),
       ]);
 
       if (usersRes.data) setUsers(usersRes.data);
       if (conceptsRes.data) setConcepts(conceptsRes.data);
       if (companiesRes.data) setCompanies(companiesRes.data);
       if (storesRes.data) setStores(storesRes.data);
+
+      if (accessRes.data) {
+        const accessMap: Record<string, number[]> = {};
+        accessRes.data.forEach(access => {
+          if (!accessMap[access.user_id]) {
+            accessMap[access.user_id] = [];
+          }
+          accessMap[access.user_id].push(access.store_id);
+        });
+        setUserStoreAccess(accessMap);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -76,6 +90,18 @@ export default function UserManagement({ onAddUser, onEditUser }: UserManagement
   };
 
   const getLocationScope = (user: UserProfile) => {
+    const multiStoreAccess = userStoreAccess[user.id];
+
+    if (multiStoreAccess && multiStoreAccess.length > 0) {
+      const accessedStores = stores.filter(s => multiStoreAccess.includes(s.id));
+      const storeNames = accessedStores.map(s => s.name).join(', ');
+      return {
+        level: 'Multiple Stores',
+        path: `${multiStoreAccess.length} stores: ${storeNames}`,
+        color: 'bg-teal-100 text-teal-800',
+      };
+    }
+
     if (user.store_id) {
       const store = stores.find(s => s.id === user.store_id);
       const company = companies.find(c => c.id === store?.company_id);

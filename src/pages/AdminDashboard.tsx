@@ -161,7 +161,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
               <FileText className="w-5 h-5 text-[#00adf0]" />
             </button>
             <NotificationPanel />
-            <UserMenu role="admin" onBackToRoles={onBack} />
+            <UserMenu role="admin" user={user} onBackToRoles={onBack} />
           </div>
         </div>
       </header>

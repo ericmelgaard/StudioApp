@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { User, LogOut } from 'lucide-react';
 
+interface UserProfile {
+  id: string;
+  email: string;
+  display_name: string;
+  role: string;
+}
+
 interface UserMenuProps {
   role: string;
+  user: UserProfile;
   onBackToRoles: () => void;
 }
 
-export default function UserMenu({ role, onBackToRoles }: UserMenuProps) {
+export default function UserMenu({ role, user, onBackToRoles }: UserMenuProps) {
   const [showMenu, setShowMenu] = useState(false);
 
-  const getInitials = (roleName: string) => {
-    return roleName.split(' ').map(word => word[0]).join('').toUpperCase();
+  const getInitials = (name: string) => {
+    return name.split(' ').map(word => word[0]).join('').toUpperCase();
   };
 
   const getRoleDisplay = (role: string) => {
@@ -36,7 +44,8 @@ export default function UserMenu({ role, onBackToRoles }: UserMenuProps) {
   };
 
   const roleDisplay = getRoleDisplay(role);
-  const email = 'demo.user@wanddigital.com';
+  const email = user.email;
+  const displayName = user.display_name;
 
   return (
     <div className="relative">
@@ -48,7 +57,7 @@ export default function UserMenu({ role, onBackToRoles }: UserMenuProps) {
           className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm"
           style={{ background: getRoleColor(role) }}
         >
-          {getInitials(roleDisplay)}
+          {getInitials(displayName)}
         </div>
         <svg
           className="w-4 h-4 text-slate-600"
@@ -73,10 +82,10 @@ export default function UserMenu({ role, onBackToRoles }: UserMenuProps) {
                   className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
                   style={{ background: getRoleColor(role) }}
                 >
-                  {getInitials(roleDisplay)}
+                  {getInitials(displayName)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-900 truncate">{roleDisplay}</h3>
+                  <h3 className="font-semibold text-slate-900 truncate">{displayName}</h3>
                   <p className="text-sm text-slate-600 truncate">{email}</p>
                 </div>
               </div>

@@ -353,7 +353,7 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
             <FileText className="w-5 h-5" />
           </button>
           <NotificationPanel />
-          <UserMenu role="creator" onBackToRoles={onBack} />
+          <UserMenu role="creator" user={user} onBackToRoles={onBack} />
         </div>
       </header>
 
