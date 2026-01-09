@@ -67,12 +67,6 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<number>>(new Set());
 
-  const [viewContext, setViewContext] = useState<{
-    concept?: Concept;
-    company?: Company;
-    store?: Store;
-  }>({});
-
   const [loading, setLoading] = useState(true);
   const [loadingCompanies, setLoadingCompanies] = useState<Set<number>>(new Set());
   const [loadingStores, setLoadingStores] = useState<Set<number>>(new Set());
@@ -80,17 +74,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   useEffect(() => {
     const initializeData = async () => {
       await loadData();
-      // Breadcrumb stops at company level, never shows store
-      // If we're at a store, set context to just the company
-      if (selectedLocation?.store) {
-        setViewContext({
-          concept: selectedLocation.concept,
-          company: selectedLocation.company
-        });
-      } else {
-        setViewContext(selectedLocation || {});
-      }
 
+      // Auto-expand to the current location in the tree
       if (selectedLocation?.concept) {
         setExpandedConcept(selectedLocation.concept.id);
       }
@@ -304,9 +289,6 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const getCompaniesForConcept = (conceptId: number) => {
     return companies.filter(c => {
       if (c.concept_id !== conceptId) return false;
-      if (viewContext?.company && c.id !== viewContext.company.id) {
-        return false;
-      }
       if (searchQuery && !c.name.toLowerCase().includes(searchLower)) {
         const companyStores = stores.filter(s => s.company_id === c.id);
         const hasMatchingStore = companyStores.some(s => s.name.toLowerCase().includes(searchLower));
@@ -328,9 +310,6 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   };
 
   const filteredConcepts = concepts.filter(c => {
-    if (viewContext?.concept && c.id !== viewContext.concept.id) {
-      return false;
-    }
     if (searchQuery) {
       const conceptMatches = c.name.toLowerCase().includes(searchLower);
       if (conceptMatches) return true;
@@ -454,52 +433,34 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         </div>
 
         <div className="p-4 border-b border-slate-200 space-y-3">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => onSelect({})}
-              className="text-xs text-slate-500 hover:text-blue-600 hover:underline transition-colors"
-            >
-              ← Return to WAND Digital
-            </button>
-          </div>
-
-          {(viewContext?.concept || viewContext?.company) && (
+          {/* Show current location breadcrumb */}
+          {selectedLocation && (selectedLocation.concept || selectedLocation.company || selectedLocation.store) && (
             <div className="flex items-center gap-2 text-sm">
-              {/* Only admins can navigate to root concept level */}
               {userRole === 'admin' && (
-                <button
-                  onClick={() => setViewContext({})}
-                  className="text-blue-600 hover:text-blue-700 hover:underline"
-                >
-                  WAND Digital
-                </button>
-              )}
-              {viewContext?.concept && (
                 <>
-                  {userRole === 'admin' && <ChevronRight className="w-4 h-4 text-slate-400" />}
-                  {/* Only show concept as clickable if admin and there's a deeper level */}
-                  {viewContext.company ? (
-                    userRole === 'admin' ? (
-                      <button
-                        onClick={() => setViewContext({ concept: viewContext.concept })}
-                        className="text-blue-600 hover:text-blue-700 hover:underline"
-                      >
-                        {viewContext.concept.name}
-                      </button>
-                    ) : (
-                      <span className="text-slate-700 font-medium">{viewContext.concept.name}</span>
-                    )
-                  ) : (
-                    <span className="text-slate-700 font-medium">{viewContext.concept.name}</span>
-                  )}
-                </>
-              )}
-              {viewContext?.company && (
-                <>
+                  <button
+                    onClick={() => onSelect({})}
+                    className="text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    WAND Digital
+                  </button>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
-                  {/* Breadcrumb stops at company - this is the deepest level shown */}
-                  <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
                 </>
+              )}
+              {selectedLocation.concept && (
+                <>
+                  <span className="text-slate-700">{selectedLocation.concept.name}</span>
+                  {selectedLocation.company && <ChevronRight className="w-4 h-4 text-slate-400" />}
+                </>
+              )}
+              {selectedLocation.company && (
+                <>
+                  <span className="text-slate-700">{selectedLocation.company.name}</span>
+                  {selectedLocation.store && <ChevronRight className="w-4 h-4 text-slate-400" />}
+                </>
+              )}
+              {selectedLocation.store && (
+                <span className="text-slate-700 font-medium">{selectedLocation.store.name}</span>
               )}
             </div>
           )}
@@ -517,58 +478,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 min-h-[400px]">
-          {/* Render based on current view context */}
-          {viewContext?.company ? (
-            /* Company-level view: Show only this company and its stores */
-            (() => {
-              const company = viewContext.company;
-              const concept = viewContext.concept;
-              const companyStores = getStoresForCompany(company.id);
-              const isCompanyExpanded = true; // Always expanded when viewing at company level
-
-              return (
-                <div className="space-y-2">
-                  <div className="border border-slate-200 rounded-lg">
-                    <div className="flex items-center gap-2 p-3 bg-slate-50 hover:bg-slate-100">
-                      {getLocationIcon('company', "w-5 h-5")}
-                      <button
-                        onClick={() => concept && handleSelectCompany(company, concept)}
-                        className="flex-1 text-left font-medium text-slate-900 hover:text-blue-600"
-                      >
-                        {company.name}
-                      </button>
-                      {companyStores.length > 0 && (
-                        <span className="text-sm text-slate-500">{companyStores.length} stores</span>
-                      )}
-                    </div>
-
-                    <div className="pl-8 pr-3 pb-2 pt-2 space-y-1">
-                      {loadingStores.has(company.id) && (
-                        <div className="p-2 text-xs text-slate-500 flex items-center gap-2">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                          Loading stores...
-                        </div>
-                      )}
-                      {companyStores.length === 0 && !loadingStores.has(company.id) ? (
-                        <div className="p-2 text-sm text-slate-500">No stores found</div>
-                      ) : (
-                        companyStores.map((store) => (
-                          <button
-                            key={store.id}
-                            onClick={() => handleSelectStore(store, company, concept!)}
-                            className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded w-full text-left"
-                          >
-                            {getLocationIcon('store', "w-4 h-4")}
-                            <span className="text-slate-600 hover:text-blue-600 text-sm">{store.name}</span>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()
-          ) : filteredConcepts.length === 0 ? (
+          {/* Always show full tree hierarchy */}
+          {filteredConcepts.length === 0 ? (
             <div className="text-center py-4 text-slate-500">No locations found</div>
           ) : (
             <div className="space-y-2">
