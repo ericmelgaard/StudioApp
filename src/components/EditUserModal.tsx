@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2, AlertTriangle } from 'lucide-react';
+import { X, Loader2, AlertTriangle, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { AccessConfigurationModal } from './AccessConfigurationModal';
+import { AccessSelection } from '../hooks/useAccessConfiguration';
 
 interface UserProfile {
   id: string;
@@ -38,107 +40,27 @@ interface EditUserModalProps {
 
 export default function EditUserModal({ user, onClose, onSuccess }: EditUserModalProps) {
   const [loading, setLoading] = useState(false);
-  const [concepts, setConcepts] = useState<Concept[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
-  const [filteredStores, setFilteredStores] = useState<Store[]>([]);
+  const [showAccessConfig, setShowAccessConfig] = useState(false);
+  const [accessSelection, setAccessSelection] = useState<AccessSelection>({
+    concepts: new Set(),
+    companies: new Set(),
+    stores: new Set()
+  });
   const [showRoleWarning, setShowRoleWarning] = useState(false);
-  const [showScopeWarning, setShowScopeWarning] = useState(false);
+  const [showAccessWarning, setShowAccessWarning] = useState(false);
 
   const [formData, setFormData] = useState({
     displayName: user.display_name,
     email: user.email,
     role: user.role,
     status: user.status,
-    scopeLevel: 'unrestricted',
-    conceptId: user.concept_id?.toString() || '',
-    companyId: user.company_id?.toString() || '',
-    storeId: user.store_id?.toString() || '',
-    selectedStores: [] as number[],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    loadLocationData();
-    loadExistingAccess();
-  }, []);
-
-  const loadExistingAccess = async () => {
-    const { data: accessData } = await supabase
-      .from('user_store_access')
-      .select('store_id')
-      .eq('user_id', user.id);
-
-    if (accessData && accessData.length > 0) {
-      const storeIds = accessData.map(a => a.store_id);
-      setFormData(prev => ({
-        ...prev,
-        scopeLevel: 'multi-store',
-        selectedStores: storeIds
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        scopeLevel: user.store_id ? 'store' : user.company_id ? 'company' : user.concept_id ? 'concept' : 'unrestricted'
-      }));
-    }
-  };
-
-  useEffect(() => {
-    if (formData.conceptId) {
-      const filtered = companies.filter(c => c.concept_id === parseInt(formData.conceptId));
-      setFilteredCompanies(filtered);
-      if (formData.scopeLevel === 'company' && !filtered.find(c => c.id === parseInt(formData.companyId))) {
-        setFormData(prev => ({ ...prev, companyId: '', storeId: '' }));
-      }
-    } else {
-      setFilteredCompanies([]);
-      setFormData(prev => ({ ...prev, companyId: '', storeId: '' }));
-    }
-  }, [formData.conceptId, companies]);
-
-  useEffect(() => {
-    if (formData.companyId) {
-      const filtered = stores.filter(s => s.company_id === parseInt(formData.companyId));
-      setFilteredStores(filtered);
-      if (formData.scopeLevel === 'store' && !filtered.find(s => s.id === parseInt(formData.storeId))) {
-        setFormData(prev => ({ ...prev, storeId: '' }));
-      }
-    } else {
-      setFilteredStores([]);
-      setFormData(prev => ({ ...prev, storeId: '' }));
-    }
-  }, [formData.companyId, stores]);
-
-  useEffect(() => {
     setShowRoleWarning(formData.role !== user.role);
   }, [formData.role, user.role]);
-
-  useEffect(() => {
-    const scopeChanged =
-      formData.conceptId !== (user.concept_id?.toString() || '') ||
-      formData.companyId !== (user.company_id?.toString() || '') ||
-      formData.storeId !== (user.store_id?.toString() || '');
-    setShowScopeWarning(scopeChanged);
-  }, [formData.conceptId, formData.companyId, formData.storeId, user]);
-
-  const loadLocationData = async () => {
-    try {
-      const [conceptsRes, companiesRes, storesRes] = await Promise.all([
-        supabase.from('concepts').select('id, name').order('name'),
-        supabase.from('companies').select('id, name, concept_id').order('name'),
-        supabase.from('stores').select('id, name, company_id').order('name'),
-      ]);
-
-      if (conceptsRes.data) setConcepts(conceptsRes.data);
-      if (companiesRes.data) setCompanies(companiesRes.data);
-      if (storesRes.data) setStores(storesRes.data);
-    } catch (error) {
-      console.error('Error loading location data:', error);
-    }
-  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -153,15 +75,10 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
       newErrors.email = 'Invalid email format';
     }
 
-    if (formData.role !== 'admin' && formData.scopeLevel !== 'unrestricted') {
-      if (formData.scopeLevel === 'concept' && !formData.conceptId) {
-        newErrors.scopeLevel = 'Please select a concept';
-      } else if (formData.scopeLevel === 'company' && !formData.companyId) {
-        newErrors.scopeLevel = 'Please select a company';
-      } else if (formData.scopeLevel === 'store' && !formData.storeId) {
-        newErrors.scopeLevel = 'Please select a store';
-      } else if (formData.scopeLevel === 'multi-store' && formData.selectedStores.length === 0) {
-        newErrors.scopeLevel = 'Please select at least one store';
+    if (formData.role !== 'admin') {
+      const totalAccess = accessSelection.concepts.size + accessSelection.companies.size + accessSelection.stores.size;
+      if (totalAccess === 0) {
+        newErrors.access = 'Please configure access for this user';
       }
     }
 
@@ -184,26 +101,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
         email: formData.email,
         role: formData.role,
         status: formData.status,
-        concept_id: null,
-        company_id: null,
-        store_id: null,
       };
-
-      if (formData.role !== 'admin') {
-        if (formData.scopeLevel === 'concept') {
-          updateData.concept_id = parseInt(formData.conceptId);
-        } else if (formData.scopeLevel === 'company') {
-          const company = companies.find(c => c.id === parseInt(formData.companyId));
-          updateData.concept_id = company?.concept_id;
-          updateData.company_id = parseInt(formData.companyId);
-        } else if (formData.scopeLevel === 'store') {
-          const store = stores.find(s => s.id === parseInt(formData.storeId));
-          const company = companies.find(c => c.id === store?.company_id);
-          updateData.concept_id = company?.concept_id;
-          updateData.company_id = store?.company_id;
-          updateData.store_id = parseInt(formData.storeId);
-        }
-      }
 
       const { error } = await supabase
         .from('user_profiles')
@@ -212,25 +110,40 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
 
       if (error) throw error;
 
-      // Handle multi-store access changes
-      // First, delete existing user_store_access entries
-      await supabase
-        .from('user_store_access')
-        .delete()
-        .eq('user_id', user.id);
+      if (formData.role !== 'admin') {
+        await supabase.from('user_concept_access').delete().eq('user_id', user.id);
+        await supabase.from('user_company_access').delete().eq('user_id', user.id);
+        await supabase.from('user_store_access').delete().eq('user_id', user.id);
 
-      // Then insert new ones if multi-store is selected
-      if (formData.scopeLevel === 'multi-store' && formData.selectedStores.length > 0) {
-        const storeAccessData = formData.selectedStores.map(storeId => ({
+        const conceptInserts = Array.from(accessSelection.concepts).map(concept_id => ({
           user_id: user.id,
-          store_id: storeId
+          concept_id
         }));
 
-        const { error: accessError } = await supabase
-          .from('user_store_access')
-          .insert(storeAccessData);
+        const companyInserts = Array.from(accessSelection.companies).map(company_id => ({
+          user_id: user.id,
+          company_id
+        }));
 
-        if (accessError) throw accessError;
+        const storeInserts = Array.from(accessSelection.stores).map(store_id => ({
+          user_id: user.id,
+          store_id
+        }));
+
+        if (conceptInserts.length > 0) {
+          const { error } = await supabase.from('user_concept_access').insert(conceptInserts);
+          if (error) throw error;
+        }
+
+        if (companyInserts.length > 0) {
+          const { error } = await supabase.from('user_company_access').insert(companyInserts);
+          if (error) throw error;
+        }
+
+        if (storeInserts.length > 0) {
+          const { error } = await supabase.from('user_store_access').insert(storeInserts);
+          if (error) throw error;
+        }
       }
 
       onSuccess();
@@ -241,6 +154,24 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAccessSummary = () => {
+    const totalAccess = accessSelection.concepts.size + accessSelection.companies.size + accessSelection.stores.size;
+    if (totalAccess === 0) return 'No access configured';
+
+    const parts = [];
+    if (accessSelection.concepts.size > 0) {
+      parts.push(`${accessSelection.concepts.size} concept${accessSelection.concepts.size === 1 ? '' : 's'}`);
+    }
+    if (accessSelection.companies.size > 0) {
+      parts.push(`${accessSelection.companies.size} compan${accessSelection.companies.size === 1 ? 'y' : 'ies'}`);
+    }
+    if (accessSelection.stores.size > 0) {
+      parts.push(`${accessSelection.stores.size} store${accessSelection.stores.size === 1 ? '' : 's'}`);
+    }
+
+    return parts.join(', ');
   };
 
   return (
@@ -263,7 +194,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
             </div>
           )}
 
-          {(showRoleWarning || showScopeWarning) && (
+          {(showRoleWarning || showAccessWarning) && (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-3">
               <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div>
@@ -272,8 +203,8 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                   {showRoleWarning && (
                     <li>• Changing the user's role will modify their system permissions</li>
                   )}
-                  {showScopeWarning && (
-                    <li>• Changing the location scope will affect which data they can access</li>
+                  {showAccessWarning && (
+                    <li>• Changing the access configuration will affect which data they can access</li>
                   )}
                 </ul>
               </div>
@@ -347,161 +278,34 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
           </div>
 
           {formData.role !== 'admin' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Access Scope Level *
-                </label>
-                <select
-                  value={formData.scopeLevel}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    scopeLevel: e.target.value,
-                    conceptId: '',
-                    companyId: '',
-                    storeId: '',
-                    selectedStores: [],
-                  }))}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="concept">Concept (all locations in concept)</option>
-                  <option value="company">Company (all stores in company)</option>
-                  <option value="store">Store (single location)</option>
-                  {formData.role === 'operator' && (
-                    <option value="multi-store">Multiple Stores (operator only)</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="space-y-3">
-                {formData.scopeLevel !== 'multi-store' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Access Configuration *
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowAccessConfig(true)}
+                className={`w-full px-4 py-3 border rounded-lg text-left flex items-center justify-between transition-colors ${
+                  errors.access ? 'border-red-300 bg-red-50' : 'border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Settings className="w-5 h-5 text-slate-400" />
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Concept *
-                    </label>
-                    <select
-                      value={formData.conceptId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, conceptId: e.target.value }))}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
-                      }`}
-                    >
-                      <option value="">Select a concept...</option>
-                      {concepts.map(concept => (
-                        <option key={concept.id} value={concept.id}>
-                          {concept.name}
-                        </option>
-                      ))}
-                    </select>
+                    <p className="text-sm font-medium text-slate-900">
+                      {getAccessSummary()}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Click to configure user access
+                    </p>
                   </div>
-                )}
-
-                {formData.scopeLevel === 'multi-store' && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Select Stores * (operator can access these stores)
-                    </label>
-                    <div className="space-y-2 max-h-64 overflow-y-auto border border-slate-300 rounded-lg p-3">
-                      {concepts.map(concept => {
-                        const conceptStores = stores.filter(s => {
-                          const company = companies.find(c => c.id === s.company_id);
-                          return company?.concept_id === concept.id;
-                        });
-
-                        if (conceptStores.length === 0) return null;
-
-                        return (
-                          <div key={concept.id} className="space-y-1">
-                            <div className="font-medium text-sm text-slate-700 sticky top-0 bg-white py-1">
-                              {concept.name}
-                            </div>
-                            {conceptStores.map(store => {
-                              const company = companies.find(c => c.id === store.company_id);
-                              return (
-                                <label key={store.id} className="flex items-center gap-2 pl-4 py-1 hover:bg-slate-50 rounded cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={formData.selectedStores.includes(store.id)}
-                                    onChange={(e) => {
-                                      setFormData(prev => ({
-                                        ...prev,
-                                        selectedStores: e.target.checked
-                                          ? [...prev.selectedStores, store.id]
-                                          : prev.selectedStores.filter(id => id !== store.id)
-                                      }));
-                                    }}
-                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                  />
-                                  <span className="text-sm text-slate-700">
-                                    {store.name}
-                                    <span className="text-xs text-slate-500 ml-1">({company?.name})</span>
-                                  </span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {formData.selectedStores.length > 0 && (
-                      <p className="text-sm text-slate-600 mt-2">
-                        {formData.selectedStores.length} store(s) selected
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {(formData.scopeLevel === 'company' || formData.scopeLevel === 'store') && formData.conceptId && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Company *
-                    </label>
-                    <select
-                      value={formData.companyId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, companyId: e.target.value }))}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
-                      }`}
-                      disabled={!formData.conceptId}
-                    >
-                      <option value="">Select a company...</option>
-                      {filteredCompanies.map(company => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {formData.scopeLevel === 'store' && formData.companyId && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Store *
-                    </label>
-                    <select
-                      value={formData.storeId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, storeId: e.target.value }))}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
-                      }`}
-                      disabled={!formData.companyId}
-                    >
-                      <option value="">Select a store...</option>
-                      {filteredStores.map(store => (
-                        <option key={store.id} value={store.id}>
-                          {store.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {errors.scopeLevel && (
-                  <p className="text-red-600 text-sm">{errors.scopeLevel}</p>
-                )}
-              </div>
-            </>
+                </div>
+                <div className="text-blue-600 text-sm font-medium">Configure</div>
+              </button>
+              {errors.access && (
+                <p className="text-red-600 text-sm mt-1">{errors.access}</p>
+              )}
+            </div>
           )}
 
           <div className="flex gap-3 pt-4 border-t border-slate-200">
@@ -530,6 +334,17 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
           </div>
         </form>
       </div>
+
+      <AccessConfigurationModal
+        isOpen={showAccessConfig}
+        onClose={() => setShowAccessConfig(false)}
+        userId={user.id}
+        userName={formData.displayName}
+        onSave={async (selection) => {
+          setAccessSelection(selection);
+          setShowAccessWarning(true);
+        }}
+      />
     </div>
   );
 }
