@@ -4,6 +4,7 @@ import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
 import { useLocation } from '../hooks/useLocation';
+import { UserProvider } from '../contexts/UserContext';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
@@ -120,7 +121,8 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <UserProvider user={user}>
+      <div className="min-h-screen bg-slate-50">
       {/* Top Header */}
       <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="h-full flex items-center justify-between px-6">
@@ -497,6 +499,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
           duration={2000}
         />
       )}
-    </div>
+      </div>
+    </UserProvider>
   );
 }

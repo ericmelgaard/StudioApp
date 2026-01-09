@@ -7,6 +7,7 @@ import OperatorMobileNav from '../components/OperatorMobileNav';
 import { supabase } from '../lib/supabase';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
+import { UserProvider } from '../contexts/UserContext';
 
 const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
@@ -519,8 +520,9 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <OperatorMobileNav
+    <UserProvider user={user}>
+      <div className="min-h-screen bg-slate-50">
+        <OperatorMobileNav
         isOpen={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
         currentView={currentView}
@@ -596,6 +598,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
           />
         </Suspense>
       )}
-    </div>
+      </div>
+    </UserProvider>
   );
 }

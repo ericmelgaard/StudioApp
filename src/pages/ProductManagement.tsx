@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { resolveProductAttributes } from '../lib/attributeResolver';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
 import { useLocation } from '../hooks/useLocation';
-import { useAuth } from '../contexts/AuthContext';
+import { useCurrentUser } from '../contexts/UserContext';
 import { LocationProductService } from '../lib/locationProductService';
 import ProductTile from '../components/ProductTile';
 import ProductEdit from './ProductEdit';
@@ -43,7 +43,7 @@ interface ProductManagementProps {
 
 export default function ProductManagement({ onBack, showBackButton = true }: ProductManagementProps) {
   const { location, setLocation } = useLocation();
-  const { profile } = useAuth();
+  const { user } = useCurrentUser();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,7 +68,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
       console.error('Error checking pending publications:', err);
       loadProducts();
     });
-  }, [location, profile]);
+  }, [location, user]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -76,7 +76,7 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     const conceptId = location.concept?.id || null;
     const companyId = location.company?.id || null;
     const siteId = location.store?.id || null;
-    const isAdmin = profile?.role === 'admin';
+    const isAdmin = user?.role === 'admin';
 
     let parentQuery = supabase
       .from('products')

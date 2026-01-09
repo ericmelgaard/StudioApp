@@ -4,6 +4,7 @@ import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import { supabase } from '../lib/supabase';
 import { checkAndApplyPendingPublications } from '../lib/publicationService';
+import { UserProvider } from '../contexts/UserContext';
 
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
@@ -313,8 +314,9 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40">
+    <UserProvider user={user}>
+      <div className="min-h-screen bg-slate-50">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <img
@@ -373,6 +375,7 @@ export default function CreatorDashboard({ onBack, user }: CreatorDashboardProps
           />
         </Suspense>
       )}
-    </div>
+      </div>
+    </UserProvider>
   );
 }
