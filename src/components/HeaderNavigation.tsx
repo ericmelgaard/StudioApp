@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, X } from 'lucide-react';
+import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, X, Search, ArrowUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 import { useStoreAccess } from '../hooks/useStoreAccess';
@@ -60,6 +60,7 @@ export default function HeaderNavigation({
   const [loading, setLoading] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [filterText, setFilterText] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -225,6 +226,7 @@ export default function HeaderNavigation({
 
   const handleCloseDropdown = () => {
     setIsDropdownOpen(false);
+    setFilterText('');
   };
 
   const handleSelectLocation = async (newLocation: { concept?: Concept; company?: Company; store?: Store }) => {
@@ -247,6 +249,60 @@ export default function HeaderNavigation({
     handleCloseDropdown();
   };
 
+  // Parent navigation logic:
+  // Store/Company -> Concept
+  // Concept -> WAND Digital (root)
+  const getParentLocation = () => {
+    if (location.store || location.company) {
+      // Both store and company go to concept
+      return location.concept ? { concept: location.concept } : null;
+    }
+    if (location.concept) {
+      // Concept goes to root (WAND Digital)
+      return {};
+    }
+    // Already at root
+    return null;
+  };
+
+  const getParentName = () => {
+    if (location.store || location.company) {
+      return location.concept?.name || 'Parent';
+    }
+    if (location.concept) {
+      return 'WAND Digital';
+    }
+    return null;
+  };
+
+  const parentLocation = getParentLocation();
+  const parentName = getParentName();
+
+  // Filter logic
+  const filteredConcepts = concepts.filter(c =>
+    c.name.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  const filteredCompanies = companies.filter(c =>
+    c.name.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  const filteredStores = stores.filter(s =>
+    s.name.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  const filteredStoresByCompany = filteredStores.reduce((acc, store) => {
+    if (!acc[store.company_id]) {
+      acc[store.company_id] = [];
+    }
+    acc[store.company_id].push(store);
+    return acc;
+  }, {} as Record<number, Store[]>);
+
+  const filteredCompaniesWithStores = companies
+    .filter(c => filteredStoresByCompany[c.id])
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div className="flex items-center gap-2">
       <div className="relative" ref={dropdownRef}>
@@ -264,11 +320,36 @@ export default function HeaderNavigation({
         {/* Desktop Dropdown */}
         {!isMobile && hasDropdownContent && isDropdownOpen && (
           <div className="absolute top-full left-0 mt-1 w-[360px] bg-white rounded-lg shadow-lg border border-slate-200 transition-all max-h-[32rem] overflow-hidden z-50">
+            {/* Go to Parent Link */}
+            {parentLocation && parentName && (
+              <button
+                onClick={() => handleSelectLocation(parentLocation)}
+                className="w-full px-4 py-3 text-left flex items-center gap-2 hover:bg-slate-50 transition-colors border-b border-slate-200"
+              >
+                <ArrowUp className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-600">Go to {parentName}</span>
+              </button>
+            )}
+
+            {/* Filter Input */}
+            <div className="p-3 border-b border-slate-200 bg-white sticky top-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Filter locations..."
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
             <div className="max-h-80 overflow-y-auto">
               {/* Show Concepts (at root) */}
               {showConcepts && (
                 <div className="py-1">
-                  {concepts.map((concept) => (
+                  {filteredConcepts.map((concept) => (
                     <button
                       key={concept.id}
                       onClick={() => handleSelectLocation({ concept })}
@@ -286,7 +367,7 @@ export default function HeaderNavigation({
               {/* Show Companies (at concept level) */}
               {showCompanies && (
                 <div className="py-1">
-                  {companies.map((company) => (
+                  {filteredCompanies.map((company) => (
                     <button
                       key={company.id}
                       onClick={async () => {
@@ -315,7 +396,7 @@ export default function HeaderNavigation({
               {/* Show Stores (at company/store level) */}
               {showStores && (
                 <>
-                  {companiesWithStores.map((company) => (
+                  {filteredCompaniesWithStores.map((company) => (
                     <div key={company.id}>
                       {/* Company Header (non-clickable) */}
                       <div className="px-4 py-2 bg-slate-50 border-b border-slate-200">
@@ -329,7 +410,7 @@ export default function HeaderNavigation({
 
                       {/* Stores in this company */}
                       <div className="py-1">
-                        {storesByCompany[company.id]
+                        {filteredStoresByCompany[company.id]
                           .sort((a, b) => a.name.localeCompare(b.name))
                           .map((store) => (
                             <button
@@ -385,11 +466,36 @@ export default function HeaderNavigation({
             </button>
           </div>
 
+          {/* Go to Parent Link */}
+          {parentLocation && parentName && (
+            <button
+              onClick={() => handleSelectLocation(parentLocation)}
+              className="w-full px-4 py-4 text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border-b border-slate-200"
+            >
+              <ArrowUp className="w-5 h-5 text-blue-600" />
+              <span className="text-base font-medium text-blue-600">Go to {parentName}</span>
+            </button>
+          )}
+
+          {/* Filter Input */}
+          <div className="p-4 border-b border-slate-200 bg-white">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Filter locations..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                className="w-full pl-10 pr-3 py-3 text-base border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
           {/* Scrollable Content */}
           {hasLocationContent && (
             <div className="flex-1 overflow-y-auto">
               {/* Show Concepts (at root) */}
-              {showConcepts && concepts.map((concept) => (
+              {showConcepts && filteredConcepts.map((concept) => (
                 <button
                   key={concept.id}
                   onClick={() => handleSelectLocation({ concept })}
@@ -404,7 +510,7 @@ export default function HeaderNavigation({
               ))}
 
               {/* Show Companies (at concept level) */}
-              {showCompanies && companies.map((company) => (
+              {showCompanies && filteredCompanies.map((company) => (
                 <button
                   key={company.id}
                   onClick={async () => {
@@ -430,7 +536,7 @@ export default function HeaderNavigation({
               ))}
 
               {/* Show Stores (at company/store level) */}
-              {showStores && companiesWithStores.map((company) => (
+              {showStores && filteredCompaniesWithStores.map((company) => (
                 <div key={company.id}>
                   {/* Company Header (non-clickable) */}
                   <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 sticky top-0">
@@ -443,7 +549,7 @@ export default function HeaderNavigation({
                   </div>
 
                   {/* Stores in this company */}
-                  {storesByCompany[company.id]
+                  {filteredStoresByCompany[company.id]
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((store) => (
                       <button
