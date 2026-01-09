@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, Search, X } from 'lucide-react';
+import { ChevronDown, Building2, Layers, MapPin, Map, Sparkles, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 import { useStoreAccess } from '../hooks/useStoreAccess';
@@ -52,7 +52,6 @@ export default function HeaderNavigation({
   const [companies, setCompanies] = useState<Company[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterQuery, setFilterQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -81,14 +80,12 @@ export default function HeaderNavigation({
       const handleClickOutside = (event: MouseEvent) => {
         if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
           setIsDropdownOpen(false);
-          setFilterQuery('');
         }
       };
 
       const handleEscape = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
           setIsDropdownOpen(false);
-          setFilterQuery('');
         }
       };
 
@@ -163,15 +160,8 @@ export default function HeaderNavigation({
   const hasLocationContent = showStores;
   const hasDropdownContent = hasLocationContent;
 
-  // Only show filter if there are multiple stores
-  const hasMultipleLocations = stores.length > 1;
-
-  // Filter logic
-  const filterLower = filterQuery.toLowerCase();
-  const filteredStores = stores.filter(s => s.name.toLowerCase().includes(filterLower));
-
   // Group stores by company for display
-  const storesByCompany = filteredStores.reduce((acc, store) => {
+  const storesByCompany = stores.reduce((acc, store) => {
     if (!acc[store.company_id]) {
       acc[store.company_id] = [];
     }
@@ -186,7 +176,6 @@ export default function HeaderNavigation({
 
   const handleCloseDropdown = () => {
     setIsDropdownOpen(false);
-    setFilterQuery('');
   };
 
   const handleSelectLocation = async (newLocation: { concept?: Concept; company?: Company; store?: Store }) => {
@@ -226,23 +215,6 @@ export default function HeaderNavigation({
         {/* Desktop Dropdown */}
         {!isMobile && hasDropdownContent && isDropdownOpen && (
           <div className="absolute top-full left-0 mt-1 w-[360px] bg-white rounded-lg shadow-lg border border-slate-200 transition-all max-h-[32rem] overflow-hidden z-50">
-            {/* Filter Input - Only show if there are multiple stores */}
-            {hasMultipleLocations && (
-              <div className="p-3 border-b border-slate-200 bg-slate-50">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Filter stores..."
-                    value={filterQuery}
-                    onChange={(e) => setFilterQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Scrollable Content - Stores grouped by company */}
             {hasLocationContent && (
               <div className="max-h-80 overflow-y-auto">
@@ -314,22 +286,6 @@ export default function HeaderNavigation({
               <X className="w-5 h-5 text-slate-600" />
             </button>
           </div>
-
-          {/* Filter Input - Only show if there are multiple stores */}
-          {hasMultipleLocations && (
-            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Filter stores..."
-                  value={filterQuery}
-                  onChange={(e) => setFilterQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Scrollable Content - Stores grouped by company */}
           {hasLocationContent && (
