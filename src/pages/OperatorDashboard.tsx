@@ -564,6 +564,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
           <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
             <HeaderNavigation
               userId={user.id}
+              role="operator"
               onOpenFullNavigator={() => setShowLocationSelector(true)}
             />
           </Suspense>

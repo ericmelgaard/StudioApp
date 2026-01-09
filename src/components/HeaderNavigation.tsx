@@ -26,6 +26,7 @@ interface HeaderNavigationProps {
   userCompanyId?: number | null;
   userStoreId?: number | null;
   userId?: string | null;
+  role?: 'admin' | 'creator' | 'operator';
   onOpenFullNavigator: () => void;
   actionButton?: React.ReactNode;
 }
@@ -49,10 +50,11 @@ export default function HeaderNavigation({
   userCompanyId,
   userStoreId,
   userId,
+  role,
   onOpenFullNavigator,
   actionButton
 }: HeaderNavigationProps) {
-  const { location, setLocation } = useLocation();
+  const { location, setLocation } = useLocation(role);
   const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId });
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -121,16 +123,78 @@ export default function HeaderNavigation({
 
     setLoading(true);
 
+    // Determine if user has limited store access
+    const hasLimitedAccess = userId && accessibleStores.length > 0;
+
     // Quick nav works like breadcrumb navigation:
     // Root (WAND) -> Concepts (children)
     // Concept -> Companies (children)
     // Company -> Stores (children) - root for store navigation
     // Store -> Stores (siblings in same company)
+    //
+    // SPECIAL RULE: Users with limited access see ALL accessible stores
+    // when at store or company level (not just siblings or children)
 
     if (location.store) {
-      // At a store: show sibling stores in the same company
-      const companyId = location.company?.id;
-      if (companyId) {
+      if (hasLimitedAccess) {
+        // Limited access: show all accessible stores
+        const storesData = accessibleStores.map(store => ({
+          id: store.id,
+          name: store.name,
+          company_id: store.company_id,
+        }));
+
+        // Get unique company IDs and load company data
+        const companyIds = [...new Set(storesData.map(s => s.company_id))];
+        const { data: companiesData } = await supabase
+          .from('companies')
+          .select('id, name, concept_id')
+          .in('id', companyIds)
+          .order('name');
+
+        setStores(storesData);
+        setCompanies(companiesData || []);
+        setConcepts([]);
+      } else {
+        // Full access: show sibling stores in the same company
+        const companyId = location.company?.id;
+        if (companyId) {
+          const { data: storesData } = await supabase
+            .from('stores')
+            .select('id, name, company_id')
+            .eq('company_id', companyId)
+            .order('name');
+
+          if (storesData) {
+            setStores(storesData);
+            setConcepts([]);
+            setCompanies(location.company ? [location.company] : []);
+          }
+        }
+      }
+    } else if (location.company) {
+      if (hasLimitedAccess) {
+        // Limited access: show all accessible stores
+        const storesData = accessibleStores.map(store => ({
+          id: store.id,
+          name: store.name,
+          company_id: store.company_id,
+        }));
+
+        // Get unique company IDs and load company data
+        const companyIds = [...new Set(storesData.map(s => s.company_id))];
+        const { data: companiesData } = await supabase
+          .from('companies')
+          .select('id, name, concept_id')
+          .in('id', companyIds)
+          .order('name');
+
+        setStores(storesData);
+        setCompanies(companiesData || []);
+        setConcepts([]);
+      } else {
+        // Full access: show child stores (acts as root for store navigation)
+        const companyId = location.company.id;
         const { data: storesData } = await supabase
           .from('stores')
           .select('id, name, company_id')
@@ -140,22 +204,8 @@ export default function HeaderNavigation({
         if (storesData) {
           setStores(storesData);
           setConcepts([]);
-          setCompanies(location.company ? [location.company] : []);
+          setCompanies([location.company]);
         }
-      }
-    } else if (location.company) {
-      // At a company: show child stores (acts as root for store navigation)
-      const companyId = location.company.id;
-      const { data: storesData } = await supabase
-        .from('stores')
-        .select('id, name, company_id')
-        .eq('company_id', companyId)
-        .order('name');
-
-      if (storesData) {
-        setStores(storesData);
-        setConcepts([]);
-        setCompanies([location.company]);
       }
     } else if (location.concept) {
       // At a concept: show child companies
