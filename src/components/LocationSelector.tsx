@@ -67,6 +67,12 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<number>>(new Set());
 
+  const [viewContext, setViewContext] = useState<{
+    concept?: Concept;
+    company?: Company;
+    store?: Store;
+  }>({});
+
   const [loading, setLoading] = useState(true);
   const [loadingCompanies, setLoadingCompanies] = useState<Set<number>>(new Set());
   const [loadingStores, setLoadingStores] = useState<Set<number>>(new Set());
@@ -74,6 +80,17 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   useEffect(() => {
     const initializeData = async () => {
       await loadData();
+
+      // Set view context - if we're at a store, viewContext shows up to company level
+      // This filters the tree to show only the relevant concept/company path
+      if (selectedLocation?.store) {
+        setViewContext({
+          concept: selectedLocation.concept,
+          company: selectedLocation.company
+        });
+      } else {
+        setViewContext(selectedLocation || {});
+      }
 
       // Auto-expand to the current location in the tree
       if (selectedLocation?.concept) {
@@ -289,6 +306,10 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const getCompaniesForConcept = (conceptId: number) => {
     return companies.filter(c => {
       if (c.concept_id !== conceptId) return false;
+      // Filter by viewContext - only show the specific company if in that context
+      if (viewContext?.company && c.id !== viewContext.company.id) {
+        return false;
+      }
       if (searchQuery && !c.name.toLowerCase().includes(searchLower)) {
         const companyStores = stores.filter(s => s.company_id === c.id);
         const hasMatchingStore = companyStores.some(s => s.name.toLowerCase().includes(searchLower));
@@ -310,6 +331,10 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   };
 
   const filteredConcepts = concepts.filter(c => {
+    // Filter by viewContext - only show the specific concept if in that context
+    if (viewContext?.concept && c.id !== viewContext.concept.id) {
+      return false;
+    }
     if (searchQuery) {
       const conceptMatches = c.name.toLowerCase().includes(searchLower);
       if (conceptMatches) return true;
@@ -433,13 +458,14 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         </div>
 
         <div className="p-4 border-b border-slate-200 space-y-3">
-          {/* Show current location breadcrumb */}
-          {selectedLocation && (selectedLocation.concept || selectedLocation.company || selectedLocation.store) && (
+          {/* Show navigation breadcrumb based on viewContext */}
+          {(viewContext?.concept || viewContext?.company) && (
             <div className="flex items-center gap-2 text-sm">
+              {/* Only admins can navigate to root concept level */}
               {userRole === 'admin' && (
                 <>
                   <button
-                    onClick={() => onSelect({})}
+                    onClick={() => setViewContext({})}
                     className="text-blue-600 hover:text-blue-700 hover:underline"
                   >
                     WAND Digital
@@ -447,20 +473,28 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </>
               )}
-              {selectedLocation.concept && (
+              {viewContext?.concept && (
                 <>
-                  <span className="text-slate-700">{selectedLocation.concept.name}</span>
-                  {selectedLocation.company && <ChevronRight className="w-4 h-4 text-slate-400" />}
+                  {/* Show concept as clickable if there's a deeper level (company) */}
+                  {viewContext.company ? (
+                    userRole === 'admin' ? (
+                      <button
+                        onClick={() => setViewContext({ concept: viewContext.concept })}
+                        className="text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        {viewContext.concept.name}
+                      </button>
+                    ) : (
+                      <span className="text-slate-700">{viewContext.concept.name}</span>
+                    )
+                  ) : (
+                    <span className="text-slate-700 font-medium">{viewContext.concept.name}</span>
+                  )}
+                  {viewContext.company && <ChevronRight className="w-4 h-4 text-slate-400" />}
                 </>
               )}
-              {selectedLocation.company && (
-                <>
-                  <span className="text-slate-700">{selectedLocation.company.name}</span>
-                  {selectedLocation.store && <ChevronRight className="w-4 h-4 text-slate-400" />}
-                </>
-              )}
-              {selectedLocation.store && (
-                <span className="text-slate-700 font-medium">{selectedLocation.store.name}</span>
+              {viewContext?.company && (
+                <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
               )}
             </div>
           )}
