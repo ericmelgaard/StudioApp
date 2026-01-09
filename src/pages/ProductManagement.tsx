@@ -71,11 +71,27 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
   const loadProducts = async () => {
     setLoading(true);
 
-    const { data, error } = await supabase
+    const conceptId = location.concept?.id || null;
+    const companyId = location.company?.id || null;
+    const siteId = location.store?.id || null;
+
+    let parentQuery = supabase
       .from('products')
       .select('*, policy_status, last_policy_check')
-      .is('parent_product_id', null)
-      .order('name');
+      .is('parent_product_id', null);
+
+    // Filter by location - show products that match the selected location
+    if (siteId !== null) {
+      parentQuery = parentQuery.eq('site_id', siteId);
+    } else if (companyId !== null) {
+      parentQuery = parentQuery.eq('company_id', companyId);
+    } else if (conceptId !== null) {
+      parentQuery = parentQuery.eq('concept_id', conceptId);
+    }
+
+    parentQuery = parentQuery.order('name');
+
+    const { data, error } = await parentQuery;
 
     if (error) {
       console.error('Error loading products:', error);
@@ -86,9 +102,6 @@ export default function ProductManagement({ onBack, showBackButton = true }: Pro
     let productsData = data || [];
 
     if (location.store || location.company || location.concept) {
-      const conceptId = location.concept?.id || null;
-      const companyId = location.company?.id || null;
-      const siteId = location.store?.id || null;
 
       const parentIds = productsData.map(p => p.id);
 
