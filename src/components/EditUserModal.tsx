@@ -51,17 +51,40 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
     email: user.email,
     role: user.role,
     status: user.status,
-    scopeLevel: user.store_id ? 'store' : user.company_id ? 'company' : user.concept_id ? 'concept' : 'unrestricted',
+    scopeLevel: 'unrestricted',
     conceptId: user.concept_id?.toString() || '',
     companyId: user.company_id?.toString() || '',
     storeId: user.store_id?.toString() || '',
+    selectedStores: [] as number[],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadLocationData();
+    loadExistingAccess();
   }, []);
+
+  const loadExistingAccess = async () => {
+    const { data: accessData } = await supabase
+      .from('user_store_access')
+      .select('store_id')
+      .eq('user_id', user.id);
+
+    if (accessData && accessData.length > 0) {
+      const storeIds = accessData.map(a => a.store_id);
+      setFormData(prev => ({
+        ...prev,
+        scopeLevel: 'multi-store',
+        selectedStores: storeIds
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        scopeLevel: user.store_id ? 'store' : user.company_id ? 'company' : user.concept_id ? 'concept' : 'unrestricted'
+      }));
+    }
+  };
 
   useEffect(() => {
     if (formData.conceptId) {
@@ -137,6 +160,8 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
         newErrors.scopeLevel = 'Please select a company';
       } else if (formData.scopeLevel === 'store' && !formData.storeId) {
         newErrors.scopeLevel = 'Please select a store';
+      } else if (formData.scopeLevel === 'multi-store' && formData.selectedStores.length === 0) {
+        newErrors.scopeLevel = 'Please select at least one store';
       }
     }
 
@@ -186,6 +211,27 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Handle multi-store access changes
+      // First, delete existing user_store_access entries
+      await supabase
+        .from('user_store_access')
+        .delete()
+        .eq('user_id', user.id);
+
+      // Then insert new ones if multi-store is selected
+      if (formData.scopeLevel === 'multi-store' && formData.selectedStores.length > 0) {
+        const storeAccessData = formData.selectedStores.map(storeId => ({
+          user_id: user.id,
+          store_id: storeId
+        }));
+
+        const { error: accessError } = await supabase
+          .from('user_store_access')
+          .insert(storeAccessData);
+
+        if (accessError) throw accessError;
+      }
 
       onSuccess();
       onClose();
@@ -314,35 +360,96 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                     conceptId: '',
                     companyId: '',
                     storeId: '',
+                    selectedStores: [],
                   }))}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="concept">Concept (all locations in concept)</option>
                   <option value="company">Company (all stores in company)</option>
                   <option value="store">Store (single location)</option>
+                  {formData.role === 'operator' && (
+                    <option value="multi-store">Multiple Stores (operator only)</option>
+                  )}
                 </select>
               </div>
 
               <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Concept *
-                  </label>
-                  <select
-                    value={formData.conceptId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, conceptId: e.target.value }))}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
-                    }`}
-                  >
-                    <option value="">Select a concept...</option>
-                    {concepts.map(concept => (
-                      <option key={concept.id} value={concept.id}>
-                        {concept.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {formData.scopeLevel !== 'multi-store' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Concept *
+                    </label>
+                    <select
+                      value={formData.conceptId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, conceptId: e.target.value }))}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.scopeLevel ? 'border-red-300' : 'border-slate-300'
+                      }`}
+                    >
+                      <option value="">Select a concept...</option>
+                      {concepts.map(concept => (
+                        <option key={concept.id} value={concept.id}>
+                          {concept.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {formData.scopeLevel === 'multi-store' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Select Stores * (operator can access these stores)
+                    </label>
+                    <div className="space-y-2 max-h-64 overflow-y-auto border border-slate-300 rounded-lg p-3">
+                      {concepts.map(concept => {
+                        const conceptStores = stores.filter(s => {
+                          const company = companies.find(c => c.id === s.company_id);
+                          return company?.concept_id === concept.id;
+                        });
+
+                        if (conceptStores.length === 0) return null;
+
+                        return (
+                          <div key={concept.id} className="space-y-1">
+                            <div className="font-medium text-sm text-slate-700 sticky top-0 bg-white py-1">
+                              {concept.name}
+                            </div>
+                            {conceptStores.map(store => {
+                              const company = companies.find(c => c.id === store.company_id);
+                              return (
+                                <label key={store.id} className="flex items-center gap-2 pl-4 py-1 hover:bg-slate-50 rounded cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={formData.selectedStores.includes(store.id)}
+                                    onChange={(e) => {
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        selectedStores: e.target.checked
+                                          ? [...prev.selectedStores, store.id]
+                                          : prev.selectedStores.filter(id => id !== store.id)
+                                      }));
+                                    }}
+                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <span className="text-sm text-slate-700">
+                                    {store.name}
+                                    <span className="text-xs text-slate-500 ml-1">({company?.name})</span>
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {formData.selectedStores.length > 0 && (
+                      <p className="text-sm text-slate-600 mt-2">
+                        {formData.selectedStores.length} store(s) selected
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {(formData.scopeLevel === 'company' || formData.scopeLevel === 'store') && formData.conceptId && (
                   <div>
