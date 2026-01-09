@@ -9,7 +9,8 @@ import { supabase } from '../lib/supabase';
 interface DisplayManagementProps {
   storeId: number;
   storeName: string;
-  onBack: () => void;
+  onBack?: () => void;
+  isHomePage?: boolean;
 }
 
 interface MediaPlayer {
@@ -61,7 +62,7 @@ interface DisplayCard {
 type OperationStatus = 'open' | 'closed' | 'identify';
 type ViewMode = 'list' | 'grid';
 
-export default function DisplayManagement({ storeId, storeName, onBack }: DisplayManagementProps) {
+export default function DisplayManagement({ storeId, storeName, onBack, isHomePage = false }: DisplayManagementProps) {
   const [operationStatus, setOperationStatus] = useState<OperationStatus>('open');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -298,31 +299,37 @@ export default function DisplayManagement({ storeId, storeName, onBack }: Displa
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </button>
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-              <Monitor className="w-5 h-5 text-white" />
+    <div className={isHomePage ? "bg-slate-50 pb-20" : "min-h-screen bg-slate-50 pb-20"}>
+      {!isHomePage && (
+        <div className="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {onBack && (
+                <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                  <ArrowLeft className="w-5 h-5 text-slate-600" />
+                </button>
+              )}
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                <Monitor className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-slate-900">Operator Hub</h1>
+                <p className="text-xs text-slate-500">{storeName}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-900">Operator Hub</h1>
-              <p className="text-xs text-slate-500">{storeName}</p>
+            <div className="flex items-center gap-2">
+              <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                <ShoppingCart className="w-5 h-5 text-slate-600" />
+              </button>
+              <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                <Moon className="w-5 h-5 text-slate-600" />
+              </button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-              <ShoppingCart className="w-5 h-5 text-slate-600" />
-            </button>
-            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-              <Moon className="w-5 h-5 text-slate-600" />
-            </button>
           </div>
         </div>
+      )}
 
+      <div className={isHomePage ? "" : "sticky top-[57px] z-10 bg-white border-b border-slate-200 shadow-sm"}>
         <div className="px-4 py-6 border-b border-slate-200 bg-slate-50">
           <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-4 text-center">
             Store Status
