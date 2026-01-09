@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, User, Shield, Activity, Settings as SettingsIcon, Loader2, AlertTriangle, Check, Settings } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { User, Shield, Activity, Settings as SettingsIcon, Loader2, AlertTriangle, Check, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
 import { AccessSelection } from '../hooks/useAccessConfiguration';
@@ -31,6 +31,10 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
   const [activeSection, setActiveSection] = useState('details');
   const [hasChanges, setHasChanges] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
+  const accessRef = useRef<HTMLDivElement>(null);
+  const activityRef = useRef<HTMLDivElement>(null);
+  const advancedRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -240,11 +244,40 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
   };
 
   const scrollToSection = (sectionId: string) => {
-    setActiveSection(sectionId);
-    if (contentRef.current) {
-      contentRef.current.scrollTop = 0;
+    const refs: Record<string, React.RefObject<HTMLDivElement>> = {
+      details: detailsRef,
+      access: accessRef,
+      activity: activityRef,
+      advanced: advancedRef
+    };
+
+    const ref = refs[sectionId];
+    if (ref?.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  // Intersection observer to track active section
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('data-section');
+            if (id) setActiveSection(id);
+          }
+        });
+      },
+      { threshold: 0.3, rootMargin: '-100px 0px -50% 0px' }
+    );
+
+    const refs = [detailsRef, accessRef, activityRef, advancedRef];
+    refs.forEach((ref) => {
+      if (ref.current) observer.observe(ref.current);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const getBreadcrumbItems = () => {
     return [
@@ -285,14 +318,6 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-[1800px] mx-auto h-screen flex flex-col">
         <div className="px-4 py-4 flex-shrink-0">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 transition-colors"
-          >
-            <ArrowLeft size={18} />
-            Back to Users
-          </button>
-
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
@@ -393,240 +418,232 @@ export default function UserEdit({ userId, onBack, onSuccess }: UserEditProps) {
                 </div>
               )}
 
-              {activeSection === 'details' && (
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-                  <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-lg font-bold text-slate-900">User Details</h2>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Basic information and account settings
-                    </p>
-                  </div>
-                  <div className="p-6 space-y-5">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Display Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.displayName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.displayName ? 'border-red-300' : 'border-slate-300'
-                        }`}
-                        placeholder="John Doe"
-                      />
-                      {errors.displayName && (
-                        <p className="text-red-600 text-sm mt-1">{errors.displayName}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.email ? 'border-red-300' : 'border-slate-300'
-                        }`}
-                        placeholder="john@example.com"
-                      />
-                      {errors.email && (
-                        <p className="text-red-600 text-sm mt-1">{errors.email}</p>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Role *
-                        </label>
-                        <select
-                          value={formData.role}
-                          onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="creator">Creator</option>
-                          <option value="operator">Operator</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Status *
-                        </label>
-                        <select
-                          value={formData.status}
-                          onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="pending">Pending</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
+              <div ref={detailsRef} data-section="details" className="bg-white rounded-lg shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                  <h2 className="text-lg font-bold text-slate-900">User Details</h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Basic information and account settings
+                  </p>
                 </div>
-              )}
-
-              {activeSection === 'access' && (
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-                  <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-lg font-bold text-slate-900">Access Configuration</h2>
-                    <p className="text-sm text-slate-600 mt-1">
-                      {formData.role === 'admin'
-                        ? 'Admin users have unrestricted access to all locations'
-                        : 'Configure which concepts, companies, and stores this user can access'
-                      }
-                    </p>
-                  </div>
-                  <div className="p-6">
-                    {formData.role === 'admin' ? (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                        <Shield className="w-12 h-12 text-blue-600 mx-auto mb-3" />
-                        <p className="text-blue-900 font-medium mb-1">Unrestricted Access</p>
-                        <p className="text-blue-700 text-sm">
-                          This user has admin privileges and can access all locations
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-semibold text-slate-900">Access Summary</h3>
-                            {(accessSelection.concepts.size + accessSelection.companies.size + accessSelection.stores.size > 0) && (
-                              <button
-                                onClick={() => setAccessSelection({
-                                  concepts: new Set(),
-                                  companies: new Set(),
-                                  stores: new Set()
-                                })}
-                                className="text-xs text-red-600 hover:text-red-700 font-medium"
-                              >
-                                Clear All
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="bg-white border border-slate-200 rounded-lg p-3">
-                              <p className="text-xs text-slate-500 mb-1">Concepts</p>
-                              <p className="text-2xl font-bold text-slate-900">{accessSelection.concepts.size}</p>
-                            </div>
-                            <div className="bg-white border border-slate-200 rounded-lg p-3">
-                              <p className="text-xs text-slate-500 mb-1">Companies</p>
-                              <p className="text-2xl font-bold text-slate-900">{accessSelection.companies.size}</p>
-                            </div>
-                            <div className="bg-white border border-slate-200 rounded-lg p-3">
-                              <p className="text-xs text-slate-500 mb-1">Stores</p>
-                              <p className="text-2xl font-bold text-slate-900">{accessSelection.stores.size}</p>
-                            </div>
-                          </div>
-                          {(accessSelection.concepts.size + accessSelection.companies.size + accessSelection.stores.size === 0) && (
-                            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
-                              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="text-xs font-medium text-amber-900">No access selected</p>
-                                <p className="text-xs text-amber-700 mt-0.5">
-                                  Select at least one location to grant access
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {errors.access && (
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <p className="text-red-600 text-sm">{errors.access}</p>
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => setShowAccessConfigModal(true)}
-                          className="w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Settings className="w-5 h-5" />
-                          <span className="font-medium">Configure Access</span>
-                        </button>
-                      </div>
+                <div className="p-6 space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Display Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.displayName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.displayName ? 'border-red-300' : 'border-slate-300'
+                      }`}
+                      placeholder="John Doe"
+                    />
+                    {errors.displayName && (
+                      <p className="text-red-600 text-sm mt-1">{errors.displayName}</p>
                     )}
                   </div>
-                </div>
-              )}
 
-              {activeSection === 'activity' && (
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-                  <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-lg font-bold text-slate-900">Activity & Audit</h2>
-                    <p className="text-sm text-slate-600 mt-1">
-                      User activity history and account timeline
-                    </p>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.email ? 'border-red-300' : 'border-slate-300'
+                      }`}
+                      placeholder="john@example.com"
+                    />
+                    {errors.email && (
+                      <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                    )}
                   </div>
-                  <div className="p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
-                          Account Created
-                        </label>
-                        <p className="text-slate-900">
-                          {new Date(user.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
-                          Last Login
-                        </label>
-                        <p className="text-slate-900">
-                          {user.last_login_at
-                            ? new Date(user.last_login_at).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })
-                            : 'Never'
-                          }
-                        </p>
-                      </div>
+
+                  <div className="grid grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Role *
+                      </label>
+                      <select
+                        value={formData.role}
+                        onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="creator">Creator</option>
+                        <option value="operator">Operator</option>
+                        <option value="admin">Admin</option>
+                      </select>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-200">
-                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Activity Log</h3>
-                      <div className="bg-slate-50 rounded-lg p-8 text-center">
-                        <Activity className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                        <p className="text-slate-600">Activity log will appear here</p>
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Status *
+                      </label>
+                      <select
+                        value={formData.status}
+                        onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="pending">Pending</option>
+                      </select>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {activeSection === 'advanced' && (
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-                  <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-lg font-bold text-slate-900">Advanced Settings</h2>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Additional configuration and preferences
-                    </p>
+              <div ref={accessRef} data-section="access" className="bg-white rounded-lg shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                  <h2 className="text-lg font-bold text-slate-900">Access Configuration</h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {formData.role === 'admin'
+                      ? 'Admin users have unrestricted access to all locations'
+                      : 'Configure which concepts, companies, and stores this user can access'
+                    }
+                  </p>
+                </div>
+                <div className="p-6">
+                  {formData.role === 'admin' ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                      <Shield className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+                      <p className="text-blue-900 font-medium mb-1">Unrestricted Access</p>
+                      <p className="text-blue-700 text-sm">
+                        This user has admin privileges and can access all locations
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-slate-900">Access Summary</h3>
+                          {(accessSelection.concepts.size + accessSelection.companies.size + accessSelection.stores.size > 0) && (
+                            <button
+                              onClick={() => setAccessSelection({
+                                concepts: new Set(),
+                                companies: new Set(),
+                                stores: new Set()
+                              })}
+                              className="text-xs text-red-600 hover:text-red-700 font-medium"
+                            >
+                              Clear All
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-white border border-slate-200 rounded-lg p-3">
+                            <p className="text-xs text-slate-500 mb-1">Concepts</p>
+                            <p className="text-2xl font-bold text-slate-900">{accessSelection.concepts.size}</p>
+                          </div>
+                          <div className="bg-white border border-slate-200 rounded-lg p-3">
+                            <p className="text-xs text-slate-500 mb-1">Companies</p>
+                            <p className="text-2xl font-bold text-slate-900">{accessSelection.companies.size}</p>
+                          </div>
+                          <div className="bg-white border border-slate-200 rounded-lg p-3">
+                            <p className="text-xs text-slate-500 mb-1">Stores</p>
+                            <p className="text-2xl font-bold text-slate-900">{accessSelection.stores.size}</p>
+                          </div>
+                        </div>
+                        {(accessSelection.concepts.size + accessSelection.companies.size + accessSelection.stores.size === 0) && (
+                          <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-medium text-amber-900">No access selected</p>
+                              <p className="text-xs text-amber-700 mt-0.5">
+                                Select at least one location to grant access
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {errors.access && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <p className="text-red-600 text-sm">{errors.access}</p>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setShowAccessConfigModal(true)}
+                        className="w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Settings className="w-5 h-5" />
+                        <span className="font-medium">Configure Access</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div ref={activityRef} data-section="activity" className="bg-white rounded-lg shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                  <h2 className="text-lg font-bold text-slate-900">Activity & Audit</h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    User activity history and account timeline
+                  </p>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                        Account Created
+                      </label>
+                      <p className="text-slate-900">
+                        {new Date(user.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                        Last Login
+                      </label>
+                      <p className="text-slate-900">
+                        {user.last_login_at
+                          ? new Date(user.last_login_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : 'Never'
+                        }
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-6">
+
+                  <div className="pt-4 border-t border-slate-200">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Activity Log</h3>
                     <div className="bg-slate-50 rounded-lg p-8 text-center">
-                      <SettingsIcon className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                      <p className="text-slate-600">Advanced settings will appear here</p>
+                      <Activity className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                      <p className="text-slate-600">Activity log will appear here</p>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+
+              <div ref={advancedRef} data-section="advanced" className="bg-white rounded-lg shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                  <h2 className="text-lg font-bold text-slate-900">Advanced Settings</h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Additional configuration and preferences
+                  </p>
+                </div>
+                <div className="p-6">
+                  <div className="bg-slate-50 rounded-lg p-8 text-center">
+                    <SettingsIcon className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                    <p className="text-slate-600">Advanced settings will appear here</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
