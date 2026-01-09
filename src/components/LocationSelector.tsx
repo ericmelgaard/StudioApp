@@ -90,7 +90,6 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
     if (storesLoading) return;
 
     setLoading(true);
-    console.log('LocationSelector: Loading data for accessible stores:', accessibleStores.length);
 
     // Check if user has multi-store access via user_store_access table
     if (userId) {
@@ -110,7 +109,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
     }
 
     const accessibleStoreIds = accessibleStores.map(s => s.id);
-    const accessibleCompanyIds = [...new Set(accessibleStores.map(s => s.company_id))];
+    const accessibleCompanyIds = [...new Set(accessibleStores.map(s => s.company_id).filter(id => id !== null))];
     const accessibleConceptIds = [...new Set(accessibleStores.map(s => s.company?.concept_id).filter(Boolean))];
 
     let conceptsQuery = supabase
@@ -141,7 +140,6 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
       company_id: s.company_id
     }));
 
-    console.log('LocationSelector: Loaded stores count:', formattedStores.length);
     if (conceptsData.data) setConcepts(conceptsData.data);
     if (companiesData.data) setCompanies(companiesData.data);
     setStores(formattedStores);

@@ -55,25 +55,19 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
         );
       } else {
         // Fetch user profile once with all needed fields
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('user_profiles')
           .select('role, company_id, concept_id, store_id')
           .eq('id', userId)
           .maybeSingle();
 
-        console.log('useStoreAccess: userId =', userId);
-        console.log('useStoreAccess: profile =', profile);
-        console.log('useStoreAccess: profileError =', profileError);
-
         if (!profile) {
-          console.log('useStoreAccess: No profile found, setting empty stores');
           setAccessibleStores([]);
           return;
         }
 
         // Priority 1: Admin role gets all stores
         if (profile.role === 'admin') {
-          console.log('useStoreAccess: Admin user detected, fetching all stores');
           const { data: stores, error } = await supabase
             .from('stores')
             .select(`
@@ -88,18 +82,14 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
             `)
             .order('name');
 
-          console.log('useStoreAccess: Admin query returned', stores?.length, 'stores');
-          console.log('useStoreAccess: Admin query error:', error);
-
           if (error) throw error;
 
-          const formattedStores = stores?.map(store => ({
-            ...store,
-            company: Array.isArray(store.companies) ? store.companies[0] : store.companies
-          })) || [];
-
-          console.log('useStoreAccess: Setting', formattedStores.length, 'accessible stores');
-          setAccessibleStores(formattedStores);
+          setAccessibleStores(
+            stores?.map(store => ({
+              ...store,
+              company: Array.isArray(store.companies) ? store.companies[0] : store.companies
+            })) || []
+          );
           return;
         }
 
