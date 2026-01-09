@@ -80,6 +80,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
                 concept_id
               )
             `)
+            .not('company_id', 'is', null)
             .order('name');
 
           if (error) throw error;
@@ -88,7 +89,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
             stores?.map(store => ({
               ...store,
               company: Array.isArray(store.companies) ? store.companies[0] : store.companies
-            })) || []
+            })).filter(store => store.company_id) || []
           );
           return;
         }
