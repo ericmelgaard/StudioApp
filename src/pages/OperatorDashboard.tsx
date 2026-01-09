@@ -56,13 +56,14 @@ interface DashboardCard {
 
 export default function OperatorDashboard({ onBack, user }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('home');
-  const { location, setLocation, clearHistory } = useLocation();
+  const { location, setLocation, clearHistory } = useLocation('operator');
   const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId: user.id });
   const [companies, setCompanies] = useState<Company[]>([]);
   const [storesByCompany, setStoresByCompany] = useState<Record<number, Store[]>>({});
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [stats, setStats] = useState({
     signageCount: 0,
     signageOnline: 0,
@@ -108,13 +109,10 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
     setLoading(true);
 
-    console.log('OperatorDashboard: Loading with accessible stores:', accessibleStores.length);
-
     // Get unique company IDs from accessible stores
     const companyIds = [...new Set(accessibleStores.map(s => s.company_id))];
 
     if (companyIds.length === 0) {
-      console.log('No accessible stores found for user');
       setLoading(false);
       return;
     }
@@ -153,17 +151,22 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
     // Set initial selection
     if (location.store && storesData.find(s => s.id === location.store?.id)) {
+      // Restore saved location
       setSelectedStore(location.store);
       const company = companiesData.find(c => c.id === location.store?.company_id);
       if (company) setSelectedCompany(company);
     } else if (location.company && companiesData.find(c => c.id === location.company?.id)) {
+      // Restore saved company
       setSelectedCompany(location.company);
-    } else if (companiesData.length > 0) {
+    } else if (!hasInitialized && companiesData.length > 0) {
+      // First time initialization - auto navigate to first accessible store
       setSelectedCompany(companiesData[0]);
-      // Auto-select first store if available
       if (grouped[companiesData[0].id]?.length > 0) {
-        setSelectedStore(grouped[companiesData[0].id][0]);
+        const firstStore = grouped[companiesData[0].id][0];
+        setSelectedStore(firstStore);
+        setLocation({ company: companiesData[0], store: firstStore });
       }
+      setHasInitialized(true);
     }
 
     setLoading(false);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { UserRole } from '../lib/supabase';
 
 interface Concept {
   id: number;
@@ -35,23 +36,34 @@ interface NavigationHistoryEntry {
   timestamp: number;
 }
 
-export function useLocation() {
+function getLocationKey(role?: UserRole): string {
+  return role ? `selectedLocation_${role}` : 'selectedLocation';
+}
+
+function getHistoryKey(role?: UserRole): string {
+  return role ? `navigationHistory_${role}` : 'navigationHistory';
+}
+
+export function useLocation(role?: UserRole) {
+  const locationKey = getLocationKey(role);
+  const historyKey = getHistoryKey(role);
+
   const [location, setLocation] = useState<LocationState>(() => {
-    const saved = localStorage.getItem('selectedLocation');
+    const saved = localStorage.getItem(locationKey);
     return saved ? JSON.parse(saved) : {};
   });
 
   const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryEntry[]>(() => {
-    const saved = localStorage.getItem('navigationHistory');
+    const saved = localStorage.getItem(historyKey);
     return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem('selectedLocation', JSON.stringify(location));
+    localStorage.setItem(locationKey, JSON.stringify(location));
 
     // Dispatch custom event to notify other components
     window.dispatchEvent(new CustomEvent('locationChange', { detail: location }));
-  }, [location]);
+  }, [location, locationKey]);
 
   useEffect(() => {
     // Listen for location changes from other components
@@ -75,7 +87,7 @@ export function useLocation() {
 
     const updatedHistory = [...navigationHistory, entry].slice(-10);
     setNavigationHistory(updatedHistory);
-    localStorage.setItem('navigationHistory', JSON.stringify(updatedHistory));
+    localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
 
     setLocation(newLocation);
   };
@@ -89,7 +101,7 @@ export function useLocation() {
     const updatedHistory = navigationHistory.slice(0, -1);
 
     setNavigationHistory(updatedHistory);
-    localStorage.setItem('navigationHistory', JSON.stringify(updatedHistory));
+    localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
     setLocation(previousEntry.location);
 
     return previousEntry.location;
@@ -108,7 +120,14 @@ export function useLocation() {
 
   const clearHistory = () => {
     setNavigationHistory([]);
-    localStorage.removeItem('navigationHistory');
+    localStorage.removeItem(historyKey);
+  };
+
+  const resetLocation = () => {
+    setLocation({});
+    setNavigationHistory([]);
+    localStorage.removeItem(locationKey);
+    localStorage.removeItem(historyKey);
   };
 
   const getLocationDisplay = (): string => {
@@ -143,6 +162,7 @@ export function useLocation() {
     canNavigateBack,
     getPreviousLocation,
     clearHistory,
+    resetLocation,
     getLocationDisplay,
     getLocationBreadcrumb,
   };
