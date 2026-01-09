@@ -27,6 +27,7 @@ export function TreeBrowser({
 }: TreeBrowserProps) {
   const [expandedConcepts, setExpandedConcepts] = useState<Set<number>>(new Set());
   const [expandedCompanies, setExpandedCompanies] = useState<Set<number>>(new Set());
+  const [expandAll, setExpandAll] = useState(false);
 
   const filteredHierarchy = useMemo(() => {
     if (!searchTerm.trim()) return hierarchy;
@@ -101,7 +102,24 @@ export function TreeBrowser({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Browse Hierarchy</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Browse Hierarchy</h3>
+          <button
+            onClick={() => {
+              if (expandAll) {
+                setExpandedConcepts(new Set());
+                setExpandedCompanies(new Set());
+              } else {
+                setExpandedConcepts(new Set(hierarchy.concepts.map(c => c.id)));
+                setExpandedCompanies(new Set(hierarchy.companies.map(c => c.id)));
+              }
+              setExpandAll(!expandAll);
+            }}
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+          >
+            {expandAll ? 'Collapse All' : 'Expand All'}
+          </button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -141,12 +159,13 @@ export function TreeBrowser({
                       e.stopPropagation();
                       toggleConceptExpansion(concept.id);
                     }}
-                    className="p-0.5 hover:bg-gray-200 rounded"
+                    className="p-1 hover:bg-gray-300 rounded transition-colors"
+                    title={isExpanded ? 'Collapse' : 'Expand'}
                   >
                     {isExpanded ? (
-                      <ChevronDown className="w-4 h-4 text-gray-600" />
+                      <ChevronDown className="w-4 h-4 text-gray-700" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                      <ChevronRight className="w-4 h-4 text-gray-700" />
                     )}
                   </button>
 
@@ -204,12 +223,13 @@ export function TreeBrowser({
                                 e.stopPropagation();
                                 toggleCompanyExpansion(company.id);
                               }}
-                              className="p-0.5 hover:bg-gray-200 rounded"
+                              className="p-1 hover:bg-gray-300 rounded transition-colors"
+                              title={isCompanyExpanded ? 'Collapse' : 'Expand'}
                             >
                               {isCompanyExpanded ? (
-                                <ChevronDown className="w-4 h-4 text-gray-600" />
+                                <ChevronDown className="w-4 h-4 text-gray-700" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-600" />
+                                <ChevronRight className="w-4 h-4 text-gray-700" />
                               )}
                             </button>
 
