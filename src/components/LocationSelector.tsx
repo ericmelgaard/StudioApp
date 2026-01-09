@@ -85,6 +85,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
     }
     if (selectedLocation?.company) {
       setExpandedCompanies(new Set([selectedLocation.company.id]));
+      // Auto-load stores for the current company
+      loadStoresForCompany(selectedLocation.company.id);
     }
   }, [accessibleStores, storesLoading]);
 
@@ -449,22 +451,30 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
 
           {(viewContext?.concept || viewContext?.company || viewContext?.store) && (
             <div className="flex items-center gap-2 text-sm">
-              <button
-                onClick={() => setViewContext({})}
-                className="text-blue-600 hover:text-blue-700 hover:underline"
-              >
-                WAND Digital
-              </button>
+              {/* Only admins can navigate to root concept level */}
+              {userRole === 'admin' && (
+                <button
+                  onClick={() => setViewContext({})}
+                  className="text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  WAND Digital
+                </button>
+              )}
               {viewContext?.concept && (
                 <>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  {userRole === 'admin' && <ChevronRight className="w-4 h-4 text-slate-400" />}
+                  {/* Only show concept as clickable if admin and there's a deeper level */}
                   {viewContext.company || viewContext.store ? (
-                    <button
-                      onClick={() => setViewContext({ concept: viewContext.concept })}
-                      className="text-blue-600 hover:text-blue-700 hover:underline"
-                    >
-                      {viewContext.concept.name}
-                    </button>
+                    userRole === 'admin' ? (
+                      <button
+                        onClick={() => setViewContext({ concept: viewContext.concept })}
+                        className="text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        {viewContext.concept.name}
+                      </button>
+                    ) : (
+                      <span className="text-slate-700 font-medium">{viewContext.concept.name}</span>
+                    )
                   ) : (
                     <span className="text-slate-700 font-medium">{viewContext.concept.name}</span>
                   )}
@@ -473,13 +483,18 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
               {viewContext?.company && (
                 <>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
+                  {/* Show company as clickable if there's a store level and user has multi-store access */}
                   {viewContext.store ? (
-                    <button
-                      onClick={() => setViewContext({ concept: viewContext.concept, company: viewContext.company })}
-                      className="text-blue-600 hover:text-blue-700 hover:underline"
-                    >
-                      {viewContext.company.name}
-                    </button>
+                    (userRole === 'admin' || isMultiStoreUser) ? (
+                      <button
+                        onClick={() => setViewContext({ concept: viewContext.concept, company: viewContext.company })}
+                        className="text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        {viewContext.company.name}
+                      </button>
+                    ) : (
+                      <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
+                    )
                   ) : (
                     <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
                   )}
