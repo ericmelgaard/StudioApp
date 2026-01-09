@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Monitor, HelpCircle, FileText, Menu } from 'lucide-react';
+import { Monitor, HelpCircle, FileText, Menu, ShoppingCart } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import OperatorMobileNav from '../components/OperatorMobileNav';
@@ -224,6 +224,15 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               </Suspense>
             </div>
             <div className="hidden md:flex items-center gap-1">
+              <a
+                href="https://shop.wanddigital.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                title="WAND Digital Shop"
+              >
+                <ShoppingCart className="w-5 h-5" />
+              </a>
               <button
                 className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
                 title="Help"
@@ -315,6 +324,15 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
             </Suspense>
           </div>
           <div className="hidden md:flex items-center gap-1">
+            <a
+              href="https://shop.wanddigital.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="WAND Digital Shop"
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </a>
             <button
               className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
               title="Help"
