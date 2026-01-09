@@ -19,6 +19,7 @@ interface UseStoreAccessProps {
 export function useStoreAccess(props?: UseStoreAccessProps) {
   const userId = props?.userId;
   const [accessibleStores, setAccessibleStores] = useState<Store[]>([]);
+  const [hasFullAccess, setHasFullAccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
             company: Array.isArray(store.companies) ? store.companies[0] : store.companies
           })) || []
         );
+        setHasFullAccess(false);
       } else {
         // Fetch user profile once with all needed fields
         const { data: profile } = await supabase
@@ -63,34 +65,22 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
 
         if (!profile) {
           setAccessibleStores([]);
+          setHasFullAccess(false);
           return;
         }
 
-        // Priority 1: Admin role - return all stores for quick navigation
-        if (profile.role === 'admin') {
-          const { data: stores, error } = await supabase
-            .from('stores')
-            .select(`
-              id,
-              name,
-              company_id,
-              companies (
-                id,
-                name,
-                concept_id
-              )
-            `)
-            .not('company_id', 'is', null)
-            .order('name');
+        // Check if user has full access:
+        // 1. Admin role with no location restrictions (concept_id, company_id, store_id all NULL)
+        // 2. Creator role with no location restrictions
+        const isUnrestrictedAdmin = profile.role === 'admin' &&
+          !profile.concept_id && !profile.company_id && !profile.store_id;
+        const isUnrestrictedCreator = profile.role === 'creator' &&
+          !profile.concept_id && !profile.company_id && !profile.store_id;
 
-          if (error) throw error;
-
-          setAccessibleStores(
-            stores?.map(store => ({
-              ...store,
-              company: Array.isArray(store.companies) ? store.companies[0] : store.companies
-            })).filter(store => store.company_id) || []
-          );
+        if (isUnrestrictedAdmin || isUnrestrictedCreator) {
+          // Full access users: empty store list, navigation is context-based
+          setAccessibleStores([]);
+          setHasFullAccess(true);
           return;
         }
 
@@ -125,6 +115,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
               company: Array.isArray(store.companies) ? store.companies[0] : store.companies
             })) || []
           );
+          setHasFullAccess(false);
           return;
         }
 
@@ -152,6 +143,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
               company: Array.isArray(store.companies) ? store.companies[0] : store.companies
             })) || []
           );
+          setHasFullAccess(false);
           return;
         }
 
@@ -180,6 +172,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
               company: Array.isArray(store.companies) ? store.companies[0] : store.companies
             })) || []
           );
+          setHasFullAccess(false);
           return;
         }
 
@@ -215,22 +208,27 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
                 company: Array.isArray(store.companies) ? store.companies[0] : store.companies
               })) || []
             );
+            setHasFullAccess(false);
             return;
           }
         }
 
         // No access defined
         setAccessibleStores([]);
+        setHasFullAccess(false);
       }
     } catch (error) {
       console.error('Error loading accessible stores:', error);
       setAccessibleStores([]);
+      setHasFullAccess(false);
     } finally {
       setLoading(false);
     }
   };
 
   const hasAccessToStore = (storeId: number): boolean => {
+    // Full access users can access any store
+    if (hasFullAccess) return true;
     return accessibleStores.some(store => store.id === storeId);
   };
 
@@ -240,6 +238,7 @@ export function useStoreAccess(props?: UseStoreAccessProps) {
 
   return {
     accessibleStores,
+    hasFullAccess,
     loading,
     hasAccessToStore,
     getDefaultStore,

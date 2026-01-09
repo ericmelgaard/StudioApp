@@ -55,7 +55,7 @@ export default function HeaderNavigation({
   actionButton
 }: HeaderNavigationProps) {
   const { location, setLocation } = useLocation(role);
-  const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId });
+  const { accessibleStores, hasFullAccess, loading: storesLoading } = useStoreAccess({ userId });
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -69,7 +69,7 @@ export default function HeaderNavigation({
     if (!storesLoading) {
       loadNavigationData();
     }
-  }, [userConceptId, userCompanyId, userStoreId, userId, location, accessibleStores, storesLoading]);
+  }, [userConceptId, userCompanyId, userStoreId, userId, location, accessibleStores, hasFullAccess, storesLoading]);
 
   // Mobile detection
   useEffect(() => {
@@ -123,8 +123,8 @@ export default function HeaderNavigation({
 
     setLoading(true);
 
-    // Determine if user has limited store access
-    const hasLimitedAccess = userId && accessibleStores.length > 0;
+    // Determine if user has limited store access (not full access)
+    const hasLimitedAccess = !hasFullAccess && accessibleStores.length > 0;
 
     // Quick nav works like breadcrumb navigation:
     // Root (WAND) -> Concepts (children)
