@@ -80,7 +80,17 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   useEffect(() => {
     const initializeData = async () => {
       await loadData();
-      setViewContext(selectedLocation || {});
+      // Breadcrumb stops at company level, never shows store
+      // If we're at a store, set context to just the company
+      if (selectedLocation?.store) {
+        setViewContext({
+          concept: selectedLocation.concept,
+          company: selectedLocation.company
+        });
+      } else {
+        setViewContext(selectedLocation || {});
+      }
+
       if (selectedLocation?.concept) {
         setExpandedConcept(selectedLocation.concept.id);
       }
@@ -453,7 +463,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
             </button>
           </div>
 
-          {(viewContext?.concept || viewContext?.company || viewContext?.store) && (
+          {(viewContext?.concept || viewContext?.company) && (
             <div className="flex items-center gap-2 text-sm">
               {/* Only admins can navigate to root concept level */}
               {userRole === 'admin' && (
@@ -468,7 +478,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
                 <>
                   {userRole === 'admin' && <ChevronRight className="w-4 h-4 text-slate-400" />}
                   {/* Only show concept as clickable if admin and there's a deeper level */}
-                  {viewContext.company || viewContext.store ? (
+                  {viewContext.company ? (
                     userRole === 'admin' ? (
                       <button
                         onClick={() => setViewContext({ concept: viewContext.concept })}
@@ -487,27 +497,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
               {viewContext?.company && (
                 <>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
-                  {/* Show company as clickable if there's a store level and user has multi-store access */}
-                  {viewContext.store ? (
-                    (userRole === 'admin' || isMultiStoreUser) ? (
-                      <button
-                        onClick={() => setViewContext({ concept: viewContext.concept, company: viewContext.company })}
-                        className="text-blue-600 hover:text-blue-700 hover:underline"
-                      >
-                        {viewContext.company.name}
-                      </button>
-                    ) : (
-                      <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
-                    )
-                  ) : (
-                    <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
-                  )}
-                </>
-              )}
-              {viewContext?.store && (
-                <>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-700 font-medium">{viewContext.store.name}</span>
+                  {/* Breadcrumb stops at company - this is the deepest level shown */}
+                  <span className="text-slate-700 font-medium">{viewContext.company.name}</span>
                 </>
               )}
             </div>
@@ -527,29 +518,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
 
         <div className="flex-1 overflow-y-auto p-4 min-h-[400px]">
           {/* Render based on current view context */}
-          {viewContext?.store ? (
-            /* Store-level view: Show only this specific store */
-            (() => {
-              const store = viewContext.store;
-              const company = viewContext.company;
-
-              return (
-                <div className="space-y-2">
-                  <div className="border border-slate-200 rounded-lg">
-                    <div className="flex items-center gap-2 p-3 bg-slate-50">
-                      {getLocationIcon('store', "w-5 h-5")}
-                      <span className="flex-1 text-left font-medium text-slate-900">
-                        {store.name}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-xs text-slate-500 text-center py-2">
-                    Click "{company?.name}" above to see other stores
-                  </div>
-                </div>
-              );
-            })()
-          ) : viewContext?.company ? (
+          {viewContext?.company ? (
             /* Company-level view: Show only this company and its stores */
             (() => {
               const company = viewContext.company;
