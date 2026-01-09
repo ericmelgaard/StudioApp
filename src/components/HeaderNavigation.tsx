@@ -117,9 +117,10 @@ export default function HeaderNavigation({
 
     setLoading(true);
 
-    // Quick nav always shows all stores you have access to
+    // Quick nav always shows all stores you have access to, regardless of current location
     // This is a simple, flat list for quick navigation between stores
-    if (userId && accessibleStores.length > 0) {
+    // It treats your accessible stores as the "root" level, just like the full nav
+    if (accessibleStores.length > 0) {
       const storeData = accessibleStores.map(store => ({
         id: store.id,
         name: store.name,
@@ -136,8 +137,6 @@ export default function HeaderNavigation({
         .order('name');
 
       if (companiesData) setCompanies(companiesData);
-      setLoading(false);
-      return;
     }
 
     setLoading(false);
