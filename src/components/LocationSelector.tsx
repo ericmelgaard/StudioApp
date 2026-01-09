@@ -529,11 +529,14 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
               return (
                 <div className="space-y-2">
                   <div className="border border-slate-200 rounded-lg">
-                    <div className="flex items-center gap-2 p-3 bg-slate-50">
+                    <div className="flex items-center gap-2 p-3 bg-slate-50 hover:bg-slate-100">
                       {getLocationIcon('company', "w-5 h-5")}
-                      <span className="flex-1 text-left font-medium text-slate-900">
+                      <button
+                        onClick={() => concept && handleSelectCompany(company, concept)}
+                        className="flex-1 text-left font-medium text-slate-900 hover:text-blue-600"
+                      >
                         {company.name}
-                      </span>
+                      </button>
                       {companyStores.length > 0 && (
                         <span className="text-sm text-slate-500">{companyStores.length} stores</span>
                       )}
