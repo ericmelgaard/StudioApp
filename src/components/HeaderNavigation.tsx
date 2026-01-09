@@ -4,6 +4,11 @@ import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 import { useStoreAccess } from '../hooks/useStoreAccess';
 
+interface Concept {
+  id: number;
+  name: string;
+}
+
 interface Company {
   id: number;
   name: string;
@@ -49,6 +54,7 @@ export default function HeaderNavigation({
 }: HeaderNavigationProps) {
   const { location, setLocation } = useLocation();
   const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId });
+  const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,11 +120,14 @@ export default function HeaderNavigation({
 
     setLoading(true);
 
-    // Quick nav shows sibling locations based on current context
-    // Load from database so you can see all siblings of your current location
+    // Quick nav works like breadcrumb navigation:
+    // Root (WAND) -> Concepts (children)
+    // Concept -> Companies (children)
+    // Company -> Stores (children) - root for store navigation
+    // Store -> Stores (siblings in same company)
 
-    if (location.store || location.company) {
-      // Show siblings: other stores in the same company
+    if (location.store) {
+      // At a store: show sibling stores in the same company
       const companyId = location.company?.id;
       if (companyId) {
         const { data: storesData } = await supabase
@@ -129,56 +138,48 @@ export default function HeaderNavigation({
 
         if (storesData) {
           setStores(storesData);
-
-          const { data: companiesData } = await supabase
-            .from('companies')
-            .select('id, name, concept_id')
-            .eq('id', companyId)
-            .maybeSingle();
-
-          if (companiesData) setCompanies([companiesData]);
+          setConcepts([]);
+          setCompanies(location.company ? [location.company] : []);
         }
       }
+    } else if (location.company) {
+      // At a company: show child stores (acts as root for store navigation)
+      const companyId = location.company.id;
+      const { data: storesData } = await supabase
+        .from('stores')
+        .select('id, name, company_id')
+        .eq('company_id', companyId)
+        .order('name');
+
+      if (storesData) {
+        setStores(storesData);
+        setConcepts([]);
+        setCompanies([location.company]);
+      }
     } else if (location.concept) {
-      // Show stores in companies under this concept
+      // At a concept: show child companies
       const { data: companiesData } = await supabase
         .from('companies')
         .select('id, name, concept_id')
         .eq('concept_id', location.concept.id)
         .order('name');
 
-      if (companiesData && companiesData.length > 0) {
+      if (companiesData) {
         setCompanies(companiesData);
-
-        const companyIds = companiesData.map(c => c.id);
-        const { data: storesData } = await supabase
-          .from('stores')
-          .select('id, name, company_id')
-          .in('company_id', companyIds)
-          .order('name');
-
-        if (storesData) setStores(storesData);
+        setConcepts([]);
+        setStores([]);
       }
     } else {
-      // At root level, show your accessible stores for quick access
-      if (accessibleStores.length > 0) {
-        const storeData = accessibleStores.map(store => ({
-          id: store.id,
-          name: store.name,
-          company_id: store.company_id,
-        }));
-        setStores(storeData);
+      // At root (WAND Digital): show child concepts
+      const { data: conceptsData } = await supabase
+        .from('concepts')
+        .select('id, name')
+        .order('name');
 
-        const uniqueCompanyIds = [...new Set(storeData.map(s => s.company_id).filter(Boolean))];
-        if (uniqueCompanyIds.length > 0) {
-          const { data: companiesData } = await supabase
-            .from('companies')
-            .select('id, name, concept_id')
-            .in('id', uniqueCompanyIds)
-            .order('name');
-
-          if (companiesData) setCompanies(companiesData);
-        }
+      if (conceptsData) {
+        setConcepts(conceptsData);
+        setCompanies([]);
+        setStores([]);
       }
     }
 
@@ -199,11 +200,13 @@ export default function HeaderNavigation({
     return getLocationIcon('wand', "w-4 h-4 text-slate-600");
   };
 
-  // Quick nav shows stores grouped by company
+  // Quick nav shows different content based on location level
+  const showConcepts = concepts.length > 0;
+  const showCompanies = companies.length > 0 && stores.length === 0;
   const showStores = stores.length > 0;
 
-  // Show dropdown if we have stores
-  const hasLocationContent = showStores;
+  // Show dropdown if we have any content
+  const hasLocationContent = showConcepts || showCompanies || showStores;
   const hasDropdownContent = hasLocationContent;
 
   // Group stores by company for display
@@ -261,55 +264,104 @@ export default function HeaderNavigation({
         {/* Desktop Dropdown */}
         {!isMobile && hasDropdownContent && isDropdownOpen && (
           <div className="absolute top-full left-0 mt-1 w-[360px] bg-white rounded-lg shadow-lg border border-slate-200 transition-all max-h-[32rem] overflow-hidden z-50">
-            {/* Scrollable Content - Stores grouped by company */}
-            {hasLocationContent && (
-              <div className="max-h-80 overflow-y-auto">
-                {companiesWithStores.map((company) => (
-                  <div key={company.id}>
-                    {/* Company Header (non-clickable) */}
-                    <div className="px-4 py-2 bg-slate-50 border-b border-slate-200">
-                      <div className="flex items-center gap-2">
-                        {getLocationIcon('company', "w-4 h-4 text-slate-500")}
-                        <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                          {company.name}
-                        </span>
+            <div className="max-h-80 overflow-y-auto">
+              {/* Show Concepts (at root) */}
+              {showConcepts && (
+                <div className="py-1">
+                  {concepts.map((concept) => (
+                    <button
+                      key={concept.id}
+                      onClick={() => handleSelectLocation({ concept })}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                        location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      {getLocationIcon('concept', "w-4 h-4 flex-shrink-0")}
+                      <span className="truncate">{concept.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Show Companies (at concept level) */}
+              {showCompanies && (
+                <div className="py-1">
+                  {companies.map((company) => (
+                    <button
+                      key={company.id}
+                      onClick={async () => {
+                        const { data: conceptData } = await supabase
+                          .from('concepts')
+                          .select('id, name')
+                          .eq('id', company.concept_id)
+                          .maybeSingle();
+
+                        handleSelectLocation({
+                          concept: conceptData || undefined,
+                          company
+                        });
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                        location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      }`}
+                    >
+                      {getLocationIcon('company', "w-4 h-4 flex-shrink-0")}
+                      <span className="truncate">{company.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Show Stores (at company/store level) */}
+              {showStores && (
+                <>
+                  {companiesWithStores.map((company) => (
+                    <div key={company.id}>
+                      {/* Company Header (non-clickable) */}
+                      <div className="px-4 py-2 bg-slate-50 border-b border-slate-200">
+                        <div className="flex items-center gap-2">
+                          {getLocationIcon('company', "w-4 h-4 text-slate-500")}
+                          <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                            {company.name}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Stores in this company */}
+                      <div className="py-1">
+                        {storesByCompany[company.id]
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((store) => (
+                            <button
+                              key={store.id}
+                              onClick={async () => {
+                                // Fetch concept for this store's company
+                                const { data: conceptData } = await supabase
+                                  .from('concepts')
+                                  .select('id, name')
+                                  .eq('id', company.concept_id)
+                                  .maybeSingle();
+
+                                handleSelectLocation({
+                                  concept: conceptData || undefined,
+                                  company,
+                                  store
+                                });
+                              }}
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                                location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                              }`}
+                            >
+                              {getLocationIcon('store', "w-4 h-4 flex-shrink-0")}
+                              <span className="truncate">{store.name}</span>
+                            </button>
+                          ))}
                       </div>
                     </div>
-
-                    {/* Stores in this company */}
-                    <div className="py-1">
-                      {storesByCompany[company.id]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((store) => (
-                          <button
-                            key={store.id}
-                            onClick={async () => {
-                              // Fetch concept for this store's company
-                              const { data: conceptData } = await supabase
-                                .from('concepts')
-                                .select('id, name')
-                                .eq('id', company.concept_id)
-                                .maybeSingle();
-
-                              handleSelectLocation({
-                                concept: conceptData || undefined,
-                                company,
-                                store
-                              });
-                            }}
-                            className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                              location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
-                            }`}
-                          >
-                            {getLocationIcon('store', "w-4 h-4 flex-shrink-0")}
-                            <span className="truncate">{store.name}</span>
-                          </button>
-                        ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -333,10 +385,52 @@ export default function HeaderNavigation({
             </button>
           </div>
 
-          {/* Scrollable Content - Stores grouped by company */}
+          {/* Scrollable Content */}
           {hasLocationContent && (
             <div className="flex-1 overflow-y-auto">
-              {companiesWithStores.map((company) => (
+              {/* Show Concepts (at root) */}
+              {showConcepts && concepts.map((concept) => (
+                <button
+                  key={concept.id}
+                  onClick={() => handleSelectLocation({ concept })}
+                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
+                    location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  }`}
+                  style={{ minHeight: '44px' }}
+                >
+                  {getLocationIcon('concept', "w-5 h-5 flex-shrink-0")}
+                  <span className="text-base">{concept.name}</span>
+                </button>
+              ))}
+
+              {/* Show Companies (at concept level) */}
+              {showCompanies && companies.map((company) => (
+                <button
+                  key={company.id}
+                  onClick={async () => {
+                    const { data: conceptData } = await supabase
+                      .from('concepts')
+                      .select('id, name')
+                      .eq('id', company.concept_id)
+                      .maybeSingle();
+
+                    handleSelectLocation({
+                      concept: conceptData || undefined,
+                      company
+                    });
+                  }}
+                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
+                    location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  }`}
+                  style={{ minHeight: '44px' }}
+                >
+                  {getLocationIcon('company', "w-5 h-5 flex-shrink-0")}
+                  <span className="text-base">{company.name}</span>
+                </button>
+              ))}
+
+              {/* Show Stores (at company/store level) */}
+              {showStores && companiesWithStores.map((company) => (
                 <div key={company.id}>
                   {/* Company Header (non-clickable) */}
                   <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 sticky top-0">
