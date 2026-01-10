@@ -83,17 +83,21 @@ export default function MediaPlayersManagement() {
   const loadData = async () => {
     try {
       let storesQuery = supabase.from('stores').select('id, name, company_id, companies!inner(id, name, concept_id)').order('name');
+      let playersQuery = supabase.from('media_players').select('*, hardware_devices(*), stores!inner(id, name, company_id, companies!inner(id, name, concept_id)), placement_groups(id, name)').order('name');
 
       if (location.store) {
         storesQuery = storesQuery.eq('id', location.store.id);
+        playersQuery = playersQuery.eq('store_id', location.store.id);
       } else if (location.company) {
         storesQuery = storesQuery.eq('companies.id', location.company.id);
+        playersQuery = playersQuery.eq('stores.company_id', location.company.id);
       } else if (location.concept) {
         storesQuery = storesQuery.eq('companies.concept_id', location.concept.id);
+        playersQuery = playersQuery.eq('stores.companies.concept_id', location.concept.id);
       }
 
       const [playersRes, devicesRes, storesRes, groupsRes, displaysRes] = await Promise.all([
-        supabase.from('media_players').select('*, hardware_devices(*), stores(id, name), placement_groups(id, name)').order('name'),
+        playersQuery,
         supabase.from('hardware_devices').select('*').in('status', ['available']).order('device_id'),
         storesQuery,
         supabase.from('placement_groups').select('id, name, store_id').order('name'),

@@ -78,17 +78,21 @@ export default function DisplaysManagement() {
   const loadData = async () => {
     try {
       let playersQuery = supabase.from('media_players').select('*, stores(id, name, company_id, companies!inner(id, name, concept_id))').order('name');
+      let displaysQuery = supabase.from('displays').select('*, media_players!inner(*, stores!inner(id, name, company_id, companies!inner(id, name, concept_id))), display_types(*)').order('name');
 
       if (location.store) {
         playersQuery = playersQuery.eq('store_id', location.store.id);
+        displaysQuery = displaysQuery.eq('media_players.store_id', location.store.id);
       } else if (location.company) {
         playersQuery = playersQuery.eq('stores.companies.id', location.company.id);
+        displaysQuery = displaysQuery.eq('media_players.stores.company_id', location.company.id);
       } else if (location.concept) {
         playersQuery = playersQuery.eq('stores.companies.concept_id', location.concept.id);
+        displaysQuery = displaysQuery.eq('media_players.stores.companies.concept_id', location.concept.id);
       }
 
       const [displaysRes, playersRes, typesRes] = await Promise.all([
-        supabase.from('displays').select('*, media_players(*, stores(id, name)), display_types(*)').order('name'),
+        displaysQuery,
         playersQuery,
         supabase.from('display_types').select('*').eq('status', 'active').order('name')
       ]);
