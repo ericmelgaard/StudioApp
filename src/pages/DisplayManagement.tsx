@@ -5,6 +5,8 @@ import {
   RotateCw, RefreshCw, Trash, Eye, Settings
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import DisplayPreviewModal from '../components/DisplayPreviewModal';
+import DisplayContentModal from '../components/DisplayContentModal';
 
 interface DisplayManagementProps {
   storeId: number;
@@ -34,6 +36,12 @@ interface Display {
   position: number;
   status: 'active' | 'inactive' | 'error';
   thumbnail_url: string | null;
+  configuration?: {
+    preview_url?: string;
+    screenshot_url?: string;
+    is_temporary_content?: boolean;
+    content_notes?: string;
+  };
   display_type?: {
     name: string;
     category: string;
@@ -77,6 +85,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [previewModal, setPreviewModal] = useState<{ display: Display; name: string } | null>(null);
+  const [contentModal, setContentModal] = useState<Display | null>(null);
 
   useEffect(() => {
     loadStoreOperationStatus();
@@ -142,13 +152,15 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     singlePlayers.forEach(mp => {
       const mpDisplays = displays?.filter(d => d.media_player_id === mp.id) || [];
       const uptime = calculateUptime(mp.last_heartbeat);
+      const screenshotUrl = mpDisplays[0]?.configuration?.screenshot_url;
+      const thumbnail = screenshotUrl || mpDisplays[0]?.thumbnail_url || null;
 
       cards.push({
         id: mp.id,
         name: mp.name,
         status: mp.status,
         uptime,
-        thumbnail: mpDisplays[0]?.thumbnail_url || null,
+        thumbnail,
         mediaPlayer: mp,
         displays: mpDisplays,
         isGroup: false
@@ -251,6 +263,25 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       }, 2000);
     } else {
       setActionLoading(null);
+    }
+  };
+
+  const handleViewPreview = (card: DisplayCard) => {
+    const display = card.displays[0];
+    if (display?.configuration?.preview_url) {
+      const displayName = card.displays.length > 0
+        ? card.displays.map(d => d.name).join(' + ')
+        : card.name;
+      setPreviewModal({ display, name: displayName });
+      setActiveMenu(null);
+    }
+  };
+
+  const handleManageContent = (card: DisplayCard) => {
+    const display = card.displays[0];
+    if (display) {
+      setContentModal(display);
+      setActiveMenu(null);
     }
   };
 
@@ -435,9 +466,22 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                   </div>
                 ) : (
                   <>
-                    <div className="relative aspect-video bg-slate-200 dark:bg-slate-700">
+                    <div
+                      className="relative aspect-video bg-slate-200 dark:bg-slate-700 cursor-pointer group"
+                      onClick={() => card.displays[0]?.configuration?.preview_url && handleViewPreview(card)}
+                    >
                       {card.thumbnail ? (
-                        <img src={card.thumbnail} alt={card.name} className="w-full h-full object-cover" />
+                        <>
+                          <img src={card.thumbnail} alt={card.name} className="w-full h-full object-cover" />
+                          {card.displays[0]?.configuration?.preview_url && (
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <div className="bg-white dark:bg-slate-800 rounded-lg px-4 py-2 flex items-center gap-2">
+                                <Eye className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Live</span>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Monitor className="w-12 h-12 text-slate-400 dark:text-slate-500" />
@@ -483,16 +527,19 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                             </button>
                             <div className="border-t border-slate-200 dark:border-slate-700"></div>
                             <button
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
+                              onClick={() => handleViewPreview(card)}
+                              disabled={!card.displays[0]?.configuration?.preview_url}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Eye className="w-4 h-4" />
-                              <span className="text-sm">View Details</span>
+                              <span className="text-sm">View Live Preview</span>
                             </button>
                             <button
+                              onClick={() => handleManageContent(card)}
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
                             >
                               <Settings className="w-4 h-4" />
-                              <span className="text-sm">Settings</span>
+                              <span className="text-sm">Manage Content</span>
                             </button>
                           </div>
                         )}
@@ -522,6 +569,25 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           </div>
         )}
       </div>
+
+      {previewModal && (
+        <DisplayPreviewModal
+          displayName={previewModal.name}
+          previewUrl={previewModal.display.configuration?.preview_url || ''}
+          onClose={() => setPreviewModal(null)}
+        />
+      )}
+
+      {contentModal && (
+        <DisplayContentModal
+          display={contentModal}
+          onClose={() => setContentModal(null)}
+          onSave={() => {
+            setContentModal(null);
+            loadDisplayData();
+          }}
+        />
+      )}
     </div>
   );
 }
