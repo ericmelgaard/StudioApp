@@ -142,15 +142,30 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
         .select('*')
         .order('name');
 
-      let storesQuery = supabase
-        .from('stores')
-        .select('id, name, company_id')
-        .order('name');
-
       if (filterByConceptId) {
         conceptsQuery = conceptsQuery.eq('id', filterByConceptId);
         companiesQuery = companiesQuery.eq('concept_id', filterByConceptId);
-        // For stores, we need to filter by companies that match the concept
+      }
+
+      const [conceptsData, companiesData] = await Promise.all([conceptsQuery, companiesQuery]);
+
+      if (conceptsData.data) setConcepts(conceptsData.data);
+      if (companiesData.data) setCompanies(companiesData.data);
+
+      // Fetch ALL stores using pagination to avoid the 1000 row limit
+      const allStores: Store[] = [];
+      const pageSize = 1000;
+      let page = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        let storesQuery = supabase
+          .from('stores')
+          .select('id, name, company_id')
+          .order('name')
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        // Filter by concept if needed
         if (filterByConceptId) {
           const { data: conceptCompanies } = await supabase
             .from('companies')
@@ -162,13 +177,19 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
             storesQuery = storesQuery.in('company_id', companyIds);
           }
         }
+
+        const { data: storesData } = await storesQuery;
+
+        if (storesData && storesData.length > 0) {
+          allStores.push(...storesData);
+          hasMore = storesData.length === pageSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
       }
 
-      const [conceptsData, companiesData, storesData] = await Promise.all([conceptsQuery, companiesQuery, storesQuery]);
-
-      if (conceptsData.data) setConcepts(conceptsData.data);
-      if (companiesData.data) setCompanies(companiesData.data);
-      if (storesData.data) setStores(storesData.data);
+      setStores(allStores);
       setLoading(false);
       return;
     }
