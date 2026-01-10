@@ -5,9 +5,10 @@ interface DisplayPreviewModalProps {
   displayName: string;
   previewUrl: string;
   onClose: () => void;
+  orientation?: 'horizontal' | 'vertical';
 }
 
-export default function DisplayPreviewModal({ displayName, previewUrl, onClose }: DisplayPreviewModalProps) {
+export default function DisplayPreviewModal({ displayName, previewUrl, onClose, orientation = 'horizontal' }: DisplayPreviewModalProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
@@ -25,7 +26,11 @@ export default function DisplayPreviewModal({ displayName, previewUrl, onClose }
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div
         className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl flex flex-col transition-all duration-300 ${
-          isFullscreen ? 'w-full h-full' : 'w-full max-w-6xl h-[90vh]'
+          isFullscreen
+            ? 'w-full h-full'
+            : orientation === 'vertical'
+            ? 'w-full max-w-3xl h-[90vh]'
+            : 'w-full max-w-6xl h-[90vh]'
         }`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">

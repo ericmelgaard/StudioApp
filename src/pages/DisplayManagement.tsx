@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, Sparkles,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
-  RotateCw, RefreshCw, Trash, Eye, Settings
+  RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
@@ -42,9 +42,14 @@ interface Display {
     is_temporary_content?: boolean;
     content_notes?: string;
   };
-  display_type?: {
+  display_types?: {
+    id: string;
     name: string;
     category: string;
+    specifications?: {
+      resolution?: string;
+      orientation?: string;
+    };
   };
 }
 
@@ -65,6 +70,7 @@ interface DisplayCard {
   displays: Display[];
   isGroup: boolean;
   groupInfo?: PlacementGroup;
+  orientation?: 'horizontal' | 'vertical';
 }
 
 type OperationStatus = 'open' | 'closed' | 'identify';
@@ -85,13 +91,26 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [previewModal, setPreviewModal] = useState<{ display: Display; name: string } | null>(null);
+  const [previewModal, setPreviewModal] = useState<{ display: Display; name: string; orientation: 'horizontal' | 'vertical' } | null>(null);
   const [contentModal, setContentModal] = useState<Display | null>(null);
 
   useEffect(() => {
     loadStoreOperationStatus();
     loadDisplayData();
   }, [storeId]);
+
+  const getDisplayOrientation = (display: Display): 'horizontal' | 'vertical' => {
+    const orientation = display.display_types?.specifications?.orientation;
+    if (orientation === 'vertical') return 'vertical';
+
+    const resolution = display.display_types?.specifications?.resolution;
+    if (resolution) {
+      const [width, height] = resolution.split('x').map(Number);
+      if (height > width) return 'vertical';
+    }
+
+    return 'horizontal';
+  };
 
   const loadStoreOperationStatus = async () => {
     const { data, error } = await supabase
@@ -154,6 +173,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       const uptime = calculateUptime(mp.last_heartbeat);
       const screenshotUrl = mpDisplays[0]?.configuration?.screenshot_url;
       const thumbnail = screenshotUrl || mpDisplays[0]?.thumbnail_url || null;
+      const orientation = mpDisplays[0] ? getDisplayOrientation(mpDisplays[0]) : 'horizontal';
 
       cards.push({
         id: mp.id,
@@ -163,7 +183,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         thumbnail,
         mediaPlayer: mp,
         displays: mpDisplays,
-        isGroup: false
+        isGroup: false,
+        orientation
       });
     });
 
@@ -272,7 +293,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       const displayName = card.displays.length > 0
         ? card.displays.map(d => d.name).join(' + ')
         : card.name;
-      setPreviewModal({ display, name: displayName });
+      setPreviewModal({ display, name: displayName, orientation: card.orientation || 'horizontal' });
       setActiveMenu(null);
     }
   };
@@ -467,12 +488,18 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                 ) : (
                   <>
                     <div
-                      className="relative aspect-video bg-slate-200 dark:bg-slate-700 cursor-pointer group"
+                      className="relative aspect-video bg-slate-200 dark:bg-slate-700 cursor-pointer group overflow-hidden"
                       onClick={() => card.displays[0]?.configuration?.preview_url && handleViewPreview(card)}
                     >
                       {card.thumbnail ? (
                         <>
-                          <img src={card.thumbnail} alt={card.name} className="w-full h-full object-cover" />
+                          <img
+                            src={card.thumbnail}
+                            alt={card.name}
+                            className={`w-full h-full object-cover transition-transform ${
+                              card.orientation === 'vertical' ? 'rotate-90 scale-[1.78]' : ''
+                            }`}
+                          />
                           {card.displays[0]?.configuration?.preview_url && (
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <div className="bg-white dark:bg-slate-800 rounded-lg px-4 py-2 flex items-center gap-2">
@@ -484,13 +511,25 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                         </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Monitor className="w-12 h-12 text-slate-400 dark:text-slate-500" />
+                          {card.orientation === 'vertical' ? (
+                            <Smartphone className="w-12 h-12 text-slate-400 dark:text-slate-500" />
+                          ) : (
+                            <Monitor className="w-12 h-12 text-slate-400 dark:text-slate-500" />
+                          )}
                         </div>
                       )}
                       <div className="absolute top-2 left-2 flex items-center gap-2">
                         <span className={`w-3 h-3 rounded-full ${getStatusColor(card.status)}`}></span>
                         <span className="text-xs bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 px-2 py-1 rounded shadow-sm">{card.uptime}</span>
                       </div>
+                      {card.orientation === 'vertical' && (
+                        <div className="absolute bottom-2 right-2">
+                          <div className="bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                            <Smartphone className="w-3 h-3" />
+                            <span className="text-xs font-medium">Vertical</span>
+                          </div>
+                        </div>
+                      )}
                       <div className="absolute top-2 right-2">
                         <button
                           onClick={(e) => {
@@ -574,6 +613,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         <DisplayPreviewModal
           displayName={previewModal.name}
           previewUrl={previewModal.display.configuration?.preview_url || ''}
+          orientation={previewModal.orientation}
           onClose={() => setPreviewModal(null)}
         />
       )}
