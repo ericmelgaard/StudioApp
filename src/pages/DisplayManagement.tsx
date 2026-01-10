@@ -460,7 +460,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             {filteredDisplays.map((card) => (
               <div
                 key={card.id}
-                className="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
                 {actionLoading === card.id && (
                   <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 z-10 flex items-center justify-center">
