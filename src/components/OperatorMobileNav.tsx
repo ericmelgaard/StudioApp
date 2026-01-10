@@ -1,4 +1,5 @@
-import { X, Home, Monitor, Tag, Package, Store, HelpCircle, FileText, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Home, Monitor, Tag, Package, Store, HelpCircle, FileText, Bell, Settings, Sun, Moon, Laptop, User, LogOut } from 'lucide-react';
 
 interface OperatorMobileNavProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ interface OperatorMobileNavProps {
   notificationCount?: number;
 }
 
+type ThemeMode = 'light' | 'dark' | 'system';
+
 export default function OperatorMobileNav({
   isOpen,
   onClose,
@@ -23,6 +26,41 @@ export default function OperatorMobileNav({
   onBackToRoles,
   notificationCount = 0
 }: OperatorMobileNavProps) {
+  const [showSettings, setShowSettings] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme-mode') as ThemeMode;
+    if (savedTheme) {
+      setThemeMode(savedTheme);
+      applyTheme(savedTheme);
+    } else {
+      applyTheme('system');
+    }
+  }, []);
+
+  const applyTheme = (mode: ThemeMode) => {
+    const root = window.document.documentElement;
+
+    if (mode === 'system') {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemPrefersDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    } else if (mode === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  };
+
+  const handleThemeChange = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    localStorage.setItem('theme-mode', mode);
+    applyTheme(mode);
+  };
   const navigationItems = [
     { id: 'displays', label: 'Operator Hub', icon: Home },
     { id: 'signage', label: 'Digital Signage', icon: Monitor },
@@ -58,6 +96,10 @@ export default function OperatorMobileNav({
     onClose();
   };
 
+  const handleSettingsClick = () => {
+    setShowSettings(!showSettings);
+  };
+
   return (
     <>
       <div
@@ -90,88 +132,193 @@ export default function OperatorMobileNav({
           </div>
 
           <nav className="flex-1 overflow-y-auto py-2">
-            <div className="px-3 py-2">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
-                Navigation
-              </p>
-              <div className="space-y-1">
-                {navigationItems.map((item) => {
-                  const isActive = currentView === item.id;
-                  const Icon = item.icon;
+            {!showSettings ? (
+              <>
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                    Navigation
+                  </p>
+                  <div className="space-y-1">
+                    {navigationItems.map((item) => {
+                      const isActive = currentView === item.id;
+                      const Icon = item.icon;
 
-                  return (
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavClick(item.id)}
+                          className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
+                            isActive
+                              ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-300 font-semibold border border-green-200 dark:border-green-700'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600'
+                          }`}
+                        >
+                          <Icon
+                            className={`w-5 h-5 flex-shrink-0 ${
+                              isActive ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500'
+                            }`}
+                          />
+                          <span className="text-base">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="px-3 py-2 mt-4">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                    Resources
+                  </p>
+                  <div className="space-y-1">
                     <button
-                      key={item.id}
-                      onClick={() => handleNavClick(item.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
-                        isActive
-                          ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-300 font-semibold border border-green-200 dark:border-green-700'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600'
-                      }`}
+                      onClick={handleNotificationsClick}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
                     >
-                      <Icon
-                        className={`w-5 h-5 flex-shrink-0 ${
-                          isActive ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500'
-                        }`}
-                      />
-                      <span className="text-base">{item.label}</span>
+                      <Bell className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
+                      <span className="text-base flex-1 text-left">Notifications</span>
+                      {notificationCount > 0 && (
+                        <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                          {notificationCount > 9 ? '9+' : notificationCount}
+                        </span>
+                      )}
                     </button>
-                  );
-                })}
+
+                    <button
+                      onClick={handleHelpClick}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
+                    >
+                      <HelpCircle className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
+                      <span className="text-base">Help</span>
+                    </button>
+
+                    <button
+                      onClick={handleDocumentationClick}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
+                    >
+                      <FileText className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
+                      <span className="text-base">Documentation</span>
+                    </button>
+
+                    <button
+                      onClick={handleSettingsClick}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
+                    >
+                      <Settings className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
+                      <span className="text-base">Settings</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="px-3 py-2">
+                <div className="flex items-center gap-2 px-3 mb-4">
+                  <button
+                    onClick={handleSettingsClick}
+                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                  >
+                    <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                  </button>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Settings</h3>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-3">
+                      Appearance
+                    </p>
+                    <div className="space-y-2 px-3">
+                      <button
+                        onClick={() => handleThemeChange('system')}
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
+                          themeMode === 'system'
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Laptop className="w-5 h-5 flex-shrink-0" />
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">System</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Use device theme</div>
+                        </div>
+                        {themeMode === 'system' && (
+                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleThemeChange('light')}
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
+                          themeMode === 'light'
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Sun className="w-5 h-5 flex-shrink-0" />
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">Light</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Always light theme</div>
+                        </div>
+                        {themeMode === 'light' && (
+                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleThemeChange('dark')}
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
+                          themeMode === 'dark'
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Moon className="w-5 h-5 flex-shrink-0" />
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">Dark</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Always dark theme</div>
+                        </div>
+                        {themeMode === 'dark' && (
+                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-3">
+                      Account
+                    </p>
+                    <div className="space-y-2 px-3">
+                      <div className="flex items-center gap-3 px-3 py-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                        <User className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-slate-900 dark:text-slate-100 truncate">{userName}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{userRole}</div>
+                        </div>
+                      </div>
+
+                      {onBackToRoles && (
+                        <button
+                          onClick={handleSwitchRole}
+                          className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                        >
+                          <LogOut className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
+                          <span className="text-base">Switch Role</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div className="px-3 py-2 mt-4">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
-                Resources
-              </p>
-              <div className="space-y-1">
-                <button
-                  onClick={handleNotificationsClick}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
-                >
-                  <Bell className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
-                  <span className="text-base flex-1 text-left">Notifications</span>
-                  {notificationCount > 0 && (
-                    <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                      {notificationCount > 9 ? '9+' : notificationCount}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleHelpClick}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
-                >
-                  <HelpCircle className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
-                  <span className="text-base">Help</span>
-                </button>
-
-                <button
-                  onClick={handleDocumentationClick}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
-                >
-                  <FileText className="w-5 h-5 flex-shrink-0 text-slate-400 dark:text-slate-500" />
-                  <span className="text-base">Documentation</span>
-                </button>
-              </div>
-            </div>
+            )}
           </nav>
 
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 space-y-3">
-            {onBackToRoles && (
-              <button
-                onClick={handleSwitchRole}
-                className="w-full px-4 py-2 bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg font-medium transition-colors touch-manipulation"
-              >
-                Switch Role
-              </button>
-            )}
-            <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
-              <p className="font-medium">{userRole}</p>
-              <p className="text-slate-400 dark:text-slate-500 mt-1">WAND Digital Studio</p>
+          {!showSettings && (
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+              <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                <p className="text-slate-400 dark:text-slate-500">WAND Digital Studio</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>
