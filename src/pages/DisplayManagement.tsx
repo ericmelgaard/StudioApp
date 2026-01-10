@@ -496,8 +496,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                           <img
                             src={card.thumbnail}
                             alt={card.name}
-                            className={`w-full h-full object-cover transition-transform ${
-                              card.orientation === 'vertical' ? 'rotate-90 scale-[1.78]' : ''
+                            className={`w-full h-full transition-transform ${
+                              card.orientation === 'vertical'
+                                ? '-rotate-90 object-contain scale-[0.5625]'
+                                : 'object-cover'
                             }`}
                           />
                           {card.displays[0]?.configuration?.preview_url && (
