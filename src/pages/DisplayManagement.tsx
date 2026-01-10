@@ -506,9 +506,13 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                       )}
                     </div>
                     <div className="p-3">
-                      <h3 className="font-semibold text-sm mb-1 text-slate-900 dark:text-slate-100">{card.name}</h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">
-                        {card.displays.map(d => d.display_type?.name).filter(Boolean).join(' + ') || 'No display type'}
+                      <h3 className="font-semibold text-sm mb-1 text-slate-900 dark:text-slate-100">
+                        {card.displays.length > 0
+                          ? card.displays.map(d => d.name).join(' + ')
+                          : card.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-500">
+                        {card.mediaPlayer.name}
                       </p>
                     </div>
                   </>
