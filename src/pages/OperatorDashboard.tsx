@@ -194,7 +194,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   if (!selectedStore) {
     return (
       <UserProvider user={user}>
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
           <OperatorMobileNav
             isOpen={mobileNavOpen}
             onClose={() => setMobileNavOpen(false)}
@@ -206,16 +206,16 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
             onBackToRoles={onBack}
           />
 
-          <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
+          <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
             <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0">
               <button
                 onClick={() => setMobileNavOpen(true)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation flex-shrink-0"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation flex-shrink-0"
                 aria-label="Open navigation menu"
               >
-                <Menu className="w-6 h-6 text-slate-700" />
+                <Menu className="w-6 h-6 text-slate-700 dark:text-slate-300" />
               </button>
-              <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
+              <Suspense fallback={<div className="w-48 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>}>
                 <HeaderNavigation
                   userId={user.id}
                   role="operator"
@@ -228,7 +228,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                 href="https://shop.wanddigital.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
                 title="WAND Digital Shop"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -236,13 +236,13 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               <NotificationPanel />
               <div className="hidden md:flex items-center gap-1">
                 <button
-                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                   title="Help"
                 >
                   <HelpCircle className="w-5 h-5" />
                 </button>
                 <button
-                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                   title="Documentation"
                 >
                   <FileText className="w-5 h-5" />
@@ -254,11 +254,11 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
 
           <main className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
             <div className="text-center px-4">
-              <Monitor className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-              <p className="text-lg text-slate-900 mb-2">Please select a store to view Operator Hub</p>
+              <Monitor className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+              <p className="text-lg text-slate-900 dark:text-slate-100 mb-2">Please select a store to view Operator Hub</p>
               <button
                 onClick={() => setShowLocationSelector(true)}
-                className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
               >
                 Select Store
               </button>
@@ -296,7 +296,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
   // Render Operator Hub (DisplayManagement) as the default home view
   return (
     <UserProvider user={user}>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <OperatorMobileNav
           isOpen={mobileNavOpen}
           onClose={() => setMobileNavOpen(false)}
@@ -308,16 +308,16 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
           onBackToRoles={onBack}
         />
 
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
           <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0">
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation flex-shrink-0"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation flex-shrink-0"
               aria-label="Open navigation menu"
             >
-              <Menu className="w-6 h-6 text-slate-700" />
+              <Menu className="w-6 h-6 text-slate-700 dark:text-slate-300" />
             </button>
-            <Suspense fallback={<div className="w-48 h-10 bg-slate-100 rounded-lg animate-pulse"></div>}>
+            <Suspense fallback={<div className="w-48 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>}>
               <HeaderNavigation
                 userId={user.id}
                 role="operator"
@@ -330,7 +330,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               href="https://shop.wanddigital.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+              className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
               title="WAND Digital Shop"
             >
               <ShoppingCart className="w-5 h-5" />
@@ -338,13 +338,13 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
             <NotificationPanel />
             <div className="hidden md:flex items-center gap-1">
               <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 title="Help"
               >
                 <HelpCircle className="w-5 h-5" />
               </button>
               <button
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 title="Documentation"
               >
                 <FileText className="w-5 h-5" />
