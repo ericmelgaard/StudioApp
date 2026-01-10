@@ -41,18 +41,27 @@ export default function OperatorMobileNav({
 
   const applyTheme = (mode: ThemeMode) => {
     const root = window.document.documentElement;
+    let isDark = false;
 
     if (mode === 'system') {
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      isDark = systemPrefersDark;
       if (systemPrefersDark) {
         root.classList.add('dark');
       } else {
         root.classList.remove('dark');
       }
     } else if (mode === 'dark') {
+      isDark = true;
       root.classList.add('dark');
     } else {
+      isDark = false;
       root.classList.remove('dark');
+    }
+
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', isDark ? '#0f172a' : '#ffffff');
     }
   };
 
