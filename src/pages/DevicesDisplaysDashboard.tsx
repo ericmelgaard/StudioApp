@@ -5,6 +5,7 @@ import DisplayTypesManagement from './DisplayTypesManagement';
 import HardwareDevicesManagement from './HardwareDevicesManagement';
 import MediaPlayersManagement from './MediaPlayersManagement';
 import DisplaysManagement from './DisplaysManagement';
+import { useLocation } from '../hooks/useLocation';
 
 type Tab = 'overview' | 'display-types' | 'hardware' | 'media-players' | 'displays';
 
@@ -33,6 +34,7 @@ interface Stats {
 }
 
 export default function DevicesDisplaysDashboard() {
+  const { location } = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [stats, setStats] = useState<Stats>({
     displayTypes: { total: 0, active: 0 },
@@ -46,15 +48,32 @@ export default function DevicesDisplaysDashboard() {
     if (activeTab === 'overview') {
       loadStats();
     }
-  }, [activeTab]);
+  }, [activeTab, location]);
 
   const loadStats = async () => {
+    setLoading(true);
     try {
+      // Display types are global, no filtering needed
+      let playersQuery = supabase.from('media_players').select('status, stores!inner(id, company_id, companies!inner(id, concept_id))');
+      let displaysQuery = supabase.from('displays').select('status, media_players!inner(stores!inner(id, company_id, companies!inner(id, concept_id)))');
+
+      // Filter based on location
+      if (location.store) {
+        playersQuery = playersQuery.eq('stores.id', location.store.id);
+        displaysQuery = displaysQuery.eq('media_players.stores.id', location.store.id);
+      } else if (location.company) {
+        playersQuery = playersQuery.eq('stores.company_id', location.company.id);
+        displaysQuery = displaysQuery.eq('media_players.stores.company_id', location.company.id);
+      } else if (location.concept) {
+        playersQuery = playersQuery.eq('stores.companies.concept_id', location.concept.id);
+        displaysQuery = displaysQuery.eq('media_players.stores.companies.concept_id', location.concept.id);
+      }
+
       const [typesRes, devicesRes, playersRes, displaysRes] = await Promise.all([
         supabase.from('display_types').select('status'),
         supabase.from('hardware_devices').select('status'),
-        supabase.from('media_players').select('status'),
-        supabase.from('displays').select('status')
+        playersQuery,
+        displaysQuery
       ]);
 
       if (typesRes.error) throw typesRes.error;
@@ -134,11 +153,22 @@ export default function DevicesDisplaysDashboard() {
         {activeTab === 'overview' && (
           <div className="p-6">
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-gray-500">Loading statistics...</div>
+              <div className="flex flex-col items-center justify-center h-96 animate-in fade-in duration-300">
+                <div className="relative">
+                  <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                </div>
+                <p className="mt-6 text-gray-600 font-medium">Loading statistics...</p>
+                <p className="mt-2 text-sm text-gray-400">Fetching data for {location.store?.name || location.company?.name || location.concept?.name || 'all locations'}</p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-6 animate-in fade-in duration-500">
+                {(location.store || location.company || location.concept) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <span className="font-semibold">Viewing statistics for:</span> {location.store?.name || location.company?.name || location.concept?.name}
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center justify-between mb-4">
