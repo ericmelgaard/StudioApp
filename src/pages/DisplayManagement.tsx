@@ -493,15 +493,22 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                     >
                       {card.thumbnail ? (
                         <>
-                          <img
-                            src={card.thumbnail}
-                            alt={card.name}
-                            className={`w-full h-full transition-transform ${
-                              card.orientation === 'vertical'
-                                ? '-rotate-90 object-contain scale-[0.5625]'
-                                : 'object-cover'
-                            }`}
-                          />
+                          {card.orientation === 'vertical' ? (
+                            <div className="relative w-full h-full flex items-center justify-center">
+                              <img
+                                src={card.thumbnail}
+                                alt={card.name}
+                                className="h-[177.78%] w-auto object-cover -rotate-90"
+                                style={{ minWidth: '177.78%' }}
+                              />
+                            </div>
+                          ) : (
+                            <img
+                              src={card.thumbnail}
+                              alt={card.name}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                           {card.displays[0]?.configuration?.preview_url && (
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <div className="bg-white dark:bg-slate-800 rounded-lg px-4 py-2 flex items-center gap-2">
