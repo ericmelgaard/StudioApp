@@ -64,7 +64,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const [isMultiStoreUser, setIsMultiStoreUser] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  const [expandedConcept, setExpandedConcept] = useState<number | null>(null);
+  const [expandedConcepts, setExpandedConcepts] = useState<Set<number>>(new Set());
   const [expandedCompanies, setExpandedCompanies] = useState<Set<number>>(new Set());
 
   const [viewContext, setViewContext] = useState<{
@@ -94,7 +94,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
 
       // Auto-expand to the current location in the tree
       if (selectedLocation?.concept) {
-        setExpandedConcept(selectedLocation.concept.id);
+        setExpandedConcepts(new Set([selectedLocation.concept.id]));
       }
       if (selectedLocation?.company) {
         setExpandedCompanies(new Set([selectedLocation.company.id]));
@@ -263,8 +263,16 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   };
 
   const handleExpandConcept = async (conceptId: number) => {
-    const isExpanded = expandedConcept === conceptId;
-    setExpandedConcept(isExpanded ? null : conceptId);
+    const isExpanded = expandedConcepts.has(conceptId);
+    setExpandedConcepts(prev => {
+      const newSet = new Set(prev);
+      if (isExpanded) {
+        newSet.delete(conceptId);
+      } else {
+        newSet.add(conceptId);
+      }
+      return newSet;
+    });
 
     if (!isExpanded && userRole === 'admin') {
       // Get all companies for this concept
@@ -351,6 +359,47 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
     });
     return filtered;
   };
+
+  // Auto-expand nodes when searching
+  useEffect(() => {
+    if (searchQuery) {
+      // Find all matching concepts
+      const matchingConceptIds = new Set<number>();
+      const matchingCompanyIds = new Set<number>();
+
+      concepts.forEach(concept => {
+        const conceptMatches = concept.name.toLowerCase().includes(searchLower);
+        const conceptCompanies = companies.filter(c => c.concept_id === concept.id);
+
+        conceptCompanies.forEach(company => {
+          const companyMatches = company.name.toLowerCase().includes(searchLower);
+          const companyStores = stores.filter(s => s.company_id === company.id);
+          const hasMatchingStore = companyStores.some(s => s.name.toLowerCase().includes(searchLower));
+
+          // If concept, company, or any store matches, expand this branch
+          if (conceptMatches || companyMatches || hasMatchingStore) {
+            matchingConceptIds.add(concept.id);
+            matchingCompanyIds.add(company.id);
+          }
+        });
+      });
+
+      // Expand all matching nodes
+      if (matchingConceptIds.size > 0) {
+        // Expand all matching concepts
+        setExpandedConcepts(matchingConceptIds);
+        // Expand all matching companies
+        setExpandedCompanies(matchingCompanyIds);
+      }
+    } else {
+      // When search is cleared, collapse all if we weren't previously expanded
+      // (don't collapse if we expanded to show current location)
+      if (!selectedLocation?.concept) {
+        setExpandedConcepts(new Set());
+        setExpandedCompanies(new Set());
+      }
+    }
+  }, [searchQuery, concepts, companies, stores, searchLower, selectedLocation]);
 
   const filteredConcepts = concepts.filter(c => {
     // Filter by viewContext - only show the specific concept if in that context
@@ -551,7 +600,7 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
             <div className="space-y-2">
               {filteredConcepts.map((concept) => {
                 const conceptCompanies = getCompaniesForConcept(concept.id);
-                const isExpanded = expandedConcept === concept.id;
+                const isExpanded = expandedConcepts.has(concept.id);
 
                 return (
                   <div key={concept.id} className="border border-slate-200 rounded-lg">
