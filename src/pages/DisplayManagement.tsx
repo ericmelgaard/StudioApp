@@ -78,7 +78,9 @@ type ViewMode = 'list' | 'grid';
 
 export default function DisplayManagement({ storeId, storeName, onBack, isHomePage = false }: DisplayManagementProps) {
   const [operationStatus, setOperationStatus] = useState<OperationStatus>('open');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    return window.innerWidth >= 768 ? 'grid' : 'list';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [displayCards, setDisplayCards] = useState<DisplayCard[]>([]);
   const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
