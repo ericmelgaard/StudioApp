@@ -67,7 +67,7 @@ interface Store {
 type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays';
 
 export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
-  const { location, setLocation, getLocationDisplay } = useLocation('admin');
+  const { location, setLocation, getLocationDisplay, resetLocation } = useLocation('admin');
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -77,6 +77,13 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+
+  // Clear location on mount for admin users (they should start at root)
+  useEffect(() => {
+    if (!user.concept_id && !user.company_id && !user.store_id) {
+      resetLocation();
+    }
+  }, []);
 
   // Sync local state with global location context on mount and location changes
   useEffect(() => {
