@@ -65,10 +65,16 @@ export function useLocation(role?: UserRole, userId?: string) {
   });
 
   useEffect(() => {
-    localStorage.setItem(locationKey, JSON.stringify(location));
+    const currentStored = localStorage.getItem(locationKey);
+    const newValue = JSON.stringify(location);
 
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new CustomEvent('locationChange', { detail: location }));
+    // Only update localStorage and dispatch event if location actually changed
+    if (currentStored !== newValue) {
+      localStorage.setItem(locationKey, newValue);
+
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('locationChange', { detail: location }));
+    }
   }, [location, locationKey]);
 
   useEffect(() => {
