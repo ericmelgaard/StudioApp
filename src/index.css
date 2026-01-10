@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Edge-to-edge layout support */
+:root {
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+}
+
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 @keyframes slide-in-right {
   from {
     transform: translateX(100%);
