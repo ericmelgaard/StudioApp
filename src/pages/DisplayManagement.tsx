@@ -487,59 +487,68 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                   </div>
                 ) : (
                   <>
-                    <div
-                      className="relative aspect-video bg-slate-200 dark:bg-slate-700 cursor-pointer group overflow-hidden"
-                      onClick={() => card.displays[0]?.configuration?.preview_url && handleViewPreview(card)}
-                    >
-                      {card.thumbnail ? (
-                        <>
-                          {card.orientation === 'vertical' ? (
-                            <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="relative">
+                      <div
+                        className="relative aspect-video bg-slate-200 dark:bg-slate-700 cursor-pointer group overflow-hidden"
+                        onClick={() => card.displays[0]?.configuration?.preview_url && handleViewPreview(card)}
+                      >
+                        {card.thumbnail ? (
+                          <>
+                            {card.orientation === 'vertical' ? (
+                              <div className="relative w-full h-full flex items-center justify-center">
+                                <img
+                                  src={card.thumbnail}
+                                  alt={card.name}
+                                  className="h-[177.78%] w-auto object-contain -rotate-90"
+                                  style={{ minWidth: '177.78%' }}
+                                />
+                              </div>
+                            ) : (
                               <img
                                 src={card.thumbnail}
                                 alt={card.name}
-                                className="h-[177.78%] w-auto object-contain -rotate-90"
-                                style={{ minWidth: '177.78%' }}
+                                className="w-full h-full object-cover"
                               />
-                            </div>
-                          ) : (
-                            <img
-                              src={card.thumbnail}
-                              alt={card.name}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                          {card.displays[0]?.configuration?.preview_url && (
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <div className="bg-white dark:bg-slate-800 rounded-lg px-4 py-2 flex items-center gap-2">
-                                <Eye className="w-4 h-4 text-slate-700 dark:text-slate-300" />
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Live</span>
+                            )}
+                            {card.displays[0]?.configuration?.preview_url && (
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="bg-white dark:bg-slate-800 rounded-lg px-4 py-2 flex items-center gap-2">
+                                  <Eye className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Live</span>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          {card.orientation === 'vertical' ? (
-                            <Smartphone className="w-12 h-12 text-slate-400 dark:text-slate-500" />
-                          ) : (
-                            <Monitor className="w-12 h-12 text-slate-400 dark:text-slate-500" />
-                          )}
-                        </div>
-                      )}
-                      <div className="absolute top-2 left-2 flex items-center gap-2">
-                        <span className={`w-3 h-3 rounded-full ${getStatusColor(card.status)}`}></span>
-                        <span className="text-xs bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 px-2 py-1 rounded shadow-sm">{card.uptime}</span>
-                      </div>
-                      {card.orientation === 'vertical' && (
-                        <div className="absolute bottom-2 right-2">
-                          <div className="bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded shadow-sm flex items-center gap-1">
-                            <Smartphone className="w-3 h-3" />
-                            <span className="text-xs font-medium">Vertical</span>
+                            )}
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            {card.orientation === 'vertical' ? (
+                              <Smartphone className="w-12 h-12 text-slate-400 dark:text-slate-500" />
+                            ) : (
+                              <Monitor className="w-12 h-12 text-slate-400 dark:text-slate-500" />
+                            )}
                           </div>
+                        )}
+                        <div className="absolute top-2 left-2 flex items-center gap-2">
+                          <span className={`w-3 h-3 rounded-full ${getStatusColor(card.status)}`}></span>
+                          <span className="text-xs bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 px-2 py-1 rounded shadow-sm">{card.uptime}</span>
                         </div>
-                      )}
-                      <div className="absolute top-2 right-2">
+                        {card.orientation === 'vertical' && (
+                          <div className="absolute bottom-2 right-2">
+                            <div className="bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                              <Smartphone className="w-3 h-3" />
+                              <span className="text-xs font-medium">Vertical</span>
+                            </div>
+                          </div>
+                        )}
+                        {card.displays.length > 1 && (
+                          <div className="absolute bottom-2 left-2">
+                            <span className="text-xs bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded shadow-sm">
+                              Dual Display
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="absolute top-2 right-2 z-10">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -592,13 +601,6 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                           </div>
                         )}
                       </div>
-                      {card.displays.length > 1 && (
-                        <div className="absolute bottom-2 left-2">
-                          <span className="text-xs bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded shadow-sm">
-                            Dual Display
-                          </span>
-                        </div>
-                      )}
                     </div>
                     <div className="p-3">
                       <h3 className="font-semibold text-sm mb-1 text-slate-900 dark:text-slate-100">
