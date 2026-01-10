@@ -69,13 +69,14 @@ export default function DisplaysManagement() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     filterDisplays();
   }, [searchTerm, typeFilter, displays]);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       let playersQuery = supabase.from('media_players').select('*, stores(id, name, company_id, companies!inner(id, name, concept_id))').order('name');
       let displaysQuery = supabase.from('displays').select('*, media_players!inner(*, stores!inner(id, name, company_id, companies!inner(id, name, concept_id))), display_types(*)').order('name');
@@ -270,8 +271,14 @@ export default function DisplaysManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading displays...</div>
+      <div className="p-6">
+        <div className="flex flex-col items-center justify-center h-96 animate-in fade-in duration-300">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-6 text-gray-600 font-medium">Loading displays...</p>
+          <p className="mt-2 text-sm text-gray-400">Fetching data for {location.store?.name || location.company?.name || location.concept?.name || 'all locations'}</p>
+        </div>
       </div>
     );
   }
@@ -280,7 +287,7 @@ export default function DisplaysManagement() {
 
   if (!location.store) {
     return (
-      <div className="p-6">
+      <div className="p-6 animate-in fade-in duration-500">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Displays</h1>
           <p className="text-gray-600 mt-1">Manage display configurations and assignments</p>
@@ -295,7 +302,7 @@ export default function DisplaysManagement() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-in fade-in duration-500">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>

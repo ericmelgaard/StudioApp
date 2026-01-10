@@ -74,13 +74,14 @@ export default function MediaPlayersManagement() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     filterPlayers();
   }, [searchTerm, statusFilter, mediaPlayers]);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       let storesQuery = supabase.from('stores').select('id, name, company_id, companies!inner(id, name, concept_id)').order('name');
       let playersQuery = supabase.from('media_players').select('*, hardware_devices(*), stores!inner(id, name, company_id, companies!inner(id, name, concept_id)), placement_groups(id, name)').order('name');
@@ -300,14 +301,20 @@ export default function MediaPlayersManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading media players...</div>
+      <div className="p-6">
+        <div className="flex flex-col items-center justify-center h-96 animate-in fade-in duration-300">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-6 text-gray-600 font-medium">Loading media players...</p>
+          <p className="mt-2 text-sm text-gray-400">Fetching data for {location.store?.name || location.company?.name || location.concept?.name || 'all locations'}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-in fade-in duration-500">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
