@@ -498,7 +498,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                               <img
                                 src={card.thumbnail}
                                 alt={card.name}
-                                className="h-[177.78%] w-auto object-cover -rotate-90"
+                                className="h-[177.78%] w-auto object-contain -rotate-90"
                                 style={{ minWidth: '177.78%' }}
                               />
                             </div>
