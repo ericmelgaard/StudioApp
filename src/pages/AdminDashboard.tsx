@@ -67,7 +67,7 @@ interface Store {
 type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays';
 
 export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
-  const { location, setLocation, getLocationDisplay, resetLocation } = useLocation('admin');
+  const { location, setLocation, getLocationDisplay, resetLocation } = useLocation('admin', user.id);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -78,7 +78,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
-  // Clear location on mount for admin users (they should start at root)
+  // Clear location on mount for unrestricted admin users (they should start at root)
   useEffect(() => {
     if (!user.concept_id && !user.company_id && !user.store_id) {
       resetLocation();

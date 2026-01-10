@@ -48,7 +48,7 @@ interface Store {
 
 export default function OperatorDashboard({ onBack, user }: OperatorDashboardProps) {
   const [currentView, setCurrentView] = useState<DashboardView>('displays');
-  const { location, setLocation, clearHistory } = useLocation('operator');
+  const { location, setLocation, clearHistory } = useLocation('operator', user.id);
   const { accessibleStores, loading: storesLoading } = useStoreAccess({ userId: user.id });
   const [companies, setCompanies] = useState<Company[]>([]);
   const [storesByCompany, setStoresByCompany] = useState<Record<number, Store[]>>({});

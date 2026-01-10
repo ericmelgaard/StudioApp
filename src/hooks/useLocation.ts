@@ -36,17 +36,23 @@ interface NavigationHistoryEntry {
   timestamp: number;
 }
 
-function getLocationKey(role?: UserRole): string {
+function getLocationKey(userId?: string, role?: UserRole): string {
+  if (userId) {
+    return `selectedLocation_${userId}`;
+  }
   return role ? `selectedLocation_${role}` : 'selectedLocation';
 }
 
-function getHistoryKey(role?: UserRole): string {
+function getHistoryKey(userId?: string, role?: UserRole): string {
+  if (userId) {
+    return `navigationHistory_${userId}`;
+  }
   return role ? `navigationHistory_${role}` : 'navigationHistory';
 }
 
-export function useLocation(role?: UserRole) {
-  const locationKey = getLocationKey(role);
-  const historyKey = getHistoryKey(role);
+export function useLocation(role?: UserRole, userId?: string) {
+  const locationKey = getLocationKey(userId, role);
+  const historyKey = getHistoryKey(userId, role);
 
   const [location, setLocation] = useState<LocationState>(() => {
     const saved = localStorage.getItem(locationKey);

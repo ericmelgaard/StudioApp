@@ -54,7 +54,7 @@ export default function HeaderNavigation({
   onOpenFullNavigator,
   actionButton
 }: HeaderNavigationProps) {
-  const { location, setLocation } = useLocation(role);
+  const { location, setLocation } = useLocation(role, userId || undefined);
   const { accessibleStores, hasFullAccess, loading: storesLoading } = useStoreAccess({ userId });
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
