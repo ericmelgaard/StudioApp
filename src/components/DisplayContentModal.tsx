@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Link2, Image as ImageIcon, FileText, Trash2 } from 'lucide-react';
+import { X, Save, Link2, Image as ImageIcon, FileText, Trash2, Copy, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Display {
@@ -25,6 +25,7 @@ export default function DisplayContentModal({ display, onClose, onSave }: Displa
   const [contentNotes, setContentNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
     if (display.configuration) {
@@ -105,6 +106,16 @@ export default function DisplayContentModal({ display, onClose, onSave }: Displa
     }
   };
 
+  const handleCopyUrl = async (url: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -133,33 +144,75 @@ export default function DisplayContentModal({ display, onClose, onSave }: Displa
           )}
 
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              <Link2 className="w-4 h-4" />
-              Live Preview URL
+            <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <span className="flex items-center gap-2">
+                <Link2 className="w-4 h-4" />
+                Live Preview URL
+              </span>
+              {previewUrl && (
+                <button
+                  type="button"
+                  onClick={() => handleCopyUrl(previewUrl, 'preview')}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                >
+                  {copiedField === 'preview' ? (
+                    <>
+                      <Check className="w-3 h-3" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      Copy
+                    </>
+                  )}
+                </button>
+              )}
             </label>
-            <input
-              type="url"
+            <textarea
               value={previewUrl}
               onChange={(e) => setPreviewUrl(e.target.value)}
-              placeholder="https://trm.wandcorp.com/cms_mediafiles/preview/..."
-              className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-slate-100"
+              placeholder="https://trm.wandcorp.com/cms_mediafiles/preview/wandplayerjs/index.html?currentTime=..."
+              rows={4}
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-slate-100 font-mono text-sm resize-none"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-              Full URL including all query parameters (currentTime, workingPath, scheduleUrl, etc.)
+              Full URL including all query parameters (currentTime, workingPath, scheduleUrl, pricingUrl, etc.)
             </p>
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              <ImageIcon className="w-4 h-4" />
-              Screenshot URL
+            <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <span className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" />
+                Screenshot URL
+              </span>
+              {screenshotUrl && (
+                <button
+                  type="button"
+                  onClick={() => handleCopyUrl(screenshotUrl, 'screenshot')}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                >
+                  {copiedField === 'screenshot' ? (
+                    <>
+                      <Check className="w-3 h-3" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      Copy
+                    </>
+                  )}
+                </button>
+              )}
             </label>
-            <input
-              type="url"
+            <textarea
               value={screenshotUrl}
               onChange={(e) => setScreenshotUrl(e.target.value)}
               placeholder="https://[project].supabase.co/storage/v1/object/public/DQ/..."
-              className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-slate-100"
+              rows={3}
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-slate-100 font-mono text-sm resize-none"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
               URL to static screenshot stored in Supabase storage (DQ folder)
