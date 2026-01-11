@@ -2,6 +2,7 @@
   "name": "WAND Operator Hub",
   "short_name": "Operator Hub",
   "description": "WAND Digital Operator Hub for Store Management",
+  "version": "1.0.1",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
