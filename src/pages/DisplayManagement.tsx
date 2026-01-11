@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, AlertTriangle, BellOff,
+  ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, AlertTriangle, CheckCircle2,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
   RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone
 } from 'lucide-react';
@@ -402,10 +402,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                   ? 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                   : 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
               }`}>
-                {alertStatus === 'alert' ? <AlertTriangle className="w-8 h-8" /> : <BellOff className="w-8 h-8" />}
+                {alertStatus === 'alert' ? <AlertTriangle className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
               </div>
               <span className={`text-sm font-medium text-slate-900 dark:text-slate-100`}>
-                {alertStatus === 'alert' ? 'Alert' : 'No Alert'}
+                {alertStatus === 'alert' ? 'Alert' : 'No Issues'}
               </span>
             </button>
           </div>
