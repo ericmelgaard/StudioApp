@@ -88,7 +88,7 @@ export default function DisplayPreviewModal({ displayName, previewUrl, onClose, 
             className="w-full h-full"
             onLoad={() => setIsLoading(false)}
             title={`Preview: ${displayName}`}
-            sandbox="allow-scripts allow-same-origin allow-forms"
+            referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
       </div>
