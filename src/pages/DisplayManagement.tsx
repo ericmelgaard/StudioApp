@@ -331,7 +331,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     const colors = {
       open: 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
       closed: 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-      alert: 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+      alert: 'border-orange-500 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
       no_alert: 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
     };
 
@@ -399,7 +399,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             >
               <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-all ${
                 alertStatus === 'alert'
-                  ? 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                  ? 'border-orange-500 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
                   : 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
               }`}>
                 {alertStatus === 'alert' ? <AlertTriangle className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
