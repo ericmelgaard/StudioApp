@@ -233,8 +233,8 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               >
                 <ShoppingCart className="w-5 h-5" />
               </a>
-              <NotificationPanel />
               <div className="hidden md:flex items-center gap-1">
+                <NotificationPanel />
                 <button
                   className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                   title="Help"
@@ -335,8 +335,8 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
             >
               <ShoppingCart className="w-5 h-5" />
             </a>
-            <NotificationPanel />
             <div className="hidden md:flex items-center gap-1">
+              <NotificationPanel />
               <button
                 className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 title="Help"

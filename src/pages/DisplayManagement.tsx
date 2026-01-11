@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, Sparkles,
+  ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, AlertTriangle, BellOff,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
   RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone
 } from 'lucide-react';
@@ -73,11 +73,12 @@ interface DisplayCard {
   orientation?: 'horizontal' | 'vertical';
 }
 
-type OperationStatus = 'open' | 'closed' | 'identify';
+type OperationStatus = 'open' | 'closed' | 'alert' | 'no_alert';
 type ViewMode = 'list' | 'grid';
 
 export default function DisplayManagement({ storeId, storeName, onBack, isHomePage = false }: DisplayManagementProps) {
   const [operationStatus, setOperationStatus] = useState<OperationStatus>('open');
+  const [alertStatus, setAlertStatus] = useState<'alert' | 'no_alert'>('no_alert');
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return window.innerWidth >= 768 ? 'grid' : 'list';
   });
@@ -330,7 +331,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     const colors = {
       open: 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
       closed: 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-      identify: 'border-amber-500 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+      alert: 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+      no_alert: 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
     };
 
     return (
@@ -391,7 +393,21 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <div className="flex items-center justify-around gap-4">
             <StatusButton status="open" icon={Unlock} label="Open" active={operationStatus === 'open'} />
             <StatusButton status="closed" icon={Lock} label="Closed" active={operationStatus === 'closed'} />
-            <StatusButton status="identify" icon={Sparkles} label="Identify" active={operationStatus === 'identify'} />
+            <button
+              onClick={() => setAlertStatus(alertStatus === 'alert' ? 'no_alert' : 'alert')}
+              className="flex flex-col items-center gap-2 flex-1"
+            >
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-all ${
+                alertStatus === 'alert'
+                  ? 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                  : 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              }`}>
+                {alertStatus === 'alert' ? <AlertTriangle className="w-8 h-8" /> : <BellOff className="w-8 h-8" />}
+              </div>
+              <span className={`text-sm font-medium text-slate-900 dark:text-slate-100`}>
+                {alertStatus === 'alert' ? 'Alert' : 'No Alert'}
+              </span>
+            </button>
           </div>
         </div>
 
