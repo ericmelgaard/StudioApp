@@ -90,156 +90,194 @@ html, body {
   scrollbar-width: none;
 }
 
-/* WAND Theme Custom Styles */
+/* WAND Theme - Dark base with magenta accents */
 .wand-theme {
-  --wand-bg-primary: #001b3d;
-  --wand-bg-secondary: #002e5e;
-  --wand-bg-tertiary: #003d7a;
-  --wand-cyan-light: #e6f8ff;
-  --wand-cyan: #00adf0;
-  --wand-cyan-dark: #0077a8;
   --wand-magenta: #de38de;
-  --wand-magenta-hover: #f3aaf3;
-  --wand-text-primary: #ffffff;
-  --wand-text-secondary: #ccf1ff;
+  --wand-magenta-light: #f3aaf3;
+  --wand-magenta-lighter: #fbe8fb;
+  --wand-magenta-dark: #c820c8;
+  --wand-magenta-darker: #a518a5;
 }
 
-/* Base background and text */
+/* Use dark theme as base */
 .wand-theme {
-  background: linear-gradient(135deg, #001b3d 0%, #002e5e 50%, #003d7a 100%);
-  color: var(--wand-text-primary);
+  background-color: #0f172a;
+  color: #e2e8f0;
 }
 
-/* Override body and main container backgrounds */
-.wand-theme body,
-.wand-theme #root {
-  background: linear-gradient(135deg, #001b3d 0%, #002e5e 50%, #003d7a 100%);
+/* Replace all green accent colors with magenta */
+.wand-theme [class*="bg-green-50"] {
+  background-color: rgba(222, 56, 222, 0.1) !important;
 }
 
-/* Header styles */
-.wand-theme header,
-.wand-theme [class*="bg-white"],
-.wand-theme [class*="bg-slate-50"] {
-  background: var(--wand-bg-secondary) !important;
-  border-color: rgba(0, 173, 240, 0.2) !important;
-}
-
-/* Card and panel backgrounds */
-.wand-theme [class*="bg-slate-800"],
-.wand-theme [class*="bg-slate-900"] {
-  background: var(--wand-bg-tertiary) !important;
-  border-color: rgba(0, 173, 240, 0.3) !important;
-}
-
-/* Text colors */
-.wand-theme [class*="text-slate-900"],
-.wand-theme [class*="text-slate-800"],
-.wand-theme [class*="text-slate-700"] {
-  color: var(--wand-text-primary) !important;
-}
-
-.wand-theme [class*="text-slate-600"],
-.wand-theme [class*="text-slate-500"],
-.wand-theme [class*="text-slate-400"] {
-  color: var(--wand-text-secondary) !important;
-}
-
-/* Replace green with magenta for active states */
-.wand-theme [class*="bg-green"],
-.wand-theme [class*="text-green"],
-.wand-theme [class*="border-green"] {
-  background-color: var(--wand-magenta) !important;
-  color: white !important;
-  border-color: var(--wand-magenta) !important;
-}
-
-/* Buttons and interactive elements */
-.wand-theme button {
-  transition: all 0.2s ease;
-}
-
-.wand-theme button:hover {
+.wand-theme [class*="bg-green-100"] {
   background-color: rgba(222, 56, 222, 0.15) !important;
-  border-color: var(--wand-magenta) !important;
 }
 
-.wand-theme button:active {
-  background-color: rgba(222, 56, 222, 0.25) !important;
+.wand-theme [class*="bg-green-500"],
+.wand-theme [class*="bg-green-600"] {
+  background-color: #de38de !important;
 }
 
-/* Active navigation items - magenta accent */
-.wand-theme button[class*="bg-green"] {
-  background: linear-gradient(135deg, var(--wand-magenta) 0%, #c820c8 100%) !important;
-  border-color: var(--wand-magenta) !important;
-  box-shadow: 0 4px 12px rgba(222, 56, 222, 0.3);
+.wand-theme [class*="bg-green-700"] {
+  background-color: #c820c8 !important;
 }
 
-/* Hover states with magenta */
-.wand-theme [class*="hover:bg-slate"]:hover,
-.wand-theme [class*="hover:bg-green"]:hover {
+.wand-theme [class*="bg-green-900"] {
   background-color: rgba(222, 56, 222, 0.2) !important;
-  border-color: rgba(222, 56, 222, 0.4) !important;
 }
 
-/* Input fields */
-.wand-theme input,
-.wand-theme textarea,
-.wand-theme select {
-  background-color: rgba(0, 173, 240, 0.1) !important;
-  border-color: rgba(0, 173, 240, 0.3) !important;
-  color: var(--wand-text-primary) !important;
+.wand-theme [class*="text-green-300"],
+.wand-theme [class*="text-green-400"],
+.wand-theme [class*="text-green-500"] {
+  color: #f3aaf3 !important;
 }
 
+.wand-theme [class*="text-green-600"],
+.wand-theme [class*="text-green-700"] {
+  color: #de38de !important;
+}
+
+.wand-theme [class*="text-green-900"] {
+  color: #a518a5 !important;
+}
+
+.wand-theme [class*="border-green-200"],
+.wand-theme [class*="border-green-300"] {
+  border-color: rgba(222, 56, 222, 0.3) !important;
+}
+
+.wand-theme [class*="border-green-500"],
+.wand-theme [class*="border-green-600"],
+.wand-theme [class*="border-green-700"] {
+  border-color: #de38de !important;
+}
+
+/* Active/selected buttons with magenta glow */
+.wand-theme button[class*="bg-green"] {
+  background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
+  border-color: #de38de !important;
+  box-shadow: 0 0 20px rgba(222, 56, 222, 0.4), 0 4px 12px rgba(222, 56, 222, 0.3) !important;
+}
+
+.wand-theme button[class*="bg-green"]:hover {
+  background: linear-gradient(135deg, #eb74eb 0%, #de38de 100%) !important;
+  box-shadow: 0 0 25px rgba(222, 56, 222, 0.5), 0 6px 16px rgba(222, 56, 222, 0.4) !important;
+}
+
+/* Hover states for all buttons with subtle magenta */
+.wand-theme button[class*="hover:bg-slate"]:not([class*="bg-green"]):hover {
+  background-color: rgba(222, 56, 222, 0.1) !important;
+}
+
+.wand-theme button[class*="hover:bg-green"]:hover {
+  background-color: rgba(222, 56, 222, 0.25) !important;
+  border-color: rgba(222, 56, 222, 0.5) !important;
+}
+
+/* Active states */
+.wand-theme button:active {
+  transform: scale(0.98);
+}
+
+/* Focus states for inputs with magenta */
 .wand-theme input:focus,
 .wand-theme textarea:focus,
 .wand-theme select:focus {
-  border-color: var(--wand-magenta) !important;
+  border-color: #de38de !important;
   box-shadow: 0 0 0 3px rgba(222, 56, 222, 0.2) !important;
+  outline: none !important;
 }
 
-/* Borders with cyan accent */
-.wand-theme [class*="border-slate"] {
-  border-color: rgba(0, 173, 240, 0.2) !important;
+/* Primary action buttons */
+.wand-theme button[class*="bg-blue"] {
+  background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
+  border-color: #de38de !important;
+  box-shadow: 0 2px 8px rgba(222, 56, 222, 0.25) !important;
 }
 
-/* Accent colors - cyan for secondary elements */
-.wand-theme [class*="bg-blue"],
+.wand-theme button[class*="bg-blue"]:hover {
+  background: linear-gradient(135deg, #eb74eb 0%, #de38de 100%) !important;
+  box-shadow: 0 4px 12px rgba(222, 56, 222, 0.35) !important;
+}
+
+/* Links and text accents */
+.wand-theme a,
 .wand-theme [class*="text-blue"] {
-  background-color: var(--wand-cyan) !important;
-  color: white !important;
+  color: #f3aaf3 !important;
 }
 
-/* Scrollbars in wand theme */
+.wand-theme a:hover {
+  color: #de38de !important;
+}
+
+/* Badges and tags */
+.wand-theme [class*="bg-blue-100"] {
+  background-color: rgba(222, 56, 222, 0.15) !important;
+  color: #f3aaf3 !important;
+}
+
+.wand-theme [class*="bg-blue-500"],
+.wand-theme [class*="bg-blue-600"] {
+  background-color: #de38de !important;
+}
+
+/* Scrollbars with magenta accent */
 .wand-theme ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .wand-theme ::-webkit-scrollbar-track {
-  background: rgba(0, 46, 94, 0.5);
+  background: rgba(15, 23, 42, 0.5);
 }
 
 .wand-theme ::-webkit-scrollbar-thumb {
-  background: var(--wand-cyan);
+  background: rgba(222, 56, 222, 0.5);
   border-radius: 4px;
 }
 
 .wand-theme ::-webkit-scrollbar-thumb:hover {
-  background: var(--wand-magenta);
+  background: #de38de;
 }
 
-/* Mobile nav in wand theme */
-.wand-theme nav[class*="bg-white"],
-.wand-theme div[class*="bg-white"] {
-  background: linear-gradient(180deg, var(--wand-bg-secondary) 0%, var(--wand-bg-primary) 100%) !important;
+/* Selection highlight */
+.wand-theme ::selection {
+  background-color: rgba(222, 56, 222, 0.3);
+  color: #ffffff;
 }
 
-/* Icon colors */
-.wand-theme svg {
-  color: inherit;
+/* Progress bars and loaders */
+.wand-theme [class*="bg-blue-500"] {
+  background-color: #de38de !important;
 }
 
-/* Special gradient backgrounds */
-.wand-theme [class*="gradient"] {
-  background: linear-gradient(135deg, var(--wand-cyan) 0%, var(--wand-magenta) 100%);
+/* Checkbox and radio states */
+.wand-theme input[type="checkbox"]:checked,
+.wand-theme input[type="radio"]:checked {
+  background-color: #de38de !important;
+  border-color: #de38de !important;
+}
+
+/* Toggle switches */
+.wand-theme [role="switch"][aria-checked="true"] {
+  background-color: #de38de !important;
+}
+
+/* Sidebar/nav active items with enhanced glow */
+.wand-theme nav button[class*="bg-green"],
+.wand-theme aside button[class*="bg-green"] {
+  background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
+  box-shadow:
+    0 0 30px rgba(222, 56, 222, 0.3),
+    0 4px 16px rgba(222, 56, 222, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  border-color: #de38de !important;
+}
+
+/* Icon colors in active states */
+.wand-theme button[class*="bg-green"] svg,
+.wand-theme [class*="text-green"] svg {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
 }
