@@ -349,30 +349,40 @@ html, body {
 }
 
 /* Tab navigation buttons - lighter black for better visibility */
-.wand-theme button[class*="border-blue-600"] {
+.wand-theme button.border-blue-600.text-blue-600 {
   background-color: #202020 !important;
-  border-color: #00adf0 !important;
+  border-bottom-color: #00adf0 !important;
+  color: #00adf0 !important;
 }
 
-.wand-theme button[class*="hover:border-gray"]:hover {
+.wand-theme button.border-transparent.text-gray-500:hover {
   background-color: #1a1a1a !important;
+  border-bottom-color: #333 !important;
 }
 
-/* Display stat cards - navy blue backgrounds */
-.wand-theme .bg-white.rounded-lg.shadow.p-6 {
+/* Display stat cards - navy blue backgrounds with higher specificity */
+.wand-theme div.grid div.bg-white.rounded-lg.shadow {
   background: #002e5e !important;
   border: 1px solid rgba(0, 173, 240, 0.3) !important;
+  color: #ffffff !important;
 }
 
-/* Override general white backgrounds for cards */
-.wand-theme div[class*="grid"] > .bg-white.rounded-lg {
-  background: #002e5e !important;
-  border: 1px solid rgba(0, 173, 240, 0.3) !important;
+.wand-theme div.grid div.bg-white.rounded-lg.shadow h3 {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
-/* Inactive status badges - keep grey coloring */
-.wand-theme .bg-gray-100.text-gray-600,
-.wand-theme .bg-gray-100.text-gray-800 {
+.wand-theme div.grid div.bg-white.rounded-lg.shadow div.text-gray-900 {
+  color: #ffffff !important;
+}
+
+.wand-theme div.grid div.bg-white.rounded-lg.shadow div.text-gray-600,
+.wand-theme div.grid div.bg-white.rounded-lg.shadow .text-gray-600 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Inactive status badges - keep grey coloring (override cyan theme) */
+.wand-theme span.bg-gray-100.text-gray-600,
+.wand-theme span.bg-gray-100.text-gray-800 {
   background: #4a5568 !important;
   color: #cbd5e0 !important;
 }
