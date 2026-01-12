@@ -153,37 +153,37 @@ html, body {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Buttons - cyan with magenta for selected states */
+/* Buttons - cyan for selected states */
 .wand-theme button[class*="bg-green"] {
-  background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
-  border-color: #de38de !important;
-  box-shadow: 0 0 20px rgba(222, 56, 222, 0.4), 0 4px 12px rgba(222, 56, 222, 0.3) !important;
+  background: linear-gradient(135deg, #00adf0 0%, #008ec5 100%) !important;
+  border-color: #00adf0 !important;
+  box-shadow: 0 0 20px rgba(0, 173, 240, 0.4), 0 4px 12px rgba(0, 173, 240, 0.3) !important;
   color: #ffffff !important;
 }
 
 .wand-theme button[class*="bg-green"]:hover {
-  background: linear-gradient(135deg, #eb74eb 0%, #de38de 100%) !important;
-  box-shadow: 0 0 25px rgba(222, 56, 222, 0.5), 0 6px 16px rgba(222, 56, 222, 0.4) !important;
+  background: linear-gradient(135deg, #33bef3 0%, #00adf0 100%) !important;
+  box-shadow: 0 0 25px rgba(0, 173, 240, 0.5), 0 6px 16px rgba(0, 173, 240, 0.4) !important;
 }
 
-/* Sidebar/nav active items - magenta (sparse usage) */
+/* Sidebar/nav active items - cyan */
 .wand-theme nav button[class*="bg-green"],
 .wand-theme aside button[class*="bg-green"] {
-  background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
+  background: linear-gradient(135deg, #00adf0 0%, #008ec5 100%) !important;
   box-shadow:
-    0 0 30px rgba(222, 56, 222, 0.4),
-    0 4px 16px rgba(222, 56, 222, 0.35),
+    0 0 30px rgba(0, 173, 240, 0.4),
+    0 4px 16px rgba(0, 173, 240, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-  border-color: #de38de !important;
+  border-color: #00adf0 !important;
   color: #ffffff !important;
 }
 
 .wand-theme nav button[class*="bg-green"]:hover,
 .wand-theme aside button[class*="bg-green"]:hover {
-  background: linear-gradient(135deg, #eb74eb 0%, #de38de 100%) !important;
+  background: linear-gradient(135deg, #33bef3 0%, #00adf0 100%) !important;
   box-shadow:
-    0 0 35px rgba(222, 56, 222, 0.5),
-    0 6px 20px rgba(222, 56, 222, 0.4),
+    0 0 35px rgba(0, 173, 240, 0.5),
+    0 6px 20px rgba(0, 173, 240, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
@@ -193,22 +193,27 @@ html, body {
 }
 
 .wand-theme [class*="bg-green-100"] {
-  background-color: rgba(0, 173, 240, 0.15) !important;
+  background-color: rgba(0, 173, 240, 0.2) !important;
+}
+
+.wand-theme [class*="bg-green-200"] {
+  background-color: rgba(0, 173, 240, 0.3) !important;
 }
 
 .wand-theme [class*="bg-green-500"],
 .wand-theme [class*="bg-green-600"] {
-  background-color: #de38de !important;
+  background-color: #00adf0 !important;
 }
 
 .wand-theme [class*="bg-green-700"] {
-  background-color: #c820c8 !important;
+  background-color: #008ec5 !important;
 }
 
 .wand-theme [class*="text-green-300"],
 .wand-theme [class*="text-green-400"],
 .wand-theme [class*="text-green-500"],
-.wand-theme [class*="text-green-600"] {
+.wand-theme [class*="text-green-600"],
+.wand-theme [class*="text-green-700"] {
   color: #00adf0 !important;
 }
 
@@ -318,16 +323,16 @@ html, body {
   color: #ffffff;
 }
 
-/* Checkbox and radio states - magenta (sparse usage for selections) */
+/* Checkbox and radio states - cyan for selections */
 .wand-theme input[type="checkbox"]:checked,
 .wand-theme input[type="radio"]:checked {
-  background-color: #de38de !important;
-  border-color: #de38de !important;
+  background-color: #00adf0 !important;
+  border-color: #00adf0 !important;
 }
 
-/* Toggle switches - magenta (sparse usage) */
+/* Toggle switches - cyan */
 .wand-theme [role="switch"][aria-checked="true"] {
-  background-color: #de38de !important;
+  background-color: #00adf0 !important;
 }
 
 /* Icon colors in active/selected states */
