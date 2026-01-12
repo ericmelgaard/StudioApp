@@ -7,7 +7,7 @@ import type { Asset } from '../types/assets';
 
 type TabType = 'upload' | 'browse' | 'manage';
 
-export function AssetLibrary() {
+export default function AssetLibrary() {
   const [activeTab, setActiveTab] = useState<TabType>('browse');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
