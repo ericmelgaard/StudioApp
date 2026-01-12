@@ -92,7 +92,7 @@ export function BoardPreviewPanel({
   };
 
   return (
-    <div className="bg-slate-900 flex flex-col">
+    <div className="bg-slate-100 flex flex-col">
       <div className="flex-1 flex items-center justify-center p-8">
         {assetDetail ? (
           <div className="relative w-full max-w-6xl">
@@ -134,36 +134,36 @@ export function BoardPreviewPanel({
 
             {displayType && (
               <div className="mt-4 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-lg text-sm">
-                  <span className="text-slate-400">{displayType.name}</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-slate-400">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm">
+                  <span className="text-slate-700">{displayType.name}</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-600">
                     {displayType.specifications?.resolution || 'N/A'}
                   </span>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-slate-400">{getAspectRatio()}</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-600">{getAspectRatio()}</span>
                 </div>
               </div>
             )}
           </div>
         ) : (
           <div className="text-center">
-            <div className="w-32 h-32 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ImageIcon className="w-16 h-16 text-slate-600" />
+            <div className="w-32 h-32 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ImageIcon className="w-16 h-16 text-slate-400" />
             </div>
-            <h3 className="text-xl font-medium text-slate-300 mb-2">No Asset Selected</h3>
+            <h3 className="text-xl font-medium text-slate-700 mb-2">No Asset Selected</h3>
             <p className="text-slate-500">Add assets to the playlist to preview</p>
           </div>
         )}
       </div>
 
       {playlistAssets.length > 0 && (
-        <div className="border-t border-slate-700 p-4">
+        <div className="border-t border-slate-200 p-4 bg-white">
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={togglePlayback}
               disabled={selectedPlaylistAsset !== null}
-              className="flex items-center justify-center w-12 h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:cursor-not-allowed rounded-full transition-colors"
+              className="flex items-center justify-center w-12 h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed rounded-full transition-colors text-white"
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6" />
@@ -173,13 +173,13 @@ export function BoardPreviewPanel({
             </button>
 
             {!selectedPlaylistAsset && (
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-slate-600">
                 {isPlaying ? 'Playing' : 'Paused'} • Asset {currentAssetIndex + 1} of {playlistAssets.length}
               </div>
             )}
 
             {selectedPlaylistAsset && (
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-slate-600">
                 Viewing selected asset
               </div>
             )}

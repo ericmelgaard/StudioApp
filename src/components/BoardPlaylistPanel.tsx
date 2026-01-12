@@ -66,19 +66,19 @@ export function BoardPlaylistPanel({
   };
 
   return (
-    <div className="bg-slate-800 border-r border-slate-700 flex flex-col">
-      <div className="p-4 border-b border-slate-700">
+    <div className="bg-white border-r border-slate-200 flex flex-col">
+      <div className="p-4 border-b border-slate-200">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Playlist</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Playlist</h2>
           <button
             onClick={onAddAssets}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Assets
           </button>
         </div>
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-slate-600">
           {playlistAssets.length} {playlistAssets.length === 1 ? 'asset' : 'assets'}
         </div>
       </div>
@@ -86,16 +86,16 @@ export function BoardPlaylistPanel({
       <div className="flex-1 overflow-y-auto">
         {playlistAssets.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-            <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mb-4">
-              <ImageIcon className="w-8 h-8 text-slate-500" />
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+              <ImageIcon className="w-8 h-8 text-slate-400" />
             </div>
-            <h3 className="text-lg font-medium text-slate-300 mb-2">No assets yet</h3>
-            <p className="text-sm text-slate-500 mb-4">
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No assets yet</h3>
+            <p className="text-sm text-slate-600 mb-4">
               Add images or videos to build your board
             </p>
             <button
               onClick={onAddAssets}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
               Add Assets
@@ -119,17 +119,17 @@ export function BoardPlaylistPanel({
                     onClick={() => onSelectAsset(playlistAsset)}
                     className={`group relative flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-blue-600'
-                        : 'bg-slate-700 hover:bg-slate-600'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
                     }`}
                   >
                     <div className="cursor-grab active:cursor-grabbing">
-                      <GripVertical className="w-4 h-4 text-slate-400" />
+                      <GripVertical className={`w-4 h-4 ${isSelected ? 'text-blue-200' : 'text-slate-400'}`} />
                     </div>
 
                     {asset && (
                       <>
-                        <div className="w-12 h-12 bg-slate-900 rounded overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-12 bg-slate-200 rounded overflow-hidden flex-shrink-0">
                           {asset.preview_path ? (
                             <img
                               src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/assets/${asset.preview_path}`}
@@ -137,7 +137,7 @@ export function BoardPlaylistPanel({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-500">
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">
                               {getAssetIcon(asset)}
                             </div>
                           )}
@@ -145,12 +145,12 @@ export function BoardPlaylistPanel({
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium text-slate-400">
+                            <span className={`text-xs font-medium ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}>
                               #{playlistAsset.order_position}
                             </span>
                             <h3 className="text-sm font-medium truncate">{asset.title}</h3>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <div className={`flex items-center gap-2 text-xs ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}>
                             {getAssetIcon(asset)}
                             <span>{formatDuration(playlistAsset.duration_seconds)}</span>
                             {playlistAsset.transition_effect !== 'none' && (
@@ -167,7 +167,7 @@ export function BoardPlaylistPanel({
                             e.stopPropagation();
                             onRemoveAsset(playlistAsset.id);
                           }}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-600 rounded transition-all"
+                          className={`opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-600 rounded transition-all ${isSelected ? 'hover:text-white' : ''}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
