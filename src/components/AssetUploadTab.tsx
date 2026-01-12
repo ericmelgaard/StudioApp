@@ -6,9 +6,17 @@ import AssetLocationSelector from './AssetLocationSelector';
 
 interface AssetUploadTabProps {
   onUploadComplete: () => void;
+  defaultCompanyId?: number | null;
+  defaultConceptId?: number | null;
+  defaultStoreId?: number | null;
 }
 
-export function AssetUploadTab({ onUploadComplete }: AssetUploadTabProps) {
+export function AssetUploadTab({
+  onUploadComplete,
+  defaultCompanyId = null,
+  defaultConceptId = null,
+  defaultStoreId = null
+}: AssetUploadTabProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -16,9 +24,9 @@ export function AssetUploadTab({ onUploadComplete }: AssetUploadTabProps) {
     title: '',
     description: '',
     tags: [],
-    company_id: null,
-    concept_id: null,
-    store_id: null
+    company_id: defaultCompanyId,
+    concept_id: defaultConceptId,
+    store_id: defaultStoreId
   });
   const [tagInput, setTagInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,9 +94,9 @@ export function AssetUploadTab({ onUploadComplete }: AssetUploadTabProps) {
         title: '',
         description: '',
         tags: [],
-        company_id: null,
-        concept_id: null,
-        store_id: null
+        company_id: defaultCompanyId,
+        concept_id: defaultConceptId,
+        store_id: defaultStoreId
       });
 
       if (fileInputRef.current) {
@@ -236,7 +244,7 @@ export function AssetUploadTab({ onUploadComplete }: AssetUploadTabProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Scope (Optional)
+              Asset Location
             </label>
             <AssetLocationSelector
               selectedCompanyId={formData.company_id}
@@ -252,7 +260,9 @@ export function AssetUploadTab({ onUploadComplete }: AssetUploadTabProps) {
               }}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Optionally scope this asset to a specific company, concept, or store
+              {(defaultCompanyId || defaultConceptId || defaultStoreId)
+                ? 'Asset will be saved to your current navigation location. You can change it above if needed.'
+                : 'Optionally scope this asset to a specific company, concept, or store'}
             </p>
           </div>
 

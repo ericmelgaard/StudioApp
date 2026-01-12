@@ -417,7 +417,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
           {currentView === 'sites' && <SiteConfiguration role="admin" userId={user.id} />}
           {currentView === 'sites-beta' && <SiteConfigurationBeta role="admin" userId={user.id} />}
           {currentView === 'devices-displays' && <DevicesDisplaysDashboard />}
-          {currentView === 'asset-library' && <AssetLibrary />}
+          {currentView === 'asset-library' && <AssetLibrary role="admin" userId={user.id} />}
         </Suspense>
 
         {currentView === 'dashboard' && (

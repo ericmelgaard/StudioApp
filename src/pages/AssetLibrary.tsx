@@ -3,11 +3,19 @@ import { Upload, Image, Settings } from 'lucide-react';
 import { AssetUploadTab } from '../components/AssetUploadTab';
 import { AssetBrowseTab } from '../components/AssetBrowseTab';
 import { AssetManageTab } from '../components/AssetManageTab';
+import { useLocation } from '../hooks/useLocation';
 import type { Asset } from '../types/assets';
+import { UserRole } from '../lib/supabase';
 
 type TabType = 'upload' | 'browse' | 'manage';
 
-export default function AssetLibrary() {
+interface AssetLibraryProps {
+  role?: UserRole;
+  userId?: string;
+}
+
+export default function AssetLibrary({ role, userId }: AssetLibraryProps = {}) {
+  const { location } = useLocation(role, userId);
   const [activeTab, setActiveTab] = useState<TabType>('browse');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -81,7 +89,12 @@ export default function AssetLibrary() {
 
         <div className="p-6">
           {activeTab === 'upload' && (
-            <AssetUploadTab onUploadComplete={handleUploadComplete} />
+            <AssetUploadTab
+              onUploadComplete={handleUploadComplete}
+              defaultCompanyId={location.company?.id || null}
+              defaultConceptId={location.concept?.id || null}
+              defaultStoreId={location.store?.id || null}
+            />
           )}
           {activeTab === 'browse' && (
             <AssetBrowseTab
