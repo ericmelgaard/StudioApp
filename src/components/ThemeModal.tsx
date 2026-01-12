@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, Grid3x3, List, Sparkles, Coffee, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Theme {
@@ -55,6 +55,8 @@ export default function ThemeModal({ theme, onClose, onSave, conceptId }: ThemeM
     display_type_id: '',
     daypart_id: ''
   });
+  const [selectedDayparts, setSelectedDayparts] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -143,39 +145,98 @@ export default function ThemeModal({ theme, onClose, onSave, conceptId }: ThemeM
   };
 
   const handleAddBoard = () => {
-    if (!newBoard.display_type_id || !newBoard.daypart_id) {
-      alert('Please select both display type and daypart');
-      return;
-    }
-
-    const isDuplicate = boards.some(
-      b => b.display_type_id === newBoard.display_type_id && b.daypart_id === newBoard.daypart_id
-    );
-
-    if (isDuplicate) {
-      alert('This board combination already exists');
+    if (!newBoard.display_type_id || selectedDayparts.size === 0) {
+      alert('Please select a display type and at least one daypart');
       return;
     }
 
     const displayType = displayTypes.find(dt => dt.id === newBoard.display_type_id);
-    const daypart = dayparts.find(dp => dp.id === newBoard.daypart_id);
+    if (!displayType) return;
 
-    if (!displayType || !daypart) return;
+    const newBoards: ThemeBoard[] = [];
+    const duplicates: string[] = [];
 
-    setBoards([
-      ...boards,
-      {
-        display_type_id: newBoard.display_type_id,
-        daypart_id: newBoard.daypart_id,
-        display_type_name: displayType.name,
-        daypart_label: daypart.display_label,
-        daypart_color: daypart.color,
-        category: displayType.category
+    selectedDayparts.forEach(daypartId => {
+      const isDuplicate = boards.some(
+        b => b.display_type_id === newBoard.display_type_id && b.daypart_id === daypartId
+      );
+
+      if (isDuplicate) {
+        const daypart = dayparts.find(dp => dp.id === daypartId);
+        if (daypart) duplicates.push(daypart.display_label);
+      } else {
+        const daypart = dayparts.find(dp => dp.id === daypartId);
+        if (daypart) {
+          newBoards.push({
+            display_type_id: newBoard.display_type_id,
+            daypart_id: daypartId,
+            display_type_name: displayType.name,
+            daypart_label: daypart.display_label,
+            daypart_color: daypart.color,
+            category: displayType.category
+          });
+        }
       }
-    ]);
+    });
+
+    if (duplicates.length > 0) {
+      alert(`Skipped duplicate boards: ${duplicates.join(', ')}`);
+    }
+
+    if (newBoards.length > 0) {
+      setBoards([...boards, ...newBoards]);
+    }
 
     setNewBoard({ display_type_id: '', daypart_id: '' });
+    setSelectedDayparts(new Set());
     setAddingBoard(false);
+  };
+
+  const handleToggleDaypart = (daypartId: string) => {
+    const newSelected = new Set(selectedDayparts);
+    if (newSelected.has(daypartId)) {
+      newSelected.delete(daypartId);
+    } else {
+      newSelected.add(daypartId);
+    }
+    setSelectedDayparts(newSelected);
+  };
+
+  const handleSelectAllDayparts = () => {
+    setSelectedDayparts(new Set(dayparts.map(dp => dp.id)));
+  };
+
+  const handleClearDayparts = () => {
+    setSelectedDayparts(new Set());
+  };
+
+  const applyTemplate = (template: 'all' | 'meals' | 'business') => {
+    if (!newBoard.display_type_id) {
+      alert('Please select a display type first');
+      return;
+    }
+
+    let templateDayparts: string[] = [];
+
+    switch (template) {
+      case 'all':
+        templateDayparts = dayparts.map(dp => dp.id);
+        break;
+      case 'meals':
+        const mealNames = ['breakfast', 'lunch', 'dinner'];
+        templateDayparts = dayparts
+          .filter(dp => mealNames.some(name => dp.daypart_name.toLowerCase().includes(name)))
+          .map(dp => dp.id);
+        break;
+      case 'business':
+        const businessNames = ['opening', 'peak', 'closing', 'morning', 'afternoon', 'evening'];
+        templateDayparts = dayparts
+          .filter(dp => businessNames.some(name => dp.daypart_name.toLowerCase().includes(name)))
+          .map(dp => dp.id);
+        break;
+    }
+
+    setSelectedDayparts(new Set(templateDayparts));
   };
 
   const handleRemoveBoard = (index: number) => {
@@ -324,136 +385,288 @@ export default function ThemeModal({ theme, onClose, onSave, conceptId }: ThemeM
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-slate-900">Boards</h3>
-              <button
-                type="button"
-                onClick={() => setAddingBoard(true)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-              >
-                ADD BOARD
-              </button>
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-medium text-slate-900">Boards</h3>
+                {boards.length > 0 && (
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
+                    {boards.length} configured
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('grid')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Grid view"
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="List view"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAddingBoard(true)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  ADD BOARD
+                </button>
+              </div>
             </div>
 
-            <div className="border border-slate-200 rounded">
-              <table className="w-full">
-                <thead className="bg-slate-100 border-b border-slate-200">
-                  <tr>
-                    <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Display Type</th>
-                    <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Layout</th>
-                    <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Daypart</th>
-                    <th className="w-12"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {boards.length === 0 && !addingBoard && (
+            {boards.length === 0 && !addingBoard ? (
+              <div className="border border-slate-200 rounded-lg p-12 text-center bg-slate-50">
+                <div className="text-sm text-slate-500">
+                  No boards yet.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setAddingBoard(true)}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Add a board
+                  </button>
+                  {' '}that will be used in this campaign.
+                </div>
+              </div>
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-3 gap-3">
+                {boards.map((board, index) => (
+                  <div
+                    key={index}
+                    className="group relative bg-white border-2 rounded-lg p-3 hover:shadow-md transition-all"
+                    style={{ borderColor: board.daypart_color }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBoard(index)}
+                      className="absolute top-2 right-2 p-1 bg-white rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    </button>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: board.daypart_color }}
+                        />
+                        <span className="text-xs font-semibold text-slate-900 truncate">
+                          {board.daypart_label}
+                        </span>
+                      </div>
+                      <div className="text-sm font-medium text-slate-900 truncate">
+                        {board.display_type_name}
+                      </div>
+                      {board.category && (
+                        <span className={`inline-block text-xs px-2 py-0.5 rounded border ${getCategoryColor(board.category)}`}>
+                          {board.category.replace('_', ' ')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-slate-100 border-b border-slate-200">
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center">
-                        <div className="text-sm text-slate-500">
-                          No boards yet.
-                          <button
-                            type="button"
-                            onClick={() => setAddingBoard(true)}
-                            className="text-blue-600 hover:text-blue-700 ml-1"
-                          >
-                            Add a board
-                          </button>
-                          {' '}that will be used in this campaign.
-                        </div>
-                      </td>
+                      <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Display Type</th>
+                      <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Category</th>
+                      <th className="text-left text-xs font-medium text-slate-500 px-4 py-2 uppercase">Daypart</th>
+                      <th className="w-12"></th>
                     </tr>
-                  )}
-
-                  {boards.map((board, index) => (
-                    <tr key={index} className="border-b border-slate-100">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-900">{board.display_type_name}</span>
+                  </thead>
+                  <tbody>
+                    {boards.map((board, index) => (
+                      <tr key={index} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-slate-900 font-medium">{board.display_type_name}</span>
+                        </td>
+                        <td className="px-4 py-3">
                           {board.category && (
                             <span className={`text-xs px-2 py-0.5 rounded border ${getCategoryColor(board.category)}`}>
                               {board.category.replace('_', ' ')}
                             </span>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-slate-600">Full Display</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: board.daypart_color }}
-                          />
-                          <span className="text-sm text-slate-900">{board.daypart_label}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: board.daypart_color }}
+                            />
+                            <span className="text-sm text-slate-900">{board.daypart_label}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBoard(index)}
+                            className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {addingBoard && (
+              <div className="border-2 border-blue-300 bg-blue-50 rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-slate-900">Add New Board</h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingBoard(false);
+                      setNewBoard({ display_type_id: '', daypart_id: '' });
+                      setSelectedDayparts(new Set());
+                    }}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
+                    DISPLAY TYPE
+                  </label>
+                  <select
+                    value={newBoard.display_type_id}
+                    onChange={(e) => setNewBoard({ ...newBoard, display_type_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select Display Type</option>
+                    {displayTypes.map(dt => (
+                      <option key={dt.id} value={dt.id}>
+                        {dt.name} - {dt.category.replace('_', ' ')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-medium text-slate-700">
+                      DAYPARTS {selectedDayparts.size > 0 && (
+                        <span className="text-blue-600">({selectedDayparts.size} selected)</span>
+                      )}
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllDayparts}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Select All
+                      </button>
+                      {selectedDayparts.size > 0 && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveBoard(index)}
-                          className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                          onClick={handleClearDayparts}
+                          className="text-xs text-slate-600 hover:text-slate-700 font-medium"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          Clear
                         </button>
-                      </td>
-                    </tr>
-                  ))}
+                      )}
+                    </div>
+                  </div>
 
-                  {addingBoard && (
-                    <tr className="border-b border-slate-100 bg-blue-50">
-                      <td className="px-4 py-3">
-                        <select
-                          value={newBoard.display_type_id}
-                          onChange={(e) => setNewBoard({ ...newBoard, display_type_id: e.target.value })}
-                          className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                        >
-                          <option value="">Select Display Type</option>
-                          {displayTypes.map(dt => (
-                            <option key={dt.id} value={dt.id}>{dt.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-slate-600">Full Display</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={newBoard.daypart_id}
-                          onChange={(e) => setNewBoard({ ...newBoard, daypart_id: e.target.value })}
-                          className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                        >
-                          <option value="">Select Daypart</option>
-                          {dayparts.map(dp => (
-                            <option key={dp.id} value={dp.id}>{dp.display_label}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={handleAddBoard}
-                            className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
-                          >
-                            Add
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAddingBoard(false);
-                              setNewBoard({ display_type_id: '', daypart_id: '' });
-                            }}
-                            className="px-2 py-1 bg-slate-200 text-slate-700 rounded text-xs hover:bg-slate-300"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {dayparts.map(dp => (
+                      <button
+                        key={dp.id}
+                        type="button"
+                        onClick={() => handleToggleDaypart(dp.id)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                          selectedDayparts.has(dp.id)
+                            ? 'border-current shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
+                        style={
+                          selectedDayparts.has(dp.id)
+                            ? { borderColor: dp.color, backgroundColor: dp.color + '20', color: dp.color }
+                            : {}
+                        }
+                      >
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: dp.color }}
+                        />
+                        {dp.display_label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-blue-200">
+                    <span className="text-xs text-slate-600">Quick Templates:</span>
+                    <button
+                      type="button"
+                      onClick={() => applyTemplate('all')}
+                      className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      All Dayparts
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyTemplate('meals')}
+                      className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <Coffee className="w-3 h-3" />
+                      Meal Periods
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyTemplate('business')}
+                      className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <Clock className="w-3 h-3" />
+                      Business Hours
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingBoard(false);
+                      setNewBoard({ display_type_id: '', daypart_id: '' });
+                      setSelectedDayparts(new Set());
+                    }}
+                    className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddBoard}
+                    disabled={!newBoard.display_type_id || selectedDayparts.size === 0}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                  >
+                    Add {selectedDayparts.size > 0 && `(${selectedDayparts.size})`} Board{selectedDayparts.size !== 1 ? 's' : ''}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-slate-200">
