@@ -79,10 +79,14 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
-  // Clear location on mount for unrestricted admin users (they should start at root)
+  // Clear location on mount for unrestricted admin users ONLY if no location is set
+  // This allows admins to maintain their location when switching roles
   useEffect(() => {
     if (!user.concept_id && !user.company_id && !user.store_id) {
-      resetLocation();
+      // Only reset if no location is currently set
+      if (!location.concept && !location.company && !location.store) {
+        resetLocation();
+      }
     }
   }, []);
 
