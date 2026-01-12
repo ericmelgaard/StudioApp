@@ -109,8 +109,10 @@ export function BoardPreviewPanel({
                 <video
                   src={assetService.getPublicUrl(assetDetail.storage_path)}
                   className="w-full h-full object-contain"
-                  controls
-                  autoPlay={isPlaying}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                 />
               )}
 
