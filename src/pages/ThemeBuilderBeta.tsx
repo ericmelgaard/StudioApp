@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Play, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Play, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { themeBuilderService } from '../lib/themeBuilderService';
 import { AssetLibraryModal } from '../components/AssetLibraryModal';
@@ -10,23 +10,24 @@ import type { Theme, DisplayType, DaypartDefinition, ThemeContent, PlaylistAsset
 import type { Asset } from '../types/assets';
 
 interface ThemeBuilderBetaProps {
+  themeId: string;
+  themeName: string;
   onBack: () => void;
 }
 
-const DAYPARTS = [
-  { name: 'breakfast', label: 'Breakfast', color: 'bg-yellow-500' },
-  { name: 'lunch', label: 'Lunch', color: 'bg-orange-500' },
-  { name: 'dinner', label: 'Dinner', color: 'bg-red-500' },
-  { name: 'late_night', label: 'Late Night', color: 'bg-purple-500' },
-  { name: 'dark_hours', label: 'Dark Hours', color: 'bg-slate-700' }
-];
+interface DaypartConfig {
+  id: string;
+  daypart_name: string;
+  display_label: string;
+  color: string;
+}
 
-export default function ThemeBuilderBeta({ onBack }: ThemeBuilderBetaProps) {
-  const [themes, setThemes] = useState<Theme[]>([]);
+export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBuilderBetaProps) {
+  const [theme, setTheme] = useState<Theme | null>(null);
   const [displayTypes, setDisplayTypes] = useState<DisplayType[]>([]);
-  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+  const [dayparts, setDayparts] = useState<DaypartConfig[]>([]);
   const [selectedDisplayType, setSelectedDisplayType] = useState<DisplayType | null>(null);
-  const [selectedDaypart, setSelectedDaypart] = useState<string>('breakfast');
+  const [selectedDaypart, setSelectedDaypart] = useState<string>('');
   const [themeContent, setThemeContent] = useState<ThemeContent | null>(null);
   const [playlistAssets, setPlaylistAssets] = useState<PlaylistAsset[]>([]);
   const [assetDetails, setAssetDetails] = useState<Map<string, Asset>>(new Map());
@@ -35,16 +36,17 @@ export default function ThemeBuilderBeta({ onBack }: ThemeBuilderBetaProps) {
   const [saving, setSaving] = useState(false);
   const [showAssetLibrary, setShowAssetLibrary] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [schemaError, setSchemaError] = useState<string | null>(null);
 
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [themeId]);
 
   useEffect(() => {
-    if (selectedTheme && selectedDisplayType) {
+    if (theme && selectedDisplayType) {
       loadThemeContent();
     }
-  }, [selectedTheme, selectedDisplayType]);
+  }, [theme, selectedDisplayType]);
 
   useEffect(() => {
     if (themeContent && selectedDaypart) {
@@ -60,40 +62,87 @@ export default function ThemeBuilderBeta({ onBack }: ThemeBuilderBetaProps) {
 
   const loadInitialData = async () => {
     setLoading(true);
+    setSchemaError(null);
     try {
-      const [themesResult, displayTypesResult] = await Promise.all([
-        supabase.from('themes').select('*').eq('status', 'active').order('name'),
-        supabase.from('display_types').select('*').eq('status', 'active').order('name')
+      const { data: themeData, error: themeError } = await supabase
+        .from('themes')
+        .select('*')
+        .eq('id', themeId)
+        .single();
+
+      if (themeError) throw themeError;
+      if (!themeData) {
+        setSchemaError('Theme not found');
+        return;
+      }
+
+      setTheme(themeData as Theme);
+
+      if (!themeData.display_type_ids || themeData.display_type_ids.length === 0) {
+        setSchemaError('Theme has no display types configured. Please edit the theme to configure its schema.');
+        return;
+      }
+
+      if (!themeData.daypart_ids || themeData.daypart_ids.length === 0) {
+        setSchemaError('Theme has no dayparts configured. Please edit the theme to configure its schema.');
+        return;
+      }
+
+      const [displayTypesResult, daypartsResult] = await Promise.all([
+        supabase
+          .from('display_types')
+          .select('*')
+          .in('id', themeData.display_type_ids)
+          .eq('status', 'active')
+          .order('name'),
+        supabase
+          .from('daypart_definitions')
+          .select('id, daypart_name, display_label, color')
+          .in('id', themeData.daypart_ids)
+          .eq('is_active', true)
+          .order('sort_order')
       ]);
 
-      if (themesResult.data) setThemes(themesResult.data);
-      if (displayTypesResult.data) setDisplayTypes(displayTypesResult.data);
+      if (displayTypesResult.error) throw displayTypesResult.error;
+      if (daypartsResult.error) throw daypartsResult.error;
 
-      if (themesResult.data && themesResult.data.length > 0) {
-        setSelectedTheme(themesResult.data[0]);
+      const loadedDisplayTypes = displayTypesResult.data || [];
+      const loadedDayparts = daypartsResult.data || [];
+
+      if (loadedDisplayTypes.length === 0) {
+        setSchemaError('No active display types found for this theme');
+        return;
       }
-      if (displayTypesResult.data && displayTypesResult.data.length > 0) {
-        setSelectedDisplayType(displayTypesResult.data[0]);
+
+      if (loadedDayparts.length === 0) {
+        setSchemaError('No active dayparts found for this theme');
+        return;
       }
+
+      setDisplayTypes(loadedDisplayTypes);
+      setDayparts(loadedDayparts);
+      setSelectedDisplayType(loadedDisplayTypes[0]);
+      setSelectedDaypart(loadedDayparts[0].id);
     } catch (error) {
       console.error('Error loading initial data:', error);
+      setSchemaError('Failed to load theme data');
     } finally {
       setLoading(false);
     }
   };
 
   const loadThemeContent = async () => {
-    if (!selectedTheme || !selectedDisplayType) return;
+    if (!theme || !selectedDisplayType) return;
 
     try {
       let content = await themeBuilderService.getThemeContent(
-        selectedTheme.id,
+        theme.id,
         selectedDisplayType.id
       );
 
       if (!content) {
         content = await themeBuilderService.createThemeContent(
-          selectedTheme.id,
+          theme.id,
           selectedDisplayType.id
         );
       }
@@ -240,22 +289,43 @@ export default function ThemeBuilderBeta({ onBack }: ThemeBuilderBetaProps) {
     );
   }
 
+  if (schemaError) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="max-w-md">
+          <div className="bg-white rounded-lg shadow-lg border border-amber-300 p-8 text-center">
+            <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Schema Configuration Required</h2>
+            <p className="text-slate-600 mb-6">{schemaError}</p>
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Return to Themes
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-slate-50 text-slate-900">
       <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <select
-            value={selectedTheme?.id || ''}
-            onChange={(e) => {
-              const theme = themes.find(t => t.id === e.target.value);
-              setSelectedTheme(theme || null);
-            }}
-            className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            {themes.map(theme => (
-              <option key={theme.id} value={theme.id}>{theme.name}</option>
-            ))}
-          </select>
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          <div className="h-8 w-px bg-slate-300" />
+
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-bold text-slate-900">{themeName}</h1>
+          </div>
 
           <select
             value={selectedDisplayType?.id || ''}
@@ -271,17 +341,20 @@ export default function ThemeBuilderBeta({ onBack }: ThemeBuilderBetaProps) {
           </select>
 
           <div className="flex items-center gap-2 ml-4">
-            {DAYPARTS.map(daypart => (
+            {dayparts.map(daypart => (
               <button
-                key={daypart.name}
-                onClick={() => setSelectedDaypart(daypart.name)}
+                key={daypart.id}
+                onClick={() => setSelectedDaypart(daypart.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedDaypart === daypart.name
-                    ? `${daypart.color} text-white`
+                  selectedDaypart === daypart.id
+                    ? 'text-white'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
+                style={{
+                  backgroundColor: selectedDaypart === daypart.id ? daypart.color : undefined
+                }}
               >
-                {daypart.label}
+                {daypart.display_label}
               </button>
             ))}
           </div>

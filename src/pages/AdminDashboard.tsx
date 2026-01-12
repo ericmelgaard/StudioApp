@@ -10,6 +10,7 @@ const SignageManagement = lazy(() => import('./SignageManagement'));
 const ShelfLabelManagement = lazy(() => import('./ShelfLabelManagement'));
 const ProductManagement = lazy(() => import('./ProductManagement'));
 const ThemeManagement = lazy(() => import('./ThemeManagement'));
+const DisplayThemesBeta = lazy(() => import('./DisplayThemesBeta'));
 const IntegrationCatalog = lazy(() => import('./IntegrationCatalog'));
 const IntegrationDashboard = lazy(() => import('./IntegrationDashboard'));
 const IntegrationAccess = lazy(() => import('./IntegrationAccess'));
@@ -66,7 +67,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'theme-builder-beta' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays' | 'asset-library';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'themes-beta' | 'theme-builder-beta' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays' | 'asset-library';
 
 export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay, resetLocation } = useLocation('admin', user.id);
@@ -74,6 +75,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [themeContext, setThemeContext] = useState<{ themeId: string; themeName: string } | null>(null);
 
   // Local state synced with global location context
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
@@ -130,7 +132,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
     beta: [
       { id: 'sites' as ViewType, label: 'Location Manager (Legacy)', icon: MapPin },
       { id: 'asset-library' as ViewType, label: 'Asset Library', icon: Images },
-      { id: 'theme-builder-beta' as ViewType, label: 'Theme Builder Beta', icon: Paintbrush },
+      { id: 'themes-beta' as ViewType, label: 'Display Themes Beta', icon: Palette },
     ],
   };
 
@@ -338,7 +340,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'beta' ? null : 'beta')}
               className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
-                activeMenu === 'beta' || ['sites', 'asset-library', 'theme-builder-beta'].includes(currentView)
+                activeMenu === 'beta' || ['sites', 'asset-library', 'themes-beta', 'theme-builder-beta'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
@@ -373,9 +375,16 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
       </nav>
 
       {/* Full-Screen Views (no padding) */}
-      {currentView === 'theme-builder-beta' && (
+      {currentView === 'theme-builder-beta' && themeContext && (
         <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
-          <ThemeBuilderBeta onBack={() => setCurrentView('dashboard')} />
+          <ThemeBuilderBeta
+            themeId={themeContext.themeId}
+            themeName={themeContext.themeName}
+            onBack={() => {
+              setCurrentView('themes-beta');
+              setThemeContext(null);
+            }}
+          />
         </Suspense>
       )}
 
@@ -388,6 +397,16 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             {currentView === 'products' && <ProductManagement showBackButton={false} />}
             {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
             {currentView === 'themes' && <ThemeManagement onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'themes-beta' && (
+              <DisplayThemesBeta
+                onBack={() => setCurrentView('dashboard')}
+                onEditContent={(themeId, themeName) => {
+                  setThemeContext({ themeId, themeName });
+                  setCurrentView('theme-builder-beta');
+                }}
+                conceptId={selectedConcept?.id}
+              />
+            )}
             {currentView === 'wand-products' && <WandProducts />}
             {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}
             {currentView === 'dayparts' && <DaypartManagement />}
