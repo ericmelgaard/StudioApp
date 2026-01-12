@@ -69,6 +69,8 @@ export default function OperatorMobileNav({
     setThemeMode(mode);
     localStorage.setItem('theme-mode', mode);
     applyTheme(mode);
+
+    window.dispatchEvent(new CustomEvent('theme-change', { detail: { theme: mode } }));
   };
   const navigationItems = [
     { id: 'displays', label: 'Operator Hub', icon: Home },
