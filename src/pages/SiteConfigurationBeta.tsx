@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Building, Layers, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
+import { UserRole } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
 import MetricsBar from '../components/MetricsBar';
 import ConceptsGrid from '../components/ConceptsGrid';
@@ -70,8 +71,13 @@ interface StoreData {
   longitude?: number;
 }
 
-export default function SiteConfigurationBeta() {
-  const { location, setLocation, canNavigateBack, getPreviousLocation } = useLocation();
+interface SiteConfigurationBetaProps {
+  role?: UserRole;
+  userId?: string;
+}
+
+export default function SiteConfigurationBeta({ role, userId }: SiteConfigurationBetaProps = {}) {
+  const { location, setLocation, canNavigateBack, getPreviousLocation } = useLocation(role, userId);
 
   // Navigation state
   const [viewLevel, setViewLevel] = useState<'wand' | 'concept' | 'concept-edit' | 'company' | 'company-edit' | 'store' | 'store-edit' | 'placement-edit'>('wand');
