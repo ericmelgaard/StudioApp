@@ -78,51 +78,55 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
 
       setTheme(themeData as Theme);
 
-      if (!themeData.display_type_ids || themeData.display_type_ids.length === 0) {
-        setSchemaError('Theme has no display types configured. Please edit the theme to configure its schema.');
+      const { data: boardsData, error: boardsError } = await supabase
+        .from('theme_boards')
+        .select(`
+          id,
+          display_type_id,
+          daypart_id,
+          display_types:display_type_id (*),
+          daypart_definitions:daypart_id (id, daypart_name, display_label, color)
+        `)
+        .eq('theme_id', themeId)
+        .eq('status', 'active');
+
+      if (boardsError) throw boardsError;
+
+      if (!boardsData || boardsData.length === 0) {
+        setSchemaError('Theme has no boards configured. Please edit the theme to add at least one board.');
         return;
       }
 
-      if (!themeData.daypart_ids || themeData.daypart_ids.length === 0) {
-        setSchemaError('Theme has no dayparts configured. Please edit the theme to configure its schema.');
+      const uniqueDisplayTypes: DisplayType[] = [];
+      const uniqueDayparts: DaypartConfig[] = [];
+      const displayTypeIds = new Set<string>();
+      const daypartIds = new Set<string>();
+
+      boardsData.forEach((board: any) => {
+        if (board.display_types && !displayTypeIds.has(board.display_type_id)) {
+          uniqueDisplayTypes.push(board.display_types);
+          displayTypeIds.add(board.display_type_id);
+        }
+        if (board.daypart_definitions && !daypartIds.has(board.daypart_id)) {
+          uniqueDayparts.push(board.daypart_definitions);
+          daypartIds.add(board.daypart_id);
+        }
+      });
+
+      if (uniqueDisplayTypes.length === 0) {
+        setSchemaError('No valid display types found for this theme');
         return;
       }
 
-      const [displayTypesResult, daypartsResult] = await Promise.all([
-        supabase
-          .from('display_types')
-          .select('*')
-          .in('id', themeData.display_type_ids)
-          .eq('status', 'active')
-          .order('name'),
-        supabase
-          .from('daypart_definitions')
-          .select('id, daypart_name, display_label, color')
-          .in('id', themeData.daypart_ids)
-          .eq('is_active', true)
-          .order('sort_order')
-      ]);
-
-      if (displayTypesResult.error) throw displayTypesResult.error;
-      if (daypartsResult.error) throw daypartsResult.error;
-
-      const loadedDisplayTypes = displayTypesResult.data || [];
-      const loadedDayparts = daypartsResult.data || [];
-
-      if (loadedDisplayTypes.length === 0) {
-        setSchemaError('No active display types found for this theme');
+      if (uniqueDayparts.length === 0) {
+        setSchemaError('No valid dayparts found for this theme');
         return;
       }
 
-      if (loadedDayparts.length === 0) {
-        setSchemaError('No active dayparts found for this theme');
-        return;
-      }
-
-      setDisplayTypes(loadedDisplayTypes);
-      setDayparts(loadedDayparts);
-      setSelectedDisplayType(loadedDisplayTypes[0]);
-      setSelectedDaypart(loadedDayparts[0].id);
+      setDisplayTypes(uniqueDisplayTypes);
+      setDayparts(uniqueDayparts);
+      setSelectedDisplayType(uniqueDisplayTypes[0]);
+      setSelectedDaypart(uniqueDayparts[0].id);
     } catch (error) {
       console.error('Error loading initial data:', error);
       setSchemaError('Failed to load theme data');

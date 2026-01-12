@@ -11,10 +11,16 @@ interface Theme {
   status: 'draft' | 'active' | 'archived';
   metadata: Record<string, any>;
   concept_id: number | null;
-  display_type_ids: string[] | null;
-  daypart_ids: string[] | null;
   created_at: string;
   updated_at: string;
+}
+
+interface ThemeBoard {
+  id: string;
+  display_type_name: string;
+  display_type_category: string;
+  daypart_label: string;
+  daypart_color: string;
 }
 
 interface DisplayType {
@@ -30,6 +36,7 @@ interface Daypart {
 
 interface ThemeWithStats extends Theme {
   deployment_count?: number;
+  boards?: ThemeBoard[];
   display_types?: DisplayType[];
   dayparts?: Daypart[];
 }
@@ -88,29 +95,28 @@ export default function DisplayThemesBeta({ onBack, onEditContent, conceptId }: 
           .eq('theme_id', theme.id)
           .eq('status', 'active');
 
-        let displayTypes: DisplayType[] = [];
-        if (theme.display_type_ids && theme.display_type_ids.length > 0) {
-          const { data: dtData } = await supabase
-            .from('display_types')
-            .select('id, name, category')
-            .in('id', theme.display_type_ids);
-          displayTypes = dtData || [];
-        }
+        const { data: boardsData } = await supabase
+          .from('theme_boards')
+          .select(`
+            id,
+            display_types:display_type_id (name, category),
+            daypart_definitions:daypart_id (display_label, color)
+          `)
+          .eq('theme_id', theme.id)
+          .eq('status', 'active');
 
-        let dayparts: Daypart[] = [];
-        if (theme.daypart_ids && theme.daypart_ids.length > 0) {
-          const { data: dpData } = await supabase
-            .from('daypart_definitions')
-            .select('id, display_label')
-            .in('id', theme.daypart_ids);
-          dayparts = dpData || [];
-        }
+        const boards: ThemeBoard[] = (boardsData || []).map((board: any) => ({
+          id: board.id,
+          display_type_name: board.display_types?.name || 'Unknown',
+          display_type_category: board.display_types?.category || 'unknown',
+          daypart_label: board.daypart_definitions?.display_label || 'Unknown',
+          daypart_color: board.daypart_definitions?.color || '#gray'
+        }));
 
         return {
           ...theme,
           deployment_count: count || 0,
-          display_types: displayTypes,
-          dayparts: dayparts
+          boards: boards
         };
       })
     );
@@ -165,9 +171,8 @@ export default function DisplayThemesBeta({ onBack, onEditContent, conceptId }: 
   };
 
   const handleEditContent = (theme: ThemeWithStats) => {
-    if (!theme.display_type_ids || theme.display_type_ids.length === 0 ||
-        !theme.daypart_ids || theme.daypart_ids.length === 0) {
-      alert('Please configure the theme schema (display types and dayparts) before editing content.');
+    if (!theme.boards || theme.boards.length === 0) {
+      alert('Please add at least one board to this theme before editing content.');
       return;
     }
 
@@ -197,8 +202,7 @@ export default function DisplayThemesBeta({ onBack, onEditContent, conceptId }: 
   };
 
   const hasSchemaIssues = (theme: ThemeWithStats) => {
-    return !theme.display_type_ids || theme.display_type_ids.length === 0 ||
-           !theme.daypart_ids || theme.daypart_ids.length === 0;
+    return !theme.boards || theme.boards.length === 0;
   };
 
   if (loading) {
@@ -286,7 +290,7 @@ export default function DisplayThemesBeta({ onBack, onEditContent, conceptId }: 
                   <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
                     <span className="text-sm text-amber-700">
-                      Schema not configured. Edit theme to set display types and dayparts.
+                      No boards configured. Edit theme to add at least one board.
                     </span>
                   </div>
                 )}
@@ -323,34 +327,31 @@ export default function DisplayThemesBeta({ onBack, onEditContent, conceptId }: 
                       <div className="font-semibold text-slate-900 text-lg">{theme.deployment_count || 0}</div>
                     </div>
 
-                    {theme.display_types && theme.display_types.length > 0 && (
+                    {theme.boards && theme.boards.length > 0 && (
                       <div>
-                        <div className="text-xs text-slate-500 mb-1">Display Types</div>
+                        <div className="text-xs text-slate-500 mb-1">Boards</div>
                         <div className="flex flex-wrap gap-1">
-                          {theme.display_types.slice(0, 2).map((dt) => (
+                          <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded font-medium">
+                            {theme.boards.length} configured
+                          </span>
+                          {theme.boards.slice(0, 3).map((board, idx) => (
                             <span
-                              key={dt.id}
-                              className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded"
+                              key={board.id || idx}
+                              className="text-xs px-2 py-1 bg-slate-50 text-slate-700 rounded flex items-center gap-1"
+                              title={`${board.display_type_name} - ${board.daypart_label}`}
                             >
-                              {dt.name}
+                              <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: board.daypart_color }}
+                              />
+                              {board.display_type_name}
                             </span>
                           ))}
-                          {theme.display_types.length > 2 && (
+                          {theme.boards.length > 3 && (
                             <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded">
-                              +{theme.display_types.length - 2}
+                              +{theme.boards.length - 3}
                             </span>
                           )}
-                        </div>
-                      </div>
-                    )}
-
-                    {theme.dayparts && theme.dayparts.length > 0 && (
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">Dayparts</div>
-                        <div className="flex flex-wrap gap-1">
-                          <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded font-medium">
-                            {theme.dayparts.length} configured
-                          </span>
                         </div>
                       </div>
                     )}

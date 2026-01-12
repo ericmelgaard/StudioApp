@@ -27,6 +27,7 @@ export interface ThemeContent {
   id: string;
   theme_id: string;
   display_type_id: string;
+  theme_board_id?: string | null;
   content_data: {
     boards?: {
       [daypart: string]: BoardConfiguration;
@@ -57,6 +58,22 @@ export interface Theme {
   description: string | null;
   status: 'draft' | 'active' | 'archived';
   metadata: Record<string, any>;
+  concept_id?: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ThemeBoard {
+  id: string;
+  theme_id: string;
+  display_type_id: string;
+  daypart_id: string;
+  layout_config: {
+    type: string;
+    width: string;
+    height: string;
+  };
+  status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
 }
