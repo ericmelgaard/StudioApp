@@ -386,3 +386,22 @@ html, body {
   background: #4a5568 !important;
   color: #cbd5e0 !important;
 }
+
+/* DisplayManagement stat cards - navy blue backgrounds */
+.wand-theme .flex-shrink-0.bg-white {
+  background: #002e5e !important;
+  border-color: rgba(0, 173, 240, 0.3) !important;
+}
+
+.wand-theme .flex-shrink-0 span.text-slate-600,
+.wand-theme .flex-shrink-0 span.text-slate-300 {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.wand-theme .flex-shrink-0 p.text-slate-900 {
+  color: #ffffff !important;
+}
+
+.wand-theme .flex-shrink-0 p.text-slate-500 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
