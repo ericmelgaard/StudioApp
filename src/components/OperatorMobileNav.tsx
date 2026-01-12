@@ -240,14 +240,14 @@ export default function OperatorMobileNav({
                         onClick={() => handleThemeChange('system')}
                         className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
                           themeMode === 'system'
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
-                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-700 font-medium'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent'
                         }`}
                       >
-                        <Laptop className="w-5 h-5 flex-shrink-0" />
+                        <Laptop className={`w-5 h-5 flex-shrink-0 ${themeMode === 'system' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
                         <div className="flex-1 text-left">
                           <div className="font-medium">System</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">Use device theme</div>
+                          <div className={`text-xs ${themeMode === 'system' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>Use device theme</div>
                         </div>
                         {themeMode === 'system' && (
                           <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
@@ -258,14 +258,14 @@ export default function OperatorMobileNav({
                         onClick={() => handleThemeChange('light')}
                         className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
                           themeMode === 'light'
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
-                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-700 font-medium'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent'
                         }`}
                       >
-                        <Sun className="w-5 h-5 flex-shrink-0" />
+                        <Sun className={`w-5 h-5 flex-shrink-0 ${themeMode === 'light' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
                         <div className="flex-1 text-left">
                           <div className="font-medium">Light</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">Always light theme</div>
+                          <div className={`text-xs ${themeMode === 'light' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>Always light theme</div>
                         </div>
                         {themeMode === 'light' && (
                           <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
@@ -276,14 +276,14 @@ export default function OperatorMobileNav({
                         onClick={() => handleThemeChange('dark')}
                         className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
                           themeMode === 'dark'
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
-                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-700 font-medium'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent'
                         }`}
                       >
-                        <Moon className="w-5 h-5 flex-shrink-0" />
+                        <Moon className={`w-5 h-5 flex-shrink-0 ${themeMode === 'dark' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
                         <div className="flex-1 text-left">
                           <div className="font-medium">Dark</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">Always dark theme</div>
+                          <div className={`text-xs ${themeMode === 'dark' ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>Always dark theme</div>
                         </div>
                         {themeMode === 'dark' && (
                           <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
