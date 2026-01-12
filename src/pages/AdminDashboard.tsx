@@ -372,93 +372,101 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
         </div>
       </nav>
 
-      {/* Main Content Area */}
-      <main className="p-6">
-        <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
-          {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'products' && <ProductManagement showBackButton={false} />}
-          {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'themes' && <ThemeManagement onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'wand-products' && <WandProducts />}
-          {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'dayparts' && <DaypartManagement />}
-          {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
-          {currentView === 'integration-dashboard' && (
-            <IntegrationDashboard
-              onNavigate={(page) => setCurrentView(page === 'access' ? 'integration-access' : 'integration')}
-            />
-          )}
-          {currentView === 'integration-access' && <IntegrationAccess />}
-          {currentView === 'integration' && <IntegrationCatalog />}
-          {currentView === 'users' && (
-            <UserManagement
-              onAddUser={() => setShowAddUserModal(true)}
-              onEditUser={(user) => {
-                setEditingUserId(user.id);
-                setCurrentView('edit-user');
-              }}
-            />
-          )}
-          {currentView === 'edit-user' && editingUserId && (
-            <UserEdit
-              userId={editingUserId}
-              onBack={() => {
-                setCurrentView('users');
-                setEditingUserId(null);
-              }}
-              onSuccess={() => {
-                setCurrentView('users');
-                setEditingUserId(null);
-                setToastMessage('User updated successfully');
-              }}
-            />
-          )}
-          {currentView === 'sites' && <SiteConfiguration role="admin" userId={user.id} />}
-          {currentView === 'sites-beta' && <SiteConfigurationBeta role="admin" userId={user.id} />}
-          {currentView === 'devices-displays' && <DevicesDisplaysDashboard />}
-          {currentView === 'asset-library' && <AssetLibrary role="admin" userId={user.id} />}
-          {currentView === 'theme-builder-beta' && <ThemeBuilderBeta onBack={() => setCurrentView('dashboard')} />}
+      {/* Full-Screen Views (no padding) */}
+      {currentView === 'theme-builder-beta' && (
+        <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+          <ThemeBuilderBeta onBack={() => setCurrentView('dashboard')} />
         </Suspense>
+      )}
 
-        {currentView === 'dashboard' && (
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                System Administration
-              </h2>
-              <p className="text-slate-600 mb-6">
-                Configure system-wide settings and access support features.
-              </p>
+      {/* Main Content Area (with padding) */}
+      {currentView !== 'theme-builder-beta' && (
+        <main className="p-6">
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+            {currentView === 'signage' && <SignageManagement onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'products' && <ProductManagement showBackButton={false} />}
+            {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'themes' && <ThemeManagement onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'wand-products' && <WandProducts />}
+            {currentView === 'integration-sources' && <WandIntegrationLibrary onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'dayparts' && <DaypartManagement />}
+            {currentView === 'core-attributes' && <CoreAttributes onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'wand-templates' && <WandTemplateManager onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'wand-mapper' && <WandIntegrationMapper onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'integration-dashboard' && (
+              <IntegrationDashboard
+                onNavigate={(page) => setCurrentView(page === 'access' ? 'integration-access' : 'integration')}
+              />
+            )}
+            {currentView === 'integration-access' && <IntegrationAccess />}
+            {currentView === 'integration' && <IntegrationCatalog />}
+            {currentView === 'users' && (
+              <UserManagement
+                onAddUser={() => setShowAddUserModal(true)}
+                onEditUser={(user) => {
+                  setEditingUserId(user.id);
+                  setCurrentView('edit-user');
+                }}
+              />
+            )}
+            {currentView === 'edit-user' && editingUserId && (
+              <UserEdit
+                userId={editingUserId}
+                onBack={() => {
+                  setCurrentView('users');
+                  setEditingUserId(null);
+                }}
+                onSuccess={() => {
+                  setCurrentView('users');
+                  setEditingUserId(null);
+                  setToastMessage('User updated successfully');
+                }}
+              />
+            )}
+            {currentView === 'sites' && <SiteConfiguration role="admin" userId={user.id} />}
+            {currentView === 'sites-beta' && <SiteConfigurationBeta role="admin" userId={user.id} />}
+            {currentView === 'devices-displays' && <DevicesDisplaysDashboard />}
+            {currentView === 'asset-library' && <AssetLibrary role="admin" userId={user.id} />}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-                  <h3 className="font-semibold text-slate-900 mb-2">Users & Access</h3>
-                  <p className="text-slate-600 text-sm">Manage user accounts and permissions</p>
-                </div>
-                <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-                  <h3 className="font-semibold text-slate-900 mb-2">System Config</h3>
-                  <p className="text-slate-600 text-sm">Configure global system settings</p>
-                </div>
-                <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-                  <h3 className="font-semibold text-slate-900 mb-2">Support Tools</h3>
-                  <p className="text-slate-600 text-sm">Access diagnostic and support features</p>
+            {currentView === 'dashboard' && (
+              <div className="max-w-7xl mx-auto">
+                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                    System Administration
+                  </h2>
+                  <p className="text-slate-600 mb-6">
+                    Configure system-wide settings and access support features.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                      <h3 className="font-semibold text-slate-900 mb-2">Users & Access</h3>
+                      <p className="text-slate-600 text-sm">Manage user accounts and permissions</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                      <h3 className="font-semibold text-slate-900 mb-2">System Config</h3>
+                      <p className="text-slate-600 text-sm">Configure global system settings</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                      <h3 className="font-semibold text-slate-900 mb-2">Support Tools</h3>
+                      <p className="text-slate-600 text-sm">Access diagnostic and support features</p>
+                    </div>
+                  </div>
+
+                  {(selectedConcept || selectedCompany || selectedStore) && (
+                    <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <strong>Current Context:</strong> {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : selectedConcept ? selectedConcept.name : 'All Locations'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {(selectedConcept || selectedCompany || selectedStore) && (
-                <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-800">
-                    <strong>Current Context:</strong> {selectedStore ? selectedStore.name : selectedCompany ? selectedCompany.name : selectedConcept ? selectedConcept.name : 'All Locations'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </main>
+            )}
+          </Suspense>
+        </main>
+      )}
 
       {/* Location Selector Modal */}
       {showLocationSelector && (
