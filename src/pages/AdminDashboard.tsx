@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown, Palette, Clock, Cpu } from 'lucide-react';
+import { HelpCircle, FileText, Building2, Users, Store, Settings, Monitor, Tag, Package, BarChart3, Layers, ImageIcon, MapPin, Database, Sliders, ChevronDown, Palette, Clock, Cpu, Images } from 'lucide-react';
 import NotificationPanel from '../components/NotificationPanel';
 import UserMenu from '../components/UserMenu';
 import Toast from '../components/Toast';
@@ -24,6 +24,7 @@ const SiteConfiguration = lazy(() => import('./SiteConfiguration'));
 const SiteConfigurationBeta = lazy(() => import('./SiteConfigurationBeta'));
 const DaypartManagement = lazy(() => import('./DaypartManagement'));
 const DevicesDisplaysDashboard = lazy(() => import('./DevicesDisplaysDashboard'));
+const AssetLibrary = lazy(() => import('./AssetLibrary'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
 const HeaderNavigation = lazy(() => import('../components/HeaderNavigation'));
 const AddUserModal = lazy(() => import('../components/AddUserModal'));
@@ -64,7 +65,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays' | 'asset-library';
 
 export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay, resetLocation } = useLocation('admin', user.id);
@@ -123,6 +124,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
     ],
     beta: [
       { id: 'sites' as ViewType, label: 'Location Manager (Legacy)', icon: MapPin },
+      { id: 'asset-library' as ViewType, label: 'Asset Library', icon: Images },
     ],
   };
 
@@ -330,7 +332,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'beta' ? null : 'beta')}
               className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
-                activeMenu === 'beta' || ['sites'].includes(currentView)
+                activeMenu === 'beta' || ['sites', 'asset-library'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
@@ -411,6 +413,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
           {currentView === 'sites' && <SiteConfiguration />}
           {currentView === 'sites-beta' && <SiteConfigurationBeta />}
           {currentView === 'devices-displays' && <DevicesDisplaysDashboard />}
+          {currentView === 'asset-library' && <AssetLibrary />}
         </Suspense>
 
         {currentView === 'dashboard' && (
