@@ -90,52 +90,53 @@ html, body {
   scrollbar-width: none;
 }
 
-/* WAND Theme - Cyan backgrounds with magenta accents */
+/* WAND Theme - Navy backgrounds with cyan highlights */
 .wand-theme {
+  --wand-navy: #002e5e;
+  --wand-navy-light: #003a75;
+  --wand-navy-lighter: #00478c;
+  --wand-navy-dark: #002247;
+  --wand-navy-darker: #001730;
   --wand-cyan: #00adf0;
-  --wand-cyan-darker: #008ec5;
-  --wand-cyan-darkest: #006d9a;
-  --wand-cyan-deep: #004d6d;
-  --wand-cyan-navy: #003347;
+  --wand-cyan-light: #33bef3;
+  --wand-cyan-dark: #008ec5;
   --wand-magenta: #de38de;
-  --wand-magenta-light: #eb74eb;
-  --wand-magenta-dark: #c820c8;
 }
 
-/* Base backgrounds using cyan variations */
+/* Base backgrounds using navy variations */
 .wand-theme {
-  background: linear-gradient(135deg, #003347 0%, #004d6d 50%, #006d9a 100%);
+  background: linear-gradient(135deg, #001730 0%, #002247 25%, #002e5e 100%);
   color: #ffffff;
 }
 
 /* Override body and main container backgrounds */
 .wand-theme body,
 .wand-theme #root {
-  background: linear-gradient(135deg, #003347 0%, #004d6d 50%, #006d9a 100%);
+  background: linear-gradient(135deg, #001730 0%, #002247 25%, #002e5e 100%);
 }
 
-/* Header backgrounds - lighter cyan */
+/* Header backgrounds - navy with cyan border */
 .wand-theme header,
 .wand-theme [class*="bg-white"],
 .wand-theme [class*="bg-slate-50"] {
-  background: rgba(0, 173, 240, 0.15) !important;
-  border-color: rgba(0, 173, 240, 0.3) !important;
+  background: rgba(0, 46, 94, 0.8) !important;
+  border-color: rgba(0, 173, 240, 0.4) !important;
 }
 
-/* Card and panel backgrounds - cyan tinted */
+/* Card and panel backgrounds - navy variations */
 .wand-theme [class*="bg-slate-800"],
 .wand-theme [class*="bg-slate-900"] {
-  background: rgba(0, 109, 154, 0.3) !important;
-  border-color: rgba(0, 173, 240, 0.2) !important;
+  background: rgba(0, 58, 117, 0.5) !important;
+  border-color: rgba(0, 173, 240, 0.3) !important;
 }
 
 /* Secondary backgrounds */
 .wand-theme [class*="bg-slate-700"] {
-  background: rgba(0, 77, 109, 0.4) !important;
+  background: rgba(0, 46, 94, 0.6) !important;
 }
 
 .wand-theme [class*="bg-slate-600"] {
-  background: rgba(0, 142, 197, 0.25) !important;
+  background: rgba(0, 71, 140, 0.4) !important;
 }
 
 /* Text colors - high contrast on cyan */
@@ -152,7 +153,7 @@ html, body {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Buttons - magenta for active/selected states */
+/* Buttons - cyan with magenta for selected states */
 .wand-theme button[class*="bg-green"] {
   background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
   border-color: #de38de !important;
@@ -165,7 +166,7 @@ html, body {
   box-shadow: 0 0 25px rgba(222, 56, 222, 0.5), 0 6px 16px rgba(222, 56, 222, 0.4) !important;
 }
 
-/* Sidebar/nav active items - magenta with glow */
+/* Sidebar/nav active items - magenta (sparse usage) */
 .wand-theme nav button[class*="bg-green"],
 .wand-theme aside button[class*="bg-green"] {
   background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
@@ -186,13 +187,13 @@ html, body {
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Replace all green colors with magenta */
+/* Replace all green colors with cyan for highlights */
 .wand-theme [class*="bg-green-50"] {
-  background-color: rgba(222, 56, 222, 0.1) !important;
+  background-color: rgba(0, 173, 240, 0.1) !important;
 }
 
 .wand-theme [class*="bg-green-100"] {
-  background-color: rgba(222, 56, 222, 0.15) !important;
+  background-color: rgba(0, 173, 240, 0.15) !important;
 }
 
 .wand-theme [class*="bg-green-500"],
@@ -208,43 +209,43 @@ html, body {
 .wand-theme [class*="text-green-400"],
 .wand-theme [class*="text-green-500"],
 .wand-theme [class*="text-green-600"] {
-  color: #eb74eb !important;
+  color: #00adf0 !important;
 }
 
 .wand-theme [class*="border-green-200"],
 .wand-theme [class*="border-green-300"] {
-  border-color: rgba(222, 56, 222, 0.3) !important;
+  border-color: rgba(0, 173, 240, 0.4) !important;
 }
 
 .wand-theme [class*="border-green-500"],
 .wand-theme [class*="border-green-600"] {
-  border-color: #de38de !important;
+  border-color: #00adf0 !important;
 }
 
-/* Primary action buttons - magenta */
+/* Primary action buttons - cyan */
 .wand-theme button[class*="bg-blue"] {
-  background: linear-gradient(135deg, #de38de 0%, #c820c8 100%) !important;
-  border-color: #de38de !important;
-  box-shadow: 0 2px 8px rgba(222, 56, 222, 0.3) !important;
+  background: linear-gradient(135deg, #00adf0 0%, #008ec5 100%) !important;
+  border-color: #00adf0 !important;
+  box-shadow: 0 2px 8px rgba(0, 173, 240, 0.3) !important;
   color: #ffffff !important;
 }
 
 .wand-theme button[class*="bg-blue"]:hover {
-  background: linear-gradient(135deg, #eb74eb 0%, #de38de 100%) !important;
-  box-shadow: 0 4px 12px rgba(222, 56, 222, 0.4) !important;
+  background: linear-gradient(135deg, #33bef3 0%, #00adf0 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 173, 240, 0.4) !important;
 }
 
 /* Hover states for non-active buttons */
 .wand-theme button[class*="hover:bg-slate"]:not([class*="bg-green"]):hover {
-  background-color: rgba(222, 56, 222, 0.15) !important;
+  background-color: rgba(0, 173, 240, 0.15) !important;
 }
 
-/* Input fields - cyan tinted backgrounds */
+/* Input fields - navy backgrounds with cyan outlines */
 .wand-theme input,
 .wand-theme textarea,
 .wand-theme select {
-  background-color: rgba(0, 109, 154, 0.2) !important;
-  border-color: rgba(0, 173, 240, 0.4) !important;
+  background-color: rgba(0, 46, 94, 0.5) !important;
+  border-color: rgba(0, 173, 240, 0.5) !important;
   color: #ffffff !important;
 }
 
@@ -256,26 +257,27 @@ html, body {
 .wand-theme input:focus,
 .wand-theme textarea:focus,
 .wand-theme select:focus {
-  border-color: #de38de !important;
-  box-shadow: 0 0 0 3px rgba(222, 56, 222, 0.25) !important;
+  border-color: #00adf0 !important;
+  box-shadow: 0 0 0 3px rgba(0, 173, 240, 0.25) !important;
   outline: none !important;
+  background-color: rgba(0, 46, 94, 0.7) !important;
 }
 
-/* Borders - cyan accent */
+/* Borders - cyan outlines */
 .wand-theme [class*="border-slate"] {
-  border-color: rgba(0, 173, 240, 0.25) !important;
+  border-color: rgba(0, 173, 240, 0.3) !important;
 }
 
-/* Links - light magenta */
+/* Links - cyan */
 .wand-theme a {
-  color: #eb74eb !important;
+  color: #00adf0 !important;
 }
 
 .wand-theme a:hover {
-  color: #de38de !important;
+  color: #33bef3 !important;
 }
 
-/* Badges using cyan/magenta */
+/* Badges using cyan */
 .wand-theme [class*="bg-blue-100"] {
   background-color: rgba(0, 173, 240, 0.2) !important;
   color: #ffffff !important;
@@ -283,7 +285,7 @@ html, body {
 
 .wand-theme [class*="bg-blue-500"],
 .wand-theme [class*="bg-blue-600"] {
-  background-color: #de38de !important;
+  background-color: #00adf0 !important;
   color: #ffffff !important;
 }
 
@@ -291,39 +293,39 @@ html, body {
   color: #00adf0 !important;
 }
 
-/* Scrollbars */
+/* Scrollbars - cyan */
 .wand-theme ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .wand-theme ::-webkit-scrollbar-track {
-  background: rgba(0, 51, 71, 0.5);
+  background: rgba(0, 23, 48, 0.5);
 }
 
 .wand-theme ::-webkit-scrollbar-thumb {
-  background: rgba(222, 56, 222, 0.5);
+  background: rgba(0, 173, 240, 0.5);
   border-radius: 4px;
 }
 
 .wand-theme ::-webkit-scrollbar-thumb:hover {
-  background: #de38de;
+  background: #00adf0;
 }
 
-/* Selection highlight */
+/* Selection highlight - cyan */
 .wand-theme ::selection {
-  background-color: rgba(222, 56, 222, 0.4);
+  background-color: rgba(0, 173, 240, 0.4);
   color: #ffffff;
 }
 
-/* Checkbox and radio states - magenta */
+/* Checkbox and radio states - magenta (sparse usage for selections) */
 .wand-theme input[type="checkbox"]:checked,
 .wand-theme input[type="radio"]:checked {
   background-color: #de38de !important;
   border-color: #de38de !important;
 }
 
-/* Toggle switches - magenta */
+/* Toggle switches - magenta (sparse usage) */
 .wand-theme [role="switch"][aria-checked="true"] {
   background-color: #de38de !important;
 }
@@ -340,8 +342,8 @@ html, body {
   transform: scale(0.98);
 }
 
-/* Mobile nav backgrounds */
+/* Mobile nav backgrounds - navy */
 .wand-theme nav[class*="bg-white"],
 .wand-theme div[class*="bg-white"] {
-  background: linear-gradient(180deg, rgba(0, 77, 109, 0.5) 0%, rgba(0, 51, 71, 0.5) 100%) !important;
+  background: linear-gradient(180deg, rgba(0, 46, 94, 0.8) 0%, rgba(0, 34, 71, 0.8) 100%) !important;
 }

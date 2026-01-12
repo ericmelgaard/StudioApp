@@ -49,7 +49,7 @@ export default function OperatorMobileNav({
 
     if (mode === 'wand') {
       root.classList.add('wand-theme');
-      themeColor = '#003347';
+      themeColor = '#002e5e';
     } else if (mode === 'system') {
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       isDark = systemPrefersDark;
