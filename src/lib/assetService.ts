@@ -168,10 +168,16 @@ export const assetService = {
     if (error) throw error;
   },
 
-  getPublicUrl(storagePath: string): string {
+  getPublicUrl(storagePath: string, cacheBuster?: string | number): string {
     const { data } = supabase.storage
       .from(BUCKET_NAME)
       .getPublicUrl(storagePath);
+
+    if (cacheBuster) {
+      const url = new URL(data.publicUrl);
+      url.searchParams.set('t', cacheBuster.toString());
+      return url.toString();
+    }
 
     return data.publicUrl;
   },
@@ -200,7 +206,10 @@ export const assetService = {
 
     const { error: updateError } = await supabase
       .from('asset_library')
-      .update({ preview_path: uploadData.path })
+      .update({
+        preview_path: uploadData.path,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', assetId);
 
     if (updateError) throw updateError;
@@ -244,7 +253,10 @@ export const assetService = {
 
     const { error: updateError } = await supabase
       .from('asset_library')
-      .update({ preview_path: uploadData.path })
+      .update({
+        preview_path: uploadData.path,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', assetId);
 
     if (updateError) throw updateError;

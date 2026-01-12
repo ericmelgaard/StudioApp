@@ -20,7 +20,8 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
 
   useEffect(() => {
     if (asset.preview_path) {
-      setPreviewUrl(assetService.getPublicUrl(asset.preview_path));
+      const cacheBuster = asset.updated_at ? new Date(asset.updated_at).getTime() : undefined;
+      setPreviewUrl(assetService.getPublicUrl(asset.preview_path, cacheBuster));
     }
   }, [asset]);
 

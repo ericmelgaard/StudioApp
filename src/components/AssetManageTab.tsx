@@ -77,14 +77,15 @@ export function AssetManageTab({ asset, onClose, onSave }: AssetManageTabProps) 
   };
 
   const getAssetPreview = () => {
+    const cacheBuster = asset.updated_at ? new Date(asset.updated_at).getTime() : undefined;
     const previewUrl = asset.preview_path
-      ? assetService.getPublicUrl(asset.preview_path)
+      ? assetService.getPublicUrl(asset.preview_path, cacheBuster)
       : null;
 
     if (asset.asset_type === 'image') {
       return (
         <img
-          src={previewUrl || assetService.getPublicUrl(asset.storage_path)}
+          src={previewUrl || assetService.getPublicUrl(asset.storage_path, cacheBuster)}
           alt={asset.title}
           className="w-full h-64 object-contain bg-gray-100 rounded-lg"
         />

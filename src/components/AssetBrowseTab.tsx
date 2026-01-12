@@ -74,8 +74,9 @@ export function AssetBrowseTab({ onEditAsset, refreshTrigger }: AssetBrowseTabPr
   };
 
   const getAssetPreview = (asset: Asset) => {
+    const cacheBuster = asset.updated_at ? new Date(asset.updated_at).getTime() : undefined;
     const previewUrl = asset.preview_path
-      ? assetService.getPublicUrl(asset.preview_path)
+      ? assetService.getPublicUrl(asset.preview_path, cacheBuster)
       : null;
 
     if (asset.asset_type === 'image' || asset.asset_type === 'video') {
@@ -90,7 +91,7 @@ export function AssetBrowseTab({ onEditAsset, refreshTrigger }: AssetBrowseTabPr
       } else if (asset.asset_type === 'image') {
         return (
           <img
-            src={assetService.getPublicUrl(asset.storage_path)}
+            src={assetService.getPublicUrl(asset.storage_path, cacheBuster)}
             alt={asset.title}
             className="w-full h-full object-contain"
           />
