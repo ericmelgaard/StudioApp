@@ -68,16 +68,19 @@ export default function ThemeModal({ theme, onClose, onSave, conceptId }: ThemeM
   };
 
   const loadDayparts = async () => {
-    const query = supabase
+    let query = supabase
       .from('daypart_definitions')
       .select('id, daypart_name, display_label, color, icon')
       .eq('is_active', true)
-      .is('store_id', null)
-      .order('sort_order');
+      .is('store_id', null);
 
     if (conceptId) {
-      query.eq('concept_id', conceptId);
+      query = query.or(`concept_id.is.null,concept_id.eq.${conceptId}`);
+    } else {
+      query = query.is('concept_id', null);
     }
+
+    query = query.order('sort_order');
 
     const { data, error } = await query;
 
