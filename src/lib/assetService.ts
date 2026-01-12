@@ -174,5 +174,79 @@ export const assetService = {
       .getPublicUrl(storagePath);
 
     return data.publicUrl;
+  },
+
+  async generateThumbnail(assetId: string, thumbnailBlob: Blob): Promise<void> {
+    const asset = await this.getAsset(assetId);
+
+    if (asset.preview_path) {
+      await supabase.storage.from(BUCKET_NAME).remove([asset.preview_path]);
+    }
+
+    const pathParts = asset.storage_path.split('/');
+    const fileNameWithoutExt = pathParts[pathParts.length - 1].split('.')[0];
+    const userFolder = pathParts[0];
+    const previewFileName = `${userFolder}/${fileNameWithoutExt}_preview.jpg`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(previewFileName, thumbnailBlob, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: 'image/jpeg'
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { error: updateError } = await supabase
+      .from('asset_library')
+      .update({ preview_path: uploadData.path })
+      .eq('id', assetId);
+
+    if (updateError) throw updateError;
+  },
+
+  async regenerateImageThumbnail(assetId: string): Promise<void> {
+    const asset = await this.getAsset(assetId);
+
+    if (asset.asset_type !== 'image') {
+      throw new Error('Can only regenerate thumbnails for images');
+    }
+
+    const publicUrl = this.getPublicUrl(asset.storage_path);
+    const response = await fetch(publicUrl);
+    const blob = await response.blob();
+    const file = new File([blob], asset.filename, { type: asset.file_type });
+
+    const preview = await previewGenerator.generatePreview(file);
+    if (!preview) {
+      throw new Error('Failed to generate preview');
+    }
+
+    if (asset.preview_path) {
+      await supabase.storage.from(BUCKET_NAME).remove([asset.preview_path]);
+    }
+
+    const pathParts = asset.storage_path.split('/');
+    const fileNameWithoutExt = pathParts[pathParts.length - 1].split('.')[0];
+    const userFolder = pathParts[0];
+    const previewFileName = `${userFolder}/${fileNameWithoutExt}_preview.jpg`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(previewFileName, preview.blob, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: 'image/jpeg'
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { error: updateError } = await supabase
+      .from('asset_library')
+      .update({ preview_path: uploadData.path })
+      .eq('id', assetId);
+
+    if (updateError) throw updateError;
   }
 };

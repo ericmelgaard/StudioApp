@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Image, Video, FileText } from 'lucide-react';
+import { X, Save, Image, Video, FileText, Camera } from 'lucide-react';
 import { assetService } from '../lib/assetService';
 import type { Asset, AssetFormData } from '../types/assets';
 import AssetLocationSelector from './AssetLocationSelector';
+import { ThumbnailGeneratorModal } from './ThumbnailGeneratorModal';
 
 interface AssetManageTabProps {
   asset: Asset | null;
@@ -21,6 +22,7 @@ export function AssetManageTab({ asset, onClose, onSave }: AssetManageTabProps) 
   });
   const [tagInput, setTagInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showThumbnailModal, setShowThumbnailModal] = useState(false);
 
   useEffect(() => {
     if (asset) {
@@ -75,15 +77,28 @@ export function AssetManageTab({ asset, onClose, onSave }: AssetManageTabProps) 
   };
 
   const getAssetPreview = () => {
+    const previewUrl = asset.preview_path
+      ? assetService.getPublicUrl(asset.preview_path)
+      : null;
+
     if (asset.asset_type === 'image') {
       return (
         <img
-          src={assetService.getPublicUrl(asset.storage_path)}
+          src={previewUrl || assetService.getPublicUrl(asset.storage_path)}
           alt={asset.title}
           className="w-full h-64 object-contain bg-gray-100 rounded-lg"
         />
       );
     } else if (asset.asset_type === 'video') {
+      if (previewUrl) {
+        return (
+          <img
+            src={previewUrl}
+            alt={asset.title}
+            className="w-full h-64 object-contain bg-gray-100 rounded-lg"
+          />
+        );
+      }
       return (
         <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-lg">
           <Video className="w-16 h-16 text-gray-400" />
@@ -105,8 +120,20 @@ export function AssetManageTab({ asset, onClose, onSave }: AssetManageTabProps) 
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <>
+      {showThumbnailModal && (
+        <ThumbnailGeneratorModal
+          asset={asset}
+          onClose={() => setShowThumbnailModal(false)}
+          onGenerated={() => {
+            setShowThumbnailModal(false);
+            onSave();
+          }}
+        />
+      )}
+
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Edit Asset Metadata</h3>
         <button
           onClick={onClose}
@@ -119,6 +146,16 @@ export function AssetManageTab({ asset, onClose, onSave }: AssetManageTabProps) 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           {getAssetPreview()}
+
+          {(asset.asset_type === 'image' || asset.asset_type === 'video') && (
+            <button
+              onClick={() => setShowThumbnailModal(true)}
+              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center gap-2"
+            >
+              <Camera className="w-4 h-4" />
+              {asset.preview_path ? 'Replace Thumbnail' : 'Generate Thumbnail'}
+            </button>
+          )}
 
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm">
@@ -254,5 +291,6 @@ export function AssetManageTab({ asset, onClose, onSave }: AssetManageTabProps) 
         </div>
       </div>
     </div>
+    </>
   );
 }
