@@ -14,6 +14,7 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
   const [captureTime, setCaptureTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -26,6 +27,7 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
   const handleVideoLoaded = () => {
     if (videoRef.current) {
       setVideoDuration(videoRef.current.duration);
+      setVideoReady(true);
     }
   };
 
@@ -53,16 +55,31 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
         return;
       }
 
+      if (video.readyState < 2) {
+        reject(new Error('Video not ready. Please wait for it to load.'));
+        return;
+      }
+
+      if (!video.videoWidth || !video.videoHeight) {
+        reject(new Error('Video dimensions not available'));
+        return;
+      }
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      try {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      } catch (err) {
+        reject(new Error('Failed to draw video frame: ' + (err as Error).message));
+        return;
+      }
 
       canvas.toBlob((blob) => {
         if (blob) {
           resolve(blob);
         } else {
-          reject(new Error('Failed to capture frame'));
+          reject(new Error('Failed to create image blob'));
         }
       }, 'image/jpeg', 0.9);
     });
@@ -72,6 +89,14 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
     setIsGenerating(true);
     try {
       if (asset.asset_type === 'video') {
+        if (!videoRef.current) {
+          throw new Error('Video not loaded');
+        }
+
+        if (videoRef.current.readyState < 2) {
+          throw new Error('Please wait for the video to finish loading');
+        }
+
         const frameBlob = await captureFrame();
         await assetService.generateThumbnail(asset.id, frameBlob);
       } else if (asset.asset_type === 'image') {
@@ -82,7 +107,8 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
       onClose();
     } catch (error) {
       console.error('Failed to generate thumbnail:', error);
-      alert('Failed to generate thumbnail. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate thumbnail';
+      alert(errorMessage);
     } finally {
       setIsGenerating(false);
     }
@@ -119,14 +145,21 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
 
               {asset.asset_type === 'video' ? (
                 <div className="space-y-4">
-                  <div className="bg-gray-900 rounded-lg overflow-hidden">
+                  <div className="bg-gray-900 rounded-lg overflow-hidden relative">
                     <video
                       ref={videoRef}
                       src={assetService.getPublicUrl(asset.storage_path)}
                       className="w-full"
                       onLoadedMetadata={handleVideoLoaded}
+                      crossOrigin="anonymous"
                       controls
+                      preload="metadata"
                     />
+                    {!videoReady && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75">
+                        <div className="text-white text-sm">Loading video...</div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -227,7 +260,7 @@ export function ThumbnailGeneratorModal({ asset, onClose, onGenerated }: Thumbna
           </button>
           <button
             onClick={handleGenerateThumbnail}
-            disabled={isGenerating || (asset.asset_type === 'video' && !videoDuration)}
+            disabled={isGenerating || (asset.asset_type === 'video' && !videoReady)}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Camera className="w-4 h-4" />
