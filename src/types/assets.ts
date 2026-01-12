@@ -4,6 +4,7 @@ export interface Asset {
   id: string;
   filename: string;
   storage_path: string;
+  thumbnail_path: string | null;
   file_type: string;
   file_size: number;
   asset_type: AssetType;

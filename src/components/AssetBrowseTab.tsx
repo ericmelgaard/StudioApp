@@ -74,20 +74,34 @@ export function AssetBrowseTab({ onEditAsset, refreshTrigger }: AssetBrowseTabPr
   };
 
   const getAssetThumbnail = (asset: Asset) => {
-    if (asset.asset_type === 'image') {
-      return (
-        <img
-          src={assetService.getPublicUrl(asset.storage_path)}
-          alt={asset.title}
-          className="w-full h-full object-cover"
-        />
-      );
-    } else if (asset.asset_type === 'video') {
-      return (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100">
-          <Video className="w-12 h-12 text-gray-400" />
-        </div>
-      );
+    const thumbnailUrl = asset.thumbnail_path
+      ? assetService.getPublicUrl(asset.thumbnail_path)
+      : null;
+
+    if (asset.asset_type === 'image' || asset.asset_type === 'video') {
+      if (thumbnailUrl) {
+        return (
+          <img
+            src={thumbnailUrl}
+            alt={asset.title}
+            className="w-full h-full object-cover"
+          />
+        );
+      } else if (asset.asset_type === 'image') {
+        return (
+          <img
+            src={assetService.getPublicUrl(asset.storage_path)}
+            alt={asset.title}
+            className="w-full h-full object-cover"
+          />
+        );
+      } else {
+        return (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <Video className="w-12 h-12 text-gray-400" />
+          </div>
+        );
+      }
     } else {
       return (
         <div className="w-full h-full flex items-center justify-center bg-gray-100">

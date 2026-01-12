@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { Asset, AssetFilters, AssetFormData } from '../types/assets';
+import { thumbnailGenerator } from './thumbnailGenerator';
 
 const BUCKET_NAME = 'assets';
 
@@ -10,7 +11,8 @@ export const assetService = {
     userId: string
   ): Promise<Asset> {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${Date.now()}.${fileExt}`;
+    const timestamp = Date.now();
+    const fileName = `${userId}/${timestamp}.${fileExt}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
@@ -27,11 +29,36 @@ export const assetService = {
       ? 'video'
       : 'document';
 
+    let thumbnailPath: string | null = null;
+
+    if (assetType === 'image' || assetType === 'video') {
+      try {
+        const thumbnail = await thumbnailGenerator.generateThumbnail(file);
+        if (thumbnail) {
+          const thumbnailFileName = `${userId}/${timestamp}_thumb.jpg`;
+          const { data: thumbData, error: thumbError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .upload(thumbnailFileName, thumbnail.blob, {
+              cacheControl: '3600',
+              upsert: false,
+              contentType: 'image/jpeg'
+            });
+
+          if (!thumbError && thumbData) {
+            thumbnailPath = thumbData.path;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to generate thumbnail:', error);
+      }
+    }
+
     const { data, error } = await supabase
       .from('asset_library')
       .insert({
         filename: file.name,
         storage_path: uploadData.path,
+        thumbnail_path: thumbnailPath,
         file_type: file.type,
         file_size: file.size,
         asset_type: assetType,
@@ -48,6 +75,9 @@ export const assetService = {
 
     if (error) {
       await supabase.storage.from(BUCKET_NAME).remove([fileName]);
+      if (thumbnailPath) {
+        await supabase.storage.from(BUCKET_NAME).remove([thumbnailPath]);
+      }
       throw error;
     }
 
@@ -118,9 +148,14 @@ export const assetService = {
   async deleteAsset(id: string): Promise<void> {
     const asset = await this.getAsset(id);
 
+    const filesToDelete = [asset.storage_path];
+    if (asset.thumbnail_path) {
+      filesToDelete.push(asset.thumbnail_path);
+    }
+
     const { error: storageError } = await supabase.storage
       .from(BUCKET_NAME)
-      .remove([asset.storage_path]);
+      .remove(filesToDelete);
 
     if (storageError) throw storageError;
 
