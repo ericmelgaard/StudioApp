@@ -73,16 +73,16 @@ export function AssetBrowseTab({ onEditAsset, refreshTrigger }: AssetBrowseTabPr
     window.open(url, '_blank');
   };
 
-  const getAssetThumbnail = (asset: Asset) => {
-    const thumbnailUrl = asset.thumbnail_path
-      ? assetService.getPublicUrl(asset.thumbnail_path)
+  const getAssetPreview = (asset: Asset) => {
+    const previewUrl = asset.preview_path
+      ? assetService.getPublicUrl(asset.preview_path)
       : null;
 
     if (asset.asset_type === 'image' || asset.asset_type === 'video') {
-      if (thumbnailUrl) {
+      if (previewUrl) {
         return (
           <img
-            src={thumbnailUrl}
+            src={previewUrl}
             alt={asset.title}
             className="w-full h-full object-cover"
           />
@@ -217,7 +217,7 @@ export function AssetBrowseTab({ onEditAsset, refreshTrigger }: AssetBrowseTabPr
               className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
             >
               <div className="aspect-square bg-gray-50">
-                {getAssetThumbnail(asset)}
+                {getAssetPreview(asset)}
               </div>
               <div className="p-4 space-y-2">
                 <h3 className="font-medium text-gray-900 truncate">{asset.title}</h3>

@@ -1,13 +1,13 @@
-const MAX_THUMBNAIL_SIZE = 400;
+const MAX_PREVIEW_SIZE = 400;
 
-export interface ThumbnailResult {
+export interface PreviewResult {
   blob: Blob;
   width: number;
   height: number;
 }
 
-export const thumbnailGenerator = {
-  async generateImageThumbnail(file: File): Promise<ThumbnailResult> {
+export const previewGenerator = {
+  async generateImagePreview(file: File): Promise<PreviewResult> {
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -27,14 +27,14 @@ export const thumbnailGenerator = {
         let height = img.height;
 
         if (width > height) {
-          if (width > MAX_THUMBNAIL_SIZE) {
-            height = (height * MAX_THUMBNAIL_SIZE) / width;
-            width = MAX_THUMBNAIL_SIZE;
+          if (width > MAX_PREVIEW_SIZE) {
+            height = (height * MAX_PREVIEW_SIZE) / width;
+            width = MAX_PREVIEW_SIZE;
           }
         } else {
-          if (height > MAX_THUMBNAIL_SIZE) {
-            width = (width * MAX_THUMBNAIL_SIZE) / height;
-            height = MAX_THUMBNAIL_SIZE;
+          if (height > MAX_PREVIEW_SIZE) {
+            width = (width * MAX_PREVIEW_SIZE) / height;
+            height = MAX_PREVIEW_SIZE;
           }
         }
 
@@ -48,7 +48,7 @@ export const thumbnailGenerator = {
             if (blob) {
               resolve({ blob, width, height });
             } else {
-              reject(new Error('Failed to create thumbnail blob'));
+              reject(new Error('Failed to create preview blob'));
             }
           },
           'image/jpeg',
@@ -65,7 +65,7 @@ export const thumbnailGenerator = {
     });
   },
 
-  async generateVideoThumbnail(file: File): Promise<ThumbnailResult> {
+  async generateVideoPreview(file: File): Promise<PreviewResult> {
     return new Promise((resolve, reject) => {
       const video = document.createElement('video');
       const url = URL.createObjectURL(file);
@@ -93,14 +93,14 @@ export const thumbnailGenerator = {
         let height = video.videoHeight;
 
         if (width > height) {
-          if (width > MAX_THUMBNAIL_SIZE) {
-            height = (height * MAX_THUMBNAIL_SIZE) / width;
-            width = MAX_THUMBNAIL_SIZE;
+          if (width > MAX_PREVIEW_SIZE) {
+            height = (height * MAX_PREVIEW_SIZE) / width;
+            width = MAX_PREVIEW_SIZE;
           }
         } else {
-          if (height > MAX_THUMBNAIL_SIZE) {
-            width = (width * MAX_THUMBNAIL_SIZE) / height;
-            height = MAX_THUMBNAIL_SIZE;
+          if (height > MAX_PREVIEW_SIZE) {
+            width = (width * MAX_PREVIEW_SIZE) / height;
+            height = MAX_PREVIEW_SIZE;
           }
         }
 
@@ -114,7 +114,7 @@ export const thumbnailGenerator = {
             if (blob) {
               resolve({ blob, width, height });
             } else {
-              reject(new Error('Failed to create thumbnail blob'));
+              reject(new Error('Failed to create preview blob'));
             }
           },
           'image/jpeg',
@@ -131,16 +131,16 @@ export const thumbnailGenerator = {
     });
   },
 
-  async generateThumbnail(file: File): Promise<ThumbnailResult | null> {
+  async generatePreview(file: File): Promise<PreviewResult | null> {
     try {
       if (file.type.startsWith('image/')) {
-        return await this.generateImageThumbnail(file);
+        return await this.generateImagePreview(file);
       } else if (file.type.startsWith('video/')) {
-        return await this.generateVideoThumbnail(file);
+        return await this.generateVideoPreview(file);
       }
       return null;
     } catch (error) {
-      console.error('Error generating thumbnail:', error);
+      console.error('Error generating preview:', error);
       return null;
     }
   }

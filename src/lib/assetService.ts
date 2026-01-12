@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { Asset, AssetFilters, AssetFormData } from '../types/assets';
-import { thumbnailGenerator } from './thumbnailGenerator';
+import { previewGenerator } from './previewGenerator';
 
 const BUCKET_NAME = 'assets';
 
@@ -30,27 +30,27 @@ export const assetService = {
       ? 'video'
       : 'document';
 
-    let thumbnailPath: string | null = null;
+    let previewPath: string | null = null;
 
     if (assetType === 'image' || assetType === 'video') {
       try {
-        const thumbnail = await thumbnailGenerator.generateThumbnail(file);
-        if (thumbnail) {
-          const thumbnailFileName = `${userFolder}/${timestamp}_thumb.jpg`;
-          const { data: thumbData, error: thumbError } = await supabase.storage
+        const preview = await previewGenerator.generatePreview(file);
+        if (preview) {
+          const previewFileName = `${userFolder}/${timestamp}_preview.jpg`;
+          const { data: previewData, error: previewError } = await supabase.storage
             .from(BUCKET_NAME)
-            .upload(thumbnailFileName, thumbnail.blob, {
+            .upload(previewFileName, preview.blob, {
               cacheControl: '3600',
               upsert: false,
               contentType: 'image/jpeg'
             });
 
-          if (!thumbError && thumbData) {
-            thumbnailPath = thumbData.path;
+          if (!previewError && previewData) {
+            previewPath = previewData.path;
           }
         }
       } catch (error) {
-        console.error('Failed to generate thumbnail:', error);
+        console.error('Failed to generate preview:', error);
       }
     }
 
@@ -59,7 +59,7 @@ export const assetService = {
       .insert({
         filename: file.name,
         storage_path: uploadData.path,
-        thumbnail_path: thumbnailPath,
+        preview_path: previewPath,
         file_type: file.type,
         file_size: file.size,
         asset_type: assetType,
@@ -76,8 +76,8 @@ export const assetService = {
 
     if (error) {
       await supabase.storage.from(BUCKET_NAME).remove([fileName]);
-      if (thumbnailPath) {
-        await supabase.storage.from(BUCKET_NAME).remove([thumbnailPath]);
+      if (previewPath) {
+        await supabase.storage.from(BUCKET_NAME).remove([previewPath]);
       }
       throw error;
     }
@@ -150,8 +150,8 @@ export const assetService = {
     const asset = await this.getAsset(id);
 
     const filesToDelete = [asset.storage_path];
-    if (asset.thumbnail_path) {
-      filesToDelete.push(asset.thumbnail_path);
+    if (asset.preview_path) {
+      filesToDelete.push(asset.preview_path);
     }
 
     const { error: storageError } = await supabase.storage
