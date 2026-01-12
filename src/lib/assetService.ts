@@ -8,11 +8,12 @@ export const assetService = {
   async uploadAsset(
     file: File,
     metadata: AssetFormData,
-    userId: string
+    userId: string | null
   ): Promise<Asset> {
     const fileExt = file.name.split('.').pop();
     const timestamp = Date.now();
-    const fileName = `${userId}/${timestamp}.${fileExt}`;
+    const userFolder = userId || 'demo-user';
+    const fileName = `${userFolder}/${timestamp}.${fileExt}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
@@ -35,7 +36,7 @@ export const assetService = {
       try {
         const thumbnail = await thumbnailGenerator.generateThumbnail(file);
         if (thumbnail) {
-          const thumbnailFileName = `${userId}/${timestamp}_thumb.jpg`;
+          const thumbnailFileName = `${userFolder}/${timestamp}_thumb.jpg`;
           const { data: thumbData, error: thumbError } = await supabase.storage
             .from(BUCKET_NAME)
             .upload(thumbnailFileName, thumbnail.blob, {

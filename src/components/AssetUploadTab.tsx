@@ -86,7 +86,8 @@ export function AssetUploadTab({
 
     setIsUploading(true);
     try {
-      const userId = 'demo-user';
+      // Pass null for demo users since uploaded_by expects UUID or null
+      const userId = null;
       await assetService.uploadAsset(selectedFile, formData, userId);
 
       setSelectedFile(null);
