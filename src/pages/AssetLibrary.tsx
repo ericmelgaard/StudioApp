@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Upload, Image, Settings } from 'lucide-react';
+import { Upload, Image, Settings, Images } from 'lucide-react';
 import { AssetUploadTab } from '../components/AssetUploadTab';
 import { AssetBrowseTab } from '../components/AssetBrowseTab';
 import { AssetManageTab } from '../components/AssetManageTab';
+import Breadcrumb from '../components/Breadcrumb';
 import { useLocation } from '../hooks/useLocation';
 import type { Asset } from '../types/assets';
 import { UserRole } from '../lib/supabase';
@@ -15,7 +16,7 @@ interface AssetLibraryProps {
 }
 
 export default function AssetLibrary({ role, userId }: AssetLibraryProps = {}) {
-  const { location } = useLocation(role, userId);
+  const { location, setLocation } = useLocation(role, userId);
   const [activeTab, setActiveTab] = useState<TabType>('browse');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -39,16 +40,57 @@ export default function AssetLibrary({ role, userId }: AssetLibraryProps = {}) {
     setActiveTab('browse');
   };
 
-  return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Asset Library</h1>
-        <p className="text-gray-600">
-          Manage your images, videos, and documents with CCS hierarchy organization
-        </p>
-      </div>
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'WAND Digital', onClick: () => setLocation({}) }
+    ];
 
-      <div className="bg-white rounded-lg shadow">
+    if (location.concept) {
+      items.push({
+        label: location.concept.name,
+        onClick: () => setLocation({ concept: location.concept })
+      });
+    }
+
+    if (location.company) {
+      items.push({
+        label: location.company.name,
+        onClick: () => setLocation({
+          concept: location.concept,
+          company: location.company
+        })
+      });
+    }
+
+    if (location.store) {
+      items.push({
+        label: location.store.name,
+        onClick: undefined
+      });
+    }
+
+    return items;
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-[1800px] mx-auto px-6 py-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-gradient-to-br from-[#00adf0] to-[#0099d6] rounded-lg">
+              <Images className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Asset Library</h1>
+              <Breadcrumb items={getBreadcrumbItems()} />
+            </div>
+          </div>
+          <p className="text-slate-600">
+            Manage your images, videos, and documents with CCS hierarchy organization
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow">
         <div className="border-b">
           <nav className="flex -mb-px">
             <button
@@ -109,6 +151,7 @@ export default function AssetLibrary({ role, userId }: AssetLibraryProps = {}) {
               onSave={handleSaveAsset}
             />
           )}
+        </div>
         </div>
       </div>
     </div>
