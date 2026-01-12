@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Home, Monitor, Tag, Package, Store, HelpCircle, FileText, Bell, Settings, Sun, Moon, Laptop, User, LogOut } from 'lucide-react';
+import { X, Home, Monitor, Tag, Package, Store, HelpCircle, FileText, Bell, Settings, Sun, Moon, Laptop, User, LogOut, Sparkles } from 'lucide-react';
 
 interface OperatorMobileNavProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface OperatorMobileNavProps {
   notificationCount?: number;
 }
 
-type ThemeMode = 'light' | 'dark' | 'system';
+type ThemeMode = 'light' | 'dark' | 'system' | 'wand';
 
 export default function OperatorMobileNav({
   isOpen,
@@ -42,26 +42,30 @@ export default function OperatorMobileNav({
   const applyTheme = (mode: ThemeMode) => {
     const root = window.document.documentElement;
     let isDark = false;
+    let themeColor = '#ffffff';
 
-    if (mode === 'system') {
+    // Remove all theme classes first
+    root.classList.remove('dark', 'wand-theme');
+
+    if (mode === 'wand') {
+      root.classList.add('wand-theme');
+      themeColor = '#002e5e';
+    } else if (mode === 'system') {
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       isDark = systemPrefersDark;
       if (systemPrefersDark) {
         root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
+        themeColor = '#0f172a';
       }
     } else if (mode === 'dark') {
       isDark = true;
       root.classList.add('dark');
-    } else {
-      isDark = false;
-      root.classList.remove('dark');
+      themeColor = '#0f172a';
     }
 
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', isDark ? '#0f172a' : '#ffffff');
+      metaThemeColor.setAttribute('content', themeColor);
     }
   };
 
@@ -289,6 +293,24 @@ export default function OperatorMobileNav({
                         </div>
                         {themeMode === 'dark' && (
                           <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleThemeChange('wand')}
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
+                          themeMode === 'wand'
+                            ? 'bg-wand-magenta-100 text-wand-magenta-900 border border-wand-magenta-300 font-medium'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent'
+                        }`}
+                      >
+                        <Sparkles className={`w-5 h-5 flex-shrink-0 ${themeMode === 'wand' ? 'text-wand-magenta-600' : 'text-slate-400 dark:text-slate-500'}`} />
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">WAND Theme</div>
+                          <div className={`text-xs ${themeMode === 'wand' ? 'text-wand-magenta-700' : 'text-slate-500 dark:text-slate-400'}`}>Vibrant brand colors</div>
+                        </div>
+                        {themeMode === 'wand' && (
+                          <div className="w-2 h-2 bg-wand-magenta-600 rounded-full" />
                         )}
                       </button>
                     </div>
