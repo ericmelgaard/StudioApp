@@ -84,7 +84,7 @@ export function AssetBrowseTab({ onEditAsset, refreshTrigger }: AssetBrowseTabPr
           <img
             src={previewUrl}
             alt={asset.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         );
       } else if (asset.asset_type === 'image') {
@@ -92,7 +92,7 @@ export function AssetBrowseTab({ onEditAsset, refreshTrigger }: AssetBrowseTabPr
           <img
             src={assetService.getPublicUrl(asset.storage_path)}
             alt={asset.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         );
       } else {
