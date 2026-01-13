@@ -418,7 +418,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white dark:bg-slate-800 max-h-[180px] md:max-h-none">
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Monitor className="w-4 h-4" style={{ color: '#DD37DD' }} />
+              <Monitor className="w-4 h-4" style={{ color: '#00adf0' }} />
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Devices</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDevices}</p>
@@ -427,7 +427,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Layers className="w-4 h-4" style={{ color: '#DD37DD' }} />
+              <Layers className="w-4 h-4" style={{ color: '#00adf0' }} />
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Groups</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalGroups}</p>
@@ -436,7 +436,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <History className="w-4 h-4" style={{ color: '#DD37DD' }} />
+              <History className="w-4 h-4" style={{ color: '#00adf0' }} />
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Activity</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.recentActions}</p>
@@ -445,7 +445,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Package className="w-4 h-4" style={{ color: '#DD37DD' }} />
+              <Package className="w-4 h-4" style={{ color: '#00adf0' }} />
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Products</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalProducts}</p>
@@ -454,7 +454,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Globe className="w-4 h-4" style={{ color: '#DD37DD' }} />
+              <Globe className="w-4 h-4" style={{ color: '#00adf0' }} />
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">URL Players</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalUrlPlayers}</p>
