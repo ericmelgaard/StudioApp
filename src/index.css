@@ -431,25 +431,30 @@ html, body {
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
-/* Navigation active states - force cyan with high specificity */
+/* Navigation active states - subtle glow effect with readable text */
 .wand-theme nav button.bg-green-50,
 .wand-theme button.bg-green-50 {
-  background-color: rgba(0, 173, 240, 0.15) !important;
+  background: linear-gradient(135deg, rgba(0, 173, 240, 0.08), rgba(0, 173, 240, 0.12)) !important;
+  box-shadow: 0 0 20px rgba(0, 173, 240, 0.2), inset 0 0 20px rgba(0, 173, 240, 0.05) !important;
+  border: 1px solid rgba(0, 173, 240, 0.3) !important;
 }
 
 .wand-theme nav button.text-green-900,
 .wand-theme button.text-green-900 {
-  color: #00adf0 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  text-shadow: 0 0 10px rgba(0, 173, 240, 0.3) !important;
 }
 
 .wand-theme nav button.border-green-200,
 .wand-theme button.border-green-200 {
-  border-color: rgba(0, 173, 240, 0.5) !important;
+  border-color: rgba(0, 173, 240, 0.3) !important;
 }
 
 .wand-theme nav button .text-green-600,
 .wand-theme button .text-green-600 {
   color: #00adf0 !important;
+  filter: drop-shadow(0 0 4px rgba(0, 173, 240, 0.4));
 }
 
 .wand-theme nav button svg.text-green-600,
@@ -457,4 +462,12 @@ html, body {
 .wand-theme nav button svg.text-green-400,
 .wand-theme button svg.text-green-400 {
   color: #00adf0 !important;
+  filter: drop-shadow(0 0 4px rgba(0, 173, 240, 0.4));
+}
+
+/* Header bar - black background for wand theme */
+.wand-theme .bg-white.border-b,
+.wand-theme .bg-gradient-to-br.from-slate-50 {
+  background: var(--wand-black) !important;
+  border-color: rgba(0, 173, 240, 0.2) !important;
 }
