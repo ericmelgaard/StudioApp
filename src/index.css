@@ -410,3 +410,31 @@ html, body {
 .wand-theme .flex-shrink-0 p.text-slate-500 {
   color: rgba(255, 255, 255, 0.6) !important;
 }
+
+/* Navigation active states - force cyan with high specificity */
+.wand-theme nav button.bg-green-50,
+.wand-theme button.bg-green-50 {
+  background-color: rgba(0, 173, 240, 0.15) !important;
+}
+
+.wand-theme nav button.text-green-900,
+.wand-theme button.text-green-900 {
+  color: #00adf0 !important;
+}
+
+.wand-theme nav button.border-green-200,
+.wand-theme button.border-green-200 {
+  border-color: rgba(0, 173, 240, 0.5) !important;
+}
+
+.wand-theme nav button .text-green-600,
+.wand-theme button .text-green-600 {
+  color: #00adf0 !important;
+}
+
+.wand-theme nav button svg.text-green-600,
+.wand-theme button svg.text-green-600,
+.wand-theme nav button svg.text-green-400,
+.wand-theme button svg.text-green-400 {
+  color: #00adf0 !important;
+}
