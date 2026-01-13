@@ -164,14 +164,16 @@ export default function OperatorMobileNav({
                           onClick={() => handleNavClick(item.id)}
                           className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all touch-manipulation ${
                             isActive
-                              ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-300 font-semibold border border-green-200 dark:border-green-700'
+                              ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-300 font-semibold border border-cyan-200 dark:border-cyan-700'
                               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600'
                           }`}
+                          style={isActive ? { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.1)' } : undefined}
                         >
                           <Icon
                             className={`w-5 h-5 flex-shrink-0 ${
-                              isActive ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500'
+                              isActive ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500'
                             }`}
+                            style={isActive ? { color: '#00adf0' } : undefined}
                           />
                           <span className="text-base">{item.label}</span>
                         </button>
