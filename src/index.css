@@ -298,23 +298,43 @@ html, body {
   color: #00adf0 !important;
 }
 
-/* Scrollbars - cyan */
-.wand-theme ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Scrollbars - hidden on mobile, subtle on desktop */
+.wand-theme {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 173, 240, 0.3) transparent;
 }
 
-.wand-theme ::-webkit-scrollbar-track {
-  background: #000000;
+/* Hide scrollbars on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .wand-theme {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .wand-theme ::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-.wand-theme ::-webkit-scrollbar-thumb {
-  background: rgba(0, 173, 240, 0.5);
-  border-radius: 4px;
-}
+/* Thin scrollbars on desktop */
+@media (hover: hover) and (pointer: fine) {
+  .wand-theme ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
 
-.wand-theme ::-webkit-scrollbar-thumb:hover {
-  background: #00adf0;
+  .wand-theme ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .wand-theme ::-webkit-scrollbar-thumb {
+    background: rgba(0, 173, 240, 0.3);
+    border-radius: 2px;
+  }
+
+  .wand-theme ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 173, 240, 0.5);
+  }
 }
 
 /* Selection highlight - cyan */
