@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, AlertTriangle, CheckCircle2,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
-  RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone
+  RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
@@ -90,7 +90,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     totalDevices: 0,
     onlineDevices: 0,
     totalGroups: 0,
-    recentActions: 0
+    recentActions: 0,
+    totalProducts: 0,
+    activeProducts: 0,
+    totalUrlPlayers: 0,
+    onlineUrlPlayers: 0
   });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -439,29 +443,23 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             <p className="text-xs text-slate-500 dark:text-slate-400">recent actions</p>
           </div>
 
-          <button
-            onClick={onNavigateToProducts}
-            className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:border-orange-300 dark:hover:border-orange-500 transition-all cursor-pointer"
-          >
+          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <Package className="w-4 h-4 text-orange-600 dark:text-orange-400" />
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Products</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalProducts}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.activeProducts} active</p>
-          </button>
+          </div>
 
-          <button
-            onClick={onNavigateToUrlPlayers}
-            className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:border-teal-300 dark:hover:border-teal-500 transition-all cursor-pointer"
-          >
+          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <Globe className="w-4 h-4 text-teal-600 dark:text-teal-400" />
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">URL Players</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalUrlPlayers}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineUrlPlayers} online</p>
-          </button>
+          </div>
         </div>
       </div>
 
