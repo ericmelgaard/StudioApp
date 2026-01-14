@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, AlertTriangle, CheckCircle2,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
-  RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe
+  RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe,
+  Sun, Coffee, Clock, Sunrise, Sunset
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
@@ -73,7 +74,15 @@ interface DisplayCard {
   orientation?: 'horizontal' | 'vertical';
 }
 
-type OperationStatus = 'open' | 'closed' | 'alert' | 'no_alert';
+interface DaypartBadge {
+  name: string;
+  label: string;
+  color: string;
+  icon: string;
+  count: number;
+}
+
+type OperationStatus = 'open' | 'closed';
 type ViewMode = 'list' | 'grid';
 
 export default function DisplayManagement({ storeId, storeName, onBack, isHomePage = false }: DisplayManagementProps) {
@@ -86,6 +95,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   const [displayCards, setDisplayCards] = useState<DisplayCard[]>([]);
   const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [daypartBadges, setDaypartBadges] = useState<DaypartBadge[]>([]);
   const [stats, setStats] = useState({
     totalDevices: 0,
     onlineDevices: 0,
@@ -104,6 +114,15 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   useEffect(() => {
     loadStoreOperationStatus();
     loadDisplayData();
+    loadActiveDayparts();
+  }, [storeId]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadActiveDayparts();
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, [storeId]);
 
   const getDisplayOrientation = (display: Display): 'horizontal' | 'vertical' => {
@@ -259,6 +278,123 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     return `${Math.floor(diff / 86400)}d ago`;
   };
 
+  const loadActiveDayparts = async () => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentTime = now.toTimeString().slice(0, 5);
+
+    const { data: mediaPlayers } = await supabase
+      .from('media_players')
+      .select('id, placement_group_id')
+      .eq('store_id', storeId)
+      .eq('status', 'online');
+
+    if (!mediaPlayers || mediaPlayers.length === 0) {
+      setDaypartBadges([]);
+      return;
+    }
+
+    const placementIds = [...new Set(mediaPlayers.map(mp => mp.placement_group_id).filter(Boolean))];
+
+    const daypartCounts: Record<string, { label: string; color: string; icon: string; count: number }> = {};
+
+    for (const placementId of placementIds) {
+      const { data: overrides } = await supabase
+        .from('placement_daypart_overrides')
+        .select('schedule_name, days_of_week, start_time, end_time')
+        .eq('placement_group_id', placementId);
+
+      let scheduleName: string | null = null;
+
+      if (overrides && overrides.length > 0) {
+        for (const override of overrides) {
+          const daysOfWeek = override.days_of_week as number[];
+          if (daysOfWeek.includes(currentDay)) {
+            const startTime = override.start_time;
+            const endTime = override.end_time;
+
+            if (startTime <= endTime) {
+              if (currentTime >= startTime && currentTime < endTime) {
+                scheduleName = override.schedule_name;
+                break;
+              }
+            } else {
+              if (currentTime >= startTime || currentTime < endTime) {
+                scheduleName = override.schedule_name;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      if (!scheduleName) {
+        const { data: routines } = await supabase
+          .from('site_daypart_routines')
+          .select('schedule_name, days_of_week, start_time, end_time')
+          .eq('store_id', storeId);
+
+        if (routines && routines.length > 0) {
+          for (const routine of routines) {
+            const daysOfWeek = routine.days_of_week as number[];
+            if (daysOfWeek.includes(currentDay)) {
+              const startTime = routine.start_time;
+              const endTime = routine.end_time;
+
+              if (startTime <= endTime) {
+                if (currentTime >= startTime && currentTime < endTime) {
+                  scheduleName = routine.schedule_name;
+                  break;
+                }
+              } else {
+                if (currentTime >= startTime || currentTime < endTime) {
+                  scheduleName = routine.schedule_name;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (scheduleName) {
+        const playerCount = mediaPlayers.filter(mp => mp.placement_group_id === placementId).length;
+
+        if (!daypartCounts[scheduleName]) {
+          const { data: definition } = await supabase
+            .from('daypart_definitions')
+            .select('display_label, color, icon')
+            .eq('schedule_name', scheduleName)
+            .eq('store_id', storeId)
+            .maybeSingle();
+
+          if (definition) {
+            daypartCounts[scheduleName] = {
+              label: definition.display_label || scheduleName,
+              color: definition.color || 'bg-slate-100 text-slate-800',
+              icon: definition.icon || 'Clock',
+              count: playerCount
+            };
+          }
+        } else {
+          daypartCounts[scheduleName].count += playerCount;
+        }
+      }
+    }
+
+    const badges = Object.entries(daypartCounts)
+      .map(([name, data]) => ({
+        name,
+        label: data.label,
+        color: data.color,
+        icon: data.icon,
+        count: data.count
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    setDaypartBadges(badges);
+  };
+
   const handleStatusChange = async (newStatus: OperationStatus) => {
     const { error } = await supabase
       .from('stores')
@@ -326,46 +462,16 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     }
   };
 
-  const StatusButton = ({ status, icon: Icon, label, active }: {
-    status: OperationStatus;
-    icon: any;
-    label: string;
-    active: boolean;
-  }) => {
-    const colors = {
-      open: 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400',
-      closed: 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400',
-      alert: 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400',
-      no_alert: 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400'
+  const getIconComponent = (iconName: string) => {
+    const iconMap: Record<string, any> = {
+      'Sun': Sun,
+      'Moon': Moon,
+      'Coffee': Coffee,
+      'Clock': Clock,
+      'Sunrise': Sunrise,
+      'Sunset': Sunset,
     };
-
-    const colorStyles = {
-      open: { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' },
-      closed: { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' },
-      alert: { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' },
-      no_alert: { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }
-    };
-
-    return (
-      <button
-        onClick={() => handleStatusChange(status)}
-        className="flex flex-col items-center gap-2 flex-1"
-      >
-        <div
-          className={`w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all ${
-            active
-              ? colors[status]
-              : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:border-slate-400 dark:hover:border-slate-500'
-          }`}
-          style={active ? colorStyles[status] : undefined}
-        >
-          <Icon className="w-8 h-8" />
-        </div>
-        <span className={`text-sm font-medium ${active ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'}`}>
-          {label}
-        </span>
-      </button>
-    );
+    return iconMap[iconName] || Clock;
   };
 
   return (
@@ -404,29 +510,68 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">
             Store Status
           </p>
-          <div className="flex items-center justify-around gap-4">
-            <StatusButton status="open" icon={Unlock} label="Open" active={operationStatus === 'open'} />
-            <StatusButton status="closed" icon={Lock} label="Closed" active={operationStatus === 'closed'} />
+          <div className="flex items-center justify-around gap-8">
+            <button
+              onClick={() => setOperationStatus(operationStatus === 'open' ? 'closed' : 'open')}
+              className="flex flex-col items-center gap-2 flex-1"
+            >
+              <div
+                className="w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all"
+                style={{ borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }}
+              >
+                {operationStatus === 'open' ? <Unlock className="w-8 h-8" /> : <Lock className="w-8 h-8" />}
+              </div>
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                {operationStatus === 'open' ? 'Open' : 'Closed'}
+              </span>
+            </button>
+
             <button
               onClick={() => setAlertStatus(alertStatus === 'alert' ? 'no_alert' : 'alert')}
               className="flex flex-col items-center gap-2 flex-1"
             >
               <div
-                className={`w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all ${
-                  alertStatus === 'alert'
-                    ? 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400'
-                    : 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400'
-                }`}
+                className="w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all"
                 style={{ borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }}
               >
                 {alertStatus === 'alert' ? <AlertTriangle className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
               </div>
-              <span className={`text-sm font-medium text-slate-900 dark:text-slate-100`}>
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                 {alertStatus === 'alert' ? 'Alert' : 'No Issues'}
               </span>
             </button>
           </div>
         </div>
+
+        {daypartBadges.length > 0 && (
+          <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3 text-center">
+              Active Dayparts
+            </p>
+            <div className="flex items-center justify-center gap-4 overflow-x-auto no-scrollbar md:flex-wrap">
+              {daypartBadges.slice(0, window.innerWidth >= 768 ? daypartBadges.length : 3).map((badge) => {
+                const IconComponent = getIconComponent(badge.icon);
+                return (
+                  <div key={badge.name} className="flex flex-col items-center gap-2 flex-shrink-0">
+                    <div className="relative">
+                      <div
+                        className={`w-20 h-12 rounded-full flex items-center justify-center border-4 ${badge.color}`}
+                      >
+                        <IconComponent className="w-6 h-6" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center text-xs font-bold shadow-md">
+                        {badge.count}
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {badge.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white dark:bg-slate-800 max-h-[180px] md:max-h-none">
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
