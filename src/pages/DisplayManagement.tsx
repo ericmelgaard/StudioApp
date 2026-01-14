@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, AlertTriangle, CheckCircle2,
+  ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
   RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe,
   Sun, Coffee, Clock, Sunrise, Sunset, Stars
@@ -583,13 +583,13 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                 className="w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all"
                 style={operationStatus === 'open'
                   ? { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }
-                  : { borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.2)', color: '#64748b' }
+                  : { borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }
                 }
               >
-                {operationStatus === 'open' ? <Unlock className="w-8 h-8" /> : <Lock className="w-8 h-8" />}
+                {operationStatus === 'open' ? <Zap className="w-8 h-8" /> : <Leaf className="w-8 h-8" />}
               </div>
               <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                {operationStatus === 'open' ? 'Open' : 'Closed'}
+                {operationStatus === 'open' ? 'Power On' : 'Power Save'}
               </span>
             </button>
 
