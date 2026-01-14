@@ -511,10 +511,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">
             Store Status
           </p>
-          <div className="flex items-center justify-around gap-8">
+          <div className="flex items-center justify-center gap-4 md:gap-8 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setOperationStatus(operationStatus === 'open' ? 'closed' : 'open')}
-              className="flex flex-col items-center gap-2 flex-1"
+              className="flex flex-col items-center gap-2 flex-shrink-0"
             >
               <div
                 className="w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all"
@@ -529,7 +529,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
             <button
               onClick={() => setAlertStatus(alertStatus === 'alert' ? 'no_alert' : 'alert')}
-              className="flex flex-col items-center gap-2 flex-1"
+              className="flex flex-col items-center gap-2 flex-shrink-0"
             >
               <div
                 className="w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all"
@@ -541,38 +541,29 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                 {alertStatus === 'alert' ? 'Alert' : 'No Issues'}
               </span>
             </button>
+
+            {daypartBadges.slice(0, window.innerWidth >= 768 ? daypartBadges.length : 1).map((badge) => {
+              const IconComponent = getIconComponent(badge.icon);
+              return (
+                <div key={badge.name} className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <div className="relative">
+                    <div
+                      className={`w-20 h-12 rounded-full flex items-center justify-center border-4 ${badge.color}`}
+                    >
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center text-xs font-bold shadow-md">
+                      {badge.count}
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    {badge.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        {daypartBadges.length > 0 && (
-          <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3 text-center">
-              Active Dayparts
-            </p>
-            <div className="flex items-center justify-center gap-4 overflow-x-auto no-scrollbar md:flex-wrap">
-              {daypartBadges.slice(0, window.innerWidth >= 768 ? daypartBadges.length : 3).map((badge) => {
-                const IconComponent = getIconComponent(badge.icon);
-                return (
-                  <div key={badge.name} className="flex flex-col items-center gap-2 flex-shrink-0">
-                    <div className="relative">
-                      <div
-                        className={`w-20 h-12 rounded-full flex items-center justify-center border-4 ${badge.color}`}
-                      >
-                        <IconComponent className="w-6 h-6" />
-                      </div>
-                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center text-xs font-bold shadow-md">
-                        {badge.count}
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {badge.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white dark:bg-slate-800 max-h-[180px] md:max-h-none">
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
