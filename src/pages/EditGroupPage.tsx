@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   ArrowLeft, AlertCircle, CheckCircle2, Wifi, WifiOff, Monitor,
-  Calendar, ChevronRight, Palette, Save, Flame, Pizza, Coffee,
-  Zap, Wrench, Utensils, DoorOpen, Sunrise, IceCream, Wine
+  Calendar, ChevronRight, Palette, Flame, Pizza, Coffee,
+  Zap, Wrench, Utensils, DoorOpen, Sunrise, IceCream, Wine, Pencil, Check, X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -72,10 +72,8 @@ export default function EditGroupPage({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    name: group.name,
-    description: group.description || ''
-  });
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(group.name);
 
   const [themes, setThemes] = useState<Theme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(group.templates?.theme_id || null);
@@ -88,10 +86,11 @@ export default function EditGroupPage({
   const [loadingSchedules, setLoadingSchedules] = useState(false);
 
   useEffect(() => {
+    setEditedName(group.name);
     loadThemes();
     loadDevices();
     loadSchedules();
-  }, [group.id, storeId]);
+  }, [group.id, group.name, storeId]);
 
   const loadThemes = async () => {
     setLoadingThemes(true);
@@ -150,35 +149,38 @@ export default function EditGroupPage({
     }
   };
 
-  const handleUpdateInfo = async () => {
-    if (!formData.name.trim()) {
-      setError('Group name is required');
+  const handleSaveName = async () => {
+    if (!editedName.trim()) {
+      setError('Group name cannot be empty');
       return;
     }
 
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const { error } = await supabase
         .from('placement_groups')
-        .update({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null
-        })
+        .update({ name: editedName.trim() })
         .eq('id', group.id);
 
       if (error) throw error;
 
-      setSuccess('Group info updated');
-      setTimeout(() => setSuccess(null), 3000);
+      setIsEditingName(false);
+      setSuccess('Name updated');
+      setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
-      console.error('Error updating group:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update group');
+      console.error('Error updating group name:', err);
+      setError('Failed to update name');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(group.name);
+    setIsEditingName(false);
+    setError(null);
   };
 
   const handleUpdateTheme = async (themeId: string) => {
@@ -230,17 +232,51 @@ export default function EditGroupPage({
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
               onClick={onBack}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </button>
-            <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">{group.name}</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Edit Group</p>
-            </div>
+            {isEditingName ? (
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="flex-1 min-w-0 px-3 py-1.5 text-lg font-bold bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                />
+                <button
+                  onClick={handleSaveName}
+                  disabled={loading || !editedName.trim()}
+                  className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg flex-shrink-0"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="p-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg flex-shrink-0"
+                >
+                  <X className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">{editedName}</h1>
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
+                >
+                  <Pencil className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -263,43 +299,7 @@ export default function EditGroupPage({
           </div>
         )}
 
-        <div className="p-4 space-y-6">
-          <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Group Information</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Group Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  rows={3}
-                />
-              </div>
-              <button
-                onClick={handleUpdateInfo}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </section>
-
+        <div className="p-4 space-y-4">
           <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="flex items-center justify-between p-4 pb-2">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Theme</h2>
