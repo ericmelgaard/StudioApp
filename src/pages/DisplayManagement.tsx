@@ -3,7 +3,7 @@ import {
   ArrowLeft, Monitor, ShoppingCart, Moon, Unlock, Lock, AlertTriangle, CheckCircle2,
   Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
   RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe,
-  Sun, Coffee, Clock, Sunrise, Sunset
+  Sun, Coffee, Clock, Sunrise, Sunset, Stars
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
@@ -301,10 +301,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     for (const placementId of placementIds) {
       const { data: overrides } = await supabase
         .from('placement_daypart_overrides')
-        .select('schedule_name, days_of_week, start_time, end_time')
+        .select('daypart_name, days_of_week, start_time, end_time')
         .eq('placement_group_id', placementId);
 
-      let scheduleName: string | null = null;
+      let daypartName: string | null = null;
 
       if (overrides && overrides.length > 0) {
         for (const override of overrides) {
@@ -315,12 +315,12 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
             if (startTime <= endTime) {
               if (currentTime >= startTime && currentTime < endTime) {
-                scheduleName = override.schedule_name;
+                daypartName = override.daypart_name;
                 break;
               }
             } else {
               if (currentTime >= startTime || currentTime < endTime) {
-                scheduleName = override.schedule_name;
+                daypartName = override.daypart_name;
                 break;
               }
             }
@@ -328,11 +328,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         }
       }
 
-      if (!scheduleName) {
+      if (!daypartName) {
         const { data: routines } = await supabase
           .from('site_daypart_routines')
-          .select('schedule_name, days_of_week, start_time, end_time')
-          .eq('store_id', storeId);
+          .select('daypart_name, days_of_week, start_time, end_time')
+          .eq('placement_group_id', placementId);
 
         if (routines && routines.length > 0) {
           for (const routine of routines) {
@@ -343,12 +343,12 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
               if (startTime <= endTime) {
                 if (currentTime >= startTime && currentTime < endTime) {
-                  scheduleName = routine.schedule_name;
+                  daypartName = routine.daypart_name;
                   break;
                 }
               } else {
                 if (currentTime >= startTime || currentTime < endTime) {
-                  scheduleName = routine.schedule_name;
+                  daypartName = routine.daypart_name;
                   break;
                 }
               }
@@ -357,27 +357,26 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         }
       }
 
-      if (scheduleName) {
+      if (daypartName) {
         const playerCount = mediaPlayers.filter(mp => mp.placement_group_id === placementId).length;
 
-        if (!daypartCounts[scheduleName]) {
+        if (!daypartCounts[daypartName]) {
           const { data: definition } = await supabase
             .from('daypart_definitions')
             .select('display_label, color, icon')
-            .eq('schedule_name', scheduleName)
-            .eq('store_id', storeId)
+            .eq('daypart_name', daypartName)
             .maybeSingle();
 
           if (definition) {
-            daypartCounts[scheduleName] = {
-              label: definition.display_label || scheduleName,
-              color: definition.color || 'bg-slate-100 text-slate-800',
+            daypartCounts[daypartName] = {
+              label: definition.display_label || daypartName,
+              color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
               icon: definition.icon || 'Clock',
               count: playerCount
             };
           }
         } else {
-          daypartCounts[scheduleName].count += playerCount;
+          daypartCounts[daypartName].count += playerCount;
         }
       }
     }
@@ -470,6 +469,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       'Clock': Clock,
       'Sunrise': Sunrise,
       'Sunset': Sunset,
+      'Stars': Stars,
+      'MoonStar': Moon,
     };
     return iconMap[iconName] || Clock;
   };
