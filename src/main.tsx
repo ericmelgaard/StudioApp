@@ -54,14 +54,3 @@ createRoot(document.getElementById('root')!).render(
     </AuthProvider>
   </StrictMode>
 );
-
-// Hide splash screen after app loads
-setTimeout(() => {
-  const splashScreen = document.getElementById('splash-screen');
-  if (splashScreen) {
-    splashScreen.classList.add('fade-out');
-    setTimeout(() => {
-      splashScreen.remove();
-    }, 300);
-  }
-}, 500);

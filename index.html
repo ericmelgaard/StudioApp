@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo_32.png" />
+    <link rel="icon" type="image/png" href="/icon-192x192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- PWA Manifest -->
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Operator Hub" />
-    <link rel="apple-touch-icon" href="/WandLogoNoText.png" />
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
 
     <!-- Android -->
     <meta name="mobile-web-app-capable" content="yes" />
@@ -24,80 +24,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title>WAND Operator Hub</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      #splash-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #002f5e;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        transition: opacity 0.3s ease-out;
-      }
-
-      #splash-screen.fade-out {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .splash-logo {
-        width: 40%;
-        max-width: 300px;
-        height: auto;
-        margin-bottom: auto;
-        margin-top: auto;
-        animation: fadeIn 0.6s ease-in;
-      }
-
-      .splash-text {
-        color: #ffffff;
-        font-family: 'Rubik', -apple-system, BlinkMacSystemFont, sans-serif;
-        font-size: 18px;
-        font-weight: 400;
-        letter-spacing: 0.5px;
-        margin-bottom: 48px;
-        opacity: 0.9;
-        animation: fadeIn 0.8s ease-in 0.2s both;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @media (max-width: 640px) {
-        .splash-logo {
-          width: 50%;
-        }
-        .splash-text {
-          font-size: 16px;
-          margin-bottom: 40px;
-        }
-      }
-    </style>
   </head>
   <body>
-    <div id="splash-screen">
-      <img src="/WAND-Logo_Horizontal_Transp_Full-Color_White.png" alt="WAND" class="splash-logo" />
-      <div class="splash-text">WAND Digital</div>
-    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
