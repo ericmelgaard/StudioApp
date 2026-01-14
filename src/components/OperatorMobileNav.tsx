@@ -308,7 +308,7 @@ export default function OperatorMobileNav({
                       >
                         <Sparkles className={`w-5 h-5 flex-shrink-0 ${themeMode === 'wand' ? 'text-wand-magenta-600' : 'text-slate-400 dark:text-slate-500'}`} />
                         <div className="flex-1 text-left">
-                          <div className="font-medium">WAND Theme</div>
+                          <div className="font-medium">Extra Dark Theme</div>
                           <div className={`text-xs ${themeMode === 'wand' ? 'text-wand-magenta-700' : 'text-slate-500 dark:text-slate-400'}`}>Vibrant brand colors</div>
                         </div>
                         {themeMode === 'wand' && (
