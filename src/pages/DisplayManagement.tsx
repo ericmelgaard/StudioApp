@@ -352,7 +352,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         className="flex flex-col items-center gap-2 flex-1"
       >
         <div
-          className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-all ${
+          className={`w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all ${
             active
               ? colors[status]
               : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:border-slate-400 dark:hover:border-slate-500'
@@ -412,7 +412,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
               className="flex flex-col items-center gap-2 flex-1"
             >
               <div
-                className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-all ${
+                className={`w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all ${
                   alertStatus === 'alert'
                     ? 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400'
                     : 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400'
