@@ -5,7 +5,9 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CreateGroupModal from '../components/CreateGroupModal';
-import EditGroupModal from '../components/EditGroupModal';
+import EditGroupPage from './EditGroupPage';
+import GroupSchedulesPage from './GroupSchedulesPage';
+import GroupDevicesPage from './GroupDevicesPage';
 
 interface StoreGroupsManagementProps {
   storeId: number;
@@ -37,13 +39,16 @@ interface MediaPlayer {
   status: string;
 }
 
+type PageView = 'list' | 'edit' | 'schedules' | 'devices';
+
 export default function StoreGroupsManagement({ storeId, storeName, onBack }: StoreGroupsManagementProps) {
   const [groups, setGroups] = useState<PlacementGroup[]>([]);
   const [filteredGroups, setFilteredGroups] = useState<PlacementGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<PlacementGroup | null>(null);
+  const [currentView, setCurrentView] = useState<PageView>('list');
+  const [selectedGroup, setSelectedGroup] = useState<PlacementGroup | null>(null);
   const [deletingGroup, setDeletingGroup] = useState<string | null>(null);
 
   useEffect(() => {
@@ -159,6 +164,56 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
     unassignedDevices: 0
   };
 
+  const handleEditGroup = (group: PlacementGroup) => {
+    setSelectedGroup(group);
+    setCurrentView('edit');
+  };
+
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedGroup(null);
+    loadGroups();
+  };
+
+  const handleNavigateToSchedules = () => {
+    setCurrentView('schedules');
+  };
+
+  const handleNavigateToDevices = () => {
+    setCurrentView('devices');
+  };
+
+  if (currentView === 'edit' && selectedGroup) {
+    return (
+      <EditGroupPage
+        group={selectedGroup}
+        storeId={storeId}
+        onBack={handleBackToList}
+        onNavigateToSchedules={handleNavigateToSchedules}
+        onNavigateToDevices={handleNavigateToDevices}
+      />
+    );
+  }
+
+  if (currentView === 'schedules' && selectedGroup) {
+    return (
+      <GroupSchedulesPage
+        group={{ id: selectedGroup.id, name: selectedGroup.name }}
+        onBack={() => setCurrentView('edit')}
+      />
+    );
+  }
+
+  if (currentView === 'devices' && selectedGroup) {
+    return (
+      <GroupDevicesPage
+        group={{ id: selectedGroup.id, name: selectedGroup.name }}
+        storeId={storeId}
+        onBack={() => setCurrentView('edit')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
       <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
@@ -258,7 +313,7 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setEditingGroup(group)}
+                        onClick={() => handleEditGroup(group)}
                         className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                         title="Edit group"
                       >
@@ -320,7 +375,7 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
                   </div>
 
                   <button
-                    onClick={() => setEditingGroup(group)}
+                    onClick={() => handleEditGroup(group)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
                     Manage Group
@@ -339,18 +394,6 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
             setShowCreateModal(false);
-            loadGroups();
-          }}
-        />
-      )}
-
-      {editingGroup && (
-        <EditGroupModal
-          group={editingGroup}
-          storeId={storeId}
-          onClose={() => setEditingGroup(null)}
-          onSuccess={() => {
-            setEditingGroup(null);
             loadGroups();
           }}
         />
