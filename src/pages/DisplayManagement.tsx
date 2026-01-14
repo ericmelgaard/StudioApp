@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
 import StoreDevicesManagement from './StoreDevicesManagement';
+import StoreGroupsManagement from './StoreGroupsManagement';
 
 interface DisplayManagementProps {
   storeId: number;
@@ -551,6 +552,16 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     );
   }
 
+  if (currentPage === 'groups') {
+    return (
+      <StoreGroupsManagement
+        storeId={storeId}
+        storeName={storeName}
+        onBack={() => setCurrentPage('home')}
+      />
+    );
+  }
+
   return (
     <div className={isHomePage ? "bg-slate-50 dark:bg-slate-900 pb-20" : "min-h-screen bg-slate-50 dark:bg-slate-900 pb-20"}>
       {!isHomePage && (
@@ -661,14 +672,18 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineDevices} online</p>
           </button>
 
-          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+          <button
+            onClick={() => setCurrentPage('groups')}
+            className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
+            aria-label="View groups"
+          >
             <div className="flex items-center gap-2 mb-1">
-              <Layers className="w-4 h-4" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Groups</span>
+              <Layers className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#00adf0' }} />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Groups</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalGroups}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">placement groups</p>
-          </div>
+          </button>
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
