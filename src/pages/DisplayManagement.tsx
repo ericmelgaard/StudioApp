@@ -511,7 +511,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">
             Store Status
           </p>
-          <div className="flex items-center justify-center gap-6 md:gap-10 overflow-x-auto no-scrollbar px-2">
+          <div className="flex items-center justify-center gap-10 overflow-x-auto no-scrollbar px-2">
             <button
               onClick={() => setOperationStatus(operationStatus === 'open' ? 'closed' : 'open')}
               className="flex flex-col items-center gap-2 flex-shrink-0"
