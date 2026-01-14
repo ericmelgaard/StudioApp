@@ -581,7 +581,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             >
               <div
                 className="w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all"
-                style={{ borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }}
+                style={operationStatus === 'open'
+                  ? { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }
+                  : { borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.2)', color: '#64748b' }
+                }
               >
                 {operationStatus === 'open' ? <Unlock className="w-8 h-8" /> : <Lock className="w-8 h-8" />}
               </div>
@@ -596,7 +599,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             >
               <div
                 className="w-20 h-12 rounded-full flex items-center justify-center border-4 transition-all"
-                style={{ borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }}
+                style={alertStatus === 'alert'
+                  ? { borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.2)', color: '#f97316' }
+                  : { borderColor: '#00adf0', backgroundColor: 'rgba(0, 173, 240, 0.2)', color: '#00adf0' }
+                }
               >
                 {alertStatus === 'alert' ? <AlertTriangle className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
               </div>
