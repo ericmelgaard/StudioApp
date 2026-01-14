@@ -300,15 +300,15 @@ export default function EditGroupPage({
             </div>
           </section>
 
-          <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-            <div className="flex items-center justify-between mb-4">
+          <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="flex items-center justify-between p-4 pb-2">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Theme</h2>
               {selectedTheme && (
                 <button
                   onClick={() => handleUpdateTheme('')}
                   className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                 >
-                  Clear Selection
+                  Clear
                 </button>
               )}
             </div>
@@ -318,41 +318,42 @@ export default function EditGroupPage({
                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
               </div>
             ) : themes.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+              <div className="text-center py-8 mx-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                 <Palette className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-sm text-slate-600 dark:text-slate-400">No themes available</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-0 border-t border-slate-200 dark:border-slate-700">
                 {themes.map((theme) => {
                   const IconComponent = getIconComponent(theme.icon);
                   return (
                     <button
                       key={theme.id}
                       onClick={() => handleUpdateTheme(theme.id)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      className={`flex flex-col items-center gap-1 p-3 transition-all border-r border-b border-slate-200 dark:border-slate-700 ${
                         selectedTheme === theme.id
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700'
+                          ? 'bg-blue-50 dark:bg-blue-900/30'
+                          : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700'
                       }`}
                     >
-                      <div className={`w-12 h-12 flex items-center justify-center rounded-lg ${
+                      <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
                         selectedTheme === theme.id
-                          ? 'bg-blue-100 dark:bg-blue-900/30'
-                          : 'bg-slate-100 dark:bg-slate-800'
+                          ? 'bg-blue-500'
+                          : 'bg-slate-100 dark:bg-slate-700'
                       }`}>
-                        <IconComponent className={`w-7 h-7 ${
+                        <IconComponent className={`w-6 h-6 ${
                           selectedTheme === theme.id
-                            ? 'text-blue-600 dark:text-blue-400'
+                            ? 'text-white'
                             : 'text-slate-600 dark:text-slate-400'
                         }`} />
                       </div>
-                      <span className="text-xs font-medium text-slate-900 dark:text-slate-100 text-center line-clamp-2">
+                      <span className={`text-[10px] font-medium text-center line-clamp-1 ${
+                        selectedTheme === theme.id
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-slate-600 dark:text-slate-400'
+                      }`}>
                         {theme.name}
                       </span>
-                      {selectedTheme === theme.id && (
-                        <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      )}
                     </button>
                   );
                 })}
