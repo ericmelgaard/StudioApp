@@ -8,6 +8,7 @@ import {
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
+import StoreDevicesManagement from './StoreDevicesManagement';
 
 interface DisplayManagementProps {
   storeId: number;
@@ -84,6 +85,7 @@ interface DaypartBadge {
 
 type OperationStatus = 'open' | 'closed';
 type ViewMode = 'list' | 'grid';
+type PageView = 'home' | 'devices' | 'groups' | 'activity' | 'products' | 'urlplayers';
 
 export default function DisplayManagement({ storeId, storeName, onBack, isHomePage = false }: DisplayManagementProps) {
   const [operationStatus, setOperationStatus] = useState<OperationStatus>('open');
@@ -91,6 +93,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return window.innerWidth >= 768 ? 'grid' : 'list';
   });
+  const [currentPage, setCurrentPage] = useState<PageView>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [displayCards, setDisplayCards] = useState<DisplayCard[]>([]);
   const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
@@ -538,6 +541,16 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     return iconMap[iconName] || Clock;
   };
 
+  if (currentPage === 'devices') {
+    return (
+      <StoreDevicesManagement
+        storeId={storeId}
+        storeName={storeName}
+        onBack={() => setCurrentPage('home')}
+      />
+    );
+  }
+
   return (
     <div className={isHomePage ? "bg-slate-50 dark:bg-slate-900 pb-20" : "min-h-screen bg-slate-50 dark:bg-slate-900 pb-20"}>
       {!isHomePage && (
@@ -635,14 +648,18 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         </div>
 
         <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white dark:bg-slate-800 max-h-[180px] md:max-h-none">
-          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+          <button
+            onClick={() => setCurrentPage('devices')}
+            className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
+            aria-label="View devices"
+          >
             <div className="flex items-center gap-2 mb-1">
-              <Monitor className="w-4 h-4" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Devices</span>
+              <Monitor className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#00adf0' }} />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Devices</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDevices}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineDevices} online</p>
-          </div>
+          </button>
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
