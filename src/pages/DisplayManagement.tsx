@@ -511,7 +511,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">
             Store Status
           </p>
-          <div className="flex items-center justify-center gap-4 md:gap-8 overflow-x-auto no-scrollbar">
+          <div className="flex items-center justify-center gap-6 md:gap-10 overflow-x-auto no-scrollbar px-2">
             <button
               onClick={() => setOperationStatus(operationStatus === 'open' ? 'closed' : 'open')}
               className="flex flex-col items-center gap-2 flex-shrink-0"
@@ -542,17 +542,17 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
               </span>
             </button>
 
-            {daypartBadges.slice(0, window.innerWidth >= 768 ? daypartBadges.length : 1).map((badge) => {
+            {daypartBadges.slice(0, window.innerWidth >= 768 ? daypartBadges.length : 3).map((badge) => {
               const IconComponent = getIconComponent(badge.icon);
               return (
                 <div key={badge.name} className="flex flex-col items-center gap-2 flex-shrink-0">
-                  <div className="relative">
+                  <div className="relative pt-1 pr-1">
                     <div
                       className={`w-20 h-12 rounded-full flex items-center justify-center border-4 ${badge.color}`}
                     >
                       <IconComponent className="w-6 h-6" />
                     </div>
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center text-xs font-bold shadow-md">
+                    <div className="absolute top-0 right-0 w-6 h-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center text-xs font-bold shadow-md">
                       {badge.count}
                     </div>
                   </div>
