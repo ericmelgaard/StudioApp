@@ -77,6 +77,26 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   const [loadingCompanies, setLoadingCompanies] = useState<Set<number>>(new Set());
   const [loadingStores, setLoadingStores] = useState<Set<number>>(new Set());
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+
+    // Prevent scrollbar jump by adding padding
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
+    };
+  }, []);
+
   useEffect(() => {
     const initializeData = async () => {
       await loadData();
@@ -459,8 +479,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200]">
-        <div className="relative z-[201] bg-white rounded-lg shadow-xl p-8">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] overflow-hidden">
+        <div className="relative z-[201] bg-white rounded-lg shadow-xl p-8 overflow-hidden">
           <div className="flex items-center gap-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             <span className="text-slate-700">Loading locations...</span>
@@ -473,8 +493,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   // For multi-store users (operators), show simplified flat view
   if (isMultiStoreUser && userRole !== 'admin') {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200]">
-        <div className="relative z-[201] bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] overflow-hidden">
+        <div className="relative z-[201] bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col overflow-hidden">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900">Select Store</h2>
             <button
@@ -537,8 +557,8 @@ export default function LocationSelector({ onClose, onSelect, selectedLocation, 
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200]">
-      <div className="relative z-[201] bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] overflow-hidden">
+      <div className="relative z-[201] bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900">Select Location</h2>
           <button
