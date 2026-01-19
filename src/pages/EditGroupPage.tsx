@@ -186,7 +186,6 @@ export default function EditGroupPage({
   const handleUpdateTheme = async (themeId: string) => {
     setSelectedTheme(themeId);
     setError(null);
-    setSuccess(null);
 
     try {
       const { error } = await supabase
@@ -200,9 +199,6 @@ export default function EditGroupPage({
         .eq('id', group.id);
 
       if (error) throw error;
-
-      setSuccess('Theme updated');
-      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Error updating theme:', err);
       setError('Failed to update theme');
@@ -282,31 +278,29 @@ export default function EditGroupPage({
       </div>
 
       <div className="overflow-y-auto pb-20">
-        {(error || success) && (
+        {error && (
           <div className="p-4">
-            {error && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
-              </div>
-            )}
-            {success && (
-              <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-green-700 dark:text-green-400">{success}</p>
-              </div>
-            )}
+            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            </div>
           </div>
         )}
 
         <div className="p-4 space-y-4">
           <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="flex items-center justify-between p-4 pb-2">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Theme</h2>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {selectedTheme && themes.find(t => t.id === selectedTheme)
+                    ? `Theme: ${themes.find(t => t.id === selectedTheme)?.name}`
+                    : 'Theme'}
+                </h2>
+              </div>
               {selectedTheme && (
                 <button
                   onClick={() => handleUpdateTheme('')}
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex-shrink-0"
                 >
                   Clear
                 </button>
@@ -336,7 +330,7 @@ export default function EditGroupPage({
                           : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700'
                       }`}
                     >
-                      <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                      <div className={`w-10 h-10 flex items-center justify-center rounded-lg flex-shrink-0 ${
                         selectedTheme === theme.id
                           ? 'bg-blue-500'
                           : 'bg-slate-100 dark:bg-slate-700'
@@ -347,7 +341,7 @@ export default function EditGroupPage({
                             : 'text-slate-600 dark:text-slate-400'
                         }`} />
                       </div>
-                      <span className={`text-[10px] font-medium text-center line-clamp-1 ${
+                      <span className={`text-[10px] font-medium text-center line-clamp-2 max-w-full leading-tight ${
                         selectedTheme === theme.id
                           ? 'text-blue-600 dark:text-blue-400'
                           : 'text-slate-600 dark:text-slate-400'

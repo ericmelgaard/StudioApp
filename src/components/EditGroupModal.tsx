@@ -173,7 +173,6 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
   const handleUpdateTheme = async () => {
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const { error } = await supabase
@@ -187,9 +186,6 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
         .eq('id', group.id);
 
       if (error) throw error;
-
-      setSuccess('Theme updated successfully');
-      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Error updating theme:', err);
       setError('Failed to update theme');
@@ -413,13 +409,17 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
           {activeTab === 'theme' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  Select Theme
-                </h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {selectedTheme && themes.find(t => t.id === selectedTheme)
+                      ? `Theme: ${themes.find(t => t.id === selectedTheme)?.name}`
+                      : 'Select Theme'}
+                  </h3>
+                </div>
                 {selectedTheme && (
                   <button
                     onClick={() => setSelectedTheme(null)}
-                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex-shrink-0"
                   >
                     Clear Selection
                   </button>
@@ -447,7 +447,7 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
                           : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-purple-300 dark:hover:border-purple-700'
                       }`}
                     >
-                      <div className="w-16 h-16 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg">
+                      <div className="w-16 h-16 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg flex-shrink-0">
                         {theme.icon_url ? (
                           <img
                             src={theme.icon_url}
@@ -460,7 +460,7 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
                           <ImageOff className="w-8 h-8 text-slate-400" />
                         )}
                       </div>
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100 text-center">
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100 text-center line-clamp-2 max-w-full leading-tight">
                         {theme.name}
                       </span>
                       {selectedTheme === theme.id && (
