@@ -416,14 +416,6 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
                       : 'Select Theme'}
                   </h3>
                 </div>
-                {selectedTheme && (
-                  <button
-                    onClick={() => setSelectedTheme(null)}
-                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex-shrink-0"
-                  >
-                    Clear Selection
-                  </button>
-                )}
               </div>
 
               {loadingThemes ? (
@@ -440,7 +432,7 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
                   {themes.map((theme) => (
                     <button
                       key={theme.id}
-                      onClick={() => setSelectedTheme(theme.id)}
+                      onClick={() => setSelectedTheme(selectedTheme === theme.id ? null : theme.id)}
                       className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all ${
                         selectedTheme === theme.id
                           ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'

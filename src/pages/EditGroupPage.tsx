@@ -297,14 +297,6 @@ export default function EditGroupPage({
                     : 'Theme'}
                 </h2>
               </div>
-              {selectedTheme && (
-                <button
-                  onClick={() => handleUpdateTheme('')}
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex-shrink-0"
-                >
-                  Clear
-                </button>
-              )}
             </div>
 
             {loadingThemes ? (
@@ -323,7 +315,7 @@ export default function EditGroupPage({
                   return (
                     <button
                       key={theme.id}
-                      onClick={() => handleUpdateTheme(theme.id)}
+                      onClick={() => handleUpdateTheme(selectedTheme === theme.id ? '' : theme.id)}
                       className={`flex flex-col items-center gap-1 p-3 transition-all border-r border-b border-slate-200 dark:border-slate-700 ${
                         selectedTheme === theme.id
                           ? 'bg-blue-50 dark:bg-blue-900/30'
