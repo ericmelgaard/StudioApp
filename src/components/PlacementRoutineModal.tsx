@@ -476,22 +476,6 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                       </div>
                     </div>
                   </div>
-
-                  <div className="p-4 bg-slate-50 flex gap-2">
-                    <button
-                      onClick={handleSaveRoutine}
-                      disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
-                      className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                    >
-                      {saving ? (editingRoutineId ? 'Updating...' : 'Adding...') : (editingRoutineId ? 'Update Routine' : 'Add Routine')}
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="px-4 py-3 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -615,12 +599,30 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
         </div>
 
         <div className="flex justify-end gap-3 p-6 border-t border-slate-200">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-          >
-            Close
-          </button>
+          {showAddForm ? (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveRoutine}
+                disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {saving ? (editingRoutineId ? 'Updating...' : 'Adding...') : (editingRoutineId ? 'Update Routine' : 'Add Routine')}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+            >
+              Close
+            </button>
+          )}
         </div>
       </div>
     </div>
