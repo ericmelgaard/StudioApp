@@ -33,13 +33,13 @@ interface Theme {
 }
 
 const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sun', fullLabel: 'Sunday' },
-  { value: 1, label: 'Mon', fullLabel: 'Monday' },
-  { value: 2, label: 'Tue', fullLabel: 'Tuesday' },
-  { value: 3, label: 'Wed', fullLabel: 'Wednesday' },
-  { value: 4, label: 'Thu', fullLabel: 'Thursday' },
-  { value: 5, label: 'Fri', fullLabel: 'Friday' },
-  { value: 6, label: 'Sat', fullLabel: 'Saturday' }
+  { value: 0, label: 'S', fullLabel: 'Sunday' },
+  { value: 1, label: 'M', fullLabel: 'Monday' },
+  { value: 2, label: 'T', fullLabel: 'Tuesday' },
+  { value: 3, label: 'W', fullLabel: 'Wednesday' },
+  { value: 4, label: 'T', fullLabel: 'Thursday' },
+  { value: 5, label: 'F', fullLabel: 'Friday' },
+  { value: 6, label: 'S', fullLabel: 'Saturday' }
 ];
 
 export default function GroupScheduleManager({ groupId, groupName }: GroupScheduleManagerProps) {
@@ -246,12 +246,14 @@ interface ScheduleFormModalProps {
 function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: ScheduleFormModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scheduleType, setScheduleType] = useState<'regular' | 'event'>('regular');
+  const [runsOnSelectedDays, setRunsOnSelectedDays] = useState(true);
   const [formData, setFormData] = useState({
     theme_id: schedule?.theme_id || '',
     cycle_week: schedule?.cycle_week || 1,
     days_of_week: schedule?.days_of_week || [] as number[],
     start_time: schedule?.start_time || '06:00',
-    end_time: schedule?.end_time || '',
+    end_time: schedule?.end_time || '11:00',
     schedule_name: schedule?.schedule_name || '',
     status: schedule?.status || 'active'
   });
@@ -332,122 +334,150 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-start gap-2 p-3 mx-4 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Schedule Name (optional)
-            </label>
-            <input
-              type="text"
-              value={formData.schedule_name}
-              onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
-              placeholder="e.g., Weekend Breakfast, Summer Hours"
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Theme *
-            </label>
-            <select
-              value={formData.theme_id}
-              onChange={(e) => setFormData({ ...formData, theme_id: e.target.value })}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              required
+          <div className="flex border-b border-slate-200 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => setScheduleType('regular')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                scheduleType === 'regular'
+                  ? 'bg-slate-700 dark:bg-slate-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
             >
-              <option value="">Select a theme</option>
-              {themes.map((theme) => (
-                <option key={theme.id} value={theme.id}>
-                  {theme.name}
-                </option>
-              ))}
-            </select>
+              Regular Schedule
+            </button>
+            <button
+              type="button"
+              onClick={() => setScheduleType('event')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                scheduleType === 'event'
+                  ? 'bg-slate-700 dark:bg-slate-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              Event / Holiday
+            </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Days of Week *
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {DAYS_OF_WEEK.map((day) => (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => handleDayToggle(day.value)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    formData.days_of_week.includes(day.value)
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+          <div className="p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Daypart Type *
+              </label>
+              <select
+                value={formData.theme_id}
+                onChange={(e) => setFormData({ ...formData, theme_id: e.target.value })}
+                className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Select a daypart...</option>
+                {themes.map((theme) => (
+                  <option key={theme.id} value={theme.id}>
+                    {theme.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Days of the Week *
+              </label>
+              <div className="grid grid-cols-7 gap-2">
+                {DAYS_OF_WEEK.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => handleDayToggle(day.value)}
+                    className={`h-12 rounded-lg font-medium text-sm transition-all ${
+                      formData.days_of_week.includes(day.value)
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    }`}
+                    title={day.fullLabel}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Schedule Name (optional)
+              </label>
+              <input
+                type="text"
+                value={formData.schedule_name}
+                onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
+                placeholder="e.g., Weekend Hours, Summer Schedule"
+                className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div>
+                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  Schedule runs on selected days
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Turn off for days where this schedule does not activate
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRunsOnSelectedDays(!runsOnSelectedDays)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  runsOnSelectedDays ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    runsOnSelectedDays ? 'translate-x-6' : 'translate-x-1'
                   }`}
-                >
-                  {day.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Start Time *
-              </label>
-              <input
-                type="time"
-                value={formData.start_time}
-                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-              />
+                />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                End Time
-              </label>
-              <input
-                type="time"
-                value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <Clock className="w-4 h-4" />
+                  Start Time *
+                </label>
+                <input
+                  type="text"
+                  value={formData.start_time}
+                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                  placeholder="6:00 AM"
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Cycle Week *
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.cycle_week}
-                onChange={(e) => setFormData({ ...formData, cycle_week: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-              />
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <Clock className="w-4 h-4" />
+                  End Time *
+                </label>
+                <input
+                  type="text"
+                  value={formData.end_time}
+                  onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                  placeholder="11:00 AM"
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Status
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="paused">Paused</option>
-            </select>
           </div>
         </form>
 
@@ -455,16 +485,16 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
           >
-            {loading ? 'Saving...' : schedule ? 'Update Schedule' : 'Create Schedule'}
+            {loading ? 'Saving...' : 'Save Schedule'}
           </button>
         </div>
       </div>
