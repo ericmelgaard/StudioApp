@@ -10,6 +10,8 @@ interface PlacementRoutine {
   cycle_week: number;
   days_of_week: number[];
   start_time: string;
+  end_time?: string;
+  schedule_name?: string;
   status: 'active' | 'inactive' | 'paused';
   priority?: number;
   placement?: {
@@ -57,6 +59,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
     cycle_week: 1,
     days_of_week: [] as number[],
     start_time: '06:00',
+    end_time: '',
+    schedule_name: '',
     status: 'active' as const
   });
 
@@ -147,6 +151,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       cycle_week: routine.cycle_week,
       days_of_week: [...routine.days_of_week],
       start_time: routine.start_time,
+      end_time: routine.end_time || '',
+      schedule_name: routine.schedule_name || '',
       status: routine.status
     });
 
@@ -165,6 +171,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       cycle_week: 1,
       days_of_week: [],
       start_time: '06:00',
+      end_time: '',
+      schedule_name: '',
       status: 'active'
     });
   };
@@ -191,6 +199,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
             cycle_week: newRoutine.cycle_week,
             days_of_week: newRoutine.days_of_week,
             start_time: newRoutine.start_time,
+            end_time: newRoutine.end_time || null,
+            schedule_name: newRoutine.schedule_name || null,
             status: newRoutine.status
           })
           .eq('id', editingRoutineId);
@@ -205,6 +215,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
             cycle_week: newRoutine.cycle_week,
             days_of_week: newRoutine.days_of_week,
             start_time: newRoutine.start_time,
+            end_time: newRoutine.end_time || null,
+            schedule_name: newRoutine.schedule_name || null,
             status: newRoutine.status
           });
 
@@ -216,6 +228,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
         cycle_week: 1,
         days_of_week: [],
         start_time: '06:00',
+        end_time: '',
+        schedule_name: '',
         status: 'active'
       });
       setEditingRoutineId(null);
@@ -366,6 +380,19 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
 
                   <div className="divide-y divide-slate-200">
                     <div className="p-4">
+                      <label className="text-sm font-medium text-slate-700 mb-2 block">
+                        Schedule Name (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={newRoutine.schedule_name}
+                        onChange={(e) => setNewRoutine({ ...newRoutine, schedule_name: e.target.value })}
+                        placeholder="e.g., Weekend Breakfast, Summer Hours"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
+                      />
+                    </div>
+
+                    <div className="p-4">
                       <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-slate-700">
                           Placement
@@ -389,7 +416,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
 
                     <div className="p-4">
                       <div className="text-sm font-medium text-slate-700 mb-2">Schedule Time</div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 gap-4">
                         <div>
                           <label className="text-xs text-slate-500 mb-1 block">Cycle Week</label>
                           <input
@@ -407,6 +434,13 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                             label="Start Time"
                             value={newRoutine.start_time}
                             onChange={(time) => setNewRoutine({ ...newRoutine, start_time: time })}
+                          />
+                        </div>
+                        <div>
+                          <TimeSelector
+                            label="End Time (optional)"
+                            value={newRoutine.end_time}
+                            onChange={(time) => setNewRoutine({ ...newRoutine, end_time: time })}
                           />
                         </div>
                       </div>
@@ -474,6 +508,11 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
+                          {routine.schedule_name && (
+                            <div className="text-xs text-slate-500 mb-1">
+                              {routine.schedule_name}
+                            </div>
+                          )}
                           <div className="flex items-center gap-3 mb-2">
                             <MapPin className="w-5 h-5 text-slate-400" />
                             <h4 className="font-semibold text-slate-900">
@@ -498,7 +537,10 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                               <div>
                                 <span className="text-slate-500">Time:</span>
                                 <span className="ml-2 font-medium text-slate-900">
-                                  {routine.start_time}
+                                  {routine.end_time
+                                    ? `${routine.start_time} - ${routine.end_time}`
+                                    : routine.start_time
+                                  }
                                 </span>
                               </div>
                             </div>
