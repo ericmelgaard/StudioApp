@@ -252,15 +252,37 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   }
 
   return (
-    <div className="space-y-6 relative pb-24">
-      <div>
-        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-cyan-600" />
-          Placement Schedules
-        </h3>
-        <p className="text-sm text-slate-600 mt-1">
-          Configure daypart hours and event/holiday schedules for this placement.
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-cyan-600" />
+            Placement Schedules
+          </h3>
+          <p className="text-sm text-slate-600 mt-1">
+            Configure daypart hours and event/holiday schedules for this placement.
+          </p>
+        </div>
+        {!showForm && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleAddNew('regular')}
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
+              title="Add Schedule"
+            >
+              <Plus className="w-4 h-4" />
+              Add Schedule
+            </button>
+            <button
+              onClick={() => handleAddNew('event_holiday')}
+              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
+              title="Add Event/Holiday Hours"
+            >
+              <Sparkles className="w-4 h-4" />
+              Add Event
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Full-screen edit/create modal */}
@@ -476,26 +498,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           })}
         </div>
       ) : null}
-
-      {/* Floating Action Button */}
-      {!showForm && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 flex gap-3">
-          <button
-            onClick={() => handleAddNew('regular')}
-            className="w-14 h-14 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
-            title="Add Schedule"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
-          <button
-            onClick={() => handleAddNew('event_holiday')}
-            className="w-14 h-14 bg-cyan-500 hover:bg-cyan-600 active:bg-cyan-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
-            title="Add Event/Holiday Hours"
-          >
-            <Sparkles className="w-5 h-5" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
