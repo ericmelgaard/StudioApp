@@ -9,14 +9,12 @@ interface GroupScheduleManagerProps {
 
 interface Schedule {
   id: string;
-  theme_id: string;
-  cycle_week: number;
+  daypart_definition_id: string;
+  placement_group_id: string;
   days_of_week: number[];
   start_time: string;
   end_time?: string;
-  schedule_name?: string;
-  status: string;
-  priority: number;
+  runs_on_days?: boolean;
   daypart_definitions?: {
     id: string;
     daypart_name: string;
@@ -70,10 +68,10 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 
       const [schedulesResult, daypartsResult] = await Promise.all([
         supabase
-          .from('placement_routines')
+          .from('site_daypart_routines')
           .select('*, daypart_definitions(id, daypart_name, display_label, color, icon)')
-          .eq('placement_id', groupId)
-          .order('priority', { ascending: false }),
+          .eq('placement_group_id', groupId)
+          .order('created_at', { ascending: false }),
         storeId
           ? supabase.rpc('get_effective_daypart_definitions', { p_store_id: storeId })
           : supabase
@@ -102,7 +100,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 
     try {
       const { error } = await supabase
-        .from('placement_routines')
+        .from('site_daypart_routines')
         .delete()
         .eq('id', scheduleId);
 
@@ -169,13 +167,8 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  {schedule.schedule_name && (
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                      {schedule.schedule_name}
-                    </div>
-                  )}
                   <div className="flex items-center gap-2">
-                    <Palette className="w-5 h-5 text-purple-500" />
+                    <Palette className="w-5 h-5 text-blue-500" />
                     <span className="font-medium text-slate-900 dark:text-slate-100">
                       {schedule.daypart_definitions?.display_label || 'Unknown Daypart'}
                     </span>
@@ -211,18 +204,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                       ? `${schedule.start_time} - ${schedule.end_time}`
                       : `Starts at ${schedule.start_time}`
                     }
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded">
-                    Week {schedule.cycle_week}
-                  </span>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    schedule.status === 'active'
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}>
-                    {schedule.status}
                   </span>
                 </div>
               </div>
@@ -263,15 +244,12 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scheduleType, setScheduleType] = useState<'regular' | 'event'>('regular');
-  const [runsOnSelectedDays, setRunsOnSelectedDays] = useState(true);
+  const [runsOnSelectedDays, setRunsOnSelectedDays] = useState(schedule?.runs_on_days !== false);
   const [formData, setFormData] = useState({
-    theme_id: schedule?.theme_id || '',
-    cycle_week: schedule?.cycle_week || 1,
+    daypart_definition_id: schedule?.daypart_definition_id || '',
     days_of_week: schedule?.days_of_week || [] as number[],
     start_time: schedule?.start_time || '06:00',
-    end_time: schedule?.end_time || '11:00',
-    schedule_name: schedule?.schedule_name || '',
-    status: schedule?.status || 'active'
+    end_time: schedule?.end_time || '11:00'
   });
 
   const handleDayToggle = (day: number) => {
@@ -287,7 +265,7 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess }: 
     e.preventDefault();
     setError(null);
 
-    if (!formData.theme_id) {
+    if (!formData.daypart_definition_id) {
       setError('Please select a daypart');
       return;
     }
@@ -301,26 +279,24 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess }: 
 
     try {
       const data = {
-        theme_id: formData.theme_id,
-        placement_id: groupId,
-        cycle_week: formData.cycle_week,
+        daypart_definition_id: formData.daypart_definition_id,
+        placement_group_id: groupId,
         days_of_week: formData.days_of_week,
         start_time: formData.start_time,
         end_time: formData.end_time || null,
-        schedule_name: formData.schedule_name || null,
-        status: formData.status
+        runs_on_days: runsOnSelectedDays
       };
 
       if (schedule?.id) {
         const { error } = await supabase
-          .from('placement_routines')
+          .from('site_daypart_routines')
           .update(data)
           .eq('id', schedule.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('placement_routines')
+          .from('site_daypart_routines')
           .insert(data);
 
         if (error) throw error;
@@ -389,8 +365,8 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess }: 
                 Daypart Type *
               </label>
               <select
-                value={formData.theme_id}
-                onChange={(e) => setFormData({ ...formData, theme_id: e.target.value })}
+                value={formData.daypart_definition_id}
+                onChange={(e) => setFormData({ ...formData, daypart_definition_id: e.target.value })}
                 className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
