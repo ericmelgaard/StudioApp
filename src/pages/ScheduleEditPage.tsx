@@ -159,29 +159,6 @@ export default function ScheduleEditPage({
               <p className="text-xs text-slate-500 dark:text-slate-400">{groupName}</p>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-6 py-2.5 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
-              style={!loading ? { backgroundColor: '#00adf0' } : {}}
-              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
-              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
-              onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
-              onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
-            >
-              {loading ? 'Saving...' : 'Save Schedule'}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -356,6 +333,33 @@ export default function ScheduleEditPage({
               )}
             </div>
           </form>
+        </div>
+      </div>
+
+      {/* Fixed Footer with Action Buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg">
+        <div className="max-w-3xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="px-6 py-2.5 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
+              style={!loading ? { backgroundColor: '#00adf0' } : {}}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
+              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
+              onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
+              onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
+            >
+              {loading ? 'Saving...' : 'Save Schedule'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
