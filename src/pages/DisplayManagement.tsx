@@ -251,13 +251,13 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         status: onlineCount === groupDisps.length ? 'online' : onlineCount > 0 ? 'error' : 'offline',
         uptime: `${onlineCount}/${groupDisps.length} online`,
         thumbnail: null,
-        mediaPlayer: players[0],
+        mediaPlayer: groupDisps[0] ? mediaPlayers?.find(mp => mp.id === groupDisps[0].media_player_id) : undefined,
         displays: [],
         isGroup: true,
         groupInfo: {
           id: pgId,
           name: pgInfo?.name || 'Unnamed Group',
-          playerCount: players.length,
+          playerCount: groupDisps.length,
           onlineCount
         }
       });
@@ -446,11 +446,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                   label: definition.display_label || daypartName,
                   color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
                   icon: definition.icon || 'Clock',
-                  count: ungroupedPlayers.length
+                  count: ungroupedDisplays.length
                 };
               }
             } else {
-              daypartCounts[daypartName].count += ungroupedPlayers.length;
+              daypartCounts[daypartName].count += ungroupedDisplays.length;
             }
           }
         }
