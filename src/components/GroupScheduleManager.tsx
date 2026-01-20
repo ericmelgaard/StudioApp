@@ -473,43 +473,37 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess, on
               </div>
             </div>
 
-            {/* Danger Zone - Delete Button */}
-            {schedule && onDelete && (
-              <div className="mt-6 pt-6 border-t-2 border-slate-200 dark:border-slate-700">
-                <div className="mb-3">
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Danger Zone</h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Once deleted, this schedule cannot be recovered.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDeleteClick}
-                  className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Schedule
-                </button>
-              </div>
-            )}
           </div>
         </form>
 
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
-          >
-            {loading ? 'Saving...' : 'Save Schedule'}
-          </button>
+        <div className="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-700">
+          {schedule && onDelete ? (
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="text-sm text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            >
+              Delete
+            </button>
+          ) : (
+            <div />
+          )}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
+            >
+              {loading ? 'Saving...' : 'Save Schedule'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
