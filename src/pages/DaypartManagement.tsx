@@ -612,13 +612,7 @@ export default function DaypartManagement() {
                           }}
                           allSchedules={defSchedules}
                           onUpdate={() => {}}
-                          onSave={() => handleSaveSchedule({
-                            daypart_name: definition.daypart_name,
-                            daypart_definition_id: definition.id,
-                            days_of_week: [],
-                            start_time: '06:00',
-                            end_time: '11:00',
-                          })}
+                          onSave={(updatedSchedule) => handleSaveSchedule(updatedSchedule)}
                           onCancel={() => setAddingScheduleForDef(null)}
                           level="site"
                         />
