@@ -253,36 +253,14 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-cyan-600" />
-            Placement Schedules
-          </h3>
-          <p className="text-sm text-slate-600 mt-1">
-            Configure daypart hours and event/holiday schedules for this placement.
-          </p>
-        </div>
-        {!showForm && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleAddNew('regular')}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
-              title="Add Schedule"
-            >
-              <Plus className="w-4 h-4" />
-              Add Schedule
-            </button>
-            <button
-              onClick={() => handleAddNew('event_holiday')}
-              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
-              title="Add Event/Holiday Hours"
-            >
-              <Sparkles className="w-4 h-4" />
-              Add Event
-            </button>
-          </div>
-        )}
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-cyan-600" />
+          Placement Schedules
+        </h3>
+        <p className="text-sm text-slate-600 mt-1">
+          Configure daypart hours and event/holiday schedules for this placement.
+        </p>
       </div>
 
       {/* Full-screen edit/create modal */}
@@ -498,6 +476,25 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           })}
         </div>
       ) : null}
+
+      {!showForm && (
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={() => handleAddNew('regular')}
+            className="py-6 border-2 border-dashed border-slate-300 rounded-lg hover:border-cyan-400 hover:bg-cyan-50/50 transition-colors flex items-center justify-center gap-2 text-slate-600 hover:text-cyan-700 font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            Add Schedule
+          </button>
+          <button
+            onClick={() => handleAddNew('event_holiday')}
+            className="py-6 border-2 border-dashed border-slate-300 rounded-lg hover:border-violet-400 hover:bg-violet-50/50 transition-colors flex items-center justify-center gap-2 text-slate-600 hover:text-violet-700 font-medium"
+          >
+            <Sparkles className="w-5 h-5" />
+            Add Event/Holiday Hours
+          </button>
+        </div>
+      )}
     </div>
   );
 }
