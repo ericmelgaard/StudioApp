@@ -58,17 +58,31 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
   const loadData = async () => {
     setLoading(true);
     try {
+      const groupResult = await supabase
+        .from('placement_groups')
+        .select('store_id')
+        .eq('id', groupId)
+        .maybeSingle();
+
+      if (groupResult.error) throw groupResult.error;
+
+      const storeId = groupResult.data?.store_id;
+
       const [schedulesResult, daypartsResult] = await Promise.all([
         supabase
           .from('placement_routines')
           .select('*, daypart_definitions(id, daypart_name, display_label, color, icon)')
           .eq('placement_id', groupId)
           .order('priority', { ascending: false }),
-        supabase
-          .from('daypart_definitions')
-          .select('id, daypart_name, display_label, color, icon')
-          .eq('is_active', true)
-          .order('sort_order')
+        storeId
+          ? supabase.rpc('get_effective_daypart_definitions', { p_store_id: storeId })
+          : supabase
+              .from('daypart_definitions')
+              .select('id, daypart_name, display_label, color, icon')
+              .is('concept_id', null)
+              .is('store_id', null)
+              .eq('is_active', true)
+              .order('sort_order')
       ]);
 
       if (schedulesResult.error) throw schedulesResult.error;
