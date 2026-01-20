@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Clock, AlertCircle, RotateCcw, Calendar, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, X, ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DaypartRoutineForm, { DaypartRoutine } from './DaypartRoutineForm';
 
@@ -163,10 +163,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   };
 
   const handleDelete = async (routineId: string) => {
-    if (!confirm('Are you sure you want to delete this schedule?')) {
-      return;
-    }
-
     const { error } = await supabase
       .from('placement_daypart_overrides')
       .delete()
@@ -174,10 +170,12 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
     if (error) {
       console.error('Error deleting schedule:', error);
-      alert(`Failed to delete schedule: ${error.message}`);
-    } else {
-      await loadData();
+      throw new Error(error.message);
     }
+
+    setShowForm(false);
+    setEditingRoutine(null);
+    await loadData();
   };
 
   const handleCancel = () => {
@@ -248,16 +246,16 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <div className="w-6 h-6 border-3 border-slate-200 border-t-amber-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-3 border-slate-200 border-t-cyan-600 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative pb-24">
       <div>
         <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-amber-600" />
+          <Clock className="w-5 h-5 text-cyan-600" />
           Placement Schedules
         </h3>
         <p className="text-sm text-slate-600 mt-1">
@@ -265,59 +263,52 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </p>
       </div>
 
-      {showForm && !editingRoutine && (
-        <>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-sm text-blue-800 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>
-                This schedule will apply to the selected days for this placement.
-              </span>
-            </p>
+      {/* Full-screen edit/create modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-white z-50 md:absolute md:inset-auto md:bg-transparent md:z-0">
+          {/* Mobile: minimal header with close button */}
+          <div className="md:hidden sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
+            <button
+              onClick={handleCancel}
+              className="p-2 -ml-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
           </div>
-          <DaypartRoutineForm
-            placementGroupId={placementGroupId}
-            existingRoutines={routines}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            editingRoutine={null}
-            preFillDaypart={preFillDaypart}
-            preFillScheduleType={preFillScheduleType}
-          />
-        </>
+
+          {/* Form content */}
+          <div className="h-full overflow-y-auto md:h-auto">
+            <div className="p-4 md:p-0">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    This schedule will apply to the selected days for this placement.
+                  </span>
+                </p>
+              </div>
+              <DaypartRoutineForm
+                placementGroupId={placementGroupId}
+                existingRoutines={routines}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                editingRoutine={editingRoutine}
+                preFillDaypart={preFillDaypart}
+                preFillScheduleType={preFillScheduleType}
+                onDelete={editingRoutine ? handleDelete : undefined}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {routines.length === 0 && !showForm ? (
-        <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
-          <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-900 mb-2">No Placement Schedules</h3>
-          <p className="text-slate-600 mb-4 text-sm">
+        <div className="text-center py-16 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+          <Clock className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No Placement Schedules</h3>
+          <p className="text-slate-600 text-sm px-4">
             This placement inherits all daypart hours from the site configuration
           </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleAddNew('regular');
-              }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-dashed border-slate-300 text-slate-700 rounded-lg hover:border-slate-400 hover:bg-slate-100 transition-colors font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Add Schedule
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleAddNew('event_holiday');
-              }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
-            >
-              <Sparkles className="w-4 h-4" />
-              Add Event/Holiday Hours
-            </button>
-          </div>
         </div>
       ) : routines.length > 0 ? (
         <div className="space-y-3">
@@ -338,33 +329,23 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                       <Clock className="w-4 h-4" />
                       <h4 className="font-semibold">{displayLabel}</h4>
                       {hasEvents && (
-                        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900 font-medium">
+                        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-900 font-medium">
                           <Calendar className="w-3 h-3" />
                           {daypartEvents.length} {daypartEvents.length === 1 ? 'Event' : 'Events'}
                         </span>
                       )}
                     </div>
-                    {!showForm && daypartRoutines.length > 0 && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleAddNew(daypartName);
-                        }}
-                        className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-white/50 rounded-lg transition-colors"
-                        title={`Add another ${displayLabel} schedule`}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
               <div className="divide-y divide-slate-200">
                 {daypartRoutines.map((routine) => (
                   <div key={routine.id}>
-                    <div className="p-4 hover:bg-slate-50 transition-colors group">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
+                    <button
+                      onClick={() => handleEdit(routine)}
+                      className="w-full p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
                             {routine.schedule_name && (
                               <span className="text-sm font-semibold text-slate-900">
@@ -393,179 +374,96 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                             })}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleEdit(routine);
-                            }}
-                            className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title="Edit schedule"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDelete(routine.id!);
-                            }}
-                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete schedule"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
                       </div>
-                    </div>
-                    {editingRoutine?.id === routine.id && (
-                      <div className="px-4 pb-4 bg-amber-50 border-t border-amber-200">
-                        <div className="pt-4">
-                          <DaypartRoutineForm
-                            placementGroupId={placementGroupId}
-                            existingRoutines={routines}
-                            onSave={handleSave}
-                            onCancel={handleCancel}
-                            editingRoutine={editingRoutine}
-                            preFillDaypart={preFillDaypart}
-                          />
-                        </div>
-                      </div>
-                    )}
+                    </button>
                   </div>
                 ))}
 
                 {daypartRoutines.length === 0 && !hasEvents && (
                   <div className="p-6 text-center">
-                    <p className="text-slate-600 text-sm mb-4">
-                      No schedules yet. Add a schedule to override site defaults.
+                    <p className="text-slate-600 text-sm">
+                      No schedules yet. Tap the + button to add a schedule.
                     </p>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleAddNew(daypartName);
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Schedule
-                    </button>
                   </div>
                 )}
 
                 {hasEvents && (
-                  <div className="border-t-2 border-violet-200">
+                  <div className="border-t-2 border-cyan-200">
                     <button
                       type="button"
                       onClick={() => toggleEventsExpanded(daypartName)}
-                      className="w-full px-4 py-3 bg-violet-50 hover:bg-violet-100 transition-colors flex items-center justify-between group"
+                      className="w-full px-4 py-3 bg-cyan-50 hover:bg-cyan-100 transition-colors flex items-center justify-between group"
                     >
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-violet-600" />
-                        <span className="font-medium text-violet-900">
+                        <Calendar className="w-4 h-4 text-cyan-600" />
+                        <span className="font-medium text-cyan-900">
                           Event & Holiday Schedules
                         </span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-900">
                           {daypartEvents.length}
                         </span>
                       </div>
                       {eventsExpanded ? (
-                        <ChevronDown className="w-5 h-5 text-violet-600" />
+                        <ChevronDown className="w-5 h-5 text-cyan-600" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-violet-600" />
+                        <ChevronRight className="w-5 h-5 text-cyan-600" />
                       )}
                     </button>
 
                     {eventsExpanded && (
-                      <div className="divide-y divide-violet-100 bg-violet-50/30">
+                      <div className="divide-y divide-cyan-100 bg-cyan-50/30">
                         {daypartEvents.map((routine) => (
                           <div key={routine.id}>
-                            {editingRoutine?.id === routine.id ? (
-                              <div className="px-4 pb-4 bg-violet-50 border-t border-violet-200">
-                                <div className="pt-4">
-                                  <DaypartRoutineForm
-                                    placementGroupId={placementGroupId}
-                                    existingRoutines={routines}
-                                    onSave={handleSave}
-                                    onCancel={handleCancel}
-                                    editingRoutine={editingRoutine}
-                                    preFillDaypart={preFillDaypart}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="p-4 hover:bg-violet-100/50 transition-colors group">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                      {routine.schedule_name && (
-                                        <span className="font-semibold text-violet-900">
-                                          {routine.schedule_name}
-                                        </span>
-                                      )}
-                                      <span className={`${routine.schedule_name ? 'text-violet-700' : 'font-medium text-violet-900'}`}>
-                                        {routine.event_name || 'Unnamed Event'}
+                            <button
+                              onClick={() => handleEdit(routine)}
+                              className="w-full p-4 hover:bg-cyan-100/50 active:bg-cyan-100 transition-colors text-left"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    {routine.schedule_name && (
+                                      <span className="font-semibold text-cyan-900">
+                                        {routine.schedule_name}
                                       </span>
-                                      <span className="text-xs px-2 py-1 bg-violet-100 text-violet-700 rounded font-medium">
-                                        {getRecurrenceLabel(routine.recurrence_type)}
-                                      </span>
-                                    </div>
-                                    <div className="text-sm text-violet-700 mb-2">
-                                      <Calendar className="w-3.5 h-3.5 inline mr-1" />
-                                      {formatEventDate(routine.event_date, routine.recurrence_type)}
-                                      <span className="mx-2 text-violet-400">•</span>
-                                      <Clock className="w-3.5 h-3.5 inline mr-1" />
-                                      {routine.runs_on_days === false
-                                        ? 'Does Not Run'
-                                        : `${formatTime(routine.start_time)} - ${formatTime(routine.end_time)}`}
-                                    </div>
-                                    {routine.days_of_week.length > 0 && (
-                                      <div className="flex flex-wrap gap-1">
-                                        {routine.days_of_week.sort().map(day => {
-                                          const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                                          const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-                                          const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
-                                          return (
-                                            <span
-                                              key={day}
-                                              className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
-                                            >
-                                              {dayInfo?.short}
-                                            </span>
-                                          );
-                                        })}
-                                      </div>
                                     )}
+                                    <span className={`${routine.schedule_name ? 'text-cyan-700' : 'font-medium text-cyan-900'}`}>
+                                      {routine.event_name || 'Unnamed Event'}
+                                    </span>
+                                    <span className="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded font-medium">
+                                      {getRecurrenceLabel(routine.recurrence_type)}
+                                    </span>
                                   </div>
-                                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleEdit(routine);
-                                      }}
-                                      className="p-2 text-violet-600 hover:text-violet-700 hover:bg-violet-200/50 rounded-lg transition-colors"
-                                      title="Edit schedule"
-                                    >
-                                      <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleDelete(routine.id!);
-                                      }}
-                                      className="p-2 text-violet-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                      title="Delete schedule"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
+                                  <div className="text-sm text-cyan-700 mb-2">
+                                    <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                    {formatEventDate(routine.event_date, routine.recurrence_type)}
+                                    <span className="mx-2 text-cyan-400">•</span>
+                                    <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                    {routine.runs_on_days === false
+                                      ? 'Does Not Run'
+                                      : `${formatTime(routine.start_time)} - ${formatTime(routine.end_time)}`}
                                   </div>
+                                  {routine.days_of_week.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {routine.days_of_week.sort().map(day => {
+                                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                        const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                        const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                        return (
+                                          <span
+                                            key={day}
+                                            className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
+                                          >
+                                            {dayInfo?.short}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
+                                <ChevronRight className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
                               </div>
-                            )}
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -576,35 +474,28 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             </div>
             );
           })}
-
-          {!showForm && (
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddNew('regular');
-                }}
-                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-colors font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Add Schedule
-              </button>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddNew('event_holiday');
-                }}
-                className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
-              >
-                <Sparkles className="w-4 h-4" />
-                Add Event/Holiday Hours
-              </button>
-            </div>
-          )}
         </div>
       ) : null}
+
+      {/* Floating Action Button */}
+      {!showForm && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 flex gap-3">
+          <button
+            onClick={() => handleAddNew('regular')}
+            className="w-14 h-14 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+            title="Add Schedule"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => handleAddNew('event_holiday')}
+            className="w-14 h-14 bg-cyan-500 hover:bg-cyan-600 active:bg-cyan-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+            title="Add Event/Holiday Hours"
+          >
+            <Sparkles className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar, Sparkles, Info } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 import DaySelector from './DaySelector';
 import { supabase } from '../lib/supabase';
@@ -14,6 +14,7 @@ interface DaypartRoutineFormProps {
   editingRoutine?: DaypartRoutine | null;
   preFillDaypart?: string;
   preFillScheduleType?: 'regular' | 'event_holiday';
+  onDelete?: (routineId: string) => Promise<void>;
 }
 
 export interface DaypartRoutine {
@@ -64,7 +65,8 @@ export default function DaypartRoutineForm({
   onCancel,
   editingRoutine,
   preFillDaypart,
-  preFillScheduleType
+  preFillScheduleType,
+  onDelete
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -243,6 +245,20 @@ export default function DaypartRoutineForm({
       setFormData(updates);
     }
     setShowTemplatePicker(false);
+  };
+
+  const handleDelete = async () => {
+    if (!editingRoutine?.id || !onDelete) return;
+
+    if (!confirm('Are you sure you want to delete this schedule? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await onDelete(editingRoutine.id);
+    } catch (err: any) {
+      alert(`Failed to delete schedule: ${err.message}`);
+    }
   };
 
   return (
@@ -632,7 +648,7 @@ export default function DaypartRoutineForm({
             type="button"
             onClick={handleSubmit}
             disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            className="flex-1 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 active:bg-cyan-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
           >
             {saving ? 'Saving...' : 'Save Schedule'}
           </button>
@@ -644,6 +660,26 @@ export default function DaypartRoutineForm({
             Cancel
           </button>
         </div>
+
+        {/* Danger Zone - Delete Button */}
+        {editingRoutine && onDelete && (
+          <div className="mt-6 pt-6 border-t-2 border-slate-200">
+            <div className="mb-3">
+              <h4 className="text-sm font-semibold text-slate-900 mb-1">Danger Zone</h4>
+              <p className="text-xs text-slate-600">
+                Once deleted, this schedule cannot be recovered.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Schedule
+            </button>
+          </div>
+        )}
       </div>
 
       {showTemplatePicker && (
