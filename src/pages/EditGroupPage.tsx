@@ -37,9 +37,16 @@ interface Device {
 
 interface Schedule {
   id: string;
-  theme_id: string;
+  daypart_definition_id: string;
   start_time: string;
+  end_time: string | null;
   days_of_week: number[];
+  schedule_name: string | null;
+  runs_on_days: boolean;
+  daypart_definitions: {
+    display_label: string;
+    color: string;
+  };
 }
 
 const getIconComponent = (iconName: string | null) => {
@@ -133,9 +140,9 @@ export default function EditGroupPage({
     setLoadingSchedules(true);
     try {
       const { data, error } = await supabase
-        .from('placement_routines')
-        .select('id, theme_id, start_time, days_of_week')
-        .eq('placement_id', group.id)
+        .from('site_daypart_routines')
+        .select('id, daypart_definition_id, start_time, end_time, days_of_week, schedule_name, runs_on_days, daypart_definitions(display_label, color)')
+        .eq('placement_group_id', group.id)
         .order('start_time')
         .limit(3);
 
@@ -370,14 +377,25 @@ export default function EditGroupPage({
                     key={schedule.id}
                     className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {formatDays(schedule.days_of_week)}
-                        </p>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div
+                        className="w-1 h-10 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: schedule.daypart_definitions?.color || '#94a3b8' }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                            {schedule.daypart_definitions?.display_label || 'Unknown Daypart'}
+                          </p>
+                          {schedule.schedule_name && (
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              • {schedule.schedule_name}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Starts at {schedule.start_time}
+                          {formatDays(schedule.days_of_week)} • {schedule.start_time}
+                          {schedule.end_time && ` - ${schedule.end_time}`}
                         </p>
                       </div>
                     </div>
@@ -385,7 +403,7 @@ export default function EditGroupPage({
                 ))}
                 {schedules.length > 0 && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">
-                    Showing {schedules.length} most recent
+                    Showing {schedules.length} schedule{schedules.length !== 1 ? 's' : ''}
                   </p>
                 )}
               </div>
