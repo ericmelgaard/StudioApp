@@ -13,6 +13,8 @@ interface Schedule {
   cycle_week: number;
   days_of_week: number[];
   start_time: string;
+  end_time?: string;
+  schedule_name?: string;
   status: string;
   priority: number;
   themes?: {
@@ -150,11 +152,18 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
               className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg"
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-purple-500" />
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {schedule.themes?.name || 'Unknown Theme'}
-                  </span>
+                <div className="flex-1">
+                  {schedule.schedule_name && (
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                      {schedule.schedule_name}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-purple-500" />
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      {schedule.themes?.name || 'Unknown Theme'}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -181,7 +190,12 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                 </div>
                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                   <Clock className="w-4 h-4" />
-                  <span>Starts at {schedule.start_time}</span>
+                  <span>
+                    {schedule.end_time
+                      ? `${schedule.start_time} - ${schedule.end_time}`
+                      : `Starts at ${schedule.start_time}`
+                    }
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded">
@@ -237,6 +251,8 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
     cycle_week: schedule?.cycle_week || 1,
     days_of_week: schedule?.days_of_week || [] as number[],
     start_time: schedule?.start_time || '06:00',
+    end_time: schedule?.end_time || '',
+    schedule_name: schedule?.schedule_name || '',
     status: schedule?.status || 'active'
   });
 
@@ -272,6 +288,8 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
         cycle_week: formData.cycle_week,
         days_of_week: formData.days_of_week,
         start_time: formData.start_time,
+        end_time: formData.end_time || null,
+        schedule_name: formData.schedule_name || null,
         status: formData.status
       };
 
@@ -324,6 +342,19 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Schedule Name (optional)
+            </label>
+            <input
+              type="text"
+              value={formData.schedule_name}
+              onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
+              placeholder="e.g., Weekend Breakfast, Summer Hours"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Theme *
             </label>
             <select
@@ -363,7 +394,7 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Start Time *
@@ -374,6 +405,18 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                 className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                End Time
+              </label>
+              <input
+                type="time"
+                value={formData.end_time}
+                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
 
