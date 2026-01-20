@@ -671,11 +671,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <button
             onClick={() => setCurrentPage('devices')}
             className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
-            aria-label="View devices"
+            aria-label="View displays"
           >
             <div className="flex items-center gap-2 mb-1">
               <Monitor className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Devices</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Displays</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDevices}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineDevices} online</p>
@@ -780,7 +780,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{card.uptime}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded">
-                        {card.groupInfo?.playerCount} devices
+                        {card.groupInfo?.playerCount} displays
                       </span>
                       <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                     </div>

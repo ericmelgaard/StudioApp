@@ -403,8 +403,8 @@ export default function EditGroupPage({
           <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Devices</h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Media players assigned to this group</p>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Displays</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Displays assigned to this group</p>
               </div>
             </div>
 
@@ -415,7 +415,7 @@ export default function EditGroupPage({
             ) : devices.length === 0 ? (
               <div className="text-center py-8 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
                 <Monitor className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-600 dark:text-slate-400">No devices assigned yet</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">No displays assigned yet</p>
               </div>
             ) : (
               <div className="space-y-2 mb-4">
@@ -436,7 +436,7 @@ export default function EditGroupPage({
                 ))}
                 {devices.length > 0 && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">
-                    Showing {devices.length} devices
+                    Showing {devices.length} displays
                   </p>
                 )}
               </div>
@@ -446,7 +446,7 @@ export default function EditGroupPage({
               onClick={onNavigateToDevices}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors text-sm font-medium text-slate-700 dark:text-slate-300"
             >
-              Manage Devices
+              Manage Displays
               <ChevronRight className="w-4 h-4" />
             </button>
           </section>

@@ -172,7 +172,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
               <ArrowLeft className="w-5 h-5 text-slate-700 dark:text-slate-300" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Devices</h1>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Displays</h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">{storeName}</p>
             </div>
           </div>
@@ -216,7 +216,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
-              placeholder="Search devices..."
+              placeholder="Search displays..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
@@ -237,12 +237,12 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">Loading devices...</p>
+            <p className="mt-4 text-slate-600 dark:text-slate-400">Loading displays...</p>
           </div>
         ) : filteredDevices.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
             <Monitor className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400">No devices found</p>
+            <p className="text-slate-600 dark:text-slate-400">No displays found</p>
           </div>
         ) : (
           <div className="space-y-3">
