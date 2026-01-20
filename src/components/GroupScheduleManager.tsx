@@ -480,42 +480,42 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess, on
               </div>
             </div>
 
+            {/* Remove Schedule Button - Only shown when editing */}
+            {schedule && onDelete && (
+              <div className="pt-8 mt-8 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  className="w-full px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium border border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700"
+                >
+                  Remove Schedule
+                </button>
+              </div>
+            )}
+
           </div>
         </form>
 
-        <div className="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-700">
-          {schedule && onDelete ? (
-            <button
-              type="button"
-              onClick={handleDeleteClick}
-              className="text-sm text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-            >
-              Delete
-            </button>
-          ) : (
-            <div />
-          )}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-6 py-2.5 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
-              style={!loading ? { backgroundColor: '#00adf0' } : {}}
-              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
-              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
-              onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
-              onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
-            >
-              {loading ? 'Saving...' : 'Save Schedule'}
-            </button>
-          </div>
+        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-6 py-2.5 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
+            style={!loading ? { backgroundColor: '#00adf0' } : {}}
+            onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
+            onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
+            onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
+            onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
+          >
+            {loading ? 'Saving...' : 'Save Schedule'}
+          </button>
         </div>
       </div>
     </div>
