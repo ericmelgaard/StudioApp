@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2,
-  Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical,
-  RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe,
-  Sun, Coffee, Clock, Sunrise, Sunset, Stars
-} from 'lucide-react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
