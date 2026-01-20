@@ -17,19 +17,21 @@ interface Schedule {
   schedule_name?: string;
   status: string;
   priority: number;
-  themes?: {
+  daypart_definitions?: {
     id: string;
-    name: string;
+    daypart_name: string;
+    display_label: string;
+    color: string;
     icon: string | null;
-    icon_url: string | null;
   };
 }
 
-interface Theme {
+interface Daypart {
   id: string;
-  name: string;
+  daypart_name: string;
+  display_label: string;
+  color: string;
   icon: string | null;
-  icon_url: string | null;
 }
 
 const DAYS_OF_WEEK = [
@@ -44,7 +46,7 @@ const DAYS_OF_WEEK = [
 
 export default function GroupScheduleManager({ groupId, groupName }: GroupScheduleManagerProps) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [themes, setThemes] = useState<Theme[]>([]);
+  const [dayparts, setDayparts] = useState<Daypart[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
@@ -56,24 +58,24 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
   const loadData = async () => {
     setLoading(true);
     try {
-      const [schedulesResult, themesResult] = await Promise.all([
+      const [schedulesResult, daypartsResult] = await Promise.all([
         supabase
           .from('placement_routines')
-          .select('*, themes(id, name, icon, icon_url)')
+          .select('*, daypart_definitions(id, daypart_name, display_label, color, icon)')
           .eq('placement_id', groupId)
           .order('priority', { ascending: false }),
         supabase
-          .from('themes')
-          .select('id, name, icon, icon_url')
-          .eq('status', 'active')
-          .order('name')
+          .from('daypart_definitions')
+          .select('id, daypart_name, display_label, color, icon')
+          .eq('is_active', true)
+          .order('sort_order')
       ]);
 
       if (schedulesResult.error) throw schedulesResult.error;
-      if (themesResult.error) throw themesResult.error;
+      if (daypartsResult.error) throw daypartsResult.error;
 
       setSchedules(schedulesResult.data || []);
-      setThemes(themesResult.data || []);
+      setDayparts(daypartsResult.data || []);
     } catch (error) {
       console.error('Error loading schedule data:', error);
     } finally {
@@ -161,7 +163,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                   <div className="flex items-center gap-2">
                     <Palette className="w-5 h-5 text-purple-500" />
                     <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {schedule.themes?.name || 'Unknown Theme'}
+                      {schedule.daypart_definitions?.display_label || 'Unknown Daypart'}
                     </span>
                   </div>
                 </div>
@@ -219,7 +221,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
         <ScheduleFormModal
           schedule={editingSchedule}
           groupId={groupId}
-          themes={themes}
+          dayparts={dayparts}
           onClose={() => {
             setShowCreateModal(false);
             setEditingSchedule(null);
@@ -238,12 +240,12 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 interface ScheduleFormModalProps {
   schedule: Schedule | null;
   groupId: string;
-  themes: Theme[];
+  dayparts: Daypart[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: ScheduleFormModalProps) {
+function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess }: ScheduleFormModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scheduleType, setScheduleType] = useState<'regular' | 'event'>('regular');
@@ -272,7 +274,7 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
     setError(null);
 
     if (!formData.theme_id) {
-      setError('Please select a theme');
+      setError('Please select a daypart');
       return;
     }
 
@@ -379,9 +381,9 @@ function ScheduleFormModal({ schedule, groupId, themes, onClose, onSuccess }: Sc
                 required
               >
                 <option value="">Select a daypart...</option>
-                {themes.map((theme) => (
-                  <option key={theme.id} value={theme.id}>
-                    {theme.name}
+                {dayparts.map((daypart) => (
+                  <option key={daypart.id} value={daypart.id}>
+                    {daypart.display_label}
                   </option>
                 ))}
               </select>
