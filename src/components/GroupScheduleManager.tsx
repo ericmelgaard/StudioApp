@@ -125,7 +125,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
   if (loading) {
     return (
       <div className="text-center py-8">
-        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-600"></div>
+        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderBottomColor: '#00adf0' }}></div>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Loading schedules...</p>
       </div>
     );
@@ -155,7 +155,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-3">
-                    <Palette className="w-5 h-5 text-cyan-500 flex-shrink-0" />
+                    <Palette className="w-5 h-5 flex-shrink-0" style={{ color: '#00adf0' }} />
                     <span className="font-medium text-slate-900 dark:text-slate-100">
                       {schedule.daypart_definitions?.display_label || 'Unknown Daypart'}
                     </span>
@@ -189,7 +189,12 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 flex gap-3">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="w-14 h-14 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+            className="w-14 h-14 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+            style={{ backgroundColor: '#00adf0' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
+            onMouseDown={(e) => e.currentTarget.style.backgroundColor = '#0085bc'}
+            onMouseUp={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
             title="Add Schedule"
           >
             <Plus className="w-6 h-6" />
@@ -393,9 +398,10 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess, on
                     onClick={() => handleDayToggle(day.value)}
                     className={`h-12 rounded-lg font-medium text-sm transition-all ${
                       formData.days_of_week.includes(day.value)
-                        ? 'bg-cyan-600 text-white'
+                        ? 'text-white'
                         : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
                     }`}
+                    style={formData.days_of_week.includes(day.value) ? { backgroundColor: '#00adf0' } : {}}
                     title={day.fullLabel}
                   >
                     {day.label}
@@ -417,7 +423,7 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess, on
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg">
+            <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'rgba(0, 173, 240, 0.1)', borderColor: 'rgba(0, 173, 240, 0.3)', borderWidth: '1px' }}>
               <div>
                 <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   Schedule runs on selected days
@@ -430,8 +436,9 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess, on
                 type="button"
                 onClick={() => setRunsOnSelectedDays(!runsOnSelectedDays)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  runsOnSelectedDays ? 'bg-cyan-600' : 'bg-slate-300 dark:bg-slate-600'
+                  runsOnSelectedDays ? '' : 'bg-slate-300 dark:bg-slate-600'
                 }`}
+                style={runsOnSelectedDays ? { backgroundColor: '#00adf0' } : {}}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -499,7 +506,12 @@ function ScheduleFormModal({ schedule, groupId, dayparts, onClose, onSuccess, on
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
+              className="px-6 py-2.5 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
+              style={!loading ? { backgroundColor: '#00adf0' } : {}}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
+              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
+              onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
+              onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
             >
               {loading ? 'Saving...' : 'Save Schedule'}
             </button>
