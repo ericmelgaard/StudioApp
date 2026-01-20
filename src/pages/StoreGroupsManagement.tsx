@@ -1,12 +1,29 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft, Layers, Plus, Palette, ImageOff, ChevronRight
+  ArrowLeft, Layers, Plus, Palette, ImageOff, ChevronRight,
+  Zap, Coffee, Flame, Wine, Utensils, Pizza, IceCream, DoorOpen,
+  Sunrise, Wrench, UtensilsCrossed
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import CreateGroupModal from '../components/CreateGroupModal';
 import EditGroupPage from './EditGroupPage';
 import GroupSchedulesPage from './GroupSchedulesPage';
 import GroupDevicesPage from './GroupDevicesPage';
+
+const iconMap: Record<string, any> = {
+  'zap': Zap,
+  'coffee': Coffee,
+  'flame': Flame,
+  'wine': Wine,
+  'utensils': Utensils,
+  'pizza': Pizza,
+  'ice-cream': IceCream,
+  'door-open': DoorOpen,
+  'sunrise': Sunrise,
+  'wrench': Wrench,
+  'utensils-crossed': UtensilsCrossed,
+  'taco': Utensils,
+};
 
 interface StoreGroupsManagementProps {
   storeId: number;
@@ -221,45 +238,50 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
                 key={group.id}
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:shadow-md transition-all"
               >
-                <div className="p-3">
-                  <h3 className="text-sm md:text-base font-semibold text-slate-900 dark:text-slate-100 mb-3 line-clamp-2">
+                <div className="p-2.5">
+                  <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-2 truncate" title={group.name}>
                     {group.name}
                   </h3>
 
                   {group.theme ? (
-                    <div className="flex items-center gap-2 mb-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-md">
+                    <div className="flex items-center gap-2 mb-2 p-1.5 bg-slate-50 dark:bg-slate-700/50 rounded-md">
                       {group.theme.icon_url ? (
                         <img
                           src={group.theme.icon_url}
                           alt={group.theme.name}
                           className="w-5 h-5 object-contain flex-shrink-0"
                         />
+                      ) : group.theme.icon && iconMap[group.theme.icon] ? (
+                        (() => {
+                          const IconComponent = iconMap[group.theme.icon];
+                          return <IconComponent className="w-5 h-5 text-blue-500 flex-shrink-0" />;
+                        })()
                       ) : (
                         <Palette className="w-5 h-5 text-blue-500 flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Theme</p>
-                        <p className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Theme</p>
+                        <p className="text-xs text-slate-700 dark:text-slate-300 truncate leading-tight">
                           {group.theme.name}
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 mb-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-md">
+                    <div className="flex items-center gap-2 mb-2 p-1.5 bg-slate-50 dark:bg-slate-700/50 rounded-md">
                       <ImageOff className="w-5 h-5 text-slate-400 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Theme</p>
-                        <p className="text-sm text-slate-400 dark:text-slate-500">No theme</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Theme</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 leading-tight">No theme</p>
                       </div>
                     </div>
                   )}
 
                   <button
                     onClick={() => handleEditGroup(group)}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs font-medium"
                   >
                     Manage Group
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
