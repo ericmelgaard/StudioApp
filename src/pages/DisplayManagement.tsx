@@ -182,28 +182,39 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       return;
     }
 
-    const groupedByPlacement: Record<string, MediaPlayer[]> = {};
-    const singlePlayers: MediaPlayer[] = [];
+    const groupedDisplays: Record<string, Display[]> = {};
+    const ungroupedDisplays: Display[] = [];
 
-    mediaPlayers?.forEach(mp => {
-      if (mp.placement_group_id) {
-        if (!groupedByPlacement[mp.placement_group_id]) {
-          groupedByPlacement[mp.placement_group_id] = [];
+    displays?.forEach(d => {
+      if (d.placement_group_id) {
+        if (!groupedDisplays[d.placement_group_id]) {
+          groupedDisplays[d.placement_group_id] = [];
         }
-        groupedByPlacement[mp.placement_group_id].push(mp);
+        groupedDisplays[d.placement_group_id].push(d);
       } else {
-        singlePlayers.push(mp);
+        ungroupedDisplays.push(d);
       }
     });
 
     const cards: DisplayCard[] = [];
 
-    singlePlayers.forEach(mp => {
-      const mpDisplays = displays?.filter(d => d.media_player_id === mp.id) || [];
+    const mediaPlayerDisplays: Record<string, Display[]> = {};
+    ungroupedDisplays.forEach(d => {
+      const mpId = d.media_player_id;
+      if (!mediaPlayerDisplays[mpId]) {
+        mediaPlayerDisplays[mpId] = [];
+      }
+      mediaPlayerDisplays[mpId].push(d);
+    });
+
+    Object.entries(mediaPlayerDisplays).forEach(([mpId, disps]) => {
+      const mp = mediaPlayers?.find(p => p.id === mpId);
+      if (!mp) return;
+
       const uptime = calculateUptime(mp.last_heartbeat);
-      const screenshotUrl = mpDisplays[0]?.configuration?.screenshot_url;
-      const thumbnail = screenshotUrl || mpDisplays[0]?.thumbnail_url || null;
-      const orientation = mpDisplays[0] ? getDisplayOrientation(mpDisplays[0]) : 'horizontal';
+      const screenshotUrl = disps[0]?.configuration?.screenshot_url;
+      const thumbnail = screenshotUrl || disps[0]?.thumbnail_url || null;
+      const orientation = disps[0] ? getDisplayOrientation(disps[0]) : 'horizontal';
 
       cards.push({
         id: mp.id,
@@ -212,7 +223,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         uptime,
         thumbnail,
         mediaPlayer: mp,
-        displays: mpDisplays,
+        displays: disps,
         isGroup: false,
         orientation
       });
@@ -221,26 +232,29 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     const { data: pgData } = await supabase
       .from('placement_groups')
       .select('id, name')
-      .in('id', Object.keys(groupedByPlacement));
+      .in('id', Object.keys(groupedDisplays));
 
     const groups: PlacementGroup[] = [];
 
-    Object.entries(groupedByPlacement).forEach(([pgId, players]) => {
+    Object.entries(groupedDisplays).forEach(([pgId, groupDisps]) => {
       const pgInfo = pgData?.find(pg => pg.id === pgId);
-      const onlineCount = players.filter(p => p.status === 'online').length;
+      const onlineCount = groupDisps.filter(d => {
+        const mp = mediaPlayers?.find(p => p.id === d.media_player_id);
+        return mp?.status === 'online';
+      }).length;
 
       groups.push({
         id: pgId,
         name: pgInfo?.name || 'Unnamed Group',
-        playerCount: players.length,
+        playerCount: groupDisps.length,
         onlineCount
       });
 
       cards.push({
         id: pgId,
         name: pgInfo?.name || 'Unnamed Group',
-        status: onlineCount === players.length ? 'online' : onlineCount > 0 ? 'error' : 'offline',
-        uptime: `${onlineCount}/${players.length} online`,
+        status: onlineCount === groupDisps.length ? 'online' : onlineCount > 0 ? 'error' : 'offline',
+        uptime: `${onlineCount}/${groupDisps.length} online`,
         thumbnail: null,
         mediaPlayer: players[0],
         displays: [],
@@ -287,19 +301,19 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     const currentDay = now.getDay();
     const currentTime = now.toTimeString().slice(0, 5);
 
-    const { data: mediaPlayers } = await supabase
-      .from('media_players')
-      .select('id, placement_group_id')
-      .eq('store_id', storeId)
-      .eq('status', 'online');
+    const { data: activeDisplays } = await supabase
+      .from('displays')
+      .select('id, placement_group_id, media_player:media_players!inner(store_id, status)')
+      .eq('media_player.store_id', storeId)
+      .eq('media_player.status', 'online');
 
-    if (!mediaPlayers || mediaPlayers.length === 0) {
+    if (!activeDisplays || activeDisplays.length === 0) {
       setDaypartBadges([]);
       return;
     }
 
-    const placementIds = [...new Set(mediaPlayers.map(mp => mp.placement_group_id).filter(Boolean))];
-    const ungroupedPlayers = mediaPlayers.filter(mp => !mp.placement_group_id);
+    const placementIds = [...new Set(activeDisplays.map(d => d.placement_group_id).filter(Boolean))];
+    const ungroupedDisplays = activeDisplays.filter(d => !d.placement_group_id);
 
     const daypartCounts: Record<string, { label: string; color: string; icon: string; count: number }> = {};
 
@@ -363,7 +377,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       }
 
       if (daypartName) {
-        const playerCount = mediaPlayers.filter(mp => mp.placement_group_id === placementId).length;
+        const displayCount = activeDisplays.filter(d => d.placement_group_id === placementId).length;
 
         if (!daypartCounts[daypartName]) {
           const { data: definition } = await supabase
@@ -377,16 +391,16 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
               label: definition.display_label || daypartName,
               color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
               icon: definition.icon || 'Clock',
-              count: playerCount
+              count: displayCount
             };
           }
         } else {
-          daypartCounts[daypartName].count += playerCount;
+          daypartCounts[daypartName].count += displayCount;
         }
       }
     }
 
-    if (ungroupedPlayers.length > 0) {
+    if (ungroupedDisplays.length > 0) {
       const { data: placementGroups } = await supabase
         .from('placement_groups')
         .select('id')

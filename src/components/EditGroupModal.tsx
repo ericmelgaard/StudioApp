@@ -21,10 +21,21 @@ interface EditGroupModalProps {
 interface Device {
   id: string;
   name: string;
-  device_id: string;
-  ip_address: string | null;
-  status: 'online' | 'offline' | 'error';
+  display_type_id: string;
+  position: number;
+  status: string;
   placement_group_id: string | null;
+  media_player?: {
+    id: string;
+    name: string;
+    device_id: string;
+    ip_address: string | null;
+    status: string;
+  };
+  display_types?: {
+    name: string;
+    category: string;
+  };
 }
 
 interface Theme {
@@ -66,9 +77,18 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
     setLoadingDevices(true);
     try {
       const { data: allDevices, error } = await supabase
-        .from('media_players')
-        .select('id, name, device_id, ip_address, status, placement_group_id')
-        .eq('store_id', storeId)
+        .from('displays')
+        .select(`
+          id,
+          name,
+          display_type_id,
+          position,
+          status,
+          placement_group_id,
+          media_player:media_players(id, name, device_id, ip_address, status),
+          display_types(name, category)
+        `)
+        .eq('media_player.store_id', storeId)
         .order('name');
 
       if (error) throw error;
@@ -79,7 +99,7 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
       setCurrentDevices(current);
       setAvailableDevices(available);
     } catch (err) {
-      console.error('Error loading devices:', err);
+      console.error('Error loading displays:', err);
     } finally {
       setLoadingDevices(false);
     }
@@ -137,36 +157,36 @@ export default function EditGroupModal({ group, storeId, onClose, onSuccess }: E
   const handleAddDevice = async (deviceId: string) => {
     try {
       const { error } = await supabase
-        .from('media_players')
+        .from('displays')
         .update({ placement_group_id: group.id })
         .eq('id', deviceId);
 
       if (error) throw error;
 
       await loadDevices();
-      setSuccess('Device added to group');
+      setSuccess('Display added to group');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error adding device:', err);
-      setError('Failed to add device');
+      console.error('Error adding display:', err);
+      setError('Failed to add display');
     }
   };
 
   const handleRemoveDevice = async (deviceId: string) => {
     try {
       const { error } = await supabase
-        .from('media_players')
+        .from('displays')
         .update({ placement_group_id: null })
         .eq('id', deviceId);
 
       if (error) throw error;
 
       await loadDevices();
-      setSuccess('Device removed from group');
+      setSuccess('Display removed from group');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error removing device:', err);
-      setError('Failed to remove device');
+      console.error('Error removing display:', err);
+      setError('Failed to remove display');
     }
   };
 

@@ -49,10 +49,14 @@ interface PlacementGroup {
   schedule_count: number;
 }
 
-interface MediaPlayer {
+interface Display {
   id: string;
   name: string;
   status: string;
+  placement_group_id: string | null;
+  media_player?: {
+    status: string;
+  };
 }
 
 type PageView = 'list' | 'edit' | 'schedules' | 'devices';
@@ -80,12 +84,12 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
 
       if (pgError) throw pgError;
 
-      const { data: mediaPlayers, error: mpError } = await supabase
-        .from('media_players')
-        .select('id, name, placement_group_id, status')
-        .eq('store_id', storeId);
+      const { data: displays, error: displaysError } = await supabase
+        .from('displays')
+        .select('id, name, status, placement_group_id, media_player:media_players!inner(status, store_id)')
+        .eq('media_player.store_id', storeId);
 
-      if (mpError) throw mpError;
+      if (displaysError) throw displaysError;
 
       const { data: schedules, error: schedError } = await supabase
         .from('placement_routines')
@@ -101,8 +105,11 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
 
       const groupsWithData = await Promise.all(
         (placementGroups || []).map(async (group) => {
-          const devices = mediaPlayers?.filter(mp => mp.placement_group_id === group.id) || [];
-          const onlineDevices = devices.filter(d => d.status === 'online').length;
+          const groupDisplays = displays?.filter(d => d.placement_group_id === group.id) || [];
+          const onlineDisplays = groupDisplays.filter(d => {
+            const status = d.media_player?.status || d.status;
+            return status === 'online' || status === 'active';
+          }).length;
           const scheduleCount = schedules?.filter(s => s.placement_id === group.id).length || 0;
 
           let theme = null;
@@ -113,8 +120,8 @@ export default function StoreGroupsManagement({ storeId, storeName, onBack }: St
           return {
             ...group,
             theme,
-            device_count: devices.length,
-            online_devices: onlineDevices,
+            device_count: groupDisplays.length,
+            online_devices: onlineDisplays,
             schedule_count: scheduleCount
           };
         })

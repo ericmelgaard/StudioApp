@@ -17,10 +17,21 @@ interface GroupDevicesPageProps {
 interface Device {
   id: string;
   name: string;
-  device_id: string;
-  ip_address: string | null;
-  status: 'online' | 'offline' | 'error';
+  display_type_id: string;
+  position: number;
+  status: string;
   placement_group_id: string | null;
+  media_player?: {
+    id: string;
+    name: string;
+    device_id: string;
+    ip_address: string | null;
+    status: string;
+  };
+  display_types?: {
+    name: string;
+    category: string;
+  };
 }
 
 export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevicesPageProps) {
@@ -38,9 +49,18 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
     setLoading(true);
     try {
       const { data: allDevices, error } = await supabase
-        .from('media_players')
-        .select('id, name, device_id, ip_address, status, placement_group_id')
-        .eq('store_id', storeId)
+        .from('displays')
+        .select(`
+          id,
+          name,
+          display_type_id,
+          position,
+          status,
+          placement_group_id,
+          media_player:media_players(id, name, device_id, ip_address, status),
+          display_types(name, category)
+        `)
+        .eq('media_player.store_id', storeId)
         .order('name');
 
       if (error) throw error;
@@ -64,18 +84,18 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
 
     try {
       const { error } = await supabase
-        .from('media_players')
+        .from('displays')
         .update({ placement_group_id: group.id })
         .eq('id', deviceId);
 
       if (error) throw error;
 
       await loadDevices();
-      setSuccess('Device added to group');
+      setSuccess('Display added to group');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error adding device:', err);
-      setError('Failed to add device');
+      console.error('Error adding display:', err);
+      setError('Failed to add display');
     }
   };
 
@@ -85,26 +105,29 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
 
     try {
       const { error } = await supabase
-        .from('media_players')
+        .from('displays')
         .update({ placement_group_id: null })
         .eq('id', deviceId);
 
       if (error) throw error;
 
       await loadDevices();
-      setSuccess('Device removed from group');
+      setSuccess('Display removed from group');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error removing device:', err);
-      setError('Failed to remove device');
+      console.error('Error removing display:', err);
+      setError('Failed to remove display');
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (device: Device) => {
+    const status = device.media_player?.status || device.status;
     switch (status) {
       case 'online':
+      case 'active':
         return <Wifi className="w-4 h-4 text-green-500" />;
       case 'offline':
+      case 'inactive':
         return <WifiOff className="w-4 h-4 text-red-500" />;
       default:
         return <AlertCircle className="w-4 h-4 text-amber-500" />;
@@ -125,7 +148,7 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
             <Monitor className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Devices</h1>
+            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Displays</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">{group.name}</p>
           </div>
         </div>
@@ -151,7 +174,7 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
       <div className="p-4 space-y-6">
         <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
-            Assigned Devices ({currentDevices.length})
+            Assigned Displays ({currentDevices.length})
           </h2>
           {loading ? (
             <div className="text-center py-8">
@@ -160,7 +183,7 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
           ) : currentDevices.length === 0 ? (
             <div className="text-center py-8 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
               <Monitor className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-              <p className="text-sm text-slate-600 dark:text-slate-400">No devices assigned yet</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">No displays assigned yet</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -174,11 +197,11 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-slate-900 dark:text-slate-100">{device.name}</span>
-                        {getStatusIcon(device.status)}
+                        {getStatusIcon(device)}
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {device.device_id}
-                        {device.ip_address && ` • ${device.ip_address}`}
+                        {device.display_types?.name} • Position {device.position}
+                        {device.media_player && ` • ${device.media_player.name}`}
                       </div>
                     </div>
                   </div>
@@ -198,7 +221,7 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
         {availableDevices.length > 0 && (
           <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
-              Available Devices ({availableDevices.length})
+              Available Displays ({availableDevices.length})
             </h2>
             <div className="space-y-2">
               {availableDevices.map((device) => (
@@ -211,11 +234,11 @@ export default function GroupDevicesPage({ group, storeId, onBack }: GroupDevice
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-slate-900 dark:text-slate-100">{device.name}</span>
-                        {getStatusIcon(device.status)}
+                        {getStatusIcon(device)}
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {device.device_id}
-                        {device.ip_address && ` • ${device.ip_address}`}
+                        {device.display_types?.name} • Position {device.position}
+                        {device.media_player && ` • ${device.media_player.name}`}
                       </div>
                     </div>
                   </div>

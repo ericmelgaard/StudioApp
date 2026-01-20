@@ -14,7 +14,6 @@ interface MediaPlayer {
   status: string;
   last_heartbeat: string | null;
   firmware_version: string | null;
-  placement_group_id: string | null;
   store_id: number | null;
   created_at: string;
   hardware_device?: {
@@ -24,10 +23,6 @@ interface MediaPlayer {
   } | null;
   store?: {
     id: number;
-    name: string;
-  } | null;
-  placement_group?: {
-    id: string;
     name: string;
   } | null;
   display_count?: number;
@@ -67,7 +62,6 @@ export default function MediaPlayersManagement() {
     name: '',
     hardware_device_id: '',
     store_id: '',
-    placement_group_id: '',
     ip_address: '',
     firmware_version: ''
   });
@@ -84,7 +78,7 @@ export default function MediaPlayersManagement() {
     setLoading(true);
     try {
       let storesQuery = supabase.from('stores').select('id, name, company_id, companies!inner(id, name, concept_id)').order('name');
-      let playersQuery = supabase.from('media_players').select('*, hardware_devices(*), stores!inner(id, name, company_id, companies!inner(id, name, concept_id)), placement_groups(id, name)').order('name');
+      let playersQuery = supabase.from('media_players').select('*, hardware_devices(*), stores!inner(id, name, company_id, companies!inner(id, name, concept_id))').order('name');
 
       if (location.store) {
         storesQuery = storesQuery.eq('id', location.store.id);
@@ -97,18 +91,16 @@ export default function MediaPlayersManagement() {
         playersQuery = playersQuery.eq('stores.companies.concept_id', location.concept.id);
       }
 
-      const [playersRes, devicesRes, storesRes, groupsRes, displaysRes] = await Promise.all([
+      const [playersRes, devicesRes, storesRes, displaysRes] = await Promise.all([
         playersQuery,
         supabase.from('hardware_devices').select('*').in('status', ['available']).order('device_id'),
         storesQuery,
-        supabase.from('placement_groups').select('id, name, store_id').order('name'),
         supabase.from('displays').select('media_player_id')
       ]);
 
       if (playersRes.error) throw playersRes.error;
       if (devicesRes.error) throw devicesRes.error;
       if (storesRes.error) throw storesRes.error;
-      if (groupsRes.error) throw groupsRes.error;
       if (displaysRes.error) throw displaysRes.error;
 
       const displayCounts = displaysRes.data.reduce((acc, display) => {
@@ -120,14 +112,12 @@ export default function MediaPlayersManagement() {
         ...player,
         hardware_device: player.hardware_devices,
         store: player.stores,
-        placement_group: player.placement_groups,
         display_count: displayCounts[player.id] || 0
       }));
 
       setMediaPlayers(playersWithCounts);
       setAvailableDevices(devicesRes.data);
       setStores(storesRes.data);
-      setPlacementGroups(groupsRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -160,7 +150,6 @@ export default function MediaPlayersManagement() {
         name: player.name,
         hardware_device_id: player.hardware_device_id || '',
         store_id: player.store_id?.toString() || '',
-        placement_group_id: player.placement_group_id || '',
         ip_address: player.ip_address || '',
         firmware_version: player.firmware_version || ''
       });
@@ -170,7 +159,6 @@ export default function MediaPlayersManagement() {
         name: '',
         hardware_device_id: '',
         store_id: '',
-        placement_group_id: '',
         ip_address: '',
         firmware_version: ''
       });
@@ -199,7 +187,6 @@ export default function MediaPlayersManagement() {
           name: formData.name,
           hardware_device_id: formData.hardware_device_id || null,
           store_id: parseInt(formData.store_id),
-          placement_group_id: formData.placement_group_id || null,
           ip_address: formData.ip_address || null,
           firmware_version: formData.firmware_version || null,
           updated_at: new Date().toISOString()
@@ -233,7 +220,6 @@ export default function MediaPlayersManagement() {
             name: formData.name,
             hardware_device_id: formData.hardware_device_id || null,
             store_id: parseInt(formData.store_id),
-            placement_group_id: formData.placement_group_id || null,
             ip_address: formData.ip_address || null,
             firmware_version: formData.firmware_version || null,
             status: 'offline'
@@ -378,9 +364,6 @@ export default function MediaPlayersManagement() {
                 Store
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Placement Group
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -421,16 +404,6 @@ export default function MediaPlayersManagement() {
                     </div>
                   ) : (
                     <span className="text-gray-400">Unassigned</span>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  {player.placement_group ? (
-                    <div className="flex items-center gap-1 text-sm text-gray-900">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      {player.placement_group.name}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">None</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
@@ -545,24 +518,6 @@ export default function MediaPlayersManagement() {
                 <p className="text-xs text-gray-500 mt-1">
                   Media players are unique to each store
                 </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Placement Group
-                </label>
-                <select
-                  value={formData.placement_group_id}
-                  onChange={(e) => setFormData({ ...formData, placement_group_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">No placement group</option>
-                  {placementGroups.map(group => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <div>

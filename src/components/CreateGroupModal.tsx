@@ -11,12 +11,20 @@ interface CreateGroupModalProps {
 interface AvailableDevice {
   id: string;
   name: string;
-  device_id: string;
-  ip_address: string | null;
-  status: 'online' | 'offline' | 'error';
-  hardware_devices?: {
-    device_type: string;
-  } | null;
+  display_type_id: string;
+  position: number;
+  status: string;
+  media_player?: {
+    id: string;
+    name: string;
+    device_id: string;
+    ip_address: string | null;
+    status: string;
+  };
+  display_types?: {
+    name: string;
+    category: string;
+  };
 }
 
 export default function CreateGroupModal({ storeId, onClose, onSuccess }: CreateGroupModalProps) {
@@ -38,17 +46,18 @@ export default function CreateGroupModal({ storeId, onClose, onSuccess }: Create
     setLoadingDevices(true);
     try {
       const { data, error } = await supabase
-        .from('media_players')
+        .from('displays')
         .select(`
           id,
           name,
-          device_id,
-          ip_address,
+          display_type_id,
+          position,
           status,
           placement_group_id,
-          hardware_devices(device_type)
+          media_player:media_players(id, name, device_id, ip_address, status, store_id),
+          display_types(name, category)
         `)
-        .eq('store_id', storeId)
+        .eq('media_player.store_id', storeId)
         .is('placement_group_id', null)
         .order('name');
 
@@ -56,8 +65,8 @@ export default function CreateGroupModal({ storeId, onClose, onSuccess }: Create
 
       setAvailableDevices(data || []);
     } catch (err) {
-      console.error('Error loading available devices:', err);
-      setError('Failed to load available devices');
+      console.error('Error loading available displays:', err);
+      setError('Failed to load available displays');
     } finally {
       setLoadingDevices(false);
     }
@@ -89,7 +98,7 @@ export default function CreateGroupModal({ storeId, onClose, onSuccess }: Create
     }
 
     if (selectedDevices.length === 0) {
-      setError('Please select at least one device');
+      setError('Please select at least one display');
       return;
     }
 
@@ -111,7 +120,7 @@ export default function CreateGroupModal({ storeId, onClose, onSuccess }: Create
 
       const updatePromises = selectedDevices.map(deviceId =>
         supabase
-          .from('media_players')
+          .from('displays')
           .update({ placement_group_id: newGroup.id })
           .eq('id', deviceId)
       );

@@ -114,9 +114,8 @@ export default function EditGroupPage({
     setLoadingDevices(true);
     try {
       const { data, error } = await supabase
-        .from('media_players')
-        .select('id, name, device_id, status')
-        .eq('store_id', storeId)
+        .from('displays')
+        .select('id, name, position, status, display_types(name)')
         .eq('placement_group_id', group.id)
         .order('name')
         .limit(4);
@@ -124,7 +123,7 @@ export default function EditGroupPage({
       if (error) throw error;
       setDevices(data || []);
     } catch (err) {
-      console.error('Error loading devices:', err);
+      console.error('Error loading displays:', err);
     } finally {
       setLoadingDevices(false);
     }
