@@ -41,7 +41,7 @@ interface Schedule {
   start_time: string;
   end_time: string | null;
   days_of_week: number[];
-  schedule_name: string | null;
+  daypart_name: string | null;
   runs_on_days: boolean;
   daypart_definitions: {
     display_label: string;
@@ -141,7 +141,7 @@ export default function EditGroupPage({
     try {
       const { data, error } = await supabase
         .from('site_daypart_routines')
-        .select('id, daypart_definition_id, start_time, end_time, days_of_week, schedule_name, runs_on_days, daypart_definitions(display_label, color)')
+        .select('id, daypart_definition_id, start_time, end_time, days_of_week, daypart_name, runs_on_days, daypart_definitions(display_label, color)')
         .eq('placement_group_id', group.id)
         .order('start_time')
         .limit(3);
@@ -387,9 +387,9 @@ export default function EditGroupPage({
                           <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {schedule.daypart_definitions?.display_label || 'Unknown Daypart'}
                           </p>
-                          {schedule.schedule_name && (
+                          {schedule.daypart_name && (
                             <span className="text-xs text-slate-500 dark:text-slate-400">
-                              • {schedule.schedule_name}
+                              • {schedule.daypart_name}
                             </span>
                           )}
                         </div>
