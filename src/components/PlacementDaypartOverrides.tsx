@@ -481,16 +481,16 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => handleAddNew('regular')}
-            className="py-6 border-2 border-dashed border-slate-300 rounded-lg hover:border-cyan-400 hover:bg-cyan-50/50 transition-colors flex items-center justify-center gap-2 text-slate-600 hover:text-cyan-700 font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
             Add Schedule
           </button>
           <button
             onClick={() => handleAddNew('event_holiday')}
-            className="py-6 border-2 border-dashed border-slate-300 rounded-lg hover:border-violet-400 hover:bg-violet-50/50 transition-colors flex items-center justify-center gap-2 text-slate-600 hover:text-violet-700 font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
             Add Event/Holiday Hours
           </button>
         </div>
