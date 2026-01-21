@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft, AlertCircle, CheckCircle2, Wifi, WifiOff, Monitor,
+  ArrowLeft, AlertCircle, Monitor,
   Calendar, ChevronRight, Palette, Flame, Pizza, Coffee,
   Zap, Wrench, Utensils, DoorOpen, Sunrise, IceCream, Wine, Pencil, Check, X
 } from 'lucide-react';
@@ -26,27 +26,6 @@ interface Theme {
   icon: string | null;
   icon_url: string | null;
   status: string;
-}
-
-interface Device {
-  id: string;
-  name: string;
-  device_id: string;
-  status: 'online' | 'offline' | 'error';
-}
-
-interface Schedule {
-  id: string;
-  daypart_definition_id: string;
-  start_time: string;
-  end_time: string | null;
-  days_of_week: number[];
-  daypart_name: string | null;
-  runs_on_days: boolean;
-  daypart_definitions: {
-    display_label: string;
-    color: string;
-  };
 }
 
 const getIconComponent = (iconName: string | null) => {
@@ -86,17 +65,9 @@ export default function EditGroupPage({
   const [selectedTheme, setSelectedTheme] = useState<string | null>(group.templates?.theme_id || null);
   const [loadingThemes, setLoadingThemes] = useState(false);
 
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loadingDevices, setLoadingDevices] = useState(false);
-
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loadingSchedules, setLoadingSchedules] = useState(false);
-
   useEffect(() => {
     setEditedName(group.name);
     loadThemes();
-    loadDevices();
-    loadSchedules();
   }, [group.id, group.name, storeId]);
 
   const loadThemes = async () => {
@@ -114,44 +85,6 @@ export default function EditGroupPage({
       console.error('Error loading themes:', err);
     } finally {
       setLoadingThemes(false);
-    }
-  };
-
-  const loadDevices = async () => {
-    setLoadingDevices(true);
-    try {
-      const { data, error } = await supabase
-        .from('displays')
-        .select('id, name, position, status, display_types(name)')
-        .eq('placement_group_id', group.id)
-        .order('name')
-        .limit(4);
-
-      if (error) throw error;
-      setDevices(data || []);
-    } catch (err) {
-      console.error('Error loading displays:', err);
-    } finally {
-      setLoadingDevices(false);
-    }
-  };
-
-  const loadSchedules = async () => {
-    setLoadingSchedules(true);
-    try {
-      const { data, error } = await supabase
-        .from('site_daypart_routines')
-        .select('id, daypart_definition_id, start_time, end_time, days_of_week, daypart_name, runs_on_days, daypart_definitions(display_label, color)')
-        .eq('placement_group_id', group.id)
-        .order('start_time')
-        .limit(3);
-
-      if (error) throw error;
-      setSchedules(data || []);
-    } catch (err) {
-      console.error('Error loading schedules:', err);
-    } finally {
-      setLoadingSchedules(false);
     }
   };
 
@@ -209,25 +142,6 @@ export default function EditGroupPage({
       console.error('Error updating theme:', err);
       setError('Failed to update theme');
     }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'online':
-        return <Wifi className="w-4 h-4 text-green-500" />;
-      case 'offline':
-        return <WifiOff className="w-4 h-4 text-red-500" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-amber-500" />;
-    }
-  };
-
-  const formatDays = (days: number[]) => {
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    if (days.length === 7) return 'Every day';
-    if (days.length === 5 && !days.includes(0) && !days.includes(6)) return 'Weekdays';
-    if (days.length === 2 && days.includes(0) && days.includes(6)) return 'Weekends';
-    return days.sort((a, b) => a - b).map(d => dayNames[d]).join(', ');
   };
 
   return (
@@ -354,116 +268,32 @@ export default function EditGroupPage({
           </section>
 
           <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Schedules</h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Manage theme rotation schedules</p>
-              </div>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedules</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Manage theme rotation schedules</p>
             </div>
-
-            {loadingSchedules ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              </div>
-            ) : schedules.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
-                <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-600 dark:text-slate-400">No schedules created yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2 mb-4">
-                {schedules.map((schedule) => (
-                  <div
-                    key={schedule.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div
-                        className="w-1 h-10 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: schedule.daypart_definitions?.color || '#94a3b8' }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                            {schedule.daypart_definitions?.display_label || 'Unknown Daypart'}
-                          </p>
-                          {schedule.daypart_name && (
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              • {schedule.daypart_name}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {formatDays(schedule.days_of_week)} • {schedule.start_time}
-                          {schedule.end_time && ` - ${schedule.end_time}`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {schedules.length > 0 && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">
-                    Showing {schedules.length} schedule{schedules.length !== 1 ? 's' : ''}
-                  </p>
-                )}
-              </div>
-            )}
 
             <button
               onClick={onNavigateToSchedules}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors text-sm font-medium text-slate-700 dark:text-slate-300"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
             >
+              <Calendar className="w-4 h-4" />
               Manage Schedules
               <ChevronRight className="w-4 h-4" />
             </button>
           </section>
 
           <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Displays</h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Displays assigned to this group</p>
-              </div>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Displays</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Manage displays assigned to this group</p>
             </div>
-
-            {loadingDevices ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              </div>
-            ) : devices.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
-                <Monitor className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-600 dark:text-slate-400">No displays assigned yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2 mb-4">
-                {devices.map((device) => (
-                  <div
-                    key={device.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Monitor className="w-4 h-4 text-slate-400" />
-                      <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{device.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{device.device_id}</p>
-                      </div>
-                    </div>
-                    {getStatusIcon(device.status)}
-                  </div>
-                ))}
-                {devices.length > 0 && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">
-                    Showing {devices.length} displays
-                  </p>
-                )}
-              </div>
-            )}
 
             <button
               onClick={onNavigateToDevices}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors text-sm font-medium text-slate-700 dark:text-slate-300"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
             >
+              <Monitor className="w-4 h-4" />
               Manage Displays
               <ChevronRight className="w-4 h-4" />
             </button>
