@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, Clock, Palette, ChevronRight, Sparkles, Sun, Moon, MoonStar, Coffee, Sunrise, Sunset } from 'lucide-react';
+import { Plus, Calendar, Clock, Palette, ChevronRight, Sparkles, Sun, Moon, MoonStar, Coffee, Sunrise, Sunset, Combine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface GroupScheduleManagerProps {
@@ -49,6 +49,7 @@ const ICON_MAP: Record<string, any> = {
 export default function GroupScheduleManager({ groupId, groupName, onEditSchedule }: GroupScheduleManagerProps) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [merging, setMerging] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -174,6 +175,72 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
     return groups;
   };
 
+  // Detect mergeable schedules within a group
+  const getMergeableSchedules = (groupSchedules: Schedule[]): Schedule[][] => {
+    const mergeableGroups: Schedule[][] = [];
+    const timeMap: Record<string, Schedule[]> = {};
+
+    // Group by start_time + end_time
+    groupSchedules.forEach(schedule => {
+      const timeKey = `${schedule.start_time}-${schedule.end_time}`;
+      if (!timeMap[timeKey]) {
+        timeMap[timeKey] = [];
+      }
+      timeMap[timeKey].push(schedule);
+    });
+
+    // Only include groups with 2 or more schedules
+    Object.values(timeMap).forEach(group => {
+      if (group.length >= 2) {
+        mergeableGroups.push(group);
+      }
+    });
+
+    return mergeableGroups;
+  };
+
+  // Merge schedules with the same times
+  const handleMergeSchedules = async (schedulesToMerge: Schedule[]) => {
+    if (schedulesToMerge.length < 2) return;
+
+    setMerging(true);
+    try {
+      // Combine all days from all schedules
+      const allDays = new Set<number>();
+      schedulesToMerge.forEach(schedule => {
+        schedule.days_of_week.forEach(day => allDays.add(day));
+      });
+
+      const combinedDays = Array.from(allDays).sort((a, b) => a - b);
+
+      // Keep the first schedule and update it with combined days
+      const primarySchedule = schedulesToMerge[0];
+      const { error: updateError } = await supabase
+        .from('site_daypart_routines')
+        .update({ days_of_week: combinedDays })
+        .eq('id', primarySchedule.id);
+
+      if (updateError) throw updateError;
+
+      // Delete all other schedules
+      const schedulesToDelete = schedulesToMerge.slice(1).map(s => s.id);
+      const { error: deleteError } = await supabase
+        .from('site_daypart_routines')
+        .delete()
+        .in('id', schedulesToDelete);
+
+      if (deleteError) throw deleteError;
+
+      // Reload data
+      await loadData();
+    } catch (error) {
+      console.error('Error merging schedules:', error);
+      alert('Failed to merge schedules. Please try again.');
+    } finally {
+      setMerging(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -215,6 +282,8 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
             const unscheduledDays = getUnscheduledDays(groupKey, groupSchedules);
             const coverage = getDayCoverage(groupSchedules);
             const hasUnscheduledDays = unscheduledDays.length > 0;
+            const mergeableGroups = getMergeableSchedules(groupSchedules);
+            const hasMergeableSchedules = mergeableGroups.length > 0;
 
             return (
               <div key={groupKey} className="space-y-2">
@@ -244,6 +313,52 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                     )}
                   </div>
                 </div>
+
+                {/* Merge Prompt */}
+                {hasMergeableSchedules && (
+                  <div className="mx-2 mb-3">
+                    {mergeableGroups.map((mergeGroup, index) => {
+                      const allDays = new Set<number>();
+                      mergeGroup.forEach(schedule => {
+                        schedule.days_of_week.forEach(day => allDays.add(day));
+                      });
+                      const timeLabel = mergeGroup[0].end_time
+                        ? `${mergeGroup[0].start_time} - ${mergeGroup[0].end_time}`
+                        : `Starts at ${mergeGroup[0].start_time}`;
+
+                      return (
+                        <div
+                          key={index}
+                          className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+                        >
+                          <div className="flex items-start gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                                Merge {mergeGroup.length} schedules with same times?
+                              </p>
+                              <p className="text-xs text-blue-700 dark:text-blue-300">
+                                {mergeGroup.length} schedules run {timeLabel} on different days.
+                                Combine them into a single schedule covering {allDays.size} days.
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleMergeSchedules(mergeGroup)}
+                            disabled={merging}
+                            className="w-full px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            style={{ backgroundColor: '#00adf0' }}
+                            onMouseEnter={(e) => !merging && (e.currentTarget.style.backgroundColor = '#0099d6')}
+                            onMouseLeave={(e) => !merging && (e.currentTarget.style.backgroundColor = '#00adf0')}
+                          >
+                            <Combine className="w-4 h-4" />
+                            <span>{merging ? 'Merging...' : 'Merge Schedules'}</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Schedule Cards */}
                 <div className="space-y-2">
