@@ -83,25 +83,6 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
     }
   };
 
-  const formatDays = (days: number[]): string => {
-    if (days.length === 7) return 'Every day';
-    if (days.length === 0) return 'No days selected';
-
-    const sortedDays = [...days].sort((a, b) => a - b);
-
-    if (sortedDays.length === 5 && sortedDays.every(d => d >= 1 && d <= 5)) {
-      return 'Weekdays';
-    }
-
-    if (sortedDays.length === 2 && sortedDays.includes(0) && sortedDays.includes(6)) {
-      return 'Weekends';
-    }
-
-    return sortedDays
-      .map(day => DAYS_OF_WEEK.find(d => d.value === day)?.label || '')
-      .join(', ');
-  };
-
   const parseColorClasses = (colorString: string) => {
     // Parse the color string like "bg-green-100 text-green-800 border-green-300"
     const bgMatch = colorString.match(/bg-(\w+)-(\d+)/);
@@ -252,12 +233,14 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
                       <div className="relative flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          {/* Title: Day Pattern */}
-                          <div className="mb-2">
-                            <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
-                              {formatDays(schedule.days_of_week)}
-                            </span>
-                          </div>
+                          {/* Title: Custom Schedule Name */}
+                          {schedule.schedule_name && (
+                            <div className="mb-2">
+                              <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
+                                {schedule.schedule_name}
+                              </span>
+                            </div>
+                          )}
 
                           {/* Day Badges */}
                           <div className="flex flex-wrap gap-1 mb-2">
