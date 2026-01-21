@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, ChevronRight, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars } from 'lucide-react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
@@ -193,16 +193,30 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
     const cards: DisplayCard[] = [];
 
-    const mediaPlayerDisplays: Record<string, Display[]> = {};
+    // Create cards for all media players (both ungrouped and grouped)
+    // For displays in placement groups, show them as individual media player cards
+    const allDisplaysByMediaPlayer: Record<string, Display[]> = {};
+
+    // Add ungrouped displays
     ungroupedDisplays.forEach(d => {
       const mpId = d.media_player_id;
-      if (!mediaPlayerDisplays[mpId]) {
-        mediaPlayerDisplays[mpId] = [];
+      if (!allDisplaysByMediaPlayer[mpId]) {
+        allDisplaysByMediaPlayer[mpId] = [];
       }
-      mediaPlayerDisplays[mpId].push(d);
+      allDisplaysByMediaPlayer[mpId].push(d);
     });
 
-    Object.entries(mediaPlayerDisplays).forEach(([mpId, disps]) => {
+    // Add grouped displays (they should still show as individual media player cards in the displays view)
+    Object.values(groupedDisplays).flat().forEach(d => {
+      const mpId = d.media_player_id;
+      if (!allDisplaysByMediaPlayer[mpId]) {
+        allDisplaysByMediaPlayer[mpId] = [];
+      }
+      allDisplaysByMediaPlayer[mpId].push(d);
+    });
+
+    // Create display cards for each media player
+    Object.entries(allDisplaysByMediaPlayer).forEach(([mpId, disps]) => {
       const mp = mediaPlayers?.find(p => p.id === mpId);
       if (!mp) return;
 
@@ -224,6 +238,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       });
     });
 
+    // Calculate placement groups stats (for the Groups button)
     const { data: pgData } = await supabase
       .from('placement_groups')
       .select('id, name')
@@ -244,23 +259,6 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         playerCount: groupDisps.length,
         onlineCount
       });
-
-      cards.push({
-        id: pgId,
-        name: pgInfo?.name || 'Unnamed Group',
-        status: onlineCount === groupDisps.length ? 'online' : onlineCount > 0 ? 'error' : 'offline',
-        uptime: `${onlineCount}/${groupDisps.length} online`,
-        thumbnail: null,
-        mediaPlayer: groupDisps[0] ? mediaPlayers?.find(mp => mp.id === groupDisps[0].media_player_id) : undefined,
-        displays: [],
-        isGroup: true,
-        groupInfo: {
-          id: pgId,
-          name: pgInfo?.name || 'Unnamed Group',
-          playerCount: groupDisps.length,
-          onlineCount
-        }
-      });
     });
 
     setDisplayCards(cards);
@@ -272,7 +270,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       totalDevices: mediaPlayers?.length || 0,
       onlineDevices: totalOnline,
       totalGroups: groups.length,
-      recentActions: 0
+      recentActions: 0,
+      totalProducts: 0,
+      activeProducts: 0,
+      totalUrlPlayers: 0,
+      onlineUrlPlayers: 0
     });
 
     setLoading(false);
@@ -768,26 +770,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                   </div>
                 )}
 
-                {card.isGroup ? (
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                        <h3 className="font-semibold text-slate-900 dark:text-slate-100">{card.name}</h3>
-                      </div>
-                      <span className={`w-3 h-3 rounded-full ${getStatusColor(card.status)}`}></span>
-                    </div>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{card.uptime}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded">
-                        {card.groupInfo?.playerCount} displays
-                      </span>
-                      <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="relative">
+                <div className="relative">
                       <div
                         className="relative aspect-video bg-slate-200 dark:bg-slate-700 cursor-pointer group overflow-hidden"
                         onClick={() => card.displays[0]?.configuration?.preview_url && handleViewPreview(card)}
@@ -912,8 +895,6 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                         {card.mediaPlayer.name}
                       </p>
                     </div>
-                  </>
-                )}
               </div>
             ))}
           </div>
