@@ -234,15 +234,7 @@ export default function ScheduleEditPage({
 
       const combinedDays = Array.from(allDays).sort((a, b) => a - b);
 
-      // Update the current schedule with combined days
-      const { error: updateError } = await supabase
-        .from('site_daypart_routines')
-        .update({ days_of_week: combinedDays })
-        .eq('id', savedScheduleId);
-
-      if (updateError) throw updateError;
-
-      // Delete all other schedules
+      // Delete all other schedules FIRST to avoid collision
       const schedulesToDelete = mergeableSchedules.map(s => s.id);
       const { error: deleteError } = await supabase
         .from('site_daypart_routines')
@@ -250,6 +242,14 @@ export default function ScheduleEditPage({
         .in('id', schedulesToDelete);
 
       if (deleteError) throw deleteError;
+
+      // Now update the current schedule with combined days
+      const { error: updateError } = await supabase
+        .from('site_daypart_routines')
+        .update({ days_of_week: combinedDays })
+        .eq('id', savedScheduleId);
+
+      if (updateError) throw updateError;
 
       // Success - go back
       onSuccess();
