@@ -331,10 +331,10 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       )}
 
       {/* Add Daypart Button */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+      <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
         <button
           onClick={() => onEditSchedule?.(null)}
-          className="px-6 py-3 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 font-medium"
+          className="w-full px-6 py-3 text-white rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium"
           style={{ backgroundColor: '#00adf0' }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
