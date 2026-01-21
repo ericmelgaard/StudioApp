@@ -223,9 +223,12 @@ export default function ScheduleEditPage({
         .from('site_daypart_routines')
         .select('days_of_week')
         .eq('id', savedScheduleId)
-        .single();
+        .maybeSingle();
 
       if (fetchError) throw fetchError;
+      if (!currentSchedule) {
+        throw new Error('Schedule not found');
+      }
 
       // Combine all days from all schedules
       const allDays = new Set<number>(currentSchedule.days_of_week);
