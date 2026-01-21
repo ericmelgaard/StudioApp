@@ -227,21 +227,16 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                     <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {daypartLabel}
                     </h3>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorClasses.bg} ${colorClasses.text}`}>
-                      {coverage.scheduled}/{coverage.total} days
-                    </span>
-                  </div>
-                  {/* Coverage Progress Bar */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${colorClasses.bg} transition-all duration-300`}
-                        style={{ width: `${(coverage.scheduled / coverage.total) * 100}%` }}
-                      />
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={`px-2 py-0.5 rounded-full font-medium ${colorClasses.bg} ${colorClasses.text}`}>
+                        {coverage.scheduled} active
+                      </span>
+                      {coverage.scheduled < coverage.total && (
+                        <span className="px-2 py-0.5 rounded-full font-medium bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
+                          {coverage.total - coverage.scheduled} inactive
+                        </span>
+                      )}
                     </div>
-                    {coverage.scheduled === coverage.total && (
-                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">Complete</span>
-                    )}
                   </div>
                 </div>
 
