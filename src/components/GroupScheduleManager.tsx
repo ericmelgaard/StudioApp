@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, Clock, Palette, ChevronRight, Sparkles } from 'lucide-react';
+import { Plus, Calendar, Clock, Palette, ChevronRight, Sparkles, Sun, Moon, MoonStar, Coffee, Sunrise, Sunset } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface GroupScheduleManagerProps {
@@ -35,6 +35,16 @@ const DAYS_OF_WEEK = [
   { value: 5, label: 'F', fullLabel: 'Friday' },
   { value: 6, label: 'S', fullLabel: 'Saturday' }
 ];
+
+const ICON_MAP: Record<string, any> = {
+  Sun,
+  Moon,
+  MoonStar,
+  Coffee,
+  Sunrise,
+  Sunset,
+  Palette
+};
 
 export default function GroupScheduleManager({ groupId, groupName, onEditSchedule }: GroupScheduleManagerProps) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -92,6 +102,32 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       .join(', ');
   };
 
+  const extractColorFromTailwind = (colorString: string) => {
+    const match = colorString.match(/bg-(\w+)-(\d+)/);
+    if (match) {
+      const [, color, shade] = match;
+      return { color, shade };
+    }
+    return { color: 'cyan', shade: '100' };
+  };
+
+  const getColorClasses = (colorString: string) => {
+    const { color } = extractColorFromTailwind(colorString);
+
+    const colorMap: Record<string, { border: string; bg: string; text: string; bgLight: string }> = {
+      green: { border: 'border-green-300', bg: 'bg-green-50', text: 'text-green-700', bgLight: 'bg-green-100' },
+      blue: { border: 'border-blue-300', bg: 'bg-blue-50', text: 'text-blue-700', bgLight: 'bg-blue-100' },
+      slate: { border: 'border-slate-300', bg: 'bg-slate-50', text: 'text-slate-700', bgLight: 'bg-slate-100' },
+      orange: { border: 'border-orange-300', bg: 'bg-orange-50', text: 'text-orange-700', bgLight: 'bg-orange-100' },
+      red: { border: 'border-red-300', bg: 'bg-red-50', text: 'text-red-700', bgLight: 'bg-red-100' },
+      purple: { border: 'border-purple-300', bg: 'bg-purple-50', text: 'text-purple-700', bgLight: 'bg-purple-100' },
+      yellow: { border: 'border-yellow-300', bg: 'bg-yellow-50', text: 'text-yellow-700', bgLight: 'bg-yellow-100' },
+      cyan: { border: 'border-cyan-300', bg: 'bg-cyan-50', text: 'text-cyan-700', bgLight: 'bg-cyan-100' },
+    };
+
+    return colorMap[color] || colorMap.cyan;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -112,32 +148,51 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
         </div>
       ) : (
         <div className="space-y-3">
-          {schedules.map((schedule) => (
-            <button
-              key={schedule.id}
-              onClick={() => onEditSchedule?.(schedule)}
-              className="w-full p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-750 transition-colors text-left"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Palette className="w-5 h-5 flex-shrink-0" style={{ color: '#00adf0' }} />
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {schedule.daypart_definitions?.display_label || 'Unknown Daypart'}
-                    </span>
-                    {schedule.schedule_name && (
-                      <span className="text-sm text-slate-500 dark:text-slate-400">
-                        ({schedule.schedule_name})
-                      </span>
-                    )}
-                  </div>
+          {schedules.map((schedule) => {
+            const colorClasses = schedule.daypart_definitions?.color
+              ? getColorClasses(schedule.daypart_definitions.color)
+              : { border: 'border-cyan-300', bg: 'bg-cyan-50', text: 'text-cyan-700', bgLight: 'bg-cyan-100' };
 
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <Calendar className="w-4 h-4" />
-                      <span>{formatDays(schedule.days_of_week)}</span>
+            const IconComponent = schedule.daypart_definitions?.icon
+              ? ICON_MAP[schedule.daypart_definitions.icon] || Palette
+              : Palette;
+
+            return (
+              <button
+                key={schedule.id}
+                onClick={() => onEditSchedule?.(schedule)}
+                className={`w-full p-4 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden`}
+              >
+                <div className={`absolute inset-0 ${colorClasses.bg} dark:bg-slate-800/50 opacity-30`}></div>
+
+                <div className="relative flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-3">
+                      <IconComponent className={`w-5 h-5 flex-shrink-0 ${colorClasses.text}`} />
+                      <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
+                        {schedule.daypart_definitions?.display_label || 'Unknown Daypart'} - {formatDays(schedule.days_of_week)}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {DAYS_OF_WEEK.map((day) => {
+                        const isActive = schedule.days_of_week.includes(day.value);
+                        return (
+                          <div
+                            key={day.value}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                              isActive
+                                ? `${colorClasses.bgLight} ${colorClasses.text} border ${colorClasses.border}`
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
+                            }`}
+                          >
+                            {day.label}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                       <Clock className="w-4 h-4" />
                       <span>
                         {schedule.end_time
@@ -147,27 +202,27 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                       </span>
                     </div>
                   </div>
+                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {/* Floating Action Button */}
+      {/* Add Schedule Button */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
         <button
           onClick={() => onEditSchedule?.(null)}
-          className="w-14 h-14 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+          className="px-6 py-3 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 font-medium"
           style={{ backgroundColor: '#00adf0' }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
           onMouseDown={(e) => e.currentTarget.style.backgroundColor = '#0085bc'}
           onMouseUp={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
-          title="Add Schedule"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-5 h-5" />
+          <span>Add Schedule</span>
         </button>
       </div>
     </div>
