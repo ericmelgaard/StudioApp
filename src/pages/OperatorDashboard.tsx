@@ -74,6 +74,16 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
     }
   }, [accessibleStores, storesLoading]);
 
+  // Sync local state with location changes from HeaderNavigation dropdown
+  useEffect(() => {
+    if (location.store && location.store.id !== selectedStore?.id) {
+      setSelectedStore(location.store);
+    }
+    if (location.company && location.company.id !== selectedCompany?.id) {
+      setSelectedCompany(location.company);
+    }
+  }, [location.store, location.company]);
+
   const loadCompaniesAndStores = async () => {
     if (storesLoading) return;
 
