@@ -102,30 +102,29 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       .join(', ');
   };
 
-  const extractColorFromTailwind = (colorString: string) => {
-    const match = colorString.match(/bg-(\w+)-(\d+)/);
-    if (match) {
-      const [, color, shade] = match;
-      return { color, shade };
+  const parseColorClasses = (colorString: string) => {
+    // Parse the color string like "bg-green-100 text-green-800 border-green-300"
+    const bgMatch = colorString.match(/bg-(\w+)-(\d+)/);
+    const textMatch = colorString.match(/text-(\w+)-(\d+)/);
+    const borderMatch = colorString.match(/border-(\w+)-(\d+)/);
+
+    if (!bgMatch || !textMatch || !borderMatch) {
+      return {
+        bg: 'bg-cyan-100',
+        text: 'text-cyan-800',
+        border: 'border-cyan-300',
+        bgLight: 'bg-cyan-50'
+      };
     }
-    return { color: 'cyan', shade: '100' };
-  };
 
-  const getColorClasses = (colorString: string) => {
-    const { color } = extractColorFromTailwind(colorString);
+    const [, colorName] = bgMatch;
 
-    const colorMap: Record<string, { border: string; bg: string; text: string; bgLight: string }> = {
-      green: { border: 'border-green-300', bg: 'bg-green-50', text: 'text-green-700', bgLight: 'bg-green-100' },
-      blue: { border: 'border-blue-300', bg: 'bg-blue-50', text: 'text-blue-700', bgLight: 'bg-blue-100' },
-      slate: { border: 'border-slate-300', bg: 'bg-slate-50', text: 'text-slate-700', bgLight: 'bg-slate-100' },
-      orange: { border: 'border-orange-300', bg: 'bg-orange-50', text: 'text-orange-700', bgLight: 'bg-orange-100' },
-      red: { border: 'border-red-300', bg: 'bg-red-50', text: 'text-red-700', bgLight: 'bg-red-100' },
-      purple: { border: 'border-purple-300', bg: 'bg-purple-50', text: 'text-purple-700', bgLight: 'bg-purple-100' },
-      yellow: { border: 'border-yellow-300', bg: 'bg-yellow-50', text: 'text-yellow-700', bgLight: 'bg-yellow-100' },
-      cyan: { border: 'border-cyan-300', bg: 'bg-cyan-50', text: 'text-cyan-700', bgLight: 'bg-cyan-100' },
+    return {
+      bg: `bg-${colorName}-100`,
+      text: `text-${colorName}-800`,
+      border: `border-${colorName}-300`,
+      bgLight: `bg-${colorName}-50`
     };
-
-    return colorMap[color] || colorMap.cyan;
   };
 
   if (loading) {
@@ -150,8 +149,8 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
         <div className="space-y-3">
           {schedules.map((schedule) => {
             const colorClasses = schedule.daypart_definitions?.color
-              ? getColorClasses(schedule.daypart_definitions.color)
-              : { border: 'border-cyan-300', bg: 'bg-cyan-50', text: 'text-cyan-700', bgLight: 'bg-cyan-100' };
+              ? parseColorClasses(schedule.daypart_definitions.color)
+              : { border: 'border-cyan-300', bg: 'bg-cyan-100', text: 'text-cyan-800', bgLight: 'bg-cyan-50' };
 
             const IconComponent = schedule.daypart_definitions?.icon
               ? ICON_MAP[schedule.daypart_definitions.icon] || Palette
@@ -163,7 +162,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                 onClick={() => onEditSchedule?.(schedule)}
                 className={`w-full p-4 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden`}
               >
-                <div className={`absolute inset-0 ${colorClasses.bg} dark:bg-slate-800/50 opacity-30`}></div>
+                <div className={`absolute inset-0 ${colorClasses.bgLight} dark:bg-slate-800/50 opacity-30`}></div>
 
                 <div className="relative flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -182,7 +181,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                             key={day.value}
                             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                               isActive
-                                ? `${colorClasses.bgLight} ${colorClasses.text} border ${colorClasses.border}`
+                                ? `${colorClasses.bg} ${colorClasses.text} border ${colorClasses.border}`
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
                             }`}
                           >
