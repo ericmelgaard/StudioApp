@@ -81,6 +81,12 @@ export default function GroupSchedulesPage({ group, onBack }: GroupSchedulesPage
     setCurrentView('edit');
   };
 
+  const handleAddScheduleForDays = (schedule: Schedule) => {
+    // Handle adding a schedule for specific days (from "Schedule Remaining Days")
+    setEditingSchedule(schedule);
+    setCurrentView('edit');
+  };
+
   const handleBackToList = () => {
     setCurrentView('list');
     setEditingSchedule(null);

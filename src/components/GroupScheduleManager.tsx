@@ -127,6 +127,30 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
     };
   };
 
+  // Get unscheduled days for a specific daypart
+  const getUnscheduledDays = (daypartId: string, daypartSchedules: Schedule[]): number[] => {
+    const scheduledDays = new Set<number>();
+    daypartSchedules.forEach(schedule => {
+      schedule.days_of_week.forEach(day => scheduledDays.add(day));
+    });
+
+    const allDays = [0, 1, 2, 3, 4, 5, 6];
+    return allDays.filter(day => !scheduledDays.has(day));
+  };
+
+  // Get day coverage count for a daypart
+  const getDayCoverage = (daypartSchedules: Schedule[]): { scheduled: number; total: number } => {
+    const scheduledDays = new Set<number>();
+    daypartSchedules.forEach(schedule => {
+      schedule.days_of_week.forEach(day => scheduledDays.add(day));
+    });
+
+    return {
+      scheduled: scheduledDays.size,
+      total: 7
+    };
+  };
+
   // Group schedules by daypart
   const groupSchedulesByDaypart = () => {
     const groups: Record<string, Schedule[]> = {};
@@ -188,19 +212,37 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
             const daypartLabel = daypartDef?.display_label || 'Unassigned';
 
+            const unscheduledDays = getUnscheduledDays(groupKey, groupSchedules);
+            const coverage = getDayCoverage(groupSchedules);
+            const hasUnscheduledDays = unscheduledDays.length > 0;
+
             return (
               <div key={groupKey} className="space-y-2">
                 {/* Daypart Group Header */}
-                <div className="flex items-center gap-2 px-2">
-                  <div className={`p-1.5 rounded-lg ${colorClasses.bg}`}>
-                    <IconComponent className={`w-4 h-4 ${colorClasses.text}`} />
+                <div className="px-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`p-1.5 rounded-lg ${colorClasses.bg}`}>
+                      <IconComponent className={`w-4 h-4 ${colorClasses.text}`} />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {daypartLabel}
+                    </h3>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorClasses.bg} ${colorClasses.text}`}>
+                      {coverage.scheduled}/{coverage.total} days
+                    </span>
                   </div>
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {daypartLabel}
-                  </h3>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorClasses.bg} ${colorClasses.text}`}>
-                    {groupSchedules.length}
-                  </span>
+                  {/* Coverage Progress Bar */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${colorClasses.bg} transition-all duration-300`}
+                        style={{ width: `${(coverage.scheduled / coverage.total) * 100}%` }}
+                      />
+                    </div>
+                    {coverage.scheduled === coverage.total && (
+                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">Complete</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Schedule Cards */}
@@ -256,6 +298,31 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                       </div>
                     </button>
                   ))}
+
+                  {/* Add Schedule for Remaining Days Button */}
+                  {hasUnscheduledDays && (
+                    <button
+                      onClick={() => {
+                        const template = groupSchedules[0];
+                        onEditSchedule?.({
+                          id: '',
+                          daypart_definition_id: template.daypart_definition_id,
+                          placement_group_id: groupId,
+                          days_of_week: unscheduledDays,
+                          start_time: template.start_time,
+                          end_time: template.end_time,
+                          runs_on_days: true,
+                          schedule_name: template.schedule_name
+                        } as Schedule);
+                      }}
+                      className="w-full p-3 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        Schedule Remaining Days ({unscheduledDays.length})
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -263,7 +330,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
         </div>
       )}
 
-      {/* Add Schedule Button */}
+      {/* Add Daypart Button */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
         <button
           onClick={() => onEditSchedule?.(null)}
@@ -275,7 +342,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
           onMouseUp={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
         >
           <Plus className="w-5 h-5" />
-          <span>Add Schedule</span>
+          <span>Add Daypart</span>
         </button>
       </div>
     </div>

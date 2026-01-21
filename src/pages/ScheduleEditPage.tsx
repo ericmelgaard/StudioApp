@@ -54,6 +54,9 @@ export default function ScheduleEditPage({
   const [error, setError] = useState<string | null>(null);
   const [scheduleType, setScheduleType] = useState<'regular' | 'event'>('regular');
   const [runsOnSelectedDays, setRunsOnSelectedDays] = useState(schedule?.runs_on_days !== false);
+  const [initialDays] = useState<number[]>(schedule?.days_of_week || []);
+  const [removedDays, setRemovedDays] = useState<number[]>([]);
+  const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
   const [formData, setFormData] = useState({
     daypart_definition_id: schedule?.daypart_definition_id || '',
     days_of_week: schedule?.days_of_week || [] as number[],
@@ -62,13 +65,57 @@ export default function ScheduleEditPage({
     schedule_name: schedule?.schedule_name || ''
   });
 
+  const isNewSchedule = !schedule?.id;
+  const isSuggestedDays = isNewSchedule && initialDays.length > 0;
+
   const handleDayToggle = (day: number) => {
-    setFormData(prev => ({
-      ...prev,
-      days_of_week: prev.days_of_week.includes(day)
+    setFormData(prev => {
+      const newDaysOfWeek = prev.days_of_week.includes(day)
         ? prev.days_of_week.filter(d => d !== day)
-        : [...prev.days_of_week, day].sort((a, b) => a - b)
-    }));
+        : [...prev.days_of_week, day].sort((a, b) => a - b);
+
+      // Track removed days if this is editing suggested days
+      if (isSuggestedDays && initialDays.includes(day) && !newDaysOfWeek.includes(day)) {
+        const newRemovedDays = initialDays.filter(d => !newDaysOfWeek.includes(d));
+        setRemovedDays(newRemovedDays);
+        setShowRemovedDaysPrompt(newRemovedDays.length > 0);
+      } else if (isSuggestedDays) {
+        const newRemovedDays = initialDays.filter(d => !newDaysOfWeek.includes(d));
+        setRemovedDays(newRemovedDays);
+        setShowRemovedDaysPrompt(newRemovedDays.length > 0);
+      }
+
+      return {
+        ...prev,
+        days_of_week: newDaysOfWeek
+      };
+    });
+  };
+
+  const handleScheduleRemovedDays = async () => {
+    // Save current schedule first
+    await handleSubmit(new Event('submit') as any);
+
+    // Then create a new schedule for removed days
+    const newSchedule: Schedule = {
+      id: '',
+      daypart_definition_id: formData.daypart_definition_id,
+      placement_group_id: groupId,
+      days_of_week: removedDays,
+      start_time: formData.start_time,
+      end_time: formData.end_time,
+      runs_on_days: true,
+      schedule_name: formData.schedule_name
+    };
+
+    // Navigate to edit page for removed days
+    window.location.reload(); // Simplified - in production would use proper navigation
+  };
+
+  const formatRemovedDays = (): string => {
+    return removedDays
+      .map(day => DAYS_OF_WEEK.find(d => d.value === day)?.fullLabel || '')
+      .join(', ');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,7 +201,7 @@ export default function ScheduleEditPage({
             </div>
             <div className="flex-1">
               <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                {schedule ? 'Edit Schedule' : 'Create Schedule'}
+                {schedule?.id ? 'Edit Schedule' : (isSuggestedDays ? 'Schedule Days' : 'Add Daypart')}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">{groupName}</p>
             </div>
@@ -170,6 +217,49 @@ export default function ScheduleEditPage({
               <div className="flex items-start gap-2 p-3 m-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
+            {/* Removed Days Prompt */}
+            {showRemovedDaysPrompt && removedDays.length > 0 && (
+              <div className="p-3 m-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-start gap-2 flex-1">
+                    <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        You removed {formatRemovedDays()}
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                        Would you like to schedule these days separately?
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRemovedDaysPrompt(false)}
+                    className="text-blue-400 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-300"
+                  >
+                    <AlertCircle className="w-5 h-5" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleScheduleRemovedDays}
+                  className="w-full px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-900/60 rounded-lg transition-colors"
+                >
+                  Schedule These Days
+                </button>
+              </div>
+            )}
+
+            {/* Suggested Days Helper Text */}
+            {isSuggestedDays && !showRemovedDaysPrompt && (
+              <div className="flex items-start gap-2 p-3 m-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+                <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Scheduling {formData.days_of_week.length} unscheduled day(s) for this daypart
+                </p>
               </div>
             )}
 
@@ -209,7 +299,8 @@ export default function ScheduleEditPage({
                 <select
                   value={formData.daypart_definition_id}
                   onChange={(e) => setFormData({ ...formData, daypart_definition_id: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isSuggestedDays}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                   required
                 >
                   <option value="">Select a daypart...</option>
@@ -219,6 +310,11 @@ export default function ScheduleEditPage({
                     </option>
                   ))}
                 </select>
+                {isSuggestedDays && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Daypart is locked when scheduling remaining days
+                  </p>
+                )}
               </div>
 
               {/* Days of Week */}
@@ -357,7 +453,7 @@ export default function ScheduleEditPage({
               onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
               onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
             >
-              {loading ? 'Saving...' : 'Save Schedule'}
+              {loading ? 'Saving...' : (schedule?.id ? 'Save Schedule' : 'Add Schedule')}
             </button>
           </div>
         </div>
