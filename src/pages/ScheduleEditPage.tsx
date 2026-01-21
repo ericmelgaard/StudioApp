@@ -53,7 +53,6 @@ export default function ScheduleEditPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scheduleType, setScheduleType] = useState<'regular' | 'event'>('regular');
-  const [runsOnSelectedDays, setRunsOnSelectedDays] = useState(schedule?.runs_on_days !== false);
   const [initialDays] = useState<number[]>(schedule?.days_of_week || []);
   const [removedDays, setRemovedDays] = useState<number[]>([]);
   const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
@@ -67,6 +66,7 @@ export default function ScheduleEditPage({
 
   const isNewSchedule = !schedule?.id;
   const isSuggestedDays = isNewSchedule && initialDays.length > 0;
+  const isDaypartLocked = !!schedule?.id || isSuggestedDays;
 
   const handleDayToggle = (day: number) => {
     setFormData(prev => {
@@ -132,20 +132,18 @@ export default function ScheduleEditPage({
       return;
     }
 
-    // Validate times when runs_on_days is true
-    if (runsOnSelectedDays) {
-      if (!formData.start_time) {
-        setError('Start time is required');
-        return;
-      }
-      if (!formData.end_time) {
-        setError('End time is required');
-        return;
-      }
-      if (formData.start_time === formData.end_time) {
-        setError('Start time and end time must be different');
-        return;
-      }
+    // Validate times (always required)
+    if (!formData.start_time) {
+      setError('Start time is required');
+      return;
+    }
+    if (!formData.end_time) {
+      setError('End time is required');
+      return;
+    }
+    if (formData.start_time === formData.end_time) {
+      setError('Start time and end time must be different');
+      return;
     }
 
     setLoading(true);
@@ -155,9 +153,9 @@ export default function ScheduleEditPage({
         daypart_definition_id: formData.daypart_definition_id,
         placement_group_id: groupId,
         days_of_week: formData.days_of_week,
-        start_time: runsOnSelectedDays ? formData.start_time : null,
-        end_time: runsOnSelectedDays ? formData.end_time : null,
-        runs_on_days: runsOnSelectedDays,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        runs_on_days: true,
         schedule_name: formData.schedule_name || null
       };
 
@@ -236,36 +234,39 @@ export default function ScheduleEditPage({
               </div>
             )}
 
-            {/* Removed Days Prompt */}
+            {/* Removed Days Warning */}
             {showRemovedDaysPrompt && removedDays.length > 0 && (
-              <div className="p-3 m-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-start gap-2 flex-1">
-                    <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                        You removed {formatRemovedDays()}
-                      </p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                        Would you like to schedule these days separately?
-                      </p>
-                    </div>
+              <div className="p-4 m-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-800 rounded-lg">
+                <div className="flex items-start gap-3 mb-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                      You removed {formatRemovedDays()}
+                    </p>
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      This daypart will not run on these days unless you create a separate schedule for them.
+                    </p>
                   </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleScheduleRemovedDays}
+                    className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors"
+                    style={{ backgroundColor: '#00adf0' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
+                  >
+                    Schedule These Days
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowRemovedDaysPrompt(false)}
-                    className="text-blue-400 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-300"
+                    className="px-4 py-2.5 text-sm font-medium text-amber-700 dark:text-amber-300 bg-white dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/60 rounded-lg transition-colors"
                   >
-                    <AlertCircle className="w-5 h-5" />
+                    Continue Without Scheduling
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleScheduleRemovedDays}
-                  className="w-full px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-900/60 rounded-lg transition-colors"
-                >
-                  Schedule These Days
-                </button>
               </div>
             )}
 
@@ -308,30 +309,37 @@ export default function ScheduleEditPage({
             {/* Form Fields */}
             <div className="p-4 space-y-4">
               {/* Daypart Type */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Daypart Type *
-                </label>
-                <select
-                  value={formData.daypart_definition_id}
-                  onChange={(e) => setFormData({ ...formData, daypart_definition_id: e.target.value })}
-                  disabled={isSuggestedDays}
-                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                  required
-                >
-                  <option value="">Select a daypart...</option>
-                  {dayparts.map((daypart) => (
-                    <option key={daypart.id} value={daypart.id}>
-                      {daypart.display_label}
-                    </option>
-                  ))}
-                </select>
-                {isSuggestedDays && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Daypart is locked when scheduling remaining days
-                  </p>
-                )}
-              </div>
+              {isDaypartLocked ? (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Daypart Type
+                  </label>
+                  <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {dayparts.find(d => d.id === formData.daypart_definition_id)?.display_label || 'Unknown Daypart'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Daypart Type *
+                  </label>
+                  <select
+                    value={formData.daypart_definition_id}
+                    onChange={(e) => setFormData({ ...formData, daypart_definition_id: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Select a daypart...</option>
+                    {dayparts.map((daypart) => (
+                      <option key={daypart.id} value={daypart.id}>
+                        {daypart.display_label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Days of Week */}
               <div>
@@ -372,63 +380,35 @@ export default function ScheduleEditPage({
                 />
               </div>
 
-              {/* Runs on Selected Days Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'rgba(0, 173, 240, 0.1)', borderColor: 'rgba(0, 173, 240, 0.3)', borderWidth: '1px' }}>
-                <div>
-                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                    Schedule runs on selected days
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Turn off for days where this schedule does not activate
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setRunsOnSelectedDays(!runsOnSelectedDays)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    runsOnSelectedDays ? '' : 'bg-slate-300 dark:bg-slate-600'
-                  }`}
-                  style={runsOnSelectedDays ? { backgroundColor: '#00adf0' } : {}}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      runsOnSelectedDays ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-
               {/* Time Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     <Clock className="w-4 h-4" />
-                    Start Time {runsOnSelectedDays && '*'}
+                    Start Time *
                   </label>
                   <input
                     type="text"
                     value={formData.start_time}
                     onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                     placeholder="6:00 AM"
-                    disabled={!runsOnSelectedDays}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    required={runsOnSelectedDays}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
                   />
                 </div>
 
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     <Clock className="w-4 h-4" />
-                    End Time {runsOnSelectedDays && '*'}
+                    End Time *
                   </label>
                   <input
                     type="text"
                     value={formData.end_time}
                     onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                     placeholder="11:00 AM"
-                    disabled={!runsOnSelectedDays}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    required={runsOnSelectedDays}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
                   />
                 </div>
               </div>
