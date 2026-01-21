@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Clock, AlertCircle, Calendar, Sparkles, Combine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import TimeSelector from '../components/TimeSelector';
 
 interface Schedule {
   id: string;
@@ -473,35 +474,17 @@ export default function ScheduleEditPage({
 
               {/* Time Fields */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    <Clock className="w-4 h-4" />
-                    Start Time *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.start_time}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                    placeholder="6:00 AM"
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
+                <TimeSelector
+                  label="Start Time *"
+                  value={formData.start_time}
+                  onChange={(time) => setFormData({ ...formData, start_time: time })}
+                />
 
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    <Clock className="w-4 h-4" />
-                    End Time *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.end_time}
-                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                    placeholder="11:00 AM"
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
+                <TimeSelector
+                  label="End Time *"
+                  value={formData.end_time}
+                  onChange={(time) => setFormData({ ...formData, end_time: time })}
+                />
               </div>
 
               {/* Remove Schedule Button - Only shown when editing */}
