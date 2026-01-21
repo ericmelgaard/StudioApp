@@ -247,10 +247,13 @@ export default function ScheduleEditPage({
 
       if (deleteError) throw deleteError;
 
-      // Now update the current schedule with combined days
+      // Now update the current schedule with combined days and clear the name
       const { error: updateError } = await supabase
         .from('site_daypart_routines')
-        .update({ days_of_week: combinedDays })
+        .update({
+          days_of_week: combinedDays,
+          schedule_name: null
+        })
         .eq('id', savedScheduleId);
 
       if (updateError) throw updateError;
