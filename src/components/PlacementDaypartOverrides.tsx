@@ -345,22 +345,29 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
       {/* Full-screen modal for edit/create form */}
       {showForm && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col">
-          {/* Modal header */}
-          <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
-            <h3 className="text-lg font-semibold text-slate-900">
-              {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
-            </h3>
-            <button
-              onClick={handleCancel}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-600" />
-            </button>
-          </div>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={handleCancel}
+        >
+          <div
+            className="bg-white w-full h-full flex flex-col rounded-lg shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
+              </h3>
+              <button
+                onClick={handleCancel}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
 
-          {/* Modal content */}
-          <div className="flex-1 overflow-y-auto p-6">
+            {/* Modal content */}
+            <div className="flex-1 overflow-y-auto p-6">
             <DaypartRoutineForm
               placementGroupId={placementGroupId}
               existingRoutines={routines}
@@ -386,6 +393,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
               preFillScheduleType={preFillScheduleType}
               onDelete={editingRoutine ? handleDelete : undefined}
             />
+            </div>
           </div>
         </div>
       )}
