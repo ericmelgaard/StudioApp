@@ -419,30 +419,29 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
       {/* Store Dayparts Section */}
       {storeSchedules.length > 0 && (
-        <div className="pt-4 border-t-2 border-amber-300 bg-white dark:bg-slate-900 rounded-lg overflow-hidden">
+        <div className="pt-4">
           <button
             type="button"
             onClick={() => setStoreSchedulesExpanded(!storeSchedulesExpanded)}
-            className="w-full px-4 py-3 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-between"
+            className="w-full px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-between rounded-lg"
           >
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-              <span className="font-semibold text-amber-900 dark:text-amber-400">
+              <span className="font-semibold" style={{ color: '#002e5e' }}>
                 Store Dayparts
               </span>
-              <span className="text-xs px-2 py-1 rounded-full bg-amber-600/20 text-amber-900 dark:text-amber-400 font-medium">
-                {groupStoreSchedulesByDaypart().length} dayparts
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 font-medium" style={{ color: '#002e5e' }}>
+                {groupStoreSchedulesByDaypart().length}
               </span>
             </div>
             {storeSchedulesExpanded ? (
-              <ChevronDown className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+              <ChevronDown className="w-4 h-4" style={{ color: '#002e5e' }} />
             ) : (
-              <ChevronRight className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+              <ChevronRight className="w-4 h-4" style={{ color: '#002e5e' }} />
             )}
           </button>
 
           {storeSchedulesExpanded && (
-            <div className="space-y-6 p-4 bg-amber-50/30 dark:bg-amber-900/10">
+            <div className="space-y-6 p-2 mt-2">
               {groupStoreSchedulesByDaypart().map(({ groupKey, groupSchedules }) => {
                 const firstSchedule = groupSchedules[0];
                 const daypartDef = firstSchedule.daypart_definitions;
@@ -483,16 +482,16 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                         <button
                           key={schedule.id}
                           onClick={() => onEditSchedule?.(schedule, true)}
-                          className={`w-full p-3 bg-amber-50 dark:bg-slate-800/50 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-amber-200 border-t-amber-200 border-b-amber-200 dark:border-r-amber-700 dark:border-t-amber-700 dark:border-b-amber-700 rounded-lg hover:bg-amber-100 dark:hover:bg-slate-700 active:bg-amber-200 dark:active:bg-slate-600 transition-colors text-left relative overflow-hidden`}
+                          className={`w-full p-3 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden opacity-75`}
                         >
-                          <div className={`absolute inset-0 ${colorClasses.bgLight} dark:bg-slate-800/50 opacity-20`}></div>
+                          <div className={`absolute inset-0 ${colorClasses.bgLight} dark:bg-slate-800/50 opacity-10`}></div>
 
                           <div className="relative flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               {/* Title: Custom Schedule Name */}
                               {schedule.schedule_name && (
                                 <div className="mb-2">
-                                  <span className="font-semibold text-base text-amber-900 dark:text-amber-300">
+                                  <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
                                     {schedule.schedule_name}
                                   </span>
                                 </div>
@@ -507,7 +506,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                       key={day.value}
                                       className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                                         isActive
-                                          ? 'bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700'
+                                          ? `${colorClasses.bg} ${colorClasses.text} border ${colorClasses.border}`
                                           : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
                                       }`}
                                     >
@@ -518,7 +517,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                               </div>
 
                               {/* Time Range */}
-                              <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                                 <Clock className="w-4 h-4" />
                                 <span>
                                   {schedule.end_time
@@ -528,7 +527,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                 </span>
                               </div>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
+                            <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
                           </div>
                         </button>
                       ))}
