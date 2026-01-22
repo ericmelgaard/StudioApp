@@ -114,26 +114,23 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
       const allStoreSchedules = storeSchedulesResult.data || [];
 
-      // Create a map of placement customizations
-      const customizationMap = new Map<string, Schedule>();
+      // Create a map of placement customizations by daypart_name
+      const customizedDayparts = new Set<string>();
       placementSchedules.forEach(custom => {
         const def = definitions.find((d: any) => d.id === custom.daypart_definition_id);
         if (def) {
-          const key = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.schedule_name || ''}`;
-          customizationMap.set(key, custom);
+          customizedDayparts.add(def.daypart_name);
         }
       });
 
-      // Build inherited schedules list (only those NOT customized)
+      // Build inherited schedules list (only dayparts NOT customized at placement level)
       const inherited: StoreSchedule[] = [];
       allStoreSchedules.forEach((schedule: any) => {
         const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
         if (!definition) return;
 
-        const key = `${definition.daypart_name}_${schedule.schedule_type || 'regular'}_${schedule.schedule_name || ''}`;
-
-        // Only add if not customized
-        if (!customizationMap.has(key)) {
+        // Only add if the entire daypart is NOT customized at placement level
+        if (!customizedDayparts.has(definition.daypart_name)) {
           inherited.push({
             ...schedule,
             placement_group_id: groupId,
