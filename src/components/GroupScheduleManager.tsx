@@ -93,6 +93,17 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       const definitions = defsResult.data || [];
       setDaypartDefinitions(definitions);
 
+      // Check which dayparts are actually in use (in themes)
+      const defIds = definitions.map((d: any) => d.id);
+      const themeBoardsResult = await supabase
+        .from('theme_boards')
+        .select('daypart_id')
+        .in('daypart_id', defIds);
+
+      const inUseDaypartIds = new Set(
+        (themeBoardsResult.data || []).map((tb: any) => tb.daypart_id)
+      );
+
       // Load placement customizations
       const schedulesResult = await supabase
         .from('site_daypart_routines')
@@ -106,7 +117,6 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       setSchedules(placementSchedules);
 
       // Load store-level schedules from daypart_schedules
-      const defIds = definitions.map((d: any) => d.id);
       const storeSchedulesResult = await supabase
         .from('daypart_schedules')
         .select('*')
@@ -123,14 +133,16 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
         }
       });
 
-      // Build inherited schedules list (only dayparts NOT customized at placement level)
+      // Build inherited schedules list (only dayparts NOT customized at placement level AND in use in themes)
       const inherited: StoreSchedule[] = [];
       allStoreSchedules.forEach((schedule: any) => {
         const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
         if (!definition) return;
 
-        // Only add if the entire daypart is NOT customized at placement level
-        if (!customizedDayparts.has(definition.daypart_name)) {
+        // Only add if:
+        // 1. The daypart is NOT customized at placement level
+        // 2. The daypart IS in use (referenced in theme_boards)
+        if (!customizedDayparts.has(definition.daypart_name) && inUseDaypartIds.has(definition.id)) {
           inherited.push({
             ...schedule,
             placement_group_id: groupId,
