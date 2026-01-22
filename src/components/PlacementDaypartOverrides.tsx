@@ -455,7 +455,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                       <Clock className="w-4 h-4" />
                       <h4 className="font-semibold">{displayLabel}</h4>
                       {hasEvents && (
-                        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-900 font-medium">
+                        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                           <Calendar className="w-3 h-3" />
                           {daypartEvents.length} {daypartEvents.length === 1 ? 'Event' : 'Events'}
                         </span>
@@ -466,7 +466,11 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                         e.stopPropagation();
                         handleAddNew('event_holiday', daypartName);
                       }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors bg-amber-600/15 text-amber-900 hover:bg-amber-600/25"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:bg-white/50"
+                      style={{
+                        backgroundColor: 'rgba(222, 56, 222, 0.15)',
+                        color: 'rgb(156, 39, 176)'
+                      }}
                     >
                       <Sparkles className="w-3 h-3" />
                       Add Event/Holiday
@@ -556,55 +560,61 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 })()}
 
                 {hasEvents && (
-                  <div className="border-t-2 border-amber-200">
+                  <div style={{ borderTop: '2px solid rgba(222, 56, 222, 0.3)' }}>
                     <button
                       type="button"
                       onClick={() => toggleEventsExpanded(daypartName)}
-                      className="w-full px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors flex items-center justify-between group"
+                      className="w-full px-4 py-3 transition-colors flex items-center justify-between group"
+                      style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.15)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
                     >
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-amber-600" />
-                        <span className="font-medium text-amber-900">
+                        <Calendar className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                        <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
                           Event & Holiday Schedules
                         </span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-900">
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                           {daypartEvents.length}
                         </span>
                       </div>
                       {eventsExpanded ? (
-                        <ChevronDown className="w-5 h-5 text-amber-600" />
+                        <ChevronDown className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-amber-600" />
+                        <ChevronRight className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
                       )}
                     </button>
 
                     {eventsExpanded && (
-                      <div className="divide-y divide-amber-100 bg-amber-50/30">
+                      <div className="divide-y" style={{ backgroundColor: 'rgba(222, 56, 222, 0.04)', borderColor: 'rgba(222, 56, 222, 0.1)' }}>
                         {daypartEvents.map((schedule) => (
                           <div key={schedule.id}>
                             <button
                               onClick={() => handleEdit(schedule)}
-                              className="w-full p-4 hover:bg-amber-100/50 active:bg-amber-100 transition-colors text-left"
+                              className="w-full p-4 transition-colors text-left"
+                              style={{ backgroundColor: 'transparent' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-3 mb-2">
                                     {schedule.schedule_name && (
-                                      <span className="font-semibold text-amber-900">
+                                      <span className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>
                                         {schedule.schedule_name}
                                       </span>
                                     )}
-                                    <span className={`${schedule.schedule_name ? 'text-amber-700' : 'font-medium text-amber-900'}`}>
+                                    <span className={schedule.schedule_name ? '' : 'font-medium'} style={{ color: 'rgb(156, 39, 176)' }}>
                                       {schedule.event_name || 'Unnamed Event'}
                                     </span>
-                                    <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded font-medium">
+                                    <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                                       {getRecurrenceLabel(schedule.recurrence_type)}
                                     </span>
                                   </div>
-                                  <div className="text-sm text-amber-700 mb-2">
+                                  <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
                                     <Calendar className="w-3.5 h-3.5 inline mr-1" />
                                     {formatEventDate(schedule.event_date, schedule.recurrence_type)}
-                                    <span className="mx-2 text-amber-400">•</span>
+                                    <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
                                     <Clock className="w-3.5 h-3.5 inline mr-1" />
                                     {schedule.runs_on_days === false
                                       ? 'Does Not Run'
@@ -747,55 +757,61 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
                           {/* Inherited Event Schedules */}
                           {hasInheritedEvents && (
-                            <div className="border-t-2 border-amber-200">
+                            <div style={{ borderTop: '2px solid rgba(222, 56, 222, 0.3)' }}>
                               <button
                                 type="button"
                                 onClick={() => toggleEventsExpanded(daypartName)}
-                                className="w-full px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors flex items-center justify-between group"
+                                className="w-full px-4 py-3 transition-colors flex items-center justify-between group"
+                                style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.15)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
                               >
                                 <div className="flex items-center gap-2">
-                                  <Calendar className="w-4 h-4 text-amber-600" />
-                                  <span className="font-medium text-amber-900">
+                                  <Calendar className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                                  <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
                                     Event & Holiday Schedules
                                   </span>
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-900">
+                                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                                     {daypartInheritedEvents.length}
                                   </span>
                                 </div>
                                 {eventsExpanded ? (
-                                  <ChevronDown className="w-5 h-5 text-amber-600" />
+                                  <ChevronDown className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
                                 ) : (
-                                  <ChevronRight className="w-5 h-5 text-amber-600" />
+                                  <ChevronRight className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
                                 )}
                               </button>
 
                               {eventsExpanded && (
-                                <div className="divide-y divide-amber-100 bg-amber-50/30">
+                                <div className="divide-y" style={{ backgroundColor: 'rgba(222, 56, 222, 0.04)', borderColor: 'rgba(222, 56, 222, 0.1)' }}>
                                   {daypartInheritedEvents.map((schedule) => (
                                     <div key={schedule.id}>
                                       <button
                                         onClick={() => handleEditInherited(schedule)}
-                                        className="w-full p-4 hover:bg-amber-100/50 active:bg-amber-100 transition-colors text-left"
+                                        className="w-full p-4 transition-colors text-left"
+                                        style={{ backgroundColor: 'transparent' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                       >
                                         <div className="flex items-start justify-between gap-3">
                                           <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-3 mb-2">
                                               {schedule.schedule_name && (
-                                                <span className="font-semibold text-amber-900">
+                                                <span className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>
                                                   {schedule.schedule_name}
                                                 </span>
                                               )}
-                                              <span className={`${schedule.schedule_name ? 'text-amber-700' : 'font-medium text-amber-900'}`}>
+                                              <span className={schedule.schedule_name ? '' : 'font-medium'} style={{ color: 'rgb(156, 39, 176)' }}>
                                                 {schedule.event_name || 'Unnamed Event'}
                                               </span>
-                                              <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded font-medium">
+                                              <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                                                 {getRecurrenceLabel(schedule.recurrence_type)}
                                               </span>
                                             </div>
-                                            <div className="text-sm text-amber-700 mb-2">
+                                            <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
                                               <Calendar className="w-3.5 h-3.5 inline mr-1" />
                                               {formatEventDate(schedule.event_date, schedule.recurrence_type)}
-                                              <span className="mx-2 text-amber-400">•</span>
+                                              <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
                                               <Clock className="w-3.5 h-3.5 inline mr-1" />
                                               {schedule.runs_on_days === false
                                                 ? 'Does Not Run'
