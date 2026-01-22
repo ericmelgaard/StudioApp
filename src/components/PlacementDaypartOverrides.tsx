@@ -430,7 +430,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           </p>
         </div>
       ) : (routines.length > 0 || inheritedSchedules.length > 0) ? (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {/* Custom Dayparts Section */}
           {allDayparts.map((daypartName) => {
             const daypartSchedules = groupedRoutines[daypartName] || [];
@@ -448,7 +448,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             const colorClass = definition.color;
 
             return (
-              <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+              <div key={daypartName} className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
@@ -560,7 +560,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 })()}
 
                 {hasEvents && (
-                  <div style={{ borderTop: '2px solid rgba(222, 56, 222, 0.3)' }}>
+                  <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
                     <button
                       type="button"
                       onClick={() => toggleEventsExpanded(daypartName)}
@@ -586,7 +586,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     </button>
 
                     {eventsExpanded && (
-                      <div className="divide-y" style={{ backgroundColor: 'rgba(222, 56, 222, 0.04)', borderColor: 'rgba(222, 56, 222, 0.1)' }}>
+                      <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
                         {daypartEvents.map((schedule) => (
                           <div key={schedule.id}>
                             <button
@@ -638,7 +638,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                     </div>
                                   )}
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
+                                <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                               </div>
                             </button>
                           </div>
@@ -654,7 +654,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
           {/* Store Dayparts Section - shown at the bottom */}
           {inheritedSchedules.length > 0 && (
-            <div className="bg-white rounded-lg overflow-hidden">
+            <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <button
                 type="button"
                 onClick={() => setInheritedSectionExpanded(!inheritedSectionExpanded)}
@@ -757,7 +757,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
                           {/* Inherited Event Schedules */}
                           {hasInheritedEvents && (
-                            <div style={{ borderTop: '2px solid rgba(222, 56, 222, 0.3)' }}>
+                            <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
                               <button
                                 type="button"
                                 onClick={() => toggleEventsExpanded(daypartName)}
@@ -783,7 +783,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                               </button>
 
                               {eventsExpanded && (
-                                <div className="divide-y" style={{ backgroundColor: 'rgba(222, 56, 222, 0.04)', borderColor: 'rgba(222, 56, 222, 0.1)' }}>
+                                <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
                                   {daypartInheritedEvents.map((schedule) => (
                                     <div key={schedule.id}>
                                       <button
@@ -835,7 +835,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                               </div>
                                             )}
                                           </div>
-                                          <ChevronRight className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
+                                          <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                                         </div>
                                       </button>
                                     </div>
