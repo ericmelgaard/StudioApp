@@ -14,6 +14,9 @@ interface DaypartRoutineFormProps {
   editingRoutine?: DaypartRoutine | null;
   preFillDaypart?: string;
   preFillScheduleType?: 'regular' | 'event_holiday';
+  preFillDaysOfWeek?: number[];
+  preFillStartTime?: string;
+  preFillEndTime?: string;
   onDelete?: (routineId: string) => Promise<void>;
 }
 
@@ -66,6 +69,9 @@ export default function DaypartRoutineForm({
   editingRoutine,
   preFillDaypart,
   preFillScheduleType,
+  preFillDaysOfWeek,
+  preFillStartTime,
+  preFillEndTime,
   onDelete
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
@@ -73,9 +79,9 @@ export default function DaypartRoutineForm({
   const [formData, setFormData] = useState({
     schedule_type: editingRoutine?.schedule_type || preFillScheduleType || 'regular' as 'regular' | 'event_holiday',
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
-    days_of_week: editingRoutine?.days_of_week || [] as number[],
-    start_time: editingRoutine?.start_time || '06:00',
-    end_time: editingRoutine?.end_time || '11:00',
+    days_of_week: editingRoutine?.days_of_week || preFillDaysOfWeek || [] as number[],
+    start_time: editingRoutine?.start_time || preFillStartTime || '06:00',
+    end_time: editingRoutine?.end_time || preFillEndTime || '11:00',
     runs_on_days: editingRoutine?.runs_on_days !== false,
     schedule_name: editingRoutine?.schedule_name || '',
     event_name: editingRoutine?.event_name || '',

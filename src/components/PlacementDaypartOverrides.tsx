@@ -69,6 +69,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [editingInherited, setEditingInherited] = useState<EffectiveSchedule | null>(null);
   const [preFillDaypart, setPreFillDaypart] = useState<string | undefined>(undefined);
   const [preFillScheduleType, setPreFillScheduleType] = useState<'regular' | 'event_holiday'>('regular');
+  const [preFillDaysOfWeek, setPreFillDaysOfWeek] = useState<number[] | undefined>(undefined);
+  const [preFillStartTime, setPreFillStartTime] = useState<string | undefined>(undefined);
+  const [preFillEndTime, setPreFillEndTime] = useState<string | undefined>(undefined);
   const [storeId, setStoreId] = useState<number | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
   const [expandedInherited, setExpandedInherited] = useState<Record<string, boolean>>({});
@@ -235,10 +238,18 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     setPreFillDaypart(undefined);
   };
 
-  const handleAddNew = (scheduleType: 'regular' | 'event_holiday' = 'regular', daypartName?: string) => {
+  const handleAddNew = (
+    scheduleType: 'regular' | 'event_holiday' = 'regular',
+    daypartName?: string,
+    daysOfWeek?: number[],
+    template?: DaypartRoutine
+  ) => {
     setEditingRoutine(null);
     setPreFillDaypart(daypartName);
     setPreFillScheduleType(scheduleType);
+    setPreFillDaysOfWeek(daysOfWeek);
+    setPreFillStartTime(template?.start_time);
+    setPreFillEndTime(template?.end_time);
     setViewLevel('edit-schedule');
   };
 
@@ -380,6 +391,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             } as DaypartRoutine : editingRoutine}
             preFillDaypart={preFillDaypart}
             preFillScheduleType={preFillScheduleType}
+            preFillDaysOfWeek={preFillDaysOfWeek}
+            preFillStartTime={preFillStartTime}
+            preFillEndTime={preFillEndTime}
             onDelete={editingRoutine ? handleDelete : undefined}
           />
         </div>
@@ -510,6 +524,33 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     </p>
                   </button>
                 )}
+
+                {/* Add Schedule for Remaining Days Button */}
+                {daypartSchedules.length > 0 && (() => {
+                  const scheduledDays = new Set<number>();
+                  daypartSchedules.forEach(schedule => {
+                    schedule.days_of_week.forEach(day => scheduledDays.add(day));
+                  });
+                  const allDays = [0, 1, 2, 3, 4, 5, 6];
+                  const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
+
+                  if (unscheduledDays.length === 0) return null;
+
+                  return (
+                    <button
+                      onClick={() => {
+                        const template = daypartSchedules[0];
+                        handleAddNew('regular', daypartName, unscheduledDays, template);
+                      }}
+                      className="w-full p-3 bg-white border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4 text-slate-600" />
+                      <span className="text-sm font-medium text-slate-600">
+                        Schedule Remaining Days ({unscheduledDays.length})
+                      </span>
+                    </button>
+                  );
+                })()}
 
                 {hasEvents && (
                   <div className="border-t-2 border-cyan-200">
