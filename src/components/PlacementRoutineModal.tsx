@@ -302,6 +302,54 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
 
   const maxCycleWeek = cycleSettings?.cycle_duration_weeks || 4;
 
+  // Group routines by placement
+  const groupedRoutines = routines.reduce((acc, routine) => {
+    const placementId = routine.placement_id;
+    if (!acc[placementId]) {
+      acc[placementId] = [];
+    }
+    acc[placementId].push(routine);
+    return acc;
+  }, {} as Record<string, PlacementRoutine[]>);
+
+  // Get unscheduled days for a specific placement
+  const getUnscheduledDays = (placementRoutines: PlacementRoutine[]): number[] => {
+    const scheduledDays = new Set<number>();
+    placementRoutines.forEach(routine => {
+      routine.days_of_week.forEach(day => scheduledDays.add(day));
+    });
+
+    const allDays = [0, 1, 2, 3, 4, 5, 6];
+    return allDays.filter(day => !scheduledDays.has(day));
+  };
+
+  // Get day coverage count for a placement
+  const getDayCoverage = (placementRoutines: PlacementRoutine[]): { scheduled: number; total: number } => {
+    const scheduledDays = new Set<number>();
+    placementRoutines.forEach(routine => {
+      routine.days_of_week.forEach(day => scheduledDays.add(day));
+    });
+
+    return {
+      scheduled: scheduledDays.size,
+      total: 7
+    };
+  };
+
+  const handleAddRemainingDays = (placementId: string, unscheduledDays: number[]) => {
+    const templateRoutine = groupedRoutines[placementId][0];
+    setNewRoutine({
+      placement_id: placementId,
+      cycle_week: templateRoutine.cycle_week,
+      days_of_week: unscheduledDays,
+      start_time: templateRoutine.start_time,
+      end_time: templateRoutine.end_time || '',
+      schedule_name: templateRoutine.schedule_name || '',
+      status: 'active'
+    });
+    setShowAddForm(true);
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -480,118 +528,162 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
               )}
 
               {routines.length > 0 && (
-                <div className="space-y-3">
-                  {routines.map((routine) => (
-                    <div
-                      key={routine.id}
-                      className={`p-4 rounded-lg border ${
-                        routine.status === 'active'
-                          ? 'bg-white border-slate-200'
-                          : 'bg-slate-50 border-slate-300 opacity-60'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          {routine.schedule_name && (
-                            <div className="text-xs text-slate-500 mb-1">
-                              {routine.schedule_name}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-3 mb-2">
-                            <MapPin className="w-5 h-5 text-slate-400" />
-                            <h4 className="font-semibold text-slate-900">
-                              {routine.placement?.name || 'Unknown Placement'}
-                            </h4>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              routine.status === 'active'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}>
-                              {routine.status}
-                            </span>
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex gap-6">
-                              <div>
-                                <span className="text-slate-500">Week:</span>
-                                <span className="ml-2 font-medium text-slate-900">
-                                  Week {routine.cycle_week}
+                <div className="space-y-6">
+                  {Object.entries(groupedRoutines).map(([placementId, placementRoutines]) => {
+                    const firstRoutine = placementRoutines[0];
+                    const unscheduledDays = getUnscheduledDays(placementRoutines);
+                    const coverage = getDayCoverage(placementRoutines);
+                    const hasUnscheduledDays = unscheduledDays.length > 0;
+
+                    return (
+                      <div key={placementId} className="space-y-2">
+                        {/* Placement Header */}
+                        <div className="px-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MapPin className="w-4 h-4 text-slate-400" />
+                            <h3 className="text-sm font-semibold text-slate-900">
+                              {firstRoutine.placement?.name || 'Unknown Placement'}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
+                                {coverage.scheduled} active
+                              </span>
+                              {coverage.scheduled < coverage.total && (
+                                <span className="px-2 py-0.5 rounded-full font-medium bg-slate-200 text-slate-600">
+                                  {coverage.total - coverage.scheduled} inactive
                                 </span>
-                              </div>
-                              <div>
-                                <span className="text-slate-500">Time:</span>
-                                <span className="ml-2 font-medium text-slate-900">
-                                  {routine.end_time
-                                    ? `${routine.start_time} - ${routine.end_time}`
-                                    : routine.start_time
-                                  }
-                                </span>
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-slate-500">Days:</span>
-                              <div className="inline-flex flex-wrap gap-1 ml-2">
-                                {routine.days_of_week?.map(day => (
-                                  <span
-                                    key={day}
-                                    className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded"
-                                  >
-                                    {DAYS_OF_WEEK.find(d => d.value === day)?.label}
-                                  </span>
-                                ))}
-                              </div>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              alert('BUTTON CLICKED! Routine ID: ' + routine.id);
-                              console.log('BUTTON CLICKED!!!', routine.id);
-                              console.log('showAddForm:', showAddForm, 'editingRoutineId:', editingRoutineId);
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleStartEdit(routine, e);
-                            }}
-                            disabled={showAddForm && editingRoutineId !== routine.id}
-                            className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Edit routine"
-                          >
-                            {editingRoutineId === routine.id ? 'Editing...' : 'Edit'}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleToggleStatus(routine);
-                            }}
-                            disabled={showAddForm}
-                            className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                              routine.status === 'active'
-                                ? 'hover:bg-amber-50 text-amber-600'
-                                : 'hover:bg-green-50 text-green-600'
-                            }`}
-                            title={routine.status === 'active' ? 'Pause routine' : 'Activate routine'}
-                          >
-                            {routine.status === 'active' ? 'Pause' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDeleteRoutine(routine.id!);
-                            }}
-                            disabled={showAddForm}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Delete routine"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </button>
+
+                        {/* Routine Cards */}
+                        <div className="space-y-2">
+                          {placementRoutines.map((routine) => (
+                            <div
+                              key={routine.id}
+                              className={`p-4 rounded-lg border ${
+                                routine.status === 'active'
+                                  ? 'bg-white border-slate-200'
+                                  : 'bg-slate-50 border-slate-300 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  {routine.schedule_name && (
+                                    <div className="text-xs text-slate-500 mb-1">
+                                      {routine.schedule_name}
+                                    </div>
+                                  )}
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex gap-6">
+                                      <div>
+                                        <span className="text-slate-500">Week:</span>
+                                        <span className="ml-2 font-medium text-slate-900">
+                                          Week {routine.cycle_week}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-slate-500">Time:</span>
+                                        <span className="ml-2 font-medium text-slate-900">
+                                          {routine.end_time
+                                            ? `${routine.start_time} - ${routine.end_time}`
+                                            : routine.start_time
+                                          }
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className={`text-xs px-2 py-1 rounded ${
+                                          routine.status === 'active'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-slate-100 text-slate-700'
+                                        }`}>
+                                          {routine.status}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500">Days:</span>
+                                      <div className="inline-flex flex-wrap gap-1 ml-2">
+                                        {routine.days_of_week?.map(day => (
+                                          <span
+                                            key={day}
+                                            className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded"
+                                          >
+                                            {DAYS_OF_WEEK.find(d => d.value === day)?.label}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      alert('BUTTON CLICKED! Routine ID: ' + routine.id);
+                                      console.log('BUTTON CLICKED!!!', routine.id);
+                                      console.log('showAddForm:', showAddForm, 'editingRoutineId:', editingRoutineId);
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleStartEdit(routine, e);
+                                    }}
+                                    disabled={showAddForm && editingRoutineId !== routine.id}
+                                    className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Edit routine"
+                                  >
+                                    {editingRoutineId === routine.id ? 'Editing...' : 'Edit'}
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleToggleStatus(routine);
+                                    }}
+                                    disabled={showAddForm}
+                                    className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      routine.status === 'active'
+                                        ? 'hover:bg-amber-50 text-amber-600'
+                                        : 'hover:bg-green-50 text-green-600'
+                                    }`}
+                                    title={routine.status === 'active' ? 'Pause routine' : 'Activate routine'}
+                                  >
+                                    {routine.status === 'active' ? 'Pause' : 'Activate'}
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDeleteRoutine(routine.id!);
+                                    }}
+                                    disabled={showAddForm}
+                                    className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Delete routine"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Add Schedule for Remaining Days Button */}
+                          {hasUnscheduledDays && (
+                            <button
+                              onClick={() => handleAddRemainingDays(placementId, unscheduledDays)}
+                              disabled={showAddForm}
+                              className="w-full p-3 bg-white border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-4 h-4 text-slate-600" />
+                              <span className="text-sm font-medium text-slate-600">
+                                Schedule Remaining Days ({unscheduledDays.length})
+                              </span>
+                            </button>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
