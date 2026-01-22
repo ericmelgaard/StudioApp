@@ -60,7 +60,7 @@ function formatTime(time: string): string {
 
 export default function PlacementDaypartOverrides({ placementGroupId }: PlacementDaypartOverridesProps) {
   const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
-  const [effectiveSchedules, setEffectiveSchedules] = useState<EffectiveSchedule[]>([]);
+  const [inheritedSchedules, setInheritedSchedules] = useState<EffectiveSchedule[]>([]);
   const [daypartDefinitions, setDaypartDefinitions] = useState<DaypartDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -70,6 +70,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [preFillScheduleType, setPreFillScheduleType] = useState<'regular' | 'event_holiday'>('regular');
   const [storeId, setStoreId] = useState<number | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
+  const [expandedInherited, setExpandedInherited] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadData();
@@ -109,15 +110,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       const definitions = defsResult.data || [];
       setDaypartDefinitions(definitions);
 
-      // Load inherited schedules from daypart_schedules
-      const defIds = definitions.map((d: DaypartDefinition) => d.id);
-      const schedulesResult = await supabase
-        .from('daypart_schedules')
-        .select('*')
-        .in('daypart_definition_id', defIds);
-
-      const inheritedSchedules = schedulesResult.data || [];
-
       // Load placement customizations
       const routinesResult = await supabase
         .from('placement_daypart_overrides')
@@ -127,18 +119,25 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       const customizations = routinesResult.data || [];
       setRoutines(customizations);
 
-      // Combine inherited and customized schedules
-      const combined: EffectiveSchedule[] = [];
+      // Load inherited schedules from daypart_schedules
+      const defIds = definitions.map((d: DaypartDefinition) => d.id);
+      const schedulesResult = await supabase
+        .from('daypart_schedules')
+        .select('*')
+        .in('daypart_definition_id', defIds);
 
-      // Create a map of customizations by daypart + days + schedule_type
+      const storeSchedules = schedulesResult.data || [];
+
+      // Create a map of customizations to identify which inherited schedules are overridden
       const customizationMap = new Map<string, DaypartRoutine>();
       customizations.forEach(custom => {
         const key = `${custom.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}_${custom.schedule_name || ''}`;
         customizationMap.set(key, custom);
       });
 
-      // Add inherited schedules
-      inheritedSchedules.forEach((schedule: DaypartSchedule) => {
+      // Build inherited schedules list (only those NOT customized)
+      const inherited: EffectiveSchedule[] = [];
+      storeSchedules.forEach((schedule: DaypartSchedule) => {
         const definition = definitions.find((d: DaypartDefinition) => d.id === schedule.daypart_definition_id);
         if (!definition) return;
 
@@ -146,7 +145,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
         // Only add if not customized
         if (!customizationMap.has(key)) {
-          combined.push({
+          inherited.push({
             ...schedule,
             is_inherited: true,
             daypart_name: definition.daypart_name,
@@ -156,22 +155,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         }
       });
 
-      // Add customizations
-      customizations.forEach(custom => {
-        const definition = definitions.find((d: DaypartDefinition) => d.daypart_name === custom.daypart_name);
-        if (!definition) return;
-
-        combined.push({
-          ...custom,
-          daypart_definition_id: definition.id,
-          is_inherited: false,
-          daypart_name: custom.daypart_name,
-          daypart_definition: definition,
-          schedule_type: custom.schedule_type || 'regular'
-        });
-      });
-
-      setEffectiveSchedules(combined);
+      setInheritedSchedules(inherited);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -209,16 +193,16 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     await loadData();
   };
 
-  const handleEdit = (schedule: EffectiveSchedule) => {
-    if (schedule.is_inherited) {
-      // Clicking an inherited schedule creates a customization
-      setEditingInherited(schedule);
-      setEditingRoutine(null);
-    } else {
-      // Editing an existing customization
-      setEditingRoutine(schedule as DaypartRoutine);
-      setEditingInherited(null);
-    }
+  const handleEdit = (routine: DaypartRoutine) => {
+    setEditingRoutine(routine);
+    setEditingInherited(null);
+    setShowForm(true);
+  };
+
+  const handleEditInherited = (schedule: EffectiveSchedule) => {
+    // Clicking an inherited schedule creates a customization
+    setEditingInherited(schedule);
+    setEditingRoutine(null);
     setShowForm(true);
   };
 
@@ -257,10 +241,31 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     setShowForm(true);
   };
 
-  const regularSchedules = effectiveSchedules.filter(s => s.schedule_type !== 'event_holiday');
-  const eventSchedules = effectiveSchedules.filter(s => s.schedule_type === 'event_holiday');
+  // Group placement-specific schedules
+  const regularRoutines = routines.filter(s => s.schedule_type !== 'event_holiday');
+  const eventRoutines = routines.filter(s => s.schedule_type === 'event_holiday');
 
-  const groupedSchedules = regularSchedules.reduce((acc, schedule) => {
+  const groupedRoutines = regularRoutines.reduce((acc, routine) => {
+    if (!acc[routine.daypart_name]) {
+      acc[routine.daypart_name] = [];
+    }
+    acc[routine.daypart_name].push(routine);
+    return acc;
+  }, {} as Record<string, DaypartRoutine[]>);
+
+  const groupedEventRoutines = eventRoutines.reduce((acc, routine) => {
+    if (!acc[routine.daypart_name]) {
+      acc[routine.daypart_name] = [];
+    }
+    acc[routine.daypart_name].push(routine);
+    return acc;
+  }, {} as Record<string, DaypartRoutine[]>);
+
+  // Group inherited schedules
+  const inheritedRegular = inheritedSchedules.filter(s => s.schedule_type !== 'event_holiday');
+  const inheritedEvents = inheritedSchedules.filter(s => s.schedule_type === 'event_holiday');
+
+  const groupedInheritedRoutines = inheritedRegular.reduce((acc, schedule) => {
     if (!acc[schedule.daypart_name]) {
       acc[schedule.daypart_name] = [];
     }
@@ -268,7 +273,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     return acc;
   }, {} as Record<string, EffectiveSchedule[]>);
 
-  const groupedEventSchedules = eventSchedules.reduce((acc, schedule) => {
+  const groupedInheritedEvents = inheritedEvents.reduce((acc, schedule) => {
     if (!acc[schedule.daypart_name]) {
       acc[schedule.daypart_name] = [];
     }
@@ -283,6 +288,13 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
   const toggleEventsExpanded = (daypartName: string) => {
     setExpandedEvents(prev => ({
+      ...prev,
+      [daypartName]: !prev[daypartName]
+    }));
+  };
+
+  const toggleInheritedExpanded = (daypartName: string) => {
+    setExpandedInherited(prev => ({
       ...prev,
       [daypartName]: !prev[daypartName]
     }));
@@ -392,7 +404,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </div>
       )}
 
-      {effectiveSchedules.length === 0 && !showForm ? (
+      {routines.length === 0 && inheritedSchedules.length === 0 && !showForm ? (
         <div className="text-center py-16 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
           <Clock className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No Daypart Schedules Configured</h3>
@@ -400,13 +412,17 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             Configure daypart schedules at the store level first
           </p>
         </div>
-      ) : effectiveSchedules.length > 0 ? (
+      ) : (routines.length > 0 || inheritedSchedules.length > 0) ? (
         <div className="space-y-3">
           {allDayparts.map((daypartName) => {
-            const daypartSchedules = groupedSchedules[daypartName] || [];
-            const daypartEvents = groupedEventSchedules[daypartName] || [];
+            const daypartSchedules = groupedRoutines[daypartName] || [];
+            const daypartEvents = groupedEventRoutines[daypartName] || [];
+            const daypartInheritedSchedules = groupedInheritedRoutines[daypartName] || [];
+            const daypartInheritedEvents = groupedInheritedEvents[daypartName] || [];
             const hasEvents = daypartEvents.length > 0;
+            const hasInherited = daypartInheritedSchedules.length > 0 || daypartInheritedEvents.length > 0;
             const eventsExpanded = expandedEvents[daypartName];
+            const inheritedExpanded = expandedInherited[daypartName];
             const definition = daypartDefinitions.find(d => d.daypart_name === daypartName);
             if (!definition) return null;
             const displayLabel = definition.display_label;
@@ -448,11 +464,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                 ? 'Does Not Run'
                                 : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
                             </span>
-                            {schedule.is_inherited && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300">
-                                Inherited
-                              </span>
-                            )}
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {schedule.days_of_week.sort().map(day => {
@@ -554,11 +565,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                     <span className="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded font-medium">
                                       {getRecurrenceLabel(schedule.recurrence_type)}
                                     </span>
-                                    {schedule.is_inherited && (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300">
-                                        Inherited
-                                      </span>
-                                    )}
                                   </div>
                                   <div className="text-sm text-cyan-700 mb-2">
                                     <Calendar className="w-3.5 h-3.5 inline mr-1" />
@@ -596,6 +602,130 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     )}
                   </div>
                 )}
+
+                {/* Inherited Schedules Section */}
+                {hasInherited && (
+                  <div className="border-t-2 border-amber-200">
+                    <button
+                      type="button"
+                      onClick={() => toggleInheritedExpanded(daypartName)}
+                      className="w-full px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors flex items-center justify-between group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-600" />
+                        <span className="font-medium text-amber-900">
+                          Inherited from Store
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-900">
+                          {daypartInheritedSchedules.length + daypartInheritedEvents.length}
+                        </span>
+                      </div>
+                      {inheritedExpanded ? (
+                        <ChevronDown className="w-5 h-5 text-amber-600" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5 text-amber-600" />
+                      )}
+                    </button>
+
+                    {inheritedExpanded && (
+                      <div className="divide-y divide-amber-100 bg-amber-50/30">
+                        {/* Inherited Regular Schedules */}
+                        {daypartInheritedSchedules.map((schedule) => (
+                          <div key={schedule.id}>
+                            <button
+                              onClick={() => handleEditInherited(schedule)}
+                              className="w-full p-4 hover:bg-amber-100/50 active:bg-amber-100 transition-colors text-left"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    {schedule.schedule_name && (
+                                      <span className="text-sm font-semibold text-amber-900">
+                                        {schedule.schedule_name}
+                                      </span>
+                                    )}
+                                    <span className={`text-sm ${schedule.schedule_name ? 'text-amber-700' : 'font-medium text-amber-900'}`}>
+                                      {schedule.runs_on_days === false
+                                        ? 'Does Not Run'
+                                        : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {schedule.days_of_week.sort().map(day => {
+                                      const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                      return (
+                                        <span
+                                          key={day}
+                                          className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded font-medium"
+                                        >
+                                          {dayInfo?.short}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
+                              </div>
+                            </button>
+                          </div>
+                        ))}
+
+                        {/* Inherited Event Schedules */}
+                        {daypartInheritedEvents.map((schedule) => (
+                          <div key={schedule.id}>
+                            <button
+                              onClick={() => handleEditInherited(schedule)}
+                              className="w-full p-4 hover:bg-amber-100/50 active:bg-amber-100 transition-colors text-left"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    {schedule.schedule_name && (
+                                      <span className="font-semibold text-amber-900">
+                                        {schedule.schedule_name}
+                                      </span>
+                                    )}
+                                    <span className={`${schedule.schedule_name ? 'text-amber-700' : 'font-medium text-amber-900'}`}>
+                                      {schedule.event_name || 'Unnamed Event'}
+                                    </span>
+                                    <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded font-medium">
+                                      {getRecurrenceLabel(schedule.recurrence_type)}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-amber-700 mb-2">
+                                    <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                    {formatEventDate(schedule.event_date, schedule.recurrence_type)}
+                                    <span className="mx-2 text-amber-400">•</span>
+                                    <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                    {schedule.runs_on_days === false
+                                      ? 'Does Not Run'
+                                      : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                  </div>
+                                  {schedule.days_of_week.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {schedule.days_of_week.sort().map(day => {
+                                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                        return (
+                                          <span
+                                            key={day}
+                                            className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded font-medium"
+                                          >
+                                            {dayInfo?.short}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
+                              </div>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             );
@@ -603,10 +733,10 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </div>
       ) : null}
 
-      {!showForm && effectiveSchedules.length === 0 && (
+      {!showForm && routines.length === 0 && inheritedSchedules.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            Configure daypart schedules at the store level to see them here. Placement-level schedules inherit from store configuration.
+            This placement uses store-level schedules. Expand "Inherited from Store" sections to customize specific schedules for this placement.
           </p>
         </div>
       )}
