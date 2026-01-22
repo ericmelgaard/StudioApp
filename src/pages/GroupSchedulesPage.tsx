@@ -76,8 +76,22 @@ export default function GroupSchedulesPage({ group, onBack }: GroupSchedulesPage
     }
   };
 
-  const handleEditSchedule = (schedule: Schedule | null) => {
-    setEditingSchedule(schedule);
+  const handleEditSchedule = (schedule: Schedule | null, isStoreSchedule?: boolean) => {
+    if (isStoreSchedule && schedule) {
+      // Convert store schedule to a new placement schedule
+      setEditingSchedule({
+        id: '', // Empty ID means create new
+        daypart_definition_id: schedule.daypart_definition_id,
+        placement_group_id: group.id,
+        days_of_week: schedule.days_of_week,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
+        runs_on_days: schedule.runs_on_days,
+        schedule_name: schedule.schedule_name
+      });
+    } else {
+      setEditingSchedule(schedule);
+    }
     setCurrentView('edit');
   };
 

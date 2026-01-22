@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, Clock, Palette, ChevronRight, Sun, Moon, MoonStar, Coffee, Sunrise, Sunset } from 'lucide-react';
+import { Plus, Calendar, Clock, Palette, ChevronRight, ChevronDown, Sun, Moon, MoonStar, Coffee, Sunrise, Sunset } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface GroupScheduleManagerProps {
   groupId: string;
   groupName: string;
-  onEditSchedule?: (schedule: Schedule | null) => void;
+  onEditSchedule?: (schedule: Schedule | null, isStoreSchedule?: boolean) => void;
 }
 
 interface Schedule {
@@ -24,6 +24,10 @@ interface Schedule {
     color: string;
     icon: string | null;
   };
+}
+
+interface StoreSchedule extends Schedule {
+  is_inherited: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -48,7 +52,10 @@ const ICON_MAP: Record<string, any> = {
 
 export default function GroupScheduleManager({ groupId, groupName, onEditSchedule }: GroupScheduleManagerProps) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [storeSchedules, setStoreSchedules] = useState<StoreSchedule[]>([]);
+  const [daypartDefinitions, setDaypartDefinitions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [storeSchedulesExpanded, setStoreSchedulesExpanded] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -57,6 +64,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
   const loadData = async () => {
     setLoading(true);
     try {
+      // Get placement's store_id
       const groupResult = await supabase
         .from('placement_groups')
         .select('store_id')
@@ -66,7 +74,26 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       if (groupResult.error) throw groupResult.error;
 
       const storeId = groupResult.data?.store_id;
+      if (!storeId) {
+        setLoading(false);
+        return;
+      }
 
+      // Load daypart definitions for this store
+      const defsResult = await supabase.rpc('get_effective_daypart_definitions', {
+        p_store_id: storeId
+      });
+
+      if (defsResult.error) {
+        console.error('Error loading daypart definitions:', defsResult.error);
+        setLoading(false);
+        return;
+      }
+
+      const definitions = defsResult.data || [];
+      setDaypartDefinitions(definitions);
+
+      // Load placement customizations
       const schedulesResult = await supabase
         .from('site_daypart_routines')
         .select('*, daypart_definitions(id, daypart_name, display_label, color, icon)')
@@ -75,7 +102,54 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
       if (schedulesResult.error) throw schedulesResult.error;
 
-      setSchedules(schedulesResult.data || []);
+      const placementSchedules = schedulesResult.data || [];
+      setSchedules(placementSchedules);
+
+      // Load store-level schedules from daypart_schedules
+      const defIds = definitions.map((d: any) => d.id);
+      const storeSchedulesResult = await supabase
+        .from('daypart_schedules')
+        .select('*')
+        .in('daypart_definition_id', defIds);
+
+      const allStoreSchedules = storeSchedulesResult.data || [];
+
+      // Create a map of placement customizations
+      const customizationMap = new Map<string, Schedule>();
+      placementSchedules.forEach(custom => {
+        const def = definitions.find((d: any) => d.id === custom.daypart_definition_id);
+        if (def) {
+          const key = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.schedule_name || ''}`;
+          customizationMap.set(key, custom);
+        }
+      });
+
+      // Build inherited schedules list (only those NOT customized)
+      const inherited: StoreSchedule[] = [];
+      allStoreSchedules.forEach((schedule: any) => {
+        const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
+        if (!definition) return;
+
+        const key = `${definition.daypart_name}_${schedule.schedule_type || 'regular'}_${schedule.schedule_name || ''}`;
+
+        // Only add if not customized
+        if (!customizationMap.has(key)) {
+          inherited.push({
+            ...schedule,
+            placement_group_id: groupId,
+            is_inherited: true,
+            daypart_definitions: {
+              id: definition.id,
+              daypart_name: definition.daypart_name,
+              display_label: definition.display_label,
+              color: definition.color,
+              icon: definition.icon
+            }
+          });
+        }
+      });
+
+      setStoreSchedules(inherited);
     } catch (error) {
       console.error('Error loading schedule data:', error);
     } finally {
@@ -153,6 +227,32 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
     });
 
     return groups;
+  };
+
+  // Group store schedules by daypart
+  const groupStoreSchedulesByDaypart = () => {
+    const groups: Record<string, StoreSchedule[]> = {};
+
+    storeSchedules.forEach(schedule => {
+      const key = schedule.daypart_definition_id || 'unassigned';
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(schedule);
+    });
+
+    // Sort schedules within each group by start time
+    Object.keys(groups).forEach(key => {
+      groups[key].sort((a, b) => {
+        return a.start_time.localeCompare(b.start_time);
+      });
+    });
+
+    // Return as array for easier rendering
+    return Object.keys(groups).map(groupKey => ({
+      groupKey,
+      groupSchedules: groups[groupKey]
+    }));
   };
 
   if (loading) {
@@ -308,21 +408,129 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
         </div>
       )}
 
-      {/* Customize Daypart Button */}
-      <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-        <button
-          onClick={() => onEditSchedule?.(null)}
-          className="w-full px-6 py-3 text-white rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium"
-          style={{ backgroundColor: '#00adf0' }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
-          onMouseDown={(e) => e.currentTarget.style.backgroundColor = '#0085bc'}
-          onMouseUp={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
-        >
-          <Plus className="w-5 h-5" />
-          <span>Customize Daypart</span>
-        </button>
-      </div>
+      {/* Store Dayparts Section */}
+      {storeSchedules.length > 0 && (
+        <div className="pt-4 border-t-2 border-amber-300 bg-white dark:bg-slate-900 rounded-lg overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setStoreSchedulesExpanded(!storeSchedulesExpanded)}
+            className="w-full px-4 py-3 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+              <span className="font-semibold text-amber-900 dark:text-amber-400">
+                Store Dayparts
+              </span>
+              <span className="text-xs px-2 py-1 rounded-full bg-amber-600/20 text-amber-900 dark:text-amber-400 font-medium">
+                {groupStoreSchedulesByDaypart().length} dayparts
+              </span>
+            </div>
+            {storeSchedulesExpanded ? (
+              <ChevronDown className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+            )}
+          </button>
+
+          {storeSchedulesExpanded && (
+            <div className="space-y-6 p-4 bg-amber-50/30 dark:bg-amber-900/10">
+              {groupStoreSchedulesByDaypart().map(({ groupKey, groupSchedules }) => {
+                const firstSchedule = groupSchedules[0];
+                const daypartDef = firstSchedule.daypart_definitions;
+
+                const colorClasses = daypartDef?.color
+                  ? parseColorClasses(daypartDef.color)
+                  : { border: 'border-slate-300', bg: 'bg-slate-100', text: 'text-slate-800', bgLight: 'bg-slate-50' };
+
+                const IconComponent = daypartDef?.icon
+                  ? ICON_MAP[daypartDef.icon] || Palette
+                  : Palette;
+
+                const daypartLabel = daypartDef?.display_label || 'Unassigned';
+                const coverage = getDayCoverage(groupSchedules);
+
+                return (
+                  <div key={groupKey} className="space-y-2">
+                    {/* Daypart Group Header */}
+                    <div className="px-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`p-1.5 rounded-lg ${colorClasses.bg}`}>
+                          <IconComponent className={`w-4 h-4 ${colorClasses.text}`} />
+                        </div>
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {daypartLabel}
+                        </h3>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className={`px-2 py-0.5 rounded-full font-medium ${colorClasses.bg} ${colorClasses.text}`}>
+                            {coverage.scheduled} active
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Store Schedule Cards */}
+                    <div className="space-y-2">
+                      {groupSchedules.map((schedule) => (
+                        <button
+                          key={schedule.id}
+                          onClick={() => onEditSchedule?.(schedule, true)}
+                          className={`w-full p-3 bg-amber-50 dark:bg-slate-800/50 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-amber-200 border-t-amber-200 border-b-amber-200 dark:border-r-amber-700 dark:border-t-amber-700 dark:border-b-amber-700 rounded-lg hover:bg-amber-100 dark:hover:bg-slate-700 active:bg-amber-200 dark:active:bg-slate-600 transition-colors text-left relative overflow-hidden`}
+                        >
+                          <div className={`absolute inset-0 ${colorClasses.bgLight} dark:bg-slate-800/50 opacity-20`}></div>
+
+                          <div className="relative flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              {/* Title: Custom Schedule Name */}
+                              {schedule.schedule_name && (
+                                <div className="mb-2">
+                                  <span className="font-semibold text-base text-amber-900 dark:text-amber-300">
+                                    {schedule.schedule_name}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Day Badges */}
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {DAYS_OF_WEEK.map((day) => {
+                                  const isActive = schedule.days_of_week.includes(day.value);
+                                  return (
+                                    <div
+                                      key={day.value}
+                                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                                        isActive
+                                          ? 'bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700'
+                                          : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
+                                      }`}
+                                    >
+                                      {day.label}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Time Range */}
+                              <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                                <Clock className="w-4 h-4" />
+                                <span>
+                                  {schedule.end_time
+                                    ? `${schedule.start_time} - ${schedule.end_time}`
+                                    : `Starts at ${schedule.start_time}`
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
