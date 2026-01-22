@@ -343,39 +343,31 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </p>
       </div>
 
-      {/* Full-screen edit/create modal */}
+      {/* Modal overlay for edit/create form */}
       {showForm && (
-        <div className="fixed inset-0 bg-white z-50 md:absolute md:inset-auto md:bg-transparent md:z-0">
-          {/* Mobile: minimal header with close button */}
-          <div className="md:hidden sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
-            <button
-              onClick={handleCancel}
-              className="p-2 -ml-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-600" />
-            </button>
-          </div>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto"
+          onClick={handleCancel}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-lg z-10">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
+              </h3>
+              <button
+                onClick={handleCancel}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
 
-          {/* Form content */}
-          <div className="h-full overflow-y-auto md:h-auto">
-            <div className="p-4 md:p-0">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                {editingInherited ? (
-                  <p className="text-sm text-blue-800 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span>
-                      Creating customization from inherited schedule. This will override the store-level schedule for this placement.
-                    </span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-blue-800 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span>
-                      This schedule will apply to the selected days for this placement.
-                    </span>
-                  </p>
-                )}
-              </div>
+            {/* Modal content */}
+            <div className="p-6">
               <DaypartRoutineForm
                 placementGroupId={placementGroupId}
                 existingRoutines={routines}
