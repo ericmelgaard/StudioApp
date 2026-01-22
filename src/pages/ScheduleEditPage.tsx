@@ -69,9 +69,9 @@ export default function ScheduleEditPage({
     schedule_name: schedule?.schedule_name || ''
   });
 
-  const isNewSchedule = !schedule?.id;
+  const isNewSchedule = !schedule?.id || isSchedulingRemovedDays;
   const isSuggestedDays = isNewSchedule && initialDays.length > 0;
-  const isDaypartLocked = !!schedule?.id || isSuggestedDays;
+  const isDaypartLocked = (!!schedule?.id && !isSchedulingRemovedDays) || isSuggestedDays;
 
   const handleDayToggle = (day: number) => {
     setFormData(prev => {
@@ -170,7 +170,7 @@ export default function ScheduleEditPage({
 
       let scheduleId: string;
 
-      if (schedule?.id) {
+      if (schedule?.id && !isSchedulingRemovedDays) {
         const { error } = await supabase
           .from('site_daypart_routines')
           .update(data)
@@ -207,9 +207,36 @@ export default function ScheduleEditPage({
         setMergeableSchedules(otherSchedules);
         setShowMergePrompt(true);
       } else if (removedDays.length > 0) {
-        // Check if days were removed
-        setSavedScheduleId(scheduleId);
-        setShowRemovedDaysPrompt(true);
+        // Check if removed days are already covered by other schedules for this daypart
+        const { data: allSchedules, error: allSchedulesError } = await supabase
+          .from('site_daypart_routines')
+          .select('days_of_week')
+          .eq('placement_group_id', groupId)
+          .eq('daypart_definition_id', formData.daypart_definition_id)
+          .neq('id', scheduleId);
+
+        if (allSchedulesError) throw allSchedulesError;
+
+        // Collect all days covered by other schedules
+        const coveredDays = new Set<number>();
+        if (allSchedules) {
+          allSchedules.forEach(sched => {
+            sched.days_of_week.forEach((day: number) => coveredDays.add(day));
+          });
+        }
+
+        // Find which removed days are NOT covered by other schedules
+        const uncoveredRemovedDays = removedDays.filter(day => !coveredDays.has(day));
+
+        if (uncoveredRemovedDays.length > 0) {
+          // Only show prompt if there are uncovered days
+          setRemovedDays(uncoveredRemovedDays);
+          setSavedScheduleId(scheduleId);
+          setShowRemovedDaysPrompt(true);
+        } else {
+          // All removed days are covered by other schedules, go back
+          onSuccess();
+        }
       } else {
         // No merge needed and no removed days, go back
         onSuccess();
@@ -322,7 +349,7 @@ export default function ScheduleEditPage({
             </div>
             <div className="flex-1">
               <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                {schedule?.id ? 'Edit Schedule' : (isSuggestedDays ? 'Schedule Days' : 'Add Daypart')}
+                {!isNewSchedule ? 'Edit Schedule' : (isSuggestedDays ? 'Schedule Days' : 'Add Daypart')}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">{groupName}</p>
             </div>
@@ -467,7 +494,7 @@ export default function ScheduleEditPage({
               </div>
 
               {/* Remove Schedule Button - Only shown when editing */}
-              {schedule && onDelete && (
+              {schedule && onDelete && !isSchedulingRemovedDays && (
                 <div className="pt-8 mt-8 border-t border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
@@ -504,7 +531,7 @@ export default function ScheduleEditPage({
               onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
               onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
             >
-              {loading ? 'Saving...' : (schedule?.id ? 'Save Schedule' : 'Add Schedule')}
+              {loading ? 'Saving...' : (isNewSchedule ? 'Add Schedule' : 'Save Schedule')}
             </button>
           </div>
         </div>
