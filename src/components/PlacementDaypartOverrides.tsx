@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, X, ChevronLeft } from 'lucide-react';
+import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, X, ChevronLeft, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DaypartRoutineForm, { DaypartRoutine } from './DaypartRoutineForm';
+import Breadcrumb from './Breadcrumb';
 
 interface PlacementDaypartOverridesProps {
   placementGroupId: string;
@@ -63,7 +64,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [inheritedSchedules, setInheritedSchedules] = useState<EffectiveSchedule[]>([]);
   const [daypartDefinitions, setDaypartDefinitions] = useState<DaypartDefinition[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [viewLevel, setViewLevel] = useState<'list' | 'edit-schedule'>('list');
   const [editingRoutine, setEditingRoutine] = useState<DaypartRoutine | null>(null);
   const [editingInherited, setEditingInherited] = useState<EffectiveSchedule | null>(null);
   const [preFillDaypart, setPreFillDaypart] = useState<string | undefined>(undefined);
@@ -188,7 +189,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       console.log('Insert successful:', data);
     }
 
-    setShowForm(false);
+    setViewLevel('list');
     setEditingRoutine(null);
     await loadData();
   };
@@ -196,14 +197,14 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const handleEdit = (routine: DaypartRoutine) => {
     setEditingRoutine(routine);
     setEditingInherited(null);
-    setShowForm(true);
+    setViewLevel('edit-schedule');
   };
 
   const handleEditInherited = (schedule: EffectiveSchedule) => {
     // Clicking an inherited schedule creates a customization
     setEditingInherited(schedule);
     setEditingRoutine(null);
-    setShowForm(true);
+    setViewLevel('edit-schedule');
   };
 
   const handleDelete = async (routineId: string) => {
@@ -221,14 +222,14 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       throw new Error(error.message);
     }
 
-    setShowForm(false);
+    setViewLevel('list');
     setEditingRoutine(null);
     setEditingInherited(null);
     await loadData();
   };
 
   const handleCancel = () => {
-    setShowForm(false);
+    setViewLevel('list');
     setEditingRoutine(null);
     setEditingInherited(null);
     setPreFillDaypart(undefined);
@@ -238,7 +239,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     setEditingRoutine(null);
     setPreFillDaypart(daypartName);
     setPreFillScheduleType(scheduleType);
-    setShowForm(true);
+    setViewLevel('edit-schedule');
   };
 
   // Group placement-specific schedules
@@ -331,6 +332,62 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     );
   }
 
+  // Edit Schedule View
+  if (viewLevel === 'edit-schedule') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleCancel}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <div>
+            <Breadcrumb
+              items={[
+                { label: 'Placement Schedules', onClick: handleCancel },
+                { label: editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule' }
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-6">
+            {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
+          </h3>
+          <DaypartRoutineForm
+            placementGroupId={placementGroupId}
+            existingRoutines={routines}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            editingRoutine={editingInherited ? {
+              id: undefined,
+              placement_group_id: placementGroupId,
+              daypart_name: editingInherited.daypart_name,
+              days_of_week: editingInherited.days_of_week,
+              start_time: editingInherited.start_time,
+              end_time: editingInherited.end_time,
+              schedule_name: editingInherited.schedule_name,
+              runs_on_days: editingInherited.runs_on_days,
+              schedule_type: editingInherited.schedule_type,
+              event_name: editingInherited.event_name,
+              event_date: editingInherited.event_date,
+              recurrence_type: editingInherited.recurrence_type,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            } as DaypartRoutine : editingRoutine}
+            preFillDaypart={preFillDaypart}
+            preFillScheduleType={preFillScheduleType}
+            onDelete={editingRoutine ? handleDelete : undefined}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // List View
   return (
     <div className="space-y-6">
       <div>
@@ -343,62 +400,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </p>
       </div>
 
-      {/* Full-screen modal for edit/create form */}
-      {showForm && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          onClick={handleCancel}
-        >
-          <div
-            className="bg-white w-full h-full flex flex-col rounded-lg shadow-xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal header */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
-              </h3>
-              <button
-                onClick={handleCancel}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
-
-            {/* Modal content */}
-            <div className="flex-1 overflow-y-auto p-6">
-            <DaypartRoutineForm
-              placementGroupId={placementGroupId}
-              existingRoutines={routines}
-              onSave={handleSave}
-              onCancel={handleCancel}
-              editingRoutine={editingInherited ? {
-                id: undefined,
-                placement_group_id: placementGroupId,
-                daypart_name: editingInherited.daypart_name,
-                days_of_week: editingInherited.days_of_week,
-                start_time: editingInherited.start_time,
-                end_time: editingInherited.end_time,
-                schedule_name: editingInherited.schedule_name,
-                runs_on_days: editingInherited.runs_on_days,
-                schedule_type: editingInherited.schedule_type,
-                event_name: editingInherited.event_name,
-                event_date: editingInherited.event_date,
-                recurrence_type: editingInherited.recurrence_type,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              } as DaypartRoutine : editingRoutine}
-              preFillDaypart={preFillDaypart}
-              preFillScheduleType={preFillScheduleType}
-              onDelete={editingRoutine ? handleDelete : undefined}
-            />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {routines.length === 0 && inheritedSchedules.length === 0 && !showForm ? (
+      {routines.length === 0 && inheritedSchedules.length === 0 ? (
         <div className="text-center py-16 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
           <Clock className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No Daypart Schedules Configured</h3>
@@ -803,7 +805,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </div>
       ) : null}
 
-      {!showForm && routines.length === 0 && inheritedSchedules.length > 0 && (
+      {routines.length === 0 && inheritedSchedules.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
             This placement uses store-level schedules. Expand "Inherited Dayparts" below to view and customize schedules for this placement.
