@@ -300,6 +300,8 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     }));
   };
 
+  const [inheritedSectionExpanded, setInheritedSectionExpanded] = useState(false);
+
   const formatEventDate = (dateString: string | undefined, recurrenceType?: string) => {
     if (!dateString) return '';
     const date = new Date(dateString + 'T00:00:00');
@@ -414,15 +416,17 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </div>
       ) : (routines.length > 0 || inheritedSchedules.length > 0) ? (
         <div className="space-y-3">
+          {/* Custom Dayparts Section */}
           {allDayparts.map((daypartName) => {
             const daypartSchedules = groupedRoutines[daypartName] || [];
             const daypartEvents = groupedEventRoutines[daypartName] || [];
-            const daypartInheritedSchedules = groupedInheritedRoutines[daypartName] || [];
-            const daypartInheritedEvents = groupedInheritedEvents[daypartName] || [];
+            const hasCustom = daypartSchedules.length > 0 || daypartEvents.length > 0;
+
+            // Only show if has customizations
+            if (!hasCustom) return null;
+
             const hasEvents = daypartEvents.length > 0;
-            const hasInherited = daypartInheritedSchedules.length > 0 || daypartInheritedEvents.length > 0;
             const eventsExpanded = expandedEvents[daypartName];
-            const inheritedExpanded = expandedInherited[daypartName];
             const definition = daypartDefinitions.find(d => d.daypart_name === daypartName);
             if (!definition) return null;
             const displayLabel = definition.display_label;
@@ -602,106 +606,97 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     )}
                   </div>
                 )}
+              </div>
+            </div>
+            );
+          })}
 
-                {/* Inherited Schedules Section */}
-                {hasInherited && (
-                  <div className="border-t-2 border-amber-200">
-                    <button
-                      type="button"
-                      onClick={() => toggleInheritedExpanded(daypartName)}
-                      className="w-full px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-amber-600" />
-                        <span className="font-medium text-amber-900">
-                          Inherited from Store
-                        </span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-900">
-                          {daypartInheritedSchedules.length + daypartInheritedEvents.length}
-                        </span>
-                      </div>
-                      {inheritedExpanded ? (
-                        <ChevronDown className="w-5 h-5 text-amber-600" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-amber-600" />
-                      )}
-                    </button>
+          {/* Inherited Dayparts Section - shown at the bottom */}
+          {inheritedSchedules.length > 0 && (
+            <div className="bg-white rounded-lg border-2 border-amber-300 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setInheritedSectionExpanded(!inheritedSectionExpanded)}
+                className="w-full px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                  <span className="font-semibold text-amber-900">
+                    Inherited Dayparts
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-amber-600/20 text-amber-900 font-medium">
+                    {allDayparts.filter(dp => {
+                      const hasCustom = (groupedRoutines[dp]?.length || 0) + (groupedEventRoutines[dp]?.length || 0) > 0;
+                      const hasInherited = (groupedInheritedRoutines[dp]?.length || 0) + (groupedInheritedEvents[dp]?.length || 0) > 0;
+                      return !hasCustom && hasInherited;
+                    }).length} dayparts
+                  </span>
+                </div>
+                {inheritedSectionExpanded ? (
+                  <ChevronDown className="w-5 h-5 text-amber-600" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-amber-600" />
+                )}
+              </button>
 
-                    {inheritedExpanded && (
-                      <div className="divide-y divide-amber-100 bg-amber-50/30">
-                        {/* Inherited Regular Schedules */}
-                        {daypartInheritedSchedules.map((schedule) => (
-                          <div key={schedule.id}>
-                            <button
-                              onClick={() => handleEditInherited(schedule)}
-                              className="w-full p-4 hover:bg-amber-100/50 active:bg-amber-100 transition-colors text-left"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    {schedule.schedule_name && (
-                                      <span className="text-sm font-semibold text-amber-900">
-                                        {schedule.schedule_name}
-                                      </span>
-                                    )}
-                                    <span className={`text-sm ${schedule.schedule_name ? 'text-amber-700' : 'font-medium text-amber-900'}`}>
-                                      {schedule.runs_on_days === false
-                                        ? 'Does Not Run'
-                                        : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                                    </span>
-                                  </div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {schedule.days_of_week.sort().map(day => {
-                                      const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                                      return (
-                                        <span
-                                          key={day}
-                                          className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded font-medium"
-                                        >
-                                          {dayInfo?.short}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
-                              </div>
-                            </button>
+              {inheritedSectionExpanded && (
+                <div className="divide-y divide-slate-200">
+                  {allDayparts.map((daypartName) => {
+                    const daypartSchedules = groupedRoutines[daypartName] || [];
+                    const daypartEvents = groupedEventRoutines[daypartName] || [];
+                    const daypartInheritedSchedules = groupedInheritedRoutines[daypartName] || [];
+                    const daypartInheritedEvents = groupedInheritedEvents[daypartName] || [];
+                    const hasCustom = daypartSchedules.length > 0 || daypartEvents.length > 0;
+                    const hasInherited = daypartInheritedSchedules.length > 0 || daypartInheritedEvents.length > 0;
+
+                    // Only show dayparts that are ONLY inherited (no customizations)
+                    if (hasCustom || !hasInherited) return null;
+
+                    const eventsExpanded = expandedEvents[daypartName];
+                    const definition = daypartDefinitions.find(d => d.daypart_name === daypartName);
+                    if (!definition) return null;
+                    const displayLabel = definition.display_label;
+                    const colorClass = definition.color;
+                    const hasInheritedEvents = daypartInheritedEvents.length > 0;
+
+                    return (
+                      <div key={daypartName}>
+                        <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1">
+                              <Clock className="w-4 h-4" />
+                              <h4 className="font-semibold">{displayLabel}</h4>
+                              {hasInheritedEvents && (
+                                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-900 font-medium">
+                                  <Calendar className="w-3 h-3" />
+                                  {daypartInheritedEvents.length} {daypartInheritedEvents.length === 1 ? 'Event' : 'Events'}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        ))}
-
-                        {/* Inherited Event Schedules */}
-                        {daypartInheritedEvents.map((schedule) => (
-                          <div key={schedule.id}>
-                            <button
-                              onClick={() => handleEditInherited(schedule)}
-                              className="w-full p-4 hover:bg-amber-100/50 active:bg-amber-100 transition-colors text-left"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    {schedule.schedule_name && (
-                                      <span className="font-semibold text-amber-900">
-                                        {schedule.schedule_name}
+                        </div>
+                        <div className="divide-y divide-amber-100 bg-amber-50/30">
+                          {/* Inherited Regular Schedules */}
+                          {daypartInheritedSchedules.map((schedule) => (
+                            <div key={schedule.id}>
+                              <button
+                                onClick={() => handleEditInherited(schedule)}
+                                className="w-full p-4 hover:bg-amber-100/50 active:bg-amber-100 transition-colors text-left"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      {schedule.schedule_name && (
+                                        <span className="text-sm font-semibold text-amber-900">
+                                          {schedule.schedule_name}
+                                        </span>
+                                      )}
+                                      <span className={`text-sm ${schedule.schedule_name ? 'text-amber-700' : 'font-medium text-amber-900'}`}>
+                                        {schedule.runs_on_days === false
+                                          ? 'Does Not Run'
+                                          : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
                                       </span>
-                                    )}
-                                    <span className={`${schedule.schedule_name ? 'text-amber-700' : 'font-medium text-amber-900'}`}>
-                                      {schedule.event_name || 'Unnamed Event'}
-                                    </span>
-                                    <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded font-medium">
-                                      {getRecurrenceLabel(schedule.recurrence_type)}
-                                    </span>
-                                  </div>
-                                  <div className="text-sm text-amber-700 mb-2">
-                                    <Calendar className="w-3.5 h-3.5 inline mr-1" />
-                                    {formatEventDate(schedule.event_date, schedule.recurrence_type)}
-                                    <span className="mx-2 text-amber-400">•</span>
-                                    <Clock className="w-3.5 h-3.5 inline mr-1" />
-                                    {schedule.runs_on_days === false
-                                      ? 'Does Not Run'
-                                      : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                                  </div>
-                                  {schedule.days_of_week.length > 0 && (
+                                    </div>
                                     <div className="flex flex-wrap gap-1">
                                       {schedule.days_of_week.sort().map(day => {
                                         const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
@@ -715,28 +710,111 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                         );
                                       })}
                                     </div>
-                                  )}
+                                  </div>
+                                  <ChevronRight className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
-                              </div>
-                            </button>
-                          </div>
-                        ))}
+                              </button>
+                            </div>
+                          ))}
+
+                          {/* Inherited Event Schedules */}
+                          {hasInheritedEvents && (
+                            <div className="border-t-2 border-cyan-200">
+                              <button
+                                type="button"
+                                onClick={() => toggleEventsExpanded(daypartName)}
+                                className="w-full px-4 py-3 bg-cyan-50 hover:bg-cyan-100 transition-colors flex items-center justify-between group"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="w-4 h-4 text-cyan-600" />
+                                  <span className="font-medium text-cyan-900">
+                                    Event & Holiday Schedules
+                                  </span>
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-900">
+                                    {daypartInheritedEvents.length}
+                                  </span>
+                                </div>
+                                {eventsExpanded ? (
+                                  <ChevronDown className="w-5 h-5 text-cyan-600" />
+                                ) : (
+                                  <ChevronRight className="w-5 h-5 text-cyan-600" />
+                                )}
+                              </button>
+
+                              {eventsExpanded && (
+                                <div className="divide-y divide-cyan-100 bg-cyan-50/30">
+                                  {daypartInheritedEvents.map((schedule) => (
+                                    <div key={schedule.id}>
+                                      <button
+                                        onClick={() => handleEditInherited(schedule)}
+                                        className="w-full p-4 hover:bg-cyan-100/50 active:bg-cyan-100 transition-colors text-left"
+                                      >
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 mb-2">
+                                              {schedule.schedule_name && (
+                                                <span className="font-semibold text-cyan-900">
+                                                  {schedule.schedule_name}
+                                                </span>
+                                              )}
+                                              <span className={`${schedule.schedule_name ? 'text-cyan-700' : 'font-medium text-cyan-900'}`}>
+                                                {schedule.event_name || 'Unnamed Event'}
+                                              </span>
+                                              <span className="text-xs px-2 py-1 bg-cyan-100 text-cyan-700 rounded font-medium">
+                                                {getRecurrenceLabel(schedule.recurrence_type)}
+                                              </span>
+                                            </div>
+                                            <div className="text-sm text-cyan-700 mb-2">
+                                              <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                              {formatEventDate(schedule.event_date, schedule.recurrence_type)}
+                                              <span className="mx-2 text-cyan-400">•</span>
+                                              <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                              {schedule.runs_on_days === false
+                                                ? 'Does Not Run'
+                                                : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                            </div>
+                                            {schedule.days_of_week.length > 0 && (
+                                              <div className="flex flex-wrap gap-1">
+                                                {schedule.days_of_week.sort().map(day => {
+                                                  const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                                  const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                                  const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                                  return (
+                                                    <span
+                                                      key={day}
+                                                      className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
+                                                    >
+                                                      {dayInfo?.short}
+                                                    </span>
+                                                  );
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <ChevronRight className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
+                                        </div>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            );
-          })}
+          )}
         </div>
       ) : null}
 
       {!showForm && routines.length === 0 && inheritedSchedules.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            This placement uses store-level schedules. Expand "Inherited from Store" sections to customize specific schedules for this placement.
+            This placement uses store-level schedules. Expand "Inherited Dayparts" below to view and customize schedules for this placement.
           </p>
         </div>
       )}
