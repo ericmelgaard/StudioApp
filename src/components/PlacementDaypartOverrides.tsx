@@ -343,57 +343,49 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </p>
       </div>
 
-      {/* Modal overlay for edit/create form */}
+      {/* Full-screen modal for edit/create form */}
       {showForm && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto"
-          onClick={handleCancel}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal header */}
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-lg z-10">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
-              </h3>
-              <button
-                onClick={handleCancel}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-white z-50 flex flex-col">
+          {/* Modal header */}
+          <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
+            <h3 className="text-lg font-semibold text-slate-900">
+              {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
+            </h3>
+            <button
+              onClick={handleCancel}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
 
-            {/* Modal content */}
-            <div className="p-6">
-              <DaypartRoutineForm
-                placementGroupId={placementGroupId}
-                existingRoutines={routines}
-                onSave={handleSave}
-                onCancel={handleCancel}
-                editingRoutine={editingInherited ? {
-                  id: undefined,
-                  placement_group_id: placementGroupId,
-                  daypart_name: editingInherited.daypart_name,
-                  days_of_week: editingInherited.days_of_week,
-                  start_time: editingInherited.start_time,
-                  end_time: editingInherited.end_time,
-                  schedule_name: editingInherited.schedule_name,
-                  runs_on_days: editingInherited.runs_on_days,
-                  schedule_type: editingInherited.schedule_type,
-                  event_name: editingInherited.event_name,
-                  event_date: editingInherited.event_date,
-                  recurrence_type: editingInherited.recurrence_type,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                } as DaypartRoutine : editingRoutine}
-                preFillDaypart={preFillDaypart}
-                preFillScheduleType={preFillScheduleType}
-                onDelete={editingRoutine ? handleDelete : undefined}
-              />
-            </div>
+          {/* Modal content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <DaypartRoutineForm
+              placementGroupId={placementGroupId}
+              existingRoutines={routines}
+              onSave={handleSave}
+              onCancel={handleCancel}
+              editingRoutine={editingInherited ? {
+                id: undefined,
+                placement_group_id: placementGroupId,
+                daypart_name: editingInherited.daypart_name,
+                days_of_week: editingInherited.days_of_week,
+                start_time: editingInherited.start_time,
+                end_time: editingInherited.end_time,
+                schedule_name: editingInherited.schedule_name,
+                runs_on_days: editingInherited.runs_on_days,
+                schedule_type: editingInherited.schedule_type,
+                event_name: editingInherited.event_name,
+                event_date: editingInherited.event_date,
+                recurrence_type: editingInherited.recurrence_type,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              } as DaypartRoutine : editingRoutine}
+              preFillDaypart={preFillDaypart}
+              preFillScheduleType={preFillScheduleType}
+              onDelete={editingRoutine ? handleDelete : undefined}
+            />
           </div>
         </div>
       )}
