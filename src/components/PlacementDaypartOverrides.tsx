@@ -345,6 +345,17 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
   // Edit Schedule View
   if (viewLevel === 'edit-schedule') {
+    const currentDaypart = preFillDaypart || editingRoutine?.daypart_name || editingInherited?.daypart_name;
+    const currentDefinition = daypartDefinitions.find(d => d.daypart_name === currentDaypart);
+    const daypartLabel = currentDefinition?.display_label || currentDaypart;
+    const scheduleTypeLabel = (preFillScheduleType || editingRoutine?.schedule_type || editingInherited?.schedule_type) === 'event_holiday' ? 'Event' : 'Schedule';
+
+    const breadcrumbLabel = editingRoutine
+      ? `Edit ${daypartLabel} ${scheduleTypeLabel}`
+      : editingInherited
+        ? `Customize ${daypartLabel} ${scheduleTypeLabel}`
+        : `Add ${daypartLabel} ${scheduleTypeLabel}`;
+
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -358,45 +369,41 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             <Breadcrumb
               items={[
                 { label: 'Placement Schedules', onClick: handleCancel },
-                { label: editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule' }
+                { label: breadcrumbLabel }
               ]}
             />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">
-            {editingRoutine ? 'Edit Schedule' : editingInherited ? 'Customize Inherited Schedule' : 'Add Schedule'}
-          </h3>
-          <DaypartRoutineForm
-            placementGroupId={placementGroupId}
-            existingRoutines={routines}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            editingRoutine={editingInherited ? {
-              id: undefined,
-              placement_group_id: placementGroupId,
-              daypart_name: editingInherited.daypart_name,
-              days_of_week: editingInherited.days_of_week,
-              start_time: editingInherited.start_time,
-              end_time: editingInherited.end_time,
-              schedule_name: editingInherited.schedule_name,
-              runs_on_days: editingInherited.runs_on_days,
-              schedule_type: editingInherited.schedule_type,
-              event_name: editingInherited.event_name,
-              event_date: editingInherited.event_date,
-              recurrence_type: editingInherited.recurrence_type,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            } as DaypartRoutine : editingRoutine}
-            preFillDaypart={preFillDaypart}
-            preFillScheduleType={preFillScheduleType}
-            preFillDaysOfWeek={preFillDaysOfWeek}
-            preFillStartTime={preFillStartTime}
-            preFillEndTime={preFillEndTime}
-            onDelete={editingRoutine ? handleDelete : undefined}
-          />
-        </div>
+        <DaypartRoutineForm
+          placementGroupId={placementGroupId}
+          existingRoutines={routines}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          editingRoutine={editingInherited ? {
+            id: undefined,
+            placement_group_id: placementGroupId,
+            daypart_name: editingInherited.daypart_name,
+            days_of_week: editingInherited.days_of_week,
+            start_time: editingInherited.start_time,
+            end_time: editingInherited.end_time,
+            schedule_name: editingInherited.schedule_name,
+            runs_on_days: editingInherited.runs_on_days,
+            schedule_type: editingInherited.schedule_type,
+            event_name: editingInherited.event_name,
+            event_date: editingInherited.event_date,
+            recurrence_type: editingInherited.recurrence_type,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } as DaypartRoutine : editingRoutine}
+          preFillDaypart={preFillDaypart}
+          preFillScheduleType={preFillScheduleType}
+          preFillDaysOfWeek={preFillDaysOfWeek}
+          preFillStartTime={preFillStartTime}
+          preFillEndTime={preFillEndTime}
+          daypartDefinition={currentDefinition}
+          onDelete={editingRoutine ? handleDelete : undefined}
+        />
       </div>
     );
   }

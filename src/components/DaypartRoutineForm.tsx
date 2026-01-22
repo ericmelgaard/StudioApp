@@ -17,6 +17,11 @@ interface DaypartRoutineFormProps {
   preFillDaysOfWeek?: number[];
   preFillStartTime?: string;
   preFillEndTime?: string;
+  daypartDefinition?: {
+    daypart_name: string;
+    display_label: string;
+    color?: string;
+  };
   onDelete?: (routineId: string) => Promise<void>;
 }
 
@@ -72,6 +77,7 @@ export default function DaypartRoutineForm({
   preFillDaysOfWeek,
   preFillStartTime,
   preFillEndTime,
+  daypartDefinition,
   onDelete
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
@@ -268,34 +274,27 @@ export default function DaypartRoutineForm({
     }
   };
 
-  const selectedDaypartLabel = daypartTypes.find(d => d.daypart_name === formData.daypart_name)?.display_label || formData.daypart_name;
+  const selectedDaypartLabel = daypartDefinition?.display_label || daypartTypes.find(d => d.daypart_name === formData.daypart_name)?.display_label || formData.daypart_name;
+  const daypartColor = daypartDefinition?.color || 'bg-slate-100';
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      <div className="p-4 border-b border-slate-200 bg-slate-50">
-        <h3 className="font-semibold text-slate-900">
-          {editingRoutine ? 'Edit Schedule' : 'New Schedule'}
-        </h3>
+      <div className={`p-4 border-b border-slate-200 ${daypartColor}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-slate-900">
+              {selectedDaypartLabel}
+            </h3>
+            <span className={`text-sm ${
+              formData.schedule_type === 'event_holiday' ? 'text-amber-900 font-medium' : 'text-slate-700'
+            }`}>
+              {formData.schedule_type === 'event_holiday' ? 'Event' : 'Schedule'}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Daypart Info (Read-only) */}
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs text-slate-500 mb-0.5">Daypart</div>
-              <div className="font-semibold text-slate-900">{selectedDaypartLabel}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-slate-500 mb-0.5">Schedule Type</div>
-              <div className={`text-sm font-medium ${
-                formData.schedule_type === 'event_holiday' ? 'text-amber-600' : 'text-slate-700'
-              }`}>
-                {formData.schedule_type === 'event_holiday' ? 'Event / Holiday' : 'Regular Schedule'}
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Schedule Name at the top */}
         <div>
