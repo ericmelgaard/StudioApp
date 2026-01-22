@@ -82,7 +82,6 @@ export default function ScheduleEditPage({
       if (initialDays.length > 0) {
         const newRemovedDays = initialDays.filter(d => !newDaysOfWeek.includes(d));
         setRemovedDays(newRemovedDays);
-        setShowRemovedDaysPrompt(newRemovedDays.length > 0);
       }
 
       return {
@@ -93,23 +92,41 @@ export default function ScheduleEditPage({
   };
 
   const handleScheduleRemovedDays = async () => {
-    // Save current schedule first
-    await handleSubmit(new Event('submit') as any);
+    if (!savedScheduleId || removedDays.length === 0) return;
 
-    // Then create a new schedule for removed days
-    const newSchedule: Schedule = {
-      id: '',
-      daypart_definition_id: formData.daypart_definition_id,
-      placement_group_id: groupId,
-      days_of_week: removedDays,
-      start_time: formData.start_time,
-      end_time: formData.end_time,
-      runs_on_days: true,
-      schedule_name: formData.schedule_name
-    };
+    setLoading(true);
+    try {
+      // Create a new schedule for removed days with the same settings
+      const data = {
+        daypart_definition_id: formData.daypart_definition_id,
+        placement_group_id: groupId,
+        days_of_week: removedDays,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        runs_on_days: true,
+        schedule_name: formData.schedule_name || null
+      };
 
-    // Navigate to edit page for removed days
-    window.location.reload(); // Simplified - in production would use proper navigation
+      const { error } = await supabase
+        .from('site_daypart_routines')
+        .insert(data);
+
+      if (error) throw error;
+
+      // Success - go back
+      onSuccess();
+    } catch (err) {
+      console.error('Error creating schedule for removed days:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create schedule');
+      setShowRemovedDaysPrompt(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipRemovedDays = () => {
+    setShowRemovedDaysPrompt(false);
+    onSuccess();
   };
 
   const formatRemovedDays = (): string => {
@@ -197,8 +214,12 @@ export default function ScheduleEditPage({
         setSavedScheduleId(scheduleId);
         setMergeableSchedules(otherSchedules);
         setShowMergePrompt(true);
+      } else if (removedDays.length > 0) {
+        // Check if days were removed
+        setSavedScheduleId(scheduleId);
+        setShowRemovedDaysPrompt(true);
       } else {
-        // No merge needed, go back
+        // No merge needed and no removed days, go back
         onSuccess();
       }
     } catch (err) {
@@ -328,44 +349,8 @@ export default function ScheduleEditPage({
               </div>
             )}
 
-            {/* Removed Days Warning */}
-            {showRemovedDaysPrompt && removedDays.length > 0 && (
-              <div className="p-4 m-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-800 rounded-lg">
-                <div className="flex items-start gap-3 mb-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-1">
-                      You removed {formatRemovedDays()}
-                    </p>
-                    <p className="text-sm text-amber-800 dark:text-amber-200">
-                      This daypart will not run on these days unless you create a separate schedule for them.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleScheduleRemovedDays}
-                    className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors"
-                    style={{ backgroundColor: '#00adf0' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
-                  >
-                    Schedule These Days
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowRemovedDaysPrompt(false)}
-                    className="px-4 py-2.5 text-sm font-medium text-amber-700 dark:text-amber-300 bg-white dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/60 rounded-lg transition-colors"
-                  >
-                    Continue Without Scheduling
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Suggested Days Helper Text */}
-            {isSuggestedDays && !showRemovedDaysPrompt && (
+            {isSuggestedDays && (
               <div className="flex items-start gap-2 p-3 m-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
                 <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -592,6 +577,55 @@ export default function ScheduleEditPage({
                   onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
                 >
                   {loading ? 'Merging...' : 'Merge Schedules'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Removed Days Prompt Modal */}
+      {showRemovedDaysPrompt && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                    Schedule Removed Days?
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    You removed {formatRemovedDays()} from this schedule
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-6">
+                <p className="text-sm text-amber-900 dark:text-amber-100">
+                  This daypart will not run on these days unless you create a separate schedule for them.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSkipRemovedDays}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Don't Schedule
+                </button>
+                <button
+                  onClick={handleScheduleRemovedDays}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: '#00adf0' }}
+                  onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
+                  onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
+                >
+                  {loading ? 'Creating Schedule...' : 'Schedule These Days'}
                 </button>
               </div>
             </div>
