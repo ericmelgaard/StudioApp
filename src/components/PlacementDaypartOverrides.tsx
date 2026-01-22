@@ -477,10 +477,35 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 ))}
 
                 {daypartSchedules.length === 0 && !hasEvents && (
-                  <div className="p-6 text-center">
-                    <p className="text-slate-600 text-sm">
-                      No schedules configured for this daypart. Configure at store level or add a customization.
+                  <button
+                    onClick={() => handleAddNew('regular', daypartName)}
+                    className="w-full p-6 text-center hover:bg-slate-50 transition-colors group"
+                  >
+                    <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2 group-hover:text-blue-500 transition-colors" />
+                    <p className="text-slate-600 text-sm group-hover:text-blue-600 transition-colors">
+                      No schedules configured for this daypart. Click to add.
                     </p>
+                  </button>
+                )}
+
+                {daypartSchedules.length > 0 && (
+                  <div className="border-t border-slate-200 bg-slate-50">
+                    <div className="flex divide-x divide-slate-200">
+                      <button
+                        onClick={() => handleAddNew('regular', daypartName)}
+                        className="flex-1 px-3 py-2 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 text-xs text-slate-600 hover:text-blue-700 font-medium"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Schedule
+                      </button>
+                      <button
+                        onClick={() => handleAddNew('event_holiday', daypartName)}
+                        className="flex-1 px-3 py-2 hover:bg-cyan-50 transition-colors flex items-center justify-center gap-2 text-xs text-slate-600 hover:text-cyan-700 font-medium"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Add Event/Holiday
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -578,22 +603,11 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         </div>
       ) : null}
 
-      {!showForm && (
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            onClick={() => handleAddNew('regular')}
-            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Schedule
-          </button>
-          <button
-            onClick={() => handleAddNew('event_holiday')}
-            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
-          >
-            <Sparkles className="w-4 h-4" />
-            Add Event/Holiday Hours
-          </button>
+      {!showForm && effectiveSchedules.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            Configure daypart schedules at the store level to see them here. Placement-level schedules inherit from store configuration.
+          </p>
         </div>
       )}
     </div>
