@@ -308,7 +308,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
         </div>
       )}
 
-      {/* Add Daypart Button */}
+      {/* Customize Daypart Button */}
       <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
         <button
           onClick={() => onEditSchedule?.(null)}
@@ -320,7 +320,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
           onMouseUp={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
         >
           <Plus className="w-5 h-5" />
-          <span>Add Daypart</span>
+          <span>Customize Daypart</span>
         </button>
       </div>
     </div>
