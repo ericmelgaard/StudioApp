@@ -78,12 +78,8 @@ export default function ScheduleEditPage({
         ? prev.days_of_week.filter(d => d !== day)
         : [...prev.days_of_week, day].sort((a, b) => a - b);
 
-      // Track removed days if this is editing suggested days
-      if (isSuggestedDays && initialDays.includes(day) && !newDaysOfWeek.includes(day)) {
-        const newRemovedDays = initialDays.filter(d => !newDaysOfWeek.includes(d));
-        setRemovedDays(newRemovedDays);
-        setShowRemovedDaysPrompt(newRemovedDays.length > 0);
-      } else if (isSuggestedDays) {
+      // Track removed days whenever there are initial days (both editing existing schedules and suggested days)
+      if (initialDays.length > 0) {
         const newRemovedDays = initialDays.filter(d => !newDaysOfWeek.includes(d));
         setRemovedDays(newRemovedDays);
         setShowRemovedDaysPrompt(newRemovedDays.length > 0);
