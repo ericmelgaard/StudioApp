@@ -82,7 +82,7 @@ export default function DaypartRoutineForm({
     days_of_week: editingRoutine?.days_of_week || preFillDaysOfWeek || [] as number[],
     start_time: editingRoutine?.start_time || preFillStartTime || '06:00',
     end_time: editingRoutine?.end_time || preFillEndTime || '11:00',
-    runs_on_days: editingRoutine?.runs_on_days !== false,
+    runs_on_days: true,
     schedule_name: editingRoutine?.schedule_name || '',
     event_name: editingRoutine?.event_name || '',
     event_date: editingRoutine?.event_date || '',
@@ -218,8 +218,9 @@ export default function DaypartRoutineForm({
       await onSave({
         placement_group_id: placementGroupId,
         ...formData,
-        start_time: formData.runs_on_days ? formData.start_time : null,
-        end_time: formData.runs_on_days ? formData.end_time : null,
+        runs_on_days: true,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
         event_date: formData.event_date || undefined,
         priority_level,
         recurrence_config: Object.keys(formData.recurrence_config).length > 0 ? formData.recurrence_config : undefined
@@ -267,6 +268,8 @@ export default function DaypartRoutineForm({
     }
   };
 
+  const selectedDaypartLabel = daypartTypes.find(d => d.daypart_name === formData.daypart_name)?.display_label || formData.daypart_name;
+
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-200 bg-slate-50">
@@ -276,31 +279,36 @@ export default function DaypartRoutineForm({
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, schedule_type: 'regular' })}
-            disabled={!!editingRoutine}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-              formData.schedule_type === 'regular'
-                ? 'bg-slate-700 text-white'
-                : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-            } ${editingRoutine ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            Regular Schedule
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, schedule_type: 'event_holiday' })}
-            disabled={!!editingRoutine}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-              formData.schedule_type === 'event_holiday'
-                ? 'bg-amber-600 text-white'
-                : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-            } ${editingRoutine ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            Event / Holiday
-          </button>
+        {/* Daypart Info (Read-only) */}
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-slate-500 mb-0.5">Daypart</div>
+              <div className="font-semibold text-slate-900">{selectedDaypartLabel}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-slate-500 mb-0.5">Schedule Type</div>
+              <div className={`text-sm font-medium ${
+                formData.schedule_type === 'event_holiday' ? 'text-amber-600' : 'text-slate-700'
+              }`}>
+                {formData.schedule_type === 'event_holiday' ? 'Event / Holiday' : 'Regular Schedule'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Schedule Name at the top */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Schedule Name (optional)
+          </label>
+          <input
+            type="text"
+            value={formData.schedule_name}
+            onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
+            placeholder="e.g., Weekend Hours, Summer Schedule"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {formData.schedule_type === 'event_holiday' && (
@@ -342,25 +350,6 @@ export default function DaypartRoutineForm({
                 placeholder="e.g., Christmas Day, Holiday Season"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Daypart Type *
-              </label>
-              <select
-                value={formData.daypart_name}
-                onChange={(e) => handleDaypartChange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                required
-              >
-                <option value="">Select a daypart...</option>
-                {daypartTypes.map((type) => (
-                  <option key={type.daypart_name} value={type.daypart_name}>
-                    {type.display_label}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div>
@@ -546,108 +535,28 @@ export default function DaypartRoutineForm({
         )}
 
         {formData.schedule_type === 'regular' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Daypart Type *
-              </label>
-              <select
-                value={formData.daypart_name}
-                onChange={(e) => handleDaypartChange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select a daypart...</option>
-                {daypartTypes.map((type) => (
-                  <option key={type.daypart_name} value={type.daypart_name}>
-                    {type.display_label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <DaySelector
-              selectedDays={formData.days_of_week}
-              onToggleDay={toggleDay}
-              schedules={existingRoutines}
-              currentDaypartName={formData.daypart_name}
-              editingScheduleId={editingRoutine?.id}
-              showPresets={false}
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Schedule Name (optional)
-              </label>
-              <input
-                type="text"
-                value={formData.schedule_name}
-                onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
-                placeholder="e.g., Weekend Hours, Summer Schedule"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-          </>
+          <DaySelector
+            selectedDays={formData.days_of_week}
+            onToggleDay={toggleDay}
+            schedules={existingRoutines}
+            currentDaypartName={formData.daypart_name}
+            editingScheduleId={editingRoutine?.id}
+            showPresets={false}
+          />
         )}
 
-        <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
-          <div>
-            <label className="text-sm font-medium text-slate-900">
-              Schedule runs on selected days
-            </label>
-            <p className="text-xs text-slate-600 mt-0.5">
-              Turn off for days where this schedule does not activate
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              const newValue = !formData.runs_on_days;
-              setFormData({
-                ...formData,
-                runs_on_days: newValue,
-                start_time: newValue ? '06:00' : null,
-                end_time: newValue ? '11:00' : null
-              });
-            }}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              formData.runs_on_days ? 'bg-blue-600' : 'bg-slate-300'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                formData.runs_on_days ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
+        <div className="grid grid-cols-2 gap-3">
+          <TimeSelector
+            label="Start Time *"
+            value={formData.start_time || '06:00'}
+            onChange={(time) => setFormData({ ...formData, start_time: time })}
+          />
+          <TimeSelector
+            label="End Time *"
+            value={formData.end_time || '11:00'}
+            onChange={(time) => setFormData({ ...formData, end_time: time })}
+          />
         </div>
-
-        {formData.runs_on_days ? (
-          <div className="grid grid-cols-2 gap-3">
-            <TimeSelector
-              label="Start Time *"
-              value={formData.start_time || '06:00'}
-              onChange={(time) => setFormData({ ...formData, start_time: time })}
-            />
-            <TimeSelector
-              label="End Time *"
-              value={formData.end_time || '11:00'}
-              onChange={(time) => setFormData({ ...formData, end_time: time })}
-            />
-          </div>
-        ) : (
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-2">
-            <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-slate-700">
-                Schedule does not run on selected days
-              </p>
-              <p className="text-xs text-slate-600 mt-0.5">
-                This daypart will be inactive/not start on the selected days.
-              </p>
-            </div>
-          </div>
-        )}
 
         <div className="flex gap-2">
           <button
