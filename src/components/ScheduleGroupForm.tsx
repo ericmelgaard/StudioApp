@@ -107,7 +107,7 @@ export default function ScheduleGroupForm({
       setRecurrenceConfig(template.recurrence_config);
       if (template.is_closed) {
         handleTimeChange('start_time', '00:00');
-        handleTimeChange('end_time', '00:00');
+        handleTimeChange('end_time', '23:59');
       } else if (template.suggested_hours) {
         handleTimeChange('start_time', template.suggested_hours.start_time);
         handleTimeChange('end_time', template.suggested_hours.end_time);
@@ -133,6 +133,10 @@ export default function ScheduleGroupForm({
       return;
     }
     if (collision.hasCollision && !disableCollisionDetection) {
+      return;
+    }
+    if (localSchedule.start_time === localSchedule.end_time) {
+      alert('Start time and end time must be different');
       return;
     }
 

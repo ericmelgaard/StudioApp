@@ -216,6 +216,11 @@ export default function DaypartRoutineForm({
       }
     }
 
+    if (formData.start_time === formData.end_time) {
+      setError('Start time and end time must be different');
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -249,7 +254,7 @@ export default function DaypartRoutineForm({
 
       if (template.is_closed) {
         updates.start_time = '00:00';
-        updates.end_time = '00:00';
+        updates.end_time = '23:59';
       } else if (template.suggested_hours) {
         updates.start_time = template.suggested_hours.start_time;
         updates.end_time = template.suggested_hours.end_time;
