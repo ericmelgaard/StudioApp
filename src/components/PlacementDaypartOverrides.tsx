@@ -440,6 +440,20 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                         </span>
                       )}
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddNew('event_holiday', daypartName);
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:bg-white/50"
+                      style={{
+                        backgroundColor: 'rgba(222, 56, 222, 0.15)',
+                        color: 'rgb(156, 39, 176)'
+                      }}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Add Event/Holiday
+                    </button>
                   </div>
                 </div>
               <div className="divide-y divide-slate-200">
@@ -495,18 +509,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                       No schedules configured for this daypart. Click to add.
                     </p>
                   </button>
-                )}
-
-                {daypartSchedules.length > 0 && (
-                  <div className="border-t border-slate-200 bg-slate-50">
-                    <button
-                      onClick={() => handleAddNew('event_holiday', daypartName)}
-                      className="w-full px-3 py-2 hover:bg-cyan-50 transition-colors flex items-center justify-center gap-2 text-xs text-slate-600 hover:text-cyan-700 font-medium"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Add Event/Holiday
-                    </button>
-                  </div>
                 )}
 
                 {hasEvents && (
@@ -602,20 +604,18 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
               <button
                 type="button"
                 onClick={() => setInheritedSectionExpanded(!inheritedSectionExpanded)}
-                className="w-full px-2 py-2 hover:bg-slate-50 transition-colors flex items-center justify-between rounded-lg"
+                className="w-full px-2 py-2 hover:bg-slate-50 transition-colors flex items-center justify-end gap-2 rounded-lg"
               >
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold" style={{ color: '#002e5e' }}>
-                    Store Dayparts
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 font-medium" style={{ color: '#002e5e' }}>
-                    {allDayparts.filter(dp => {
-                      const hasCustom = (groupedRoutines[dp]?.length || 0) + (groupedEventRoutines[dp]?.length || 0) > 0;
-                      const hasInherited = (groupedInheritedRoutines[dp]?.length || 0) + (groupedInheritedEvents[dp]?.length || 0) > 0;
-                      return !hasCustom && hasInherited;
-                    }).length}
-                  </span>
-                </div>
+                <span className="font-semibold" style={{ color: '#002e5e' }}>
+                  Store Dayparts
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 font-medium" style={{ color: '#002e5e' }}>
+                  {allDayparts.filter(dp => {
+                    const hasCustom = (groupedRoutines[dp]?.length || 0) + (groupedEventRoutines[dp]?.length || 0) > 0;
+                    const hasInherited = (groupedInheritedRoutines[dp]?.length || 0) + (groupedInheritedEvents[dp]?.length || 0) > 0;
+                    return !hasCustom && hasInherited;
+                  }).length}
+                </span>
                 {inheritedSectionExpanded ? (
                   <ChevronDown className="w-4 h-4" style={{ color: '#002e5e' }} />
                 ) : (
