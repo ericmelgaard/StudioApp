@@ -549,10 +549,10 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                         const template = daypartSchedules[0];
                         handleAddNew('regular', daypartName, unscheduledDays, template);
                       }}
-                      className="w-full p-3 bg-white border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                      className="mx-3 mb-3 w-auto p-3 bg-slate-50 border-2 border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-100 active:bg-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow"
                     >
-                      <Plus className="w-4 h-4 text-slate-600" />
-                      <span className="text-sm font-medium text-slate-600">
+                      <Plus className="w-4 h-4 text-slate-700" />
+                      <span className="text-sm font-semibold text-slate-700">
                         Schedule Remaining Days ({unscheduledDays.length})
                       </span>
                     </button>
