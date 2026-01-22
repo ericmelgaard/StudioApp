@@ -60,6 +60,7 @@ export default function ScheduleEditPage({
   const [showMergePrompt, setShowMergePrompt] = useState(false);
   const [mergeableSchedules, setMergeableSchedules] = useState<Schedule[]>([]);
   const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
+  const [isSchedulingRemovedDays, setIsSchedulingRemovedDays] = useState(false);
   const [formData, setFormData] = useState({
     daypart_definition_id: schedule?.daypart_definition_id || '',
     days_of_week: schedule?.days_of_week || [] as number[],
@@ -78,8 +79,9 @@ export default function ScheduleEditPage({
         ? prev.days_of_week.filter(d => d !== day)
         : [...prev.days_of_week, day].sort((a, b) => a - b);
 
-      // Track removed days whenever there are initial days (both editing existing schedules and suggested days)
-      if (initialDays.length > 0) {
+      // Only track removed days if we're still working on the original schedule
+      // Don't track if we're scheduling removed days from a previous save
+      if (initialDays.length > 0 && !isSchedulingRemovedDays) {
         const newRemovedDays = initialDays.filter(d => !newDaysOfWeek.includes(d));
         setRemovedDays(newRemovedDays);
       }
@@ -91,37 +93,27 @@ export default function ScheduleEditPage({
     });
   };
 
-  const handleScheduleRemovedDays = async () => {
-    if (!savedScheduleId || removedDays.length === 0) return;
+  const handleScheduleRemovedDays = () => {
+    // Reset form to create a new schedule with the removed days
+    setFormData({
+      daypart_definition_id: formData.daypart_definition_id,
+      placement_group_id: groupId,
+      days_of_week: removedDays,
+      start_time: formData.start_time,
+      end_time: formData.end_time,
+      runs_on_days: true,
+      schedule_name: formData.schedule_name || null
+    });
 
-    setLoading(true);
-    try {
-      // Create a new schedule for removed days with the same settings
-      const data = {
-        daypart_definition_id: formData.daypart_definition_id,
-        placement_group_id: groupId,
-        days_of_week: removedDays,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
-        runs_on_days: true,
-        schedule_name: formData.schedule_name || null
-      };
+    // Mark that we're now scheduling removed days (not editing the original schedule)
+    setIsSchedulingRemovedDays(true);
 
-      const { error } = await supabase
-        .from('site_daypart_routines')
-        .insert(data);
+    // Clear saved schedule ID and removed days tracking
+    setSavedScheduleId(null);
+    setRemovedDays([]);
 
-      if (error) throw error;
-
-      // Success - go back
-      onSuccess();
-    } catch (err) {
-      console.error('Error creating schedule for removed days:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create schedule');
-      setShowRemovedDaysPrompt(false);
-    } finally {
-      setLoading(false);
-    }
+    // Close the prompt - user can now edit and save
+    setShowRemovedDaysPrompt(false);
   };
 
   const handleSkipRemovedDays = () => {
@@ -612,20 +604,18 @@ export default function ScheduleEditPage({
               <div className="flex gap-3">
                 <button
                   onClick={handleSkipRemovedDays}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 rounded-lg transition-colors"
                 >
                   Don't Schedule
                 </button>
                 <button
                   onClick={handleScheduleRemovedDays}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors"
                   style={{ backgroundColor: '#00adf0' }}
-                  onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
-                  onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
                 >
-                  {loading ? 'Creating Schedule...' : 'Schedule These Days'}
+                  Schedule These Days
                 </button>
               </div>
             </div>
