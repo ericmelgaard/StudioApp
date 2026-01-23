@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Calendar, Sparkles, Info } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 import DaySelector from './DaySelector';
 import HolidayTemplatePicker from './HolidayTemplatePicker';
@@ -26,6 +26,7 @@ interface ScheduleGroupFormProps {
   onDaypartChange?: (daypartId: string, daypartName: string) => void;
   skipDayValidation?: boolean;
   disableCollisionDetection?: boolean;
+  onDelete?: (scheduleId: string) => Promise<void>;
 }
 
 export default function ScheduleGroupForm({
@@ -40,17 +41,17 @@ export default function ScheduleGroupForm({
   selectedDaypartId = '',
   onDaypartChange,
   skipDayValidation = false,
-  disableCollisionDetection = false
+  disableCollisionDetection = false,
+  onDelete
 }: ScheduleGroupFormProps) {
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-  const [scheduleType, setScheduleType] = useState<ScheduleType>(schedule.schedule_type || 'regular');
+  const scheduleType = schedule.schedule_type || 'regular';
   const [scheduleName, setScheduleName] = useState(schedule.schedule_name || '');
   const [eventName, setEventName] = useState(schedule.event_name || '');
   const [eventDate, setEventDate] = useState(schedule.event_date || '');
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(schedule.recurrence_type || 'none');
   const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig>(schedule.recurrence_config || {});
-  const [runsOnDays, setRunsOnDays] = useState<boolean>(schedule.runs_on_days !== false);
 
   const collision = useScheduleCollisionDetection(
     allSchedules,
@@ -74,29 +75,6 @@ export default function ScheduleGroupForm({
     const updated = { ...localSchedule, [field]: value };
     setLocalSchedule(updated);
     onUpdate(updated);
-  };
-
-  const handleRunsOnDaysToggle = (value: boolean) => {
-    setRunsOnDays(value);
-    if (!value) {
-      const updated = { ...localSchedule, start_time: null, end_time: null, runs_on_days: false };
-      setLocalSchedule(updated);
-      onUpdate(updated);
-    } else {
-      const updated = { ...localSchedule, start_time: '09:00', end_time: '17:00', runs_on_days: true };
-      setLocalSchedule(updated);
-      onUpdate(updated);
-    }
-  };
-
-  const handleScheduleTypeChange = (type: ScheduleType) => {
-    setScheduleType(type);
-    if (type === 'regular') {
-      setEventName('');
-      setEventDate('');
-      setRecurrenceType('none');
-      setRecurrenceConfig({});
-    }
   };
 
   const handleTemplateSelect = (templates: any[]) => {
@@ -144,6 +122,7 @@ export default function ScheduleGroupForm({
       ...localSchedule,
       schedule_type: scheduleType,
       schedule_name: scheduleName || undefined,
+      runs_on_days: true,
       priority_level: scheduleType === 'event_holiday' ? getPriorityLevel(recurrenceType) : 10
     };
 
@@ -156,6 +135,20 @@ export default function ScheduleGroupForm({
 
     onUpdate(updatedSchedule);
     onSave(updatedSchedule);
+  };
+
+  const handleDelete = async () => {
+    if (!schedule.id || !onDelete) return;
+
+    if (!confirm('Are you sure you want to delete this schedule? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await onDelete(schedule.id);
+    } catch (err: any) {
+      alert(`Failed to delete schedule: ${err.message}`);
+    }
   };
 
   const daypartError = showDaypartSelector && !selectedDaypartId
@@ -179,33 +172,6 @@ export default function ScheduleGroupForm({
 
   return (
     <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-4">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => handleScheduleTypeChange('regular')}
-          disabled={!!schedule.id}
-          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-            scheduleType === 'regular'
-              ? 'bg-slate-700 text-white'
-              : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-          } ${schedule.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          Regular Schedule
-        </button>
-        <button
-          type="button"
-          onClick={() => handleScheduleTypeChange('event_holiday')}
-          disabled={!!schedule.id}
-          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-            scheduleType === 'event_holiday'
-              ? 'bg-amber-600 text-white'
-              : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-          } ${schedule.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          Event / Holiday
-        </button>
-      </div>
-
       {scheduleType === 'event_holiday' && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
           <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -481,73 +447,50 @@ export default function ScheduleGroupForm({
         />
       )}
 
-      <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
-        <div>
-          <label className="text-sm font-medium text-slate-900">
-            Schedule runs on selected days
-          </label>
-          <p className="text-xs text-slate-600 mt-0.5">
-            Turn off for days where this schedule does not activate
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => handleRunsOnDaysToggle(!runsOnDays)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            runsOnDays ? 'bg-blue-600' : 'bg-slate-300'
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              runsOnDays ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
-        </button>
+      <div className="grid grid-cols-2 gap-3">
+        <TimeSelector
+          label="Start Time *"
+          value={localSchedule.start_time || '09:00'}
+          onChange={(time) => handleTimeChange('start_time', time)}
+        />
+        <TimeSelector
+          label="End Time *"
+          value={localSchedule.end_time || '17:00'}
+          onChange={(time) => handleTimeChange('end_time', time)}
+        />
       </div>
 
-      {runsOnDays ? (
-        <div className="grid grid-cols-2 gap-3">
-          <TimeSelector
-            label="Start Time *"
-            value={localSchedule.start_time || '09:00'}
-            onChange={(time) => handleTimeChange('start_time', time)}
-          />
-          <TimeSelector
-            label="End Time *"
-            value={localSchedule.end_time || '17:00'}
-            onChange={(time) => handleTimeChange('end_time', time)}
-          />
-        </div>
-      ) : (
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-start gap-2">
-          <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-slate-700">
-              Schedule does not run on selected days
-            </p>
-            <p className="text-xs text-slate-600 mt-0.5">
-              This daypart will be inactive/not start on the selected days.
-            </p>
-          </div>
-        </div>
-      )}
+      <div className="flex items-center justify-between gap-4">
+        {schedule.id && onDelete ? (
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Schedule
+          </button>
+        ) : (
+          <div />
+        )}
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!!error}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-        >
-          Save Schedule
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
-        >
-          Cancel
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!!error}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+          >
+            Save Schedule
+          </button>
+        </div>
       </div>
 
       {showTemplatePicker && (

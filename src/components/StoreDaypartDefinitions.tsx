@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
 import ScheduleGroupForm from './ScheduleGroupForm';
 import { Schedule } from '../hooks/useScheduleCollisionDetection';
+import Breadcrumb from './Breadcrumb';
 
 interface DaypartDefinition {
   id: string;
@@ -59,6 +60,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [showUnused, setShowUnused] = useState(false);
   const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
+  const [viewLevel, setViewLevel] = useState<'list' | 'edit-schedule'>('list');
+  const [editingDefinitionContext, setEditingDefinitionContext] = useState<DaypartDefinition | null>(null);
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -236,6 +239,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     });
     setAddingScheduleForDef(defId);
     setEditingSchedule(null);
+    setEditingDefinitionContext(def || null);
+    setViewLevel('edit-schedule');
   };
 
   const handleEditSchedule = (schedule: DaypartSchedule) => {
@@ -246,6 +251,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     };
     setEditingSchedule(scheduleWithDaypartName);
     setAddingScheduleForDef(null);
+    setEditingDefinitionContext(definition || null);
+    setViewLevel('edit-schedule');
   };
 
   const handleSaveSchedule = async (scheduleToSave?: Schedule) => {
@@ -423,6 +430,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       setEditingSchedule(null);
       setAddingScheduleForDef(null);
       setNewSchedule(null);
+      setEditingDefinitionContext(null);
+      setViewLevel('list');
       await loadData();
 
       setTimeout(() => setSuccess(null), 3000);
@@ -496,6 +505,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         if (deleteError) throw deleteError;
       }
 
+      setEditingSchedule(null);
+      setEditingDefinitionContext(null);
+      setViewLevel('list');
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -526,6 +538,84 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-8 h-8 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (viewLevel === 'edit-schedule' && (editingSchedule || newSchedule)) {
+    const currentSchedule = editingSchedule || newSchedule;
+    const scheduleName = currentSchedule?.schedule_name ||
+      (currentSchedule?.schedule_type === 'event_holiday' ? currentSchedule?.event_name : '') ||
+      (editingSchedule ? 'Edit Schedule' : 'New Schedule');
+
+    return (
+      <div>
+        <button
+          onClick={() => {
+            setViewLevel('list');
+            setEditingSchedule(null);
+            setNewSchedule(null);
+            setAddingScheduleForDef(null);
+            setEditingDefinitionContext(null);
+          }}
+          className="mb-4 flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Back to List</span>
+        </button>
+
+        <Breadcrumb
+          items={[
+            { label: 'Daypart Schedules', onClick: () => {
+              setViewLevel('list');
+              setEditingSchedule(null);
+              setNewSchedule(null);
+              setAddingScheduleForDef(null);
+              setEditingDefinitionContext(null);
+            }},
+            { label: editingDefinitionContext?.display_label || 'Schedule' },
+            { label: scheduleName }
+          ]}
+          className="mb-4"
+        />
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-start gap-2">
+            <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{success}</span>
+          </div>
+        )}
+
+        <ScheduleGroupForm
+          schedule={currentSchedule!}
+          allSchedules={schedules}
+          onUpdate={(updated) => {
+            if (editingSchedule) {
+              setEditingSchedule(updated as DaypartSchedule);
+            } else {
+              setNewSchedule(updated);
+            }
+          }}
+          onSave={handleSaveSchedule}
+          onCancel={() => {
+            setViewLevel('list');
+            setEditingSchedule(null);
+            setNewSchedule(null);
+            setAddingScheduleForDef(null);
+            setEditingDefinitionContext(null);
+          }}
+          onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+          level="site"
+          skipDayValidation={false}
+          disableCollisionDetection={false}
+        />
       </div>
     );
   }
