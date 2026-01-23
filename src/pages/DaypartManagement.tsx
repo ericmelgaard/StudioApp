@@ -253,7 +253,12 @@ export default function DaypartManagement() {
   };
 
   const handleEditSchedule = (schedule: DaypartSchedule) => {
-    setEditingSchedule(schedule);
+    const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
+    const scheduleWithName = {
+      ...schedule,
+      daypart_name: definition?.daypart_name
+    };
+    setEditingSchedule(scheduleWithName);
     setAddingScheduleForDef(null);
   };
 
@@ -425,9 +430,14 @@ export default function DaypartManagement() {
 
       <div className="space-y-4 mb-6">
         {definitions.map((definition) => {
+          console.log('[DaypartManagement] Processing definition:', definition.id, 'daypart_name:', definition.daypart_name);
           const defSchedules = allSchedules
             .filter(s => s.daypart_definition_id === definition.id)
-            .map(s => ({ ...s, daypart_name: definition.daypart_name }));
+            .map(s => {
+              const enriched = { ...s, daypart_name: definition.daypart_name };
+              console.log('[DaypartManagement] Enriched schedule:', s.id, 'with daypart_name:', enriched.daypart_name);
+              return enriched;
+            });
           const regularSchedules = defSchedules.filter(s => s.schedule_type !== 'event_holiday');
           const eventSchedules = defSchedules.filter(s => s.schedule_type === 'event_holiday');
           const hasEvents = eventSchedules.length > 0;
