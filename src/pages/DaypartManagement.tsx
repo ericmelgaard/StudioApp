@@ -136,6 +136,10 @@ export default function DaypartManagement() {
       console.error('Error loading definitions:', error);
       setError('Failed to load daypart definitions');
     } else {
+      console.log('[DaypartManagement] Loaded definitions:', data);
+      data?.forEach(def => {
+        console.log('[DaypartManagement] Definition:', def.id, 'daypart_name:', def.daypart_name, 'display_label:', def.display_label);
+      });
       setDefinitions(data || []);
     }
   };
@@ -148,6 +152,10 @@ export default function DaypartManagement() {
     if (error) {
       console.error('Error loading schedules:', error);
     } else {
+      console.log('[DaypartManagement] Loaded schedules:', data);
+      data?.forEach(sch => {
+        console.log('[DaypartManagement] Schedule:', sch.id, 'daypart_definition_id:', sch.daypart_definition_id, 'schedule_name:', sch.schedule_name);
+      });
       setAllSchedules(data || []);
     }
   };
