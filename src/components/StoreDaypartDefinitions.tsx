@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
@@ -71,6 +71,16 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     icon: 'Clock',
     sort_order: 0,
   });
+
+  const enrichedSchedules = useMemo(() => {
+    return schedules.map(schedule => {
+      const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
+      return {
+        ...schedule,
+        daypart_name: definition?.daypart_name
+      };
+    });
+  }, [schedules, definitions]);
 
   useEffect(() => {
     loadData();
@@ -612,7 +622,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           <div className="p-4">
             <ScheduleGroupForm
               schedule={currentSchedule!}
-              allSchedules={schedules}
+              allSchedules={enrichedSchedules}
               onUpdate={(updated) => {
                 if (editingSchedule) {
                   setEditingSchedule(updated as DaypartSchedule);
