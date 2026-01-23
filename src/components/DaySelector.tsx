@@ -95,7 +95,7 @@ export default function DaySelector({
         <div className="text-xs text-slate-500 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded border-2 border-red-400"></div>
-            <span>Already scheduled in this daypart</span>
+            <span>Day has conflicting schedule</span>
           </div>
         </div>
       )}
@@ -111,18 +111,20 @@ export default function DaySelector({
             <button
               key={day.value}
               type="button"
-              onClick={() => !hasCollision && onToggleDay(day.value)}
+              onClick={() => (hasCollision && !isSelected) ? undefined : onToggleDay(day.value)}
               disabled={hasCollision && !isSelected}
               className={`flex-1 h-12 rounded-lg text-sm font-medium transition-all ${
                 isSelected
-                  ? 'bg-slate-800 text-white shadow-md'
+                  ? hasCollision
+                    ? 'bg-slate-800 text-white shadow-md'
+                    : 'bg-slate-800 text-white shadow-md'
                   : hasCollision
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              } ${hasCollision && !isSelected ? 'ring-2 ring-red-400' : ''}`}
+              } ${hasCollision ? 'ring-2 ring-red-400' : ''}`}
               title={
-                hasCollision && !isSelected
-                  ? `${day.label} already scheduled in this daypart`
+                hasCollision
+                  ? `${day.label} already scheduled in this daypart${isSelected ? ' - click to remove' : ''}`
                   : day.label
               }
             >

@@ -87,7 +87,7 @@ export function getDayCollisionStatus(
   editingScheduleId?: string,
   currentScheduleType?: ScheduleType
 ): boolean {
-  if (!currentDaypartName || selectedDays.includes(day)) return false;
+  if (!currentDaypartName) return false;
   if (currentScheduleType === 'event_holiday') return false;
 
   return schedules.some(schedule => {
