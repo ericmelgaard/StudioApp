@@ -33,6 +33,14 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Saturday', short: 'Sat' }
 ];
 
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:${minutes} ${ampm}`;
+}
+
 interface StoreDaypartDefinitionsProps {
   storeId: number;
 }
@@ -51,9 +59,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [showUnused, setShowUnused] = useState(false);
   const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
-  const [isEventSchedule, setIsEventSchedule] = useState(false);
-  const [newScheduleType, setNewScheduleType] = useState<'regular' | 'event_holiday' | null>(null);
-  const [selectedDaypartId, setSelectedDaypartId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -214,46 +219,23 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     }
   };
 
-  const handleAddSchedule = (defId: string) => {
+  const handleAddSchedule = (
+    defId: string,
+    scheduleType: 'regular' | 'event_holiday' = 'regular',
+    preFillDays?: number[],
+    templateSchedule?: DaypartSchedule
+  ) => {
     const def = definitions.find(d => d.id === defId);
     setNewSchedule({
       daypart_name: def?.daypart_name || '',
       daypart_definition_id: defId,
-      days_of_week: [],
-      start_time: '06:00',
-      end_time: '11:00',
-      schedule_type: isEventSchedule ? 'event_holiday' : 'regular',
+      days_of_week: preFillDays || [],
+      start_time: templateSchedule?.start_time || '06:00',
+      end_time: templateSchedule?.end_time || '11:00',
+      schedule_type: scheduleType,
     });
     setAddingScheduleForDef(defId);
     setEditingSchedule(null);
-  };
-
-  const handleAddScheduleClick = () => {
-    setNewScheduleType('regular');
-    setIsEventSchedule(false);
-    setNewSchedule({
-      daypart_name: '',
-      daypart_definition_id: '',
-      days_of_week: [],
-      start_time: '06:00',
-      end_time: '11:00',
-      schedule_type: 'regular',
-    });
-    setAddingScheduleForDef('new');
-  };
-
-  const handleAddEventScheduleClick = () => {
-    setNewScheduleType('event_holiday');
-    setIsEventSchedule(true);
-    setNewSchedule({
-      daypart_name: '',
-      daypart_definition_id: '',
-      days_of_week: [],
-      start_time: '06:00',
-      end_time: '11:00',
-      schedule_type: 'event_holiday',
-    });
-    setAddingScheduleForDef('new');
   };
 
   const handleEditSchedule = (schedule: DaypartSchedule) => {
@@ -351,9 +333,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           if (updateError) throw updateError;
         }
       } else if (addingScheduleForDef) {
-        const targetDaypartId = addingScheduleForDef === 'new' ? selectedDaypartId : addingScheduleForDef;
+        const targetDaypartId = addingScheduleForDef;
 
-        if (!targetDaypartId || targetDaypartId === 'new') {
+        if (!targetDaypartId) {
           throw new Error('Please select a daypart');
         }
 
@@ -441,9 +423,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       setEditingSchedule(null);
       setAddingScheduleForDef(null);
       setNewSchedule(null);
-      setIsEventSchedule(false);
-      setNewScheduleType(null);
-      setSelectedDaypartId('');
       await loadData();
 
       setTimeout(() => setSuccess(null), 3000);
@@ -591,7 +570,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         </div>
       )}
 
-      <div className="space-y-4 mb-6">
+      <div className="space-y-5 mb-6">
         {filteredDefinitions.map((definition) => {
           const defSchedules = schedules
             .filter(s => s.daypart_definition_id === definition.id)
@@ -602,15 +581,108 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           const hasEvents = eventSchedules.length > 0;
           const eventsExpanded = expandedEvents[definition.id];
 
+          const scheduledDays = new Set<number>();
+          regularSchedules.forEach(schedule => {
+            schedule.days_of_week.forEach(day => scheduledDays.add(day));
+          });
+          const allDays = [0, 1, 2, 3, 4, 5, 6];
+          const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
+          const hasUnscheduledDays = unscheduledDays.length > 0;
+
+          if (editingSchedule?.daypart_definition_id === definition.id) {
+            return (
+              <div key={definition.id} className={`bg-white rounded-xl border-2 overflow-hidden transition-opacity ${
+                isInUse ? 'border-slate-200 shadow-sm' : 'border-slate-300 opacity-60'
+              }`}>
+                <div className={`px-4 py-3 border-b border-slate-200 ${definition.color}`}>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <h4 className="font-semibold">{definition.display_label}</h4>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        definition.source_level === 'store'
+                          ? 'bg-blue-600/20 text-blue-900'
+                          : definition.source_level === 'concept'
+                          ? 'bg-purple-600/20 text-purple-900'
+                          : 'bg-slate-600/20 text-slate-900'
+                      }`}
+                    >
+                      {definition.source_level === 'store'
+                        ? 'Store'
+                        : definition.source_level === 'concept'
+                        ? 'Concept'
+                        : 'Global'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleInUseStatus(definition.id)}
+                      className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
+                        isInUse
+                          ? 'bg-green-600/20 text-green-900 hover:bg-green-600/30'
+                          : 'bg-slate-600/20 text-slate-900 hover:bg-slate-600/30'
+                      }`}
+                      title={isInUse ? 'Mark as not in use' : 'Mark as in use'}
+                    >
+                      {isInUse ? 'In Use' : 'Not In Use'}
+                    </button>
+                  </div>
+                </div>
+                <div className="px-4 pb-4 bg-slate-50">
+                  <div className="pt-4">
+                    <ScheduleGroupForm
+                      schedule={editingSchedule}
+                      allSchedules={defSchedules}
+                      onUpdate={setEditingSchedule}
+                      onSave={handleSaveSchedule}
+                      onCancel={() => setEditingSchedule(null)}
+                      onDelete={() => handleDeleteSchedule(editingSchedule.id!)}
+                      level="site"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          if (addingScheduleForDef === definition.id && newSchedule) {
+            return (
+              <div key={definition.id} className={`bg-white rounded-xl border-2 overflow-hidden transition-opacity ${
+                isInUse ? 'border-slate-200 shadow-sm' : 'border-slate-300 opacity-60'
+              }`}>
+                <div className={`px-4 py-3 border-b border-slate-200 ${definition.color}`}>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <h4 className="font-semibold">{definition.display_label}</h4>
+                  </div>
+                </div>
+                <div className="px-4 pb-4 bg-slate-50">
+                  <div className="pt-4">
+                    <ScheduleGroupForm
+                      schedule={newSchedule}
+                      allSchedules={defSchedules}
+                      onUpdate={setNewSchedule}
+                      onSave={handleSaveSchedule}
+                      onCancel={() => {
+                        setAddingScheduleForDef(null);
+                        setNewSchedule(null);
+                      }}
+                      level="site"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div key={definition.id}>
-              {regularSchedules.length === 0 && !addingScheduleForDef && !hasEvents ? (
+              {regularSchedules.length === 0 && !hasEvents ? (
                 <div
-                  className={`bg-white rounded-lg border overflow-hidden transition-opacity ${
+                  className={`bg-white rounded-xl border-2 overflow-hidden transition-opacity shadow-sm hover:shadow-md ${
                     isInUse ? 'border-slate-200' : 'border-slate-300 opacity-60'
                   }`}
                 >
-                  <div className={`px-4 py-3 ${definition.color}`}>
+                  <div className={`px-4 py-3 border-b border-slate-200 ${definition.color}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1">
                         <Clock className="w-4 h-4" />
@@ -667,283 +739,288 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                       </div>
                     </div>
                   </div>
-                  <div className="p-6 text-center">
-                    <p className="text-slate-600 text-sm mb-4">
-                      No schedules yet. Add a schedule to define when this daypart is active.
-                    </p>
+                  <div className="p-6 space-y-4">
+                    <div className="text-center">
+                      <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-slate-600 text-sm">
+                        No schedules configured for this daypart.
+                      </p>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => handleAddSchedule(definition.id)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
+                      className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                      style={{
+                        borderColor: 'rgba(222, 56, 222, 0.3)',
+                        color: 'rgb(156, 39, 176)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                        e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
-                      <Plus className="w-4 h-4" />
-                      Add Schedule
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        Add Event/Holiday
+                      </span>
                     </button>
                   </div>
                 </div>
               ) : (
-                <>
-                  {regularSchedules.map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className={`bg-white rounded-lg border overflow-hidden transition-opacity mb-4 ${
-                        isInUse ? 'border-slate-200' : 'border-slate-300 opacity-60'
-                      }`}
-                    >
-                      <div className={`px-4 py-3 ${definition.color}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 flex-1">
-                            <Clock className="w-4 h-4" />
-                            <h4 className="font-semibold">{definition.display_label}</h4>
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${
-                                definition.source_level === 'store'
-                                  ? 'bg-blue-600/20 text-blue-900'
-                                  : definition.source_level === 'concept'
-                                  ? 'bg-purple-600/20 text-purple-900'
-                                  : 'bg-slate-600/20 text-slate-900'
-                              }`}
-                            >
-                              {definition.source_level === 'store'
-                                ? 'Store'
-                                : definition.source_level === 'concept'
-                                ? 'Concept'
-                                : 'Global'}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => toggleInUseStatus(definition.id)}
-                              className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
-                                isInUse
-                                  ? 'bg-green-600/20 text-green-900 hover:bg-green-600/30'
-                                  : 'bg-slate-600/20 text-slate-900 hover:bg-slate-600/30'
-                              }`}
-                              title={isInUse ? 'Mark as not in use' : 'Mark as in use'}
-                            >
-                              {isInUse ? 'In Use' : 'Not In Use'}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {definition.is_customized && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleEditDefinition(definition)}
-                                  className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                                  title="Edit definition"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteDefinition(definition)}
-                                  className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                                  title="Delete definition"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </>
-                            )}
-                            {!addingScheduleForDef && !editingSchedule && (
-                              <button
-                                type="button"
-                                onClick={() => handleAddSchedule(definition.id)}
-                                className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                                title="Add schedule"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {editingSchedule?.id === schedule.id ? (
-                        <div className="px-4 pb-4 bg-slate-50">
-                          <div className="pt-4">
-                            <ScheduleGroupForm
-                              schedule={editingSchedule}
-                              allSchedules={defSchedules}
-                              onUpdate={setEditingSchedule}
-                              onSave={handleSaveSchedule}
-                              onCancel={() => setEditingSchedule(null)}
-                              level="site"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-4">
-                          <div className="flex items-center gap-3 mb-2">
-                            {schedule.schedule_name && (
-                              <span className="text-sm font-semibold text-slate-900">
-                                {schedule.schedule_name}
-                              </span>
-                            )}
-                            <span className={`text-sm ${schedule.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
-                              {schedule.start_time} - {schedule.end_time}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-wrap gap-1">
-                              {schedule.days_of_week.sort().map(day => {
-                                const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                                return (
-                                  <span
-                                    key={day}
-                                    className={`px-2 py-1 text-xs rounded font-medium ${definition.color}`}
-                                  >
-                                    {dayInfo?.short}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleEditSchedule(schedule)}
-                                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Edit schedule"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteSchedule(schedule.id!)}
-                                className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete schedule"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {addingScheduleForDef === definition.id && newSchedule && (
-                    <div className={`bg-white rounded-lg border mb-4 ${isInUse ? 'border-slate-200' : 'border-slate-300 opacity-60'}`}>
-                      <div className={`px-4 py-3 ${definition.color}`}>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          <h4 className="font-semibold">{definition.display_label}</h4>
-                        </div>
-                      </div>
-                      <div className="px-4 pb-4 bg-slate-50">
-                        <div className="pt-4">
-                          <ScheduleGroupForm
-                            schedule={newSchedule}
-                            allSchedules={defSchedules}
-                            onUpdate={setNewSchedule}
-                            onSave={handleSaveSchedule}
-                            onCancel={() => {
-                              setAddingScheduleForDef(null);
-                              setNewSchedule(null);
-                              setIsEventSchedule(false);
-                            }}
-                            level="site"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {hasEvents && (
-                    <div className={`bg-white rounded-lg border overflow-hidden mb-4 ${
-                      isInUse ? 'border-slate-200' : 'border-slate-300 opacity-60'
-                    }`}>
+                <div className={`bg-white rounded-xl border-2 overflow-hidden transition-opacity shadow-sm hover:shadow-md ${
+                  isInUse ? 'border-slate-200' : 'border-slate-300 opacity-60'
+                }`}>
+                  <div className={`px-4 py-3 border-b border-slate-200 ${definition.color}`}>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      <h4 className="font-semibold">{definition.display_label}</h4>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          definition.source_level === 'store'
+                            ? 'bg-blue-600/20 text-blue-900'
+                            : definition.source_level === 'concept'
+                            ? 'bg-purple-600/20 text-purple-900'
+                            : 'bg-slate-600/20 text-slate-900'
+                        }`}
+                      >
+                        {definition.source_level === 'store'
+                          ? 'Store'
+                          : definition.source_level === 'concept'
+                          ? 'Concept'
+                          : 'Global'}
+                      </span>
                       <button
                         type="button"
-                        onClick={() => toggleEventsExpanded(definition.id)}
-                        className="w-full px-4 py-3 bg-violet-50 hover:bg-violet-100 transition-colors flex items-center justify-between"
+                        onClick={() => toggleInUseStatus(definition.id)}
+                        className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
+                          isInUse
+                            ? 'bg-green-600/20 text-green-900 hover:bg-green-600/30'
+                            : 'bg-slate-600/20 text-slate-900 hover:bg-slate-600/30'
+                        }`}
+                        title={isInUse ? 'Mark as not in use' : 'Mark as in use'}
                       >
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-violet-600" />
-                          <span className="font-medium text-violet-900">
-                            {definition.display_label} - Event & Holiday Schedules
-                          </span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900">
-                            {eventSchedules.length}
-                          </span>
-                        </div>
-                        {eventsExpanded ? (
-                          <ChevronDown className="w-5 h-5 text-violet-600" />
-                        ) : (
-                          <ChevronRight className="w-5 h-5 text-violet-600" />
-                        )}
+                        {isInUse ? 'In Use' : 'Not In Use'}
                       </button>
+                      {hasEvents && (
+                        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                          <Calendar className="w-3 h-3" />
+                          {eventSchedules.length} {eventSchedules.length === 1 ? 'Event' : 'Events'}
+                        </span>
+                      )}
+                      <div className="ml-auto flex items-center gap-1">
+                        {definition.is_customized && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleEditDefinition(definition)}
+                              className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                              title="Edit definition"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDefinition(definition)}
+                              className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
+                              title="Delete definition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-200">
+                    {regularSchedules.map((schedule) => (
+                      <div key={schedule.id}>
+                        <button
+                          onClick={() => handleEditSchedule(schedule)}
+                          className="w-full p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                {schedule.schedule_name && (
+                                  <span className="text-sm font-semibold text-slate-900">
+                                    {schedule.schedule_name}
+                                  </span>
+                                )}
+                                <span className={`text-sm ${schedule.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
+                                  {schedule.runs_on_days === false
+                                    ? 'Does Not Run'
+                                    : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {schedule.days_of_week.sort().map(day => {
+                                  const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                  const bgColor = definition.color.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                  const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                  return (
+                                    <span
+                                      key={day}
+                                      className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
+                                    >
+                                      {dayInfo?.short}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
+                          </div>
+                        </button>
+                      </div>
+                    ))}
 
-                      {eventsExpanded && (
-                        <div className="divide-y divide-violet-100 bg-violet-50/30">
-                          {eventSchedules.map((schedule) => (
-                            <div key={schedule.id}>
-                              {editingSchedule?.id === schedule.id ? (
-                                <div className="px-4 pb-4 bg-violet-50">
-                                  <div className="pt-4">
-                                    <ScheduleGroupForm
-                                      schedule={editingSchedule}
-                                      allSchedules={defSchedules}
-                                      onUpdate={setEditingSchedule}
-                                      onSave={handleSaveSchedule}
-                                      onCancel={() => setEditingSchedule(null)}
-                                      level="site"
-                                    />
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="p-4 hover:bg-violet-100/50 transition-colors group">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
+                    {regularSchedules.length > 0 && (
+                      <div className={`mx-3 mb-3 mt-3 grid ${hasUnscheduledDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                        {hasUnscheduledDays && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const template = regularSchedules[0];
+                              handleAddSchedule(definition.id, 'regular', unscheduledDays, template);
+                            }}
+                            className="p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Plus className="w-4 h-4 text-slate-700" />
+                            <span className="text-sm font-medium text-slate-700">
+                              Add Missing Days ({unscheduledDays.length})
+                            </span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
+                          className="p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                          style={{
+                            borderColor: 'rgba(222, 56, 222, 0.3)',
+                            color: 'rgb(156, 39, 176)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                            e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Add Event/Holiday
+                          </span>
+                        </button>
+                      </div>
+                    )}
+
+                    {hasEvents && (
+                      <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
+                        <button
+                          type="button"
+                          onClick={() => toggleEventsExpanded(definition.id)}
+                          className="w-full px-4 py-3 transition-colors flex items-center justify-between group"
+                          style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.15)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                            <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
+                              Event & Holiday Schedules
+                            </span>
+                            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                              {eventSchedules.length}
+                            </span>
+                          </div>
+                          {eventsExpanded ? (
+                            <ChevronDown className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
+                          ) : (
+                            <ChevronRight className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
+                          )}
+                        </button>
+
+                        {eventsExpanded && (
+                          <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
+                            {eventSchedules.map((schedule) => (
+                              <div key={schedule.id}>
+                                <button
+                                  onClick={() => handleEditSchedule(schedule)}
+                                  className="w-full p-4 transition-colors text-left"
+                                  style={{ backgroundColor: 'transparent' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-3 mb-2">
-                                        <span className="font-medium text-violet-900">
-                                          {schedule.event_name}
+                                        {schedule.schedule_name && (
+                                          <span className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>
+                                            {schedule.schedule_name}
+                                          </span>
+                                        )}
+                                        <span className={schedule.schedule_name ? '' : 'font-medium'} style={{ color: 'rgb(156, 39, 176)' }}>
+                                          {schedule.event_name || 'Unnamed Event'}
                                         </span>
-                                        <span className="text-sm text-violet-700">
-                                          {schedule.start_time} - {schedule.end_time}
+                                        <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                                          {schedule.recurrence_type === 'none' ? 'One-time' :
+                                           schedule.recurrence_type === 'annual_date' ? 'Annual' :
+                                           schedule.recurrence_type === 'monthly_date' ? 'Monthly' :
+                                           schedule.recurrence_type === 'annual_relative' ? 'Annual (relative)' :
+                                           schedule.recurrence_type === 'annual_date_range' ? 'Annual range' : 'Unknown'}
                                         </span>
                                       </div>
-                                      {schedule.recurrence_type && schedule.recurrence_type !== 'none' && (
-                                        <div className="text-xs text-violet-600 mb-1">
-                                          {schedule.recurrence_type === 'annual_date' && 'Recurs annually'}
-                                          {schedule.recurrence_type === 'monthly_date' && 'Recurs monthly'}
-                                          {schedule.recurrence_type === 'annual_relative' && 'Recurs annually (relative)'}
-                                          {schedule.recurrence_type === 'annual_date_range' && 'Annual date range'}
-                                        </div>
-                                      )}
-                                      {schedule.event_date && (
-                                        <div className="text-xs text-violet-600">
-                                          Date: {new Date(schedule.event_date).toLocaleDateString()}
+                                      <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
+                                        <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                        {schedule.event_date && (() => {
+                                          const date = new Date(schedule.event_date + 'T00:00:00');
+                                          const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+                                          if (schedule.recurrence_type === 'none') {
+                                            options.year = 'numeric';
+                                          }
+                                          return date.toLocaleDateString('en-US', options);
+                                        })()}
+                                        <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
+                                        <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                        {schedule.runs_on_days === false
+                                          ? 'Does Not Run'
+                                          : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                      </div>
+                                      {schedule.days_of_week.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                          {schedule.days_of_week.sort().map(day => {
+                                            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                            const bgColor = definition.color.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                            const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                            return (
+                                              <span
+                                                key={day}
+                                                className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
+                                              >
+                                                {dayInfo?.short}
+                                              </span>
+                                            );
+                                          })}
                                         </div>
                                       )}
                                     </div>
-                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleEditSchedule(schedule)}
-                                        className="p-2 text-violet-600 hover:text-violet-700 hover:bg-violet-200/50 rounded-lg transition-colors"
-                                        title="Edit schedule"
-                                      >
-                                        <Edit2 className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteSchedule(schedule.id!)}
-                                        className="p-2 text-violet-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                        title="Delete schedule"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
+                                    <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           );
@@ -967,66 +1044,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             >
               Show all dayparts
             </button>
-          </div>
-        )}
-
-        {addingScheduleForDef === 'new' && newSchedule && (
-          <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              {isEventSchedule ? 'Add Event/Holiday' : 'Add Schedule'}
-            </h3>
-
-            <ScheduleGroupForm
-              schedule={newSchedule}
-              allSchedules={newSchedule.daypart_definition_id ? schedules.filter(s => s.daypart_definition_id === newSchedule.daypart_definition_id) : []}
-              onUpdate={setNewSchedule}
-              onSave={handleSaveSchedule}
-              onCancel={() => {
-                setAddingScheduleForDef(null);
-                setNewSchedule(null);
-                setIsEventSchedule(false);
-                setNewScheduleType(null);
-                setSelectedDaypartId('');
-              }}
-              level="site"
-              showDaypartSelector={true}
-              availableDayparts={filteredDefinitions.map(d => ({
-                id: d.id,
-                daypart_name: d.daypart_name,
-                display_label: d.display_label,
-                source_level: d.source_level
-              }))}
-              selectedDaypartId={newSchedule.daypart_definition_id || ''}
-              onDaypartChange={(daypartId, daypartName) => {
-                setSelectedDaypartId(daypartId);
-                setNewSchedule(prev => prev ? {
-                  ...prev,
-                  daypart_definition_id: daypartId,
-                  daypart_name: daypartName
-                } : null);
-              }}
-            />
-          </div>
-        )}
-
-        {!addingScheduleForDef && (
-          <div className="grid grid-cols-2 gap-4">
-          <button
-            type="button"
-            onClick={handleAddScheduleClick}
-            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Schedule
-          </button>
-          <button
-            type="button"
-            onClick={handleAddEventScheduleClick}
-            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
-          >
-            <Sparkles className="w-4 h-4" />
-            Add Event/Holiday
-          </button>
           </div>
         )}
       </div>
