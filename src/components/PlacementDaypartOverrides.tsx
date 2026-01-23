@@ -450,31 +450,15 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             return (
               <div key={daypartName} className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-1">
-                      <Clock className="w-4 h-4" />
-                      <h4 className="font-semibold">{displayLabel}</h4>
-                      {hasEvents && (
-                        <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
-                          <Calendar className="w-3 h-3" />
-                          {daypartEvents.length} {daypartEvents.length === 1 ? 'Event' : 'Events'}
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddNew('event_holiday', daypartName);
-                      }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:bg-white/50"
-                      style={{
-                        backgroundColor: 'rgba(222, 56, 222, 0.15)',
-                        color: 'rgb(156, 39, 176)'
-                      }}
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      Add Event/Holiday
-                    </button>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <h4 className="font-semibold">{displayLabel}</h4>
+                    {hasEvents && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                        <Calendar className="w-3 h-3" />
+                        {daypartEvents.length} {daypartEvents.length === 1 ? 'Event' : 'Events'}
+                      </span>
+                    )}
                   </div>
                 </div>
               <div className="divide-y divide-slate-200">
@@ -521,18 +505,38 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 ))}
 
                 {daypartSchedules.length === 0 && !hasEvents && (
-                  <button
-                    onClick={() => handleAddNew('regular', daypartName)}
-                    className="w-full p-6 text-center hover:bg-slate-50 transition-colors group"
-                  >
-                    <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2 group-hover:text-blue-500 transition-colors" />
-                    <p className="text-slate-600 text-sm group-hover:text-blue-600 transition-colors">
-                      No schedules configured for this daypart. Click to add.
-                    </p>
-                  </button>
+                  <div className="p-6 space-y-4">
+                    <div className="text-center">
+                      <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-slate-600 text-sm">
+                        No schedules configured for this daypart.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleAddNew('event_holiday', daypartName)}
+                      className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                      style={{
+                        borderColor: 'rgba(222, 56, 222, 0.3)',
+                        color: 'rgb(156, 39, 176)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                        e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        Add Event/Holiday
+                      </span>
+                    </button>
+                  </div>
                 )}
 
-                {/* Add Schedule for Remaining Days Button */}
+                {/* Action Buttons Grid */}
                 {daypartSchedules.length > 0 && (() => {
                   const scheduledDays = new Set<number>();
                   daypartSchedules.forEach(schedule => {
@@ -540,22 +544,46 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                   });
                   const allDays = [0, 1, 2, 3, 4, 5, 6];
                   const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
-
-                  if (unscheduledDays.length === 0) return null;
+                  const hasUnscheduledDays = unscheduledDays.length > 0;
 
                   return (
-                    <button
-                      onClick={() => {
-                        const template = daypartSchedules[0];
-                        handleAddNew('regular', daypartName, unscheduledDays, template);
-                      }}
-                      className="mx-3 mb-3 w-auto p-3 bg-slate-50 border-2 border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-100 active:bg-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow"
-                    >
-                      <Plus className="w-4 h-4 text-slate-700" />
-                      <span className="text-sm font-semibold text-slate-700">
-                        Schedule Remaining Days ({unscheduledDays.length})
-                      </span>
-                    </button>
+                    <div className={`mx-3 mb-3 grid ${hasUnscheduledDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                      {hasUnscheduledDays && (
+                        <button
+                          onClick={() => {
+                            const template = daypartSchedules[0];
+                            handleAddNew('regular', daypartName, unscheduledDays, template);
+                          }}
+                          className="p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Plus className="w-4 h-4 text-slate-700" />
+                          <span className="text-sm font-medium text-slate-700">
+                            Schedule Remaining Days ({unscheduledDays.length})
+                          </span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleAddNew('event_holiday', daypartName)}
+                        className="p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                        style={{
+                          borderColor: 'rgba(222, 56, 222, 0.3)',
+                          color: 'rgb(156, 39, 176)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                          e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                          Add Event/Holiday
+                        </span>
+                      </button>
+                    </div>
                   );
                 })()}
 
@@ -700,17 +728,15 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     return (
                       <div key={daypartName}>
                         <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 flex-1">
-                              <Clock className="w-4 h-4" />
-                              <h4 className="font-semibold">{displayLabel}</h4>
-                              {hasInheritedEvents && (
-                                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-cyan-600/20 text-cyan-900 font-medium">
-                                  <Calendar className="w-3 h-3" />
-                                  {daypartInheritedEvents.length} {daypartInheritedEvents.length === 1 ? 'Event' : 'Events'}
-                                </span>
-                              )}
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            <h4 className="font-semibold">{displayLabel}</h4>
+                            {hasInheritedEvents && (
+                              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                                <Calendar className="w-3 h-3" />
+                                {daypartInheritedEvents.length} {daypartInheritedEvents.length === 1 ? 'Event' : 'Events'}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="divide-y divide-slate-200">
