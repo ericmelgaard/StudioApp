@@ -358,22 +358,32 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
     const allRoutinesForCollision: DaypartRoutine[] = [
       ...routines,
-      ...inheritedSchedules.map(inherited => ({
-        id: inherited.id,
-        placement_group_id: placementGroupId,
-        daypart_name: inherited.daypart_name,
-        days_of_week: inherited.days_of_week,
-        start_time: inherited.start_time,
-        end_time: inherited.end_time,
-        schedule_name: inherited.schedule_name,
-        runs_on_days: inherited.runs_on_days,
-        schedule_type: inherited.schedule_type || 'regular',
-        event_name: inherited.event_name,
-        event_date: inherited.event_date,
-        recurrence_type: inherited.recurrence_type,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } as DaypartRoutine))
+      ...inheritedSchedules
+        .filter(inherited => {
+          if (!editingInherited) return true;
+          return !(
+            inherited.daypart_name === editingInherited.daypart_name &&
+            inherited.schedule_type === editingInherited.schedule_type &&
+            inherited.event_date === editingInherited.event_date &&
+            inherited.schedule_name === editingInherited.schedule_name
+          );
+        })
+        .map(inherited => ({
+          id: inherited.id,
+          placement_group_id: placementGroupId,
+          daypart_name: inherited.daypart_name,
+          days_of_week: inherited.days_of_week,
+          start_time: inherited.start_time,
+          end_time: inherited.end_time,
+          schedule_name: inherited.schedule_name,
+          runs_on_days: inherited.runs_on_days,
+          schedule_type: inherited.schedule_type || 'regular',
+          event_name: inherited.event_name,
+          event_date: inherited.event_date,
+          recurrence_type: inherited.recurrence_type,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as DaypartRoutine))
     ];
 
     return (
