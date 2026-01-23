@@ -87,19 +87,43 @@ export function getDayCollisionStatus(
   editingScheduleId?: string,
   currentScheduleType?: ScheduleType
 ): boolean {
-  if (!currentDaypartName) return false;
+  if (!currentDaypartName) {
+    console.log('[Collision] No currentDaypartName');
+    return false;
+  }
   if (currentScheduleType === 'event_holiday') return false;
 
-  return schedules.some(schedule => {
-    if (editingScheduleId && schedule.id === editingScheduleId) return false;
+  console.log('[Collision Check] Day:', day, 'Current Daypart:', currentDaypartName, 'Editing ID:', editingScheduleId);
+  console.log('[Collision Check] Available schedules:', schedules.map(s => ({
+    id: s.id,
+    daypart_name: s.daypart_name,
+    days: s.days_of_week,
+    schedule_name: s.schedule_name
+  })));
+
+  const hasCollision = schedules.some(schedule => {
+    if (editingScheduleId && schedule.id === editingScheduleId) {
+      console.log('[Collision] Skipping editing schedule:', schedule.id);
+      return false;
+    }
     if (schedule.schedule_type === 'event_holiday') return false;
-    if (!schedule.daypart_name || !schedule.days_of_week) return false;
+    if (!schedule.daypart_name || !schedule.days_of_week) {
+      console.log('[Collision] Missing daypart_name or days_of_week:', schedule);
+      return false;
+    }
 
     const daypartMatches = schedule.daypart_name === currentDaypartName;
     const dayInSchedule = schedule.days_of_week.some(d => Number(d) === Number(day));
 
+    if (daypartMatches && dayInSchedule) {
+      console.log('[Collision] FOUND COLLISION with schedule:', schedule.schedule_name || schedule.id, 'on day', day);
+    }
+
     return daypartMatches && dayInSchedule;
   });
+
+  console.log('[Collision] Result for day', day, ':', hasCollision);
+  return hasCollision;
 }
 
 export function getDayUsageInfo(
