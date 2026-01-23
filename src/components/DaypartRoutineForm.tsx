@@ -562,27 +562,9 @@ export default function DaypartRoutineForm({
           />
         </div>
 
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-            className="flex-1 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 active:bg-cyan-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-          >
-            {saving ? 'Saving...' : 'Save Schedule'}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
-          >
-            Cancel
-          </button>
-        </div>
-
-        {/* Delete Button */}
-        {editingRoutine && onDelete && (
-          <div className="mt-6 pt-6 border-t border-slate-200">
+        <div className="flex items-center justify-between gap-4">
+          {/* Delete Button - Far Left */}
+          {editingRoutine && onDelete ? (
             <button
               type="button"
               onClick={handleDelete}
@@ -591,8 +573,29 @@ export default function DaypartRoutineForm({
               <Trash2 className="w-4 h-4" />
               Delete Schedule
             </button>
+          ) : (
+            <div />
+          )}
+
+          {/* Save and Cancel - Right Side */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
+              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 active:bg-cyan-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            >
+              {saving ? 'Saving...' : 'Save Schedule'}
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       {showTemplatePicker && (
