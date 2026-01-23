@@ -580,19 +580,13 @@ export default function DaypartRoutineForm({
           </button>
         </div>
 
-        {/* Danger Zone - Delete Button */}
+        {/* Delete Button */}
         {editingRoutine && onDelete && (
-          <div className="mt-6 pt-6 border-t-2 border-slate-200">
-            <div className="mb-3">
-              <h4 className="text-sm font-semibold text-slate-900 mb-1">Danger Zone</h4>
-              <p className="text-xs text-slate-600">
-                Once deleted, this schedule cannot be recovered.
-              </p>
-            </div>
+          <div className="mt-6 pt-6 border-t border-slate-200">
             <button
               type="button"
               onClick={handleDelete}
-              className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-2"
+              className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
               Delete Schedule
