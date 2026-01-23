@@ -100,8 +100,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
       const initialInUseStatus: Record<string, boolean> = {};
       defs.forEach((def, index) => {
-        const isSystemDaypart = ['power_save', 'breakfast', 'lunch', 'dinner', 'late_night'].includes(def.daypart_name);
-        initialInUseStatus[def.id] = isSystemDaypart || index < 3;
+        initialInUseStatus[def.id] = index < 3;
       });
       setInUseStatus(initialInUseStatus);
 
@@ -676,21 +675,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         </button>
       </div>
 
-      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm text-blue-900">
-            <p className="font-medium mb-2">Multi-Level Daypart System</p>
-            <div className="space-y-1 text-blue-800">
-              <p><span className="inline-block w-16 px-2 py-0.5 text-xs rounded-full bg-slate-600/20 text-slate-900 font-medium mr-2">Global</span>System-wide defaults inherited by all stores</p>
-              <p><span className="inline-block w-16 px-2 py-0.5 text-xs rounded-full bg-purple-600/20 text-purple-900 font-medium mr-2">Concept</span>Concept-level overrides (if applicable)</p>
-              <p><span className="inline-block w-16 px-2 py-0.5 text-xs rounded-full bg-blue-600/20 text-blue-900 font-medium mr-2">Store</span>Store-specific customizations (highest priority)</p>
-            </div>
-            <p className="mt-2 text-xs">Adding or editing schedules for inherited dayparts will automatically create a store-level copy.</p>
-          </div>
-        </div>
-      </div>
-
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -878,46 +862,31 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     <div className="text-center">
                       <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                       <p className="text-slate-600 text-sm">
-                        {definition.daypart_name === 'power_save'
-                          ? 'No power save schedules configured. Add schedules to automatically put displays into low-power mode during specified times.'
-                          : 'No schedules configured for this daypart.'}
+                        No schedules configured for this daypart.
                       </p>
                     </div>
-                    {definition.daypart_name === 'power_save' ? (
-                      <button
-                        type="button"
-                        onClick={() => handleAddSchedule(definition.id, 'regular', [0,1,2,3,4,5,6])}
-                        className="w-full p-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-all flex items-center justify-center gap-2 font-medium"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span className="text-sm">
-                          Configure Power Save Hours
-                        </span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
-                        className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                        style={{
-                          borderColor: 'rgba(222, 56, 222, 0.3)',
-                          color: 'rgb(156, 39, 176)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                          e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        <span className="text-sm font-medium">
-                          Add Event/Holiday
-                        </span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
+                      className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                      style={{
+                        borderColor: 'rgba(222, 56, 222, 0.3)',
+                        color: 'rgb(156, 39, 176)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                        e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        Add Event/Holiday
+                      </span>
+                    </button>
                   </div>
                 </div>
               ) : (
