@@ -593,29 +593,48 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           </div>
         )}
 
-        <ScheduleGroupForm
-          schedule={currentSchedule!}
-          allSchedules={schedules}
-          onUpdate={(updated) => {
-            if (editingSchedule) {
-              setEditingSchedule(updated as DaypartSchedule);
-            } else {
-              setNewSchedule(updated);
-            }
-          }}
-          onSave={handleSaveSchedule}
-          onCancel={() => {
-            setViewLevel('list');
-            setEditingSchedule(null);
-            setNewSchedule(null);
-            setAddingScheduleForDef(null);
-            setEditingDefinitionContext(null);
-          }}
-          onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
-          level="site"
-          skipDayValidation={false}
-          disableCollisionDetection={false}
-        />
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <div className={`p-4 border-b border-slate-200 ${editingDefinitionContext?.color || 'bg-slate-100'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-900">
+                  {editingDefinitionContext?.display_label || 'Schedule'}
+                </h3>
+                <span className={`text-sm ${
+                  currentSchedule?.schedule_type === 'event_holiday' ? 'text-amber-900 font-medium' : 'text-slate-700'
+                }`}>
+                  {currentSchedule?.schedule_type === 'event_holiday' ? 'Event' : 'Schedule'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <ScheduleGroupForm
+              schedule={currentSchedule!}
+              allSchedules={schedules}
+              onUpdate={(updated) => {
+                if (editingSchedule) {
+                  setEditingSchedule(updated as DaypartSchedule);
+                } else {
+                  setNewSchedule(updated);
+                }
+              }}
+              onSave={handleSaveSchedule}
+              onCancel={() => {
+                setViewLevel('list');
+                setEditingSchedule(null);
+                setNewSchedule(null);
+                setAddingScheduleForDef(null);
+                setEditingDefinitionContext(null);
+              }}
+              onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+              level="site"
+              skipDayValidation={false}
+              disableCollisionDetection={false}
+            />
+          </div>
+        </div>
       </div>
     );
   }

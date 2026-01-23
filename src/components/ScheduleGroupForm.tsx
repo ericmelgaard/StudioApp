@@ -171,7 +171,7 @@ export default function ScheduleGroupForm({
   const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   return (
-    <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-4">
+    <div className="space-y-4">
       {scheduleType === 'event_holiday' && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
           <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
