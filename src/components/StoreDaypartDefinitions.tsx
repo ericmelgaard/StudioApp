@@ -267,26 +267,84 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
     try {
       if (editingSchedule) {
-        const updateData: any = {
-          days_of_week: schedule.days_of_week,
-          start_time: schedule.start_time,
-          end_time: schedule.end_time,
-          updated_at: new Date().toISOString(),
-        };
+        const currentDefinition = definitions.find(d => d.id === editingSchedule.daypart_definition_id);
 
-        if (schedule.schedule_name !== undefined) updateData.schedule_name = schedule.schedule_name;
-        if (schedule.schedule_type) updateData.schedule_type = schedule.schedule_type;
-        if (schedule.event_name) updateData.event_name = schedule.event_name;
-        if (schedule.event_date) updateData.event_date = schedule.event_date;
-        if (schedule.recurrence_type) updateData.recurrence_type = schedule.recurrence_type;
-        if (schedule.recurrence_config) updateData.recurrence_config = schedule.recurrence_config;
+        if (currentDefinition && !currentDefinition.is_customized && currentDefinition.source_level !== 'store') {
+          const allSchedulesForDaypart = schedules.filter(s => s.daypart_definition_id === currentDefinition.id);
 
-        const { error: updateError } = await supabase
-          .from('daypart_schedules')
-          .update(updateData)
-          .eq('id', editingSchedule.id);
+          const { data: newDefinition, error: defError } = await supabase
+            .from('daypart_definitions')
+            .insert([{
+              daypart_name: currentDefinition.daypart_name,
+              display_label: currentDefinition.display_label,
+              color: currentDefinition.color,
+              icon: currentDefinition.icon,
+              sort_order: currentDefinition.sort_order,
+              is_active: true,
+              store_id: storeId,
+            }])
+            .select()
+            .single();
 
-        if (updateError) throw updateError;
+          if (defError) throw defError;
+          if (!newDefinition) throw new Error('Failed to create store-level daypart');
+
+          const schedulesToCopy = allSchedulesForDaypart.map(s => {
+            const baseData: any = {
+              daypart_definition_id: newDefinition.id,
+              days_of_week: s.id === editingSchedule.id ? schedule.days_of_week : s.days_of_week,
+              start_time: s.id === editingSchedule.id ? schedule.start_time : s.start_time,
+              end_time: s.id === editingSchedule.id ? schedule.end_time : s.end_time,
+            };
+
+            if (s.id === editingSchedule.id) {
+              if (schedule.schedule_name !== undefined) baseData.schedule_name = schedule.schedule_name;
+              if (schedule.schedule_type) baseData.schedule_type = schedule.schedule_type;
+              if (schedule.event_name) baseData.event_name = schedule.event_name;
+              if (schedule.event_date) baseData.event_date = schedule.event_date;
+              if (schedule.recurrence_type) baseData.recurrence_type = schedule.recurrence_type;
+              if (schedule.recurrence_config) baseData.recurrence_config = schedule.recurrence_config;
+            } else {
+              if (s.schedule_name) baseData.schedule_name = s.schedule_name;
+              if (s.schedule_type) baseData.schedule_type = s.schedule_type;
+              if (s.event_name) baseData.event_name = s.event_name;
+              if (s.event_date) baseData.event_date = s.event_date;
+              if (s.recurrence_type) baseData.recurrence_type = s.recurrence_type;
+              if (s.recurrence_config) baseData.recurrence_config = s.recurrence_config;
+            }
+
+            return baseData;
+          });
+
+          const { error: schedulesError } = await supabase
+            .from('daypart_schedules')
+            .insert(schedulesToCopy);
+
+          if (schedulesError) throw schedulesError;
+
+          setSuccess(`Customized ${currentDefinition.display_label} at store level with all schedules`);
+        } else {
+          const updateData: any = {
+            days_of_week: schedule.days_of_week,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            updated_at: new Date().toISOString(),
+          };
+
+          if (schedule.schedule_name !== undefined) updateData.schedule_name = schedule.schedule_name;
+          if (schedule.schedule_type) updateData.schedule_type = schedule.schedule_type;
+          if (schedule.event_name) updateData.event_name = schedule.event_name;
+          if (schedule.event_date) updateData.event_date = schedule.event_date;
+          if (schedule.recurrence_type) updateData.recurrence_type = schedule.recurrence_type;
+          if (schedule.recurrence_config) updateData.recurrence_config = schedule.recurrence_config;
+
+          const { error: updateError } = await supabase
+            .from('daypart_schedules')
+            .update(updateData)
+            .eq('id', editingSchedule.id);
+
+          if (updateError) throw updateError;
+        }
       } else if (addingScheduleForDef) {
         const targetDaypartId = addingScheduleForDef === 'new' ? selectedDaypartId : addingScheduleForDef;
 
@@ -294,25 +352,85 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           throw new Error('Please select a daypart');
         }
 
-        const insertData: any = {
-          daypart_definition_id: targetDaypartId,
-          days_of_week: schedule.days_of_week,
-          start_time: schedule.start_time,
-          end_time: schedule.end_time,
-        };
+        const targetDefinition = definitions.find(d => d.id === targetDaypartId);
 
-        if (schedule.schedule_name !== undefined) insertData.schedule_name = schedule.schedule_name;
-        if (schedule.schedule_type) insertData.schedule_type = schedule.schedule_type;
-        if (schedule.event_name) insertData.event_name = schedule.event_name;
-        if (schedule.event_date) insertData.event_date = schedule.event_date;
-        if (schedule.recurrence_type) insertData.recurrence_type = schedule.recurrence_type;
-        if (schedule.recurrence_config) insertData.recurrence_config = schedule.recurrence_config;
+        if (targetDefinition && !targetDefinition.is_customized && targetDefinition.source_level !== 'store') {
+          const allSchedulesForDaypart = schedules.filter(s => s.daypart_definition_id === targetDefinition.id);
 
-        const { error: insertError } = await supabase
-          .from('daypart_schedules')
-          .insert([insertData]);
+          const { data: newDefinition, error: defError } = await supabase
+            .from('daypart_definitions')
+            .insert([{
+              daypart_name: targetDefinition.daypart_name,
+              display_label: targetDefinition.display_label,
+              color: targetDefinition.color,
+              icon: targetDefinition.icon,
+              sort_order: targetDefinition.sort_order,
+              is_active: true,
+              store_id: storeId,
+            }])
+            .select()
+            .single();
 
-        if (insertError) throw insertError;
+          if (defError) throw defError;
+          if (!newDefinition) throw new Error('Failed to create store-level daypart');
+
+          const schedulesToCopy = allSchedulesForDaypart.map(s => ({
+            daypart_definition_id: newDefinition.id,
+            days_of_week: s.days_of_week,
+            start_time: s.start_time,
+            end_time: s.end_time,
+            schedule_name: s.schedule_name || undefined,
+            schedule_type: s.schedule_type || undefined,
+            event_name: s.event_name || undefined,
+            event_date: s.event_date || undefined,
+            recurrence_type: s.recurrence_type || undefined,
+            recurrence_config: s.recurrence_config || undefined,
+          }));
+
+          const newScheduleData: any = {
+            daypart_definition_id: newDefinition.id,
+            days_of_week: schedule.days_of_week,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+          };
+
+          if (schedule.schedule_name !== undefined) newScheduleData.schedule_name = schedule.schedule_name;
+          if (schedule.schedule_type) newScheduleData.schedule_type = schedule.schedule_type;
+          if (schedule.event_name) newScheduleData.event_name = schedule.event_name;
+          if (schedule.event_date) newScheduleData.event_date = schedule.event_date;
+          if (schedule.recurrence_type) newScheduleData.recurrence_type = schedule.recurrence_type;
+          if (schedule.recurrence_config) newScheduleData.recurrence_config = schedule.recurrence_config;
+
+          const allSchedulesToInsert = [...schedulesToCopy, newScheduleData];
+
+          const { error: schedulesError } = await supabase
+            .from('daypart_schedules')
+            .insert(allSchedulesToInsert);
+
+          if (schedulesError) throw schedulesError;
+
+          setSuccess(`Customized ${targetDefinition.display_label} at store level with all schedules`);
+        } else {
+          const insertData: any = {
+            daypart_definition_id: targetDaypartId,
+            days_of_week: schedule.days_of_week,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+          };
+
+          if (schedule.schedule_name !== undefined) insertData.schedule_name = schedule.schedule_name;
+          if (schedule.schedule_type) insertData.schedule_type = schedule.schedule_type;
+          if (schedule.event_name) insertData.event_name = schedule.event_name;
+          if (schedule.event_date) insertData.event_date = schedule.event_date;
+          if (schedule.recurrence_type) insertData.recurrence_type = schedule.recurrence_type;
+          if (schedule.recurrence_config) insertData.recurrence_config = schedule.recurrence_config;
+
+          const { error: insertError } = await supabase
+            .from('daypart_schedules')
+            .insert([insertData]);
+
+          if (insertError) throw insertError;
+        }
       }
 
       setEditingSchedule(null);
@@ -322,6 +440,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       setNewScheduleType(null);
       setSelectedDaypartId('');
       await loadData();
+
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       console.error('Error saving schedule:', err);
       setError(err.message || 'Failed to save schedule');
@@ -334,14 +454,66 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     }
 
     try {
-      const { error: deleteError } = await supabase
-        .from('daypart_schedules')
-        .delete()
-        .eq('id', scheduleId);
+      const scheduleToDelete = schedules.find(s => s.id === scheduleId);
+      if (!scheduleToDelete) throw new Error('Schedule not found');
 
-      if (deleteError) throw deleteError;
+      const currentDefinition = definitions.find(d => d.id === scheduleToDelete.daypart_definition_id);
+
+      if (currentDefinition && !currentDefinition.is_customized && currentDefinition.source_level !== 'store') {
+        const allSchedulesForDaypart = schedules.filter(s => s.daypart_definition_id === currentDefinition.id);
+
+        const { data: newDefinition, error: defError } = await supabase
+          .from('daypart_definitions')
+          .insert([{
+            daypart_name: currentDefinition.daypart_name,
+            display_label: currentDefinition.display_label,
+            color: currentDefinition.color,
+            icon: currentDefinition.icon,
+            sort_order: currentDefinition.sort_order,
+            is_active: true,
+            store_id: storeId,
+          }])
+          .select()
+          .single();
+
+        if (defError) throw defError;
+        if (!newDefinition) throw new Error('Failed to create store-level daypart');
+
+        const schedulesToCopy = allSchedulesForDaypart
+          .filter(s => s.id !== scheduleId)
+          .map(s => ({
+            daypart_definition_id: newDefinition.id,
+            days_of_week: s.days_of_week,
+            start_time: s.start_time,
+            end_time: s.end_time,
+            schedule_name: s.schedule_name || undefined,
+            schedule_type: s.schedule_type || undefined,
+            event_name: s.event_name || undefined,
+            event_date: s.event_date || undefined,
+            recurrence_type: s.recurrence_type || undefined,
+            recurrence_config: s.recurrence_config || undefined,
+          }));
+
+        if (schedulesToCopy.length > 0) {
+          const { error: schedulesError } = await supabase
+            .from('daypart_schedules')
+            .insert(schedulesToCopy);
+
+          if (schedulesError) throw schedulesError;
+        }
+
+        setSuccess(`Customized ${currentDefinition.display_label} at store level and removed schedule`);
+      } else {
+        const { error: deleteError } = await supabase
+          .from('daypart_schedules')
+          .delete()
+          .eq('id', scheduleId);
+
+        if (deleteError) throw deleteError;
+      }
 
       await loadData();
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       console.error('Error deleting schedule:', err);
       setError(err.message || 'Failed to delete schedule');
