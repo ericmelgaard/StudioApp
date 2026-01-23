@@ -179,9 +179,40 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         throw error;
       }
     } else {
+      const schedulesToInsert = [routine];
+
+      // If customizing an inherited schedule, copy ALL other schedules from the same daypart
+      if (editingInherited) {
+        const sameDaypartSchedules = inheritedSchedules.filter(sched =>
+          sched.daypart_name === editingInherited.daypart_name &&
+          !(
+            sched.daypart_name === editingInherited.daypart_name &&
+            sched.schedule_type === editingInherited.schedule_type &&
+            sched.event_date === editingInherited.event_date &&
+            sched.schedule_name === editingInherited.schedule_name
+          )
+        );
+
+        sameDaypartSchedules.forEach(sched => {
+          schedulesToInsert.push({
+            placement_group_id: placementGroupId,
+            daypart_name: sched.daypart_name,
+            days_of_week: sched.days_of_week,
+            start_time: sched.start_time,
+            end_time: sched.end_time,
+            schedule_name: sched.schedule_name,
+            runs_on_days: sched.runs_on_days,
+            schedule_type: sched.schedule_type,
+            event_name: sched.event_name,
+            event_date: sched.event_date,
+            recurrence_type: sched.recurrence_type
+          });
+        });
+      }
+
       const { error, data } = await supabase
         .from('placement_daypart_overrides')
-        .insert([routine])
+        .insert(schedulesToInsert)
         .select();
 
       if (error) {
@@ -194,6 +225,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
     setViewLevel('list');
     setEditingRoutine(null);
+    setEditingInherited(null);
     await loadData();
   };
 
