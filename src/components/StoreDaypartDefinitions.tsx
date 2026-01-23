@@ -257,7 +257,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   };
 
   const handleEditSchedule = (schedule: DaypartSchedule) => {
-    setEditingSchedule(schedule);
+    const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
+    const scheduleWithDaypartName = {
+      ...schedule,
+      daypart_name: definition?.daypart_name || schedule.daypart_name || ''
+    };
+    setEditingSchedule(scheduleWithDaypartName);
     setAddingScheduleForDef(null);
   };
 
