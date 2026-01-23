@@ -176,8 +176,10 @@ export default function DaypartRoutineForm({
 
   const getDayCollisionStatus = (day: number): boolean => {
     if (!formData.daypart_name || formData.days_of_week.includes(day)) return false;
+    if (formData.schedule_type === 'event_holiday') return false;
     return existingRoutines.some(routine => {
       if (editingRoutine && routine.id === editingRoutine.id) return false;
+      if (routine.schedule_type === 'event_holiday') return false;
       return routine.daypart_name === formData.daypart_name && routine.days_of_week.includes(day);
     });
   };

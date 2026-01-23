@@ -356,6 +356,26 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         ? `Customize ${daypartLabel} ${scheduleTypeLabel}`
         : `Add ${daypartLabel} ${scheduleTypeLabel}`;
 
+    const allRoutinesForCollision: DaypartRoutine[] = [
+      ...routines,
+      ...inheritedSchedules.map(inherited => ({
+        id: inherited.id,
+        placement_group_id: placementGroupId,
+        daypart_name: inherited.daypart_name,
+        days_of_week: inherited.days_of_week,
+        start_time: inherited.start_time,
+        end_time: inherited.end_time,
+        schedule_name: inherited.schedule_name,
+        runs_on_days: inherited.runs_on_days,
+        schedule_type: inherited.schedule_type || 'regular',
+        event_name: inherited.event_name,
+        event_date: inherited.event_date,
+        recurrence_type: inherited.recurrence_type,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as DaypartRoutine))
+    ];
+
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -377,7 +397,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
         <DaypartRoutineForm
           placementGroupId={placementGroupId}
-          existingRoutines={routines}
+          existingRoutines={allRoutinesForCollision}
           onSave={handleSave}
           onCancel={handleCancel}
           editingRoutine={editingInherited ? {
