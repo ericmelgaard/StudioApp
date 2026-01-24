@@ -65,6 +65,7 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
     locale: undefined
   });
 
+  const [conceptId, setConceptId] = useState<number | undefined>(undefined);
   const [companyLanguages, setCompanyLanguages] = useState<Array<{ locale: string; locale_name: string; sort_order: number }>>([]);
   const [activeSection, setActiveSection] = useState('basic-info');
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -141,6 +142,16 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
     setLoading(true);
 
     await loadCompanyLanguages();
+
+    const { data: companyData } = await supabase
+      .from('companies')
+      .select('concept_id')
+      .eq('id', companyId)
+      .maybeSingle();
+
+    if (companyData) {
+      setConceptId(companyData.concept_id);
+    }
 
     if (storeId) {
       const { data, error: fetchError } = await supabase
@@ -590,7 +601,7 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
                     ref={(el) => (sectionRefs.current['operation-hours'] = el)}
                     className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
                   >
-                    <StoreOperationHours storeId={storeId} />
+                    <StoreOperationHours storeId={storeId} conceptId={conceptId} viewLevel="store" />
                   </div>
 
                   <div

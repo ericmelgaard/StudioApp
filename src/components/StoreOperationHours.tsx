@@ -7,7 +7,7 @@ import { ScheduleType, RecurrenceType, RecurrenceConfig, formatRecurrenceText, i
 
 interface OperationSchedule extends Schedule {
   id?: string;
-  store_id: number;
+  store_id?: number;
   schedule_name?: string;
   is_closed: boolean;
   schedule_type?: ScheduleType;
@@ -17,10 +17,13 @@ interface OperationSchedule extends Schedule {
   recurrence_config?: RecurrenceConfig;
   priority_level?: number;
   runs_on_days?: boolean;
+  source?: 'site' | 'store';
 }
 
 interface StoreOperationHoursProps {
-  storeId: number;
+  storeId?: number;
+  conceptId?: number;
+  viewLevel?: 'site' | 'store';
 }
 
 const DAYS_OF_WEEK = [
@@ -33,7 +36,7 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Saturday', short: 'Sat' }
 ];
 
-export default function StoreOperationHours({ storeId }: StoreOperationHoursProps) {
+export default function StoreOperationHours({ storeId, conceptId, viewLevel = 'store' }: StoreOperationHoursProps) {
   const [schedules, setSchedules] = useState<OperationSchedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +60,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
   useEffect(() => {
     loadSchedules();
-  }, [storeId]);
+  }, [storeId, conceptId, viewLevel]);
 
   const loadSchedules = async () => {
     setLoading(true);
@@ -65,14 +68,14 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
     try {
       const { data, error: fetchError } = await supabase
-        .from('store_operation_hours_schedules')
-        .select('*')
-        .eq('store_id', storeId)
-        .order('created_at');
+        .rpc('get_effective_power_save_schedules', {
+          p_store_id: viewLevel === 'store' ? storeId : null,
+          p_concept_id: conceptId
+        });
 
       if (fetchError) throw fetchError;
 
-      const mappedSchedules: OperationSchedule[] = (data || []).map(s => ({
+      const mappedSchedules: OperationSchedule[] = (data || []).map((s: any) => ({
         id: s.id,
         store_id: s.store_id,
         schedule_name: s.schedule_name,
@@ -87,7 +90,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
         recurrence_type: s.recurrence_type,
         recurrence_config: s.recurrence_config,
         priority_level: s.priority_level || 10,
-        runs_on_days: s.runs_on_days !== false
+        runs_on_days: s.runs_on_days !== false,
+        source: s.source
       }));
 
       const sortedSchedules = mappedSchedules.sort((a, b) => {
@@ -147,8 +151,9 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
   const handleSaveSchedule = async (schedule: Schedule) => {
     try {
       const operationSchedule = schedule as OperationSchedule;
+      const tableName = viewLevel === 'site' ? 'site_power_save_schedules' : 'store_operation_hours_schedules';
+
       const scheduleData: any = {
-        store_id: storeId,
         schedule_name: operationSchedule.schedule_name || null,
         days_of_week: schedule.days_of_week,
         open_time: schedule.runs_on_days !== false ? schedule.start_time : null,
@@ -160,6 +165,13 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
         updated_at: new Date().toISOString()
       };
 
+      if (viewLevel === 'site') {
+        scheduleData.concept_id = conceptId;
+      } else {
+        scheduleData.store_id = storeId;
+        scheduleData.concept_id = conceptId;
+      }
+
       if (schedule.schedule_type === 'event_holiday') {
         scheduleData.event_name = schedule.event_name;
         scheduleData.event_date = schedule.event_date || null;
@@ -169,7 +181,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
       if (editingSchedule?.id) {
         const { error: updateError } = await supabase
-          .from('store_operation_hours_schedules')
+          .from(tableName)
           .update(scheduleData)
           .eq('id', editingSchedule.id);
 
@@ -177,7 +189,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
         setSuccess('Schedule updated successfully');
       } else {
         const { error: insertError } = await supabase
-          .from('store_operation_hours_schedules')
+          .from(tableName)
           .insert([scheduleData]);
 
         if (insertError) throw insertError;
@@ -196,14 +208,16 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
     }
   };
 
-  const handleDeleteSchedule = async (scheduleId: string) => {
+  const handleDeleteSchedule = async (scheduleId: string, source?: 'site' | 'store') => {
     if (!confirm('Are you sure you want to delete this schedule?')) {
       return;
     }
 
     try {
+      const tableName = source === 'site' ? 'site_power_save_schedules' : 'store_operation_hours_schedules';
+
       const { error: deleteError } = await supabase
-        .from('store_operation_hours_schedules')
+        .from(tableName)
         .delete()
         .eq('id', scheduleId);
 
@@ -294,7 +308,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                   <Calendar className="w-4 h-4" />
                   <h4 className="font-semibold">Power Save</h4>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
-                    Store
+                    {viewLevel === 'site' ? 'Site' : 'Store'}
                   </span>
                 </div>
               </div>
@@ -337,7 +351,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                 <Calendar className="w-4 h-4" />
                 <h4 className="font-semibold">Power Save</h4>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
-                  Store
+                  {schedules[0]?.source === 'site' ? 'Site' : 'Store'}
                 </span>
                 {eventSchedules.length > 0 && (
                   <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>

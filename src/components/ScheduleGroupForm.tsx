@@ -26,7 +26,7 @@ interface ScheduleGroupFormProps {
   onDaypartChange?: (daypartId: string, daypartName: string) => void;
   skipDayValidation?: boolean;
   disableCollisionDetection?: boolean;
-  onDelete?: (scheduleId: string) => Promise<void>;
+  onDelete?: (scheduleId: string, source?: 'site' | 'store') => Promise<void>;
 }
 
 export default function ScheduleGroupForm({
@@ -145,7 +145,7 @@ export default function ScheduleGroupForm({
     }
 
     try {
-      await onDelete(schedule.id);
+      await onDelete(schedule.id, (schedule as any).source);
     } catch (err: any) {
       alert(`Failed to delete schedule: ${err.message}`);
     }
