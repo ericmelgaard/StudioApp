@@ -47,8 +47,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
     store_id: storeId,
     schedule_name: '',
     days_of_week: [],
-    start_time: '09:00',
-    end_time: '17:00',
+    start_time: '23:00',
+    end_time: '06:00',
     is_closed: false,
     daypart_name: 'operation_hours',
     schedule_type: 'regular',
@@ -110,8 +110,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       store_id: storeId,
       schedule_name: '',
       days_of_week: [],
-      start_time: '09:00',
-      end_time: '17:00',
+      start_time: '23:00',
+      end_time: '06:00',
       is_closed: false,
       daypart_name: 'operation_hours',
       schedule_type: 'regular',
@@ -127,8 +127,8 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       store_id: storeId,
       schedule_name: '',
       days_of_week: [],
-      start_time: '09:00',
-      end_time: '17:00',
+      start_time: '23:00',
+      end_time: '06:00',
       is_closed: false,
       daypart_name: 'operation_hours',
       schedule_type: 'event_holiday',
@@ -254,22 +254,22 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
     }
   };
 
+  const formatTime = (time: string): string => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-slate-900">Power Save Schedules</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Power Save</h3>
         </div>
       </div>
-      <p className="text-sm text-slate-600 mb-4">
-        Define when devices should enter a power savings state. Multiple schedules per day are allowed.
-        {eventCount > 0 && (
-          <span className="ml-1 text-violet-600 font-medium">
-            ({eventCount} {eventCount === 1 ? 'event' : 'events'})
-          </span>
-        )}
-      </p>
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
@@ -285,23 +285,63 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
         </div>
       )}
 
-      <div className="space-y-4 mb-6">
-        {regularSchedules.length === 0 && eventSchedules.length === 0 && !addingSchedule && !addingEventSchedule ? (
-          <div className="text-center py-4 bg-white rounded-lg border border-slate-200">
-            <Calendar className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm text-slate-600 mb-4">
-              No power save schedules set. Add a schedule to define when devices should enter a power savings state.
-            </p>
+      <div className="space-y-5 mb-6">
+        {regularSchedules.length === 0 && eventSchedules.length === 0 ? (
+          <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-opacity">
+            <div className="px-4 py-3 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1">
+                  <Calendar className="w-4 h-4" />
+                  <h4 className="font-semibold">Power Save</h4>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
+                    Global
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="text-center">
+                <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-slate-600 text-sm">
+                  No power save schedules configured yet.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddEventSchedule}
+                className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                style={{
+                  borderColor: 'rgba(222, 56, 222, 0.3)',
+                  color: 'rgb(156, 39, 176)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                  e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  Add Event/Holiday
+                </span>
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div className="bg-blue-50 px-4 py-3 border-b border-blue-100">
+          <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md">
+            <div className="px-4 py-3 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-blue-600" />
-                <h4 className="font-semibold text-slate-900">Regular Schedules</h4>
+                <Calendar className="w-4 h-4" />
+                <h4 className="font-semibold">Power Save</h4>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
+                  Global
+                </span>
                 {eventSchedules.length > 0 && (
-                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900 font-medium">
-                    <Sparkles className="w-3 h-3" />
+                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                    <Calendar className="w-3 h-3" />
                     {eventSchedules.length} {eventSchedules.length === 1 ? 'Event' : 'Events'}
                   </span>
                 )}
@@ -310,214 +350,151 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
             <div className="divide-y divide-slate-200">
               {regularSchedules.map((schedule) => (
                 <div key={schedule.id}>
-                  {editingSchedule?.id === schedule.id ? (
-                    <div className="px-4 pb-4 bg-blue-50 border-t border-blue-200">
-                      <div className="pt-4 space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Schedule Name (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            value={editingSchedule.schedule_name || ''}
-                            onChange={(e) => setEditingSchedule({ ...editingSchedule, schedule_name: e.target.value })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="e.g., Overnight, Extended Break"
-                          />
-                        </div>
-                        <ScheduleGroupForm
-                          schedule={editingSchedule}
-                          allSchedules={schedules}
-                          onUpdate={setEditingSchedule}
-                          onSave={handleSaveSchedule}
-                          onCancel={() => setEditingSchedule(null)}
-                          level="site"
-                          skipDayValidation={true}
-                          disableCollisionDetection={true}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 hover:bg-slate-50 transition-colors group">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            {schedule.schedule_name && (
-                              <span className="text-sm font-semibold text-slate-900">
-                                {schedule.schedule_name}
-                              </span>
-                            )}
-                            <span className={`text-sm ${schedule.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
-                              {schedule.runs_on_days === false
-                                ? 'Does Not Run'
-                                : schedule.is_closed
-                                  ? 'Power Save'
-                                  : `${schedule.start_time} - ${schedule.end_time}`}
+                  <button
+                    onClick={() => handleEditSchedule(schedule)}
+                    className="w-full p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          {schedule.schedule_name && (
+                            <span className="text-sm font-semibold text-slate-900">
+                              {schedule.schedule_name}
                             </span>
-                          </div>
-                          {schedule.days_of_week.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {schedule.days_of_week.sort().map(day => {
-                                const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                                return (
-                                  <span
-                                    key={day}
-                                    className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium"
-                                  >
-                                    {dayInfo?.short}
-                                  </span>
-                                );
-                              })}
-                            </div>
                           )}
+                          <span className={`text-sm ${schedule.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
+                            {schedule.runs_on_days === false
+                              ? 'Does Not Run'
+                              : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={() => handleEditSchedule(schedule)}
-                            className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit schedule"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => schedule.id && handleDeleteSchedule(schedule.id)}
-                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete schedule"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        <div className="flex flex-wrap gap-1">
+                          {schedule.days_of_week.sort().map(day => {
+                            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                            return (
+                              <span
+                                key={day}
+                                className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded font-medium"
+                              >
+                                {dayInfo?.short}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
+                      <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
                     </div>
-                  )}
+                  </button>
                 </div>
               ))}
 
-              {regularSchedules.length === 0 && (
-                <div className="p-6 text-center">
-                  <p className="text-slate-600 text-sm mb-4">
-                    No regular schedules yet. Add a schedule to define power save times.
-                  </p>
+              {regularSchedules.length > 0 && (
+                <div className="mx-3 mb-3 mt-3">
                   <button
                     type="button"
-                    onClick={handleAddSchedule}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    onClick={handleAddEventSchedule}
+                    className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                    style={{
+                      borderColor: 'rgba(222, 56, 222, 0.3)',
+                      color: 'rgb(156, 39, 176)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                      e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
                   >
-                    <Plus className="w-4 h-4" />
-                    Add Schedule
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      Add Event/Holiday
+                    </span>
                   </button>
                 </div>
               )}
 
               {eventSchedules.length > 0 && (
-                <div className="border-t-2 border-violet-200">
+                <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
                   <button
                     type="button"
                     onClick={() => setEventsExpanded(!eventsExpanded)}
-                    className="w-full px-4 py-3 bg-violet-50 hover:bg-violet-100 transition-colors flex items-center justify-between group"
+                    className="w-full px-4 py-3 transition-colors flex items-center justify-between group"
+                    style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.15)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
                   >
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-violet-600" />
-                      <span className="font-medium text-violet-900">
+                      <Calendar className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                      <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
                         Event & Holiday Schedules
                       </span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-900">
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                         {eventSchedules.length}
                       </span>
                     </div>
                     {eventsExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-violet-600" />
+                      <ChevronDown className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-violet-600" />
+                      <ChevronRight className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
                     )}
                   </button>
 
                   {eventsExpanded && (
-                    <div className="divide-y divide-violet-100 bg-violet-50/30">
+                    <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
                       {eventSchedules.map((schedule) => (
                         <div key={schedule.id}>
-                          {editingSchedule?.id === schedule.id ? (
-                            <div className="px-4 pb-4 bg-violet-50 border-t border-violet-200">
-                              <div className="pt-4 space-y-4">
-                                <ScheduleGroupForm
-                                  schedule={editingSchedule}
-                                  allSchedules={schedules}
-                                  onUpdate={setEditingSchedule}
-                                  onSave={handleSaveSchedule}
-                                  onCancel={() => setEditingSchedule(null)}
-                                  level="site"
-                                  skipDayValidation={true}
-                                  disableCollisionDetection={true}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="p-4 hover:bg-violet-100/50 transition-colors group">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    {schedule.schedule_name && (
-                                      <span className="font-semibold text-violet-900">
-                                        {schedule.schedule_name}
-                                      </span>
-                                    )}
-                                    <span className={`${schedule.schedule_name ? 'text-violet-700' : 'font-medium text-violet-900'}`}>
-                                      {schedule.event_name || 'Unnamed Event'}
+                          <button
+                            onClick={() => handleEditSchedule(schedule)}
+                            className="w-full p-4 transition-colors text-left"
+                            style={{ backgroundColor: 'transparent' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                  {schedule.schedule_name && (
+                                    <span className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>
+                                      {schedule.schedule_name}
                                     </span>
-                                    <span className="text-xs px-2 py-1 bg-violet-100 text-violet-700 rounded font-medium">
-                                      {getRecurrenceLabel(schedule.recurrence_type)}
-                                    </span>
-                                  </div>
-                                  <div className="text-sm text-violet-700 mb-2">
-                                    <Calendar className="w-3.5 h-3.5 inline mr-1" />
-                                    {formatEventDate(schedule.event_date, schedule.recurrence_type)}
-                                    <span className="mx-2 text-violet-400">•</span>
-                                    <Clock className="w-3.5 h-3.5 inline mr-1" />
-                                    {schedule.runs_on_days === false
-                                      ? 'Does Not Run'
-                                      : schedule.is_closed
-                                        ? 'Power Save'
-                                        : `${schedule.start_time} - ${schedule.end_time}`}
-                                  </div>
-                                  {schedule.days_of_week.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                      {schedule.days_of_week.sort().map(day => {
-                                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                                        return (
-                                          <span
-                                            key={day}
-                                            className="px-2 py-1 bg-violet-100 text-violet-700 text-xs rounded font-medium"
-                                          >
-                                            {dayInfo?.short}
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
                                   )}
+                                  <span className={schedule.schedule_name ? '' : 'font-medium'} style={{ color: 'rgb(156, 39, 176)' }}>
+                                    {schedule.event_name || 'Unnamed Event'}
+                                  </span>
+                                  <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                                    {getRecurrenceLabel(schedule.recurrence_type)}
+                                  </span>
                                 </div>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleEditSchedule(schedule)}
-                                    className="p-2 text-violet-600 hover:text-violet-700 hover:bg-violet-200/50 rounded-lg transition-colors"
-                                    title="Edit schedule"
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => schedule.id && handleDeleteSchedule(schedule.id)}
-                                    className="p-2 text-violet-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Delete schedule"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
+                                  <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                  {formatEventDate(schedule.event_date, schedule.recurrence_type)}
+                                  <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
+                                  <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                  {schedule.runs_on_days === false
+                                    ? 'Does Not Run'
+                                    : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
                                 </div>
+                                {schedule.days_of_week.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {schedule.days_of_week.sort().map(day => {
+                                      const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                      return (
+                                        <span
+                                          key={day}
+                                          className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded font-medium"
+                                        >
+                                          {dayInfo?.short}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
+                              <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                             </div>
-                          )}
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -528,74 +505,110 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
           </div>
         )}
 
-        {(addingSchedule || addingEventSchedule) && (
-          <div className={`bg-white rounded-lg border ${addingEventSchedule ? 'border-violet-200' : 'border-slate-200'} overflow-hidden`}>
-            <div className={`px-4 py-3 ${addingEventSchedule ? 'bg-violet-50 border-b border-violet-100' : 'bg-blue-50 border-b border-blue-100'}`}>
-              <div className="flex items-center gap-2">
-                {addingEventSchedule ? (
-                  <>
-                    <Sparkles className="w-4 h-4 text-violet-600" />
-                    <h4 className="font-semibold text-slate-900">New Event / Holiday Schedule</h4>
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                    <h4 className="font-semibold text-slate-900">New Regular Schedule</h4>
-                  </>
-                )}
+        {(addingSchedule || editingSchedule) && (
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-slate-900">
+                    Power Save
+                  </h3>
+                  <span className="text-sm text-slate-700">
+                    {editingSchedule ? 'Edit Schedule' : 'New Schedule'}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="px-4 pb-4 bg-slate-50">
-              <div className="pt-4 space-y-4">
-                {!addingEventSchedule && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Schedule Name (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={newSchedule.schedule_name || ''}
-                      onChange={(e) => setNewSchedule({ ...newSchedule, schedule_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., Overnight, Extended Break"
-                    />
-                  </div>
-                )}
-                <ScheduleGroupForm
-                  schedule={newSchedule}
-                  allSchedules={schedules}
-                  onUpdate={setNewSchedule}
-                  onSave={handleSaveSchedule}
-                  onCancel={() => {
-                    setAddingSchedule(false);
-                    setAddingEventSchedule(false);
-                  }}
-                  level="site"
-                  skipDayValidation={true}
-                  disableCollisionDetection={true}
-                />
-              </div>
+
+            <div className="p-4">
+              <ScheduleGroupForm
+                schedule={editingSchedule || newSchedule}
+                allSchedules={schedules}
+                onUpdate={(updated) => {
+                  if (editingSchedule) {
+                    setEditingSchedule(updated as OperationSchedule);
+                  } else {
+                    setNewSchedule(updated as OperationSchedule);
+                  }
+                }}
+                onSave={handleSaveSchedule}
+                onCancel={() => {
+                  setEditingSchedule(null);
+                  setNewSchedule({
+                    store_id: storeId,
+                    schedule_name: '',
+                    days_of_week: [],
+                    start_time: '23:00',
+                    end_time: '06:00',
+                    is_closed: false,
+                    daypart_name: 'operation_hours',
+                    schedule_type: 'regular',
+                    runs_on_days: true
+                  });
+                  setAddingSchedule(false);
+                  setAddingEventSchedule(false);
+                }}
+                onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+                level="site"
+                skipDayValidation={true}
+                disableCollisionDetection={true}
+              />
             </div>
           </div>
         )}
 
-        {!addingSchedule && !addingEventSchedule && !editingSchedule && (
-          <div className="grid grid-cols-2 gap-3">
+        {addingEventSchedule && !editingSchedule && !addingSchedule && (
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-slate-900">
+                    Power Save
+                  </h3>
+                  <span className="text-sm text-amber-900 font-medium">Event</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <ScheduleGroupForm
+                schedule={newSchedule}
+                allSchedules={schedules}
+                onUpdate={setNewSchedule}
+                onSave={handleSaveSchedule}
+                onCancel={() => {
+                  setAddingEventSchedule(false);
+                  setNewSchedule({
+                    store_id: storeId,
+                    schedule_name: '',
+                    days_of_week: [],
+                    start_time: '23:00',
+                    end_time: '06:00',
+                    is_closed: false,
+                    daypart_name: 'operation_hours',
+                    schedule_type: 'regular',
+                    runs_on_days: true
+                  });
+                }}
+                level="site"
+                skipDayValidation={true}
+                disableCollisionDetection={true}
+              />
+            </div>
+          </div>
+        )}
+
+        {!addingSchedule && !addingEventSchedule && !editingSchedule && regularSchedules.length === 0 && eventSchedules.length === 0 && (
+          <div className="mx-3 mb-3 mt-3">
             <button
               type="button"
               onClick={handleAddSchedule}
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 text-slate-600 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+              className="w-full p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4" />
-              Add Schedule
-            </button>
-            <button
-              type="button"
-              onClick={handleAddEventSchedule}
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-violet-300 text-violet-600 rounded-lg hover:border-violet-600 hover:bg-violet-50 transition-colors font-medium"
-            >
-              <Sparkles className="w-4 h-4" />
-              Add Event/Holiday
+              <Plus className="w-4 h-4 text-slate-700" />
+              <span className="text-sm font-medium text-slate-700">
+                Add Schedule
+              </span>
             </button>
           </div>
         )}
