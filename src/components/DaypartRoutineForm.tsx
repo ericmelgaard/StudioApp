@@ -33,7 +33,6 @@ export interface DaypartRoutine {
   start_time: string | null;
   end_time: string | null;
   runs_on_days?: boolean;
-  schedule_name?: string;
   schedule_type?: 'regular' | 'event_holiday';
   event_name?: string;
   event_date?: string;
@@ -89,7 +88,6 @@ export default function DaypartRoutineForm({
     start_time: editingRoutine?.start_time || preFillStartTime || '06:00',
     end_time: editingRoutine?.end_time || preFillEndTime || '11:00',
     runs_on_days: true,
-    schedule_name: editingRoutine?.schedule_name || '',
     event_name: editingRoutine?.event_name || '',
     event_date: editingRoutine?.event_date || '',
     recurrence_type: editingRoutine?.recurrence_type || 'none' as 'none' | 'annual_date' | 'monthly_date' | 'annual_relative' | 'annual_date_range',
@@ -302,20 +300,6 @@ export default function DaypartRoutineForm({
       </div>
 
       <div className="p-4 space-y-4">
-
-        {/* Schedule Name at the top */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Schedule Name (optional)
-          </label>
-          <input
-            type="text"
-            value={formData.schedule_name}
-            onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
-            placeholder="e.g., Weekend Hours, Summer Schedule"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
 
         {formData.schedule_type === 'event_holiday' && (
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
