@@ -448,9 +448,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   // List View
   return (
     <div className="space-y-6">
-      <div>
+      <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-cyan-600" />
+          <Clock className="w-5 h-5 text-blue-600" />
           Placement Schedules
         </h3>
         <p className="text-sm text-slate-600 mt-1">
@@ -485,7 +485,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             const colorClass = definition.color;
 
             return (
-              <div key={daypartName} className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                 <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
@@ -503,7 +503,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                   <div key={schedule.id}>
                     <button
                       onClick={() => handleEdit(schedule)}
-                      className="w-full p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+                      className="w-full p-4 hover:bg-blue-50 active:bg-blue-100 transition-colors text-left"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -720,17 +720,17 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
           {/* Store Dayparts Section - collapsible group containing individual cards */}
           {inheritedSchedules.length > 0 && (
-            <div className="bg-slate-50 rounded-xl border-2 border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
               <button
                 type="button"
                 onClick={() => setInheritedSectionExpanded(!inheritedSectionExpanded)}
-                className="w-full px-4 py-3 hover:bg-slate-100 transition-colors flex items-center justify-between"
+                className="w-full px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-slate-900">
                     Store Dayparts
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
                     {allDayparts.filter(dp => {
                       const hasCustom = (groupedRoutines[dp]?.length || 0) + (groupedEventRoutines[dp]?.length || 0) > 0;
                       const hasInherited = (groupedInheritedRoutines[dp]?.length || 0) + (groupedInheritedEvents[dp]?.length || 0) > 0;
@@ -766,7 +766,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     const hasInheritedEvents = daypartInheritedEvents.length > 0;
 
                     return (
-                      <div key={daypartName} className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                         <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
@@ -785,7 +785,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                             <div key={schedule.id}>
                               <button
                                 onClick={() => handleEditInherited(schedule)}
-                                className="w-full p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left opacity-75"
+                                className="w-full p-4 hover:bg-blue-50 active:bg-blue-100 transition-colors text-left opacity-75"
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="flex-1 min-w-0">

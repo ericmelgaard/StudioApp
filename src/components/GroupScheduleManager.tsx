@@ -336,9 +336,9 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                     <button
                       key={schedule.id}
                       onClick={() => onEditSchedule?.(schedule)}
-                      className={`w-full p-3 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden`}
+                      className={`w-full p-3 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 active:bg-blue-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden`}
                     >
-                      <div className={`absolute inset-0 ${colorClasses.bgLight} dark:bg-slate-800/50 opacity-20`}></div>
+                      <div className={`absolute inset-0 bg-blue-50 dark:bg-slate-800/50 opacity-20`}></div>
 
                       <div className="relative flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -394,10 +394,10 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                           schedule_name: template.schedule_name
                         } as Schedule);
                       }}
-                      className="w-full min-w-[220px] p-3 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                      className="w-full min-w-[220px] p-3 bg-white dark:bg-slate-900 border-2 border-dashed border-blue-300 dark:border-slate-600 rounded-lg hover:border-blue-400 dark:hover:border-slate-500 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                     >
-                      <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                      <span className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400">
+                      <Plus className="w-4 h-4 text-blue-600 dark:text-slate-400" />
+                      <span className="text-xs md:text-sm font-medium text-blue-600 dark:text-slate-400">
                         Schedule Remaining Days ({unscheduledDays.length})
                       </span>
                     </button>
@@ -415,20 +415,20 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
           <button
             type="button"
             onClick={() => setStoreSchedulesExpanded(!storeSchedulesExpanded)}
-            className="w-full px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-between rounded-lg"
+            className="w-full px-2 py-2 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-between rounded-lg"
           >
             <div className="flex items-center gap-2">
-              <span className="font-semibold" style={{ color: '#002e5e' }}>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
                 Store Dayparts
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 font-medium" style={{ color: '#002e5e' }}>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-slate-700 text-blue-700 dark:text-blue-400 font-medium">
                 {groupStoreSchedulesByDaypart().length}
               </span>
             </div>
             {storeSchedulesExpanded ? (
-              <ChevronDown className="w-4 h-4" style={{ color: '#002e5e' }} />
+              <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             ) : (
-              <ChevronRight className="w-4 h-4" style={{ color: '#002e5e' }} />
+              <ChevronRight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             )}
           </button>
 
@@ -474,9 +474,9 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                         <button
                           key={schedule.id}
                           onClick={() => onEditSchedule?.(schedule, true)}
-                          className={`w-full p-3 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden opacity-75`}
+                          className={`w-full p-3 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 active:bg-blue-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden opacity-75`}
                         >
-                          <div className={`absolute inset-0 ${colorClasses.bgLight} dark:bg-slate-800/50 opacity-10`}></div>
+                          <div className={`absolute inset-0 bg-blue-50 dark:bg-slate-800/50 opacity-10`}></div>
 
                           <div className="relative flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
