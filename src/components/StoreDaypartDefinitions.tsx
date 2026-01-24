@@ -62,6 +62,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
   const [viewLevel, setViewLevel] = useState<'list' | 'edit-schedule'>('list');
   const [editingDefinitionContext, setEditingDefinitionContext] = useState<DaypartDefinition | null>(null);
+  const [removedDays, setRemovedDays] = useState<number[]>([]);
+  const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
+  const [savedScheduleData, setSavedScheduleData] = useState<{ definitionId: string; schedule: Schedule } | null>(null);
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -444,6 +447,34 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       setViewLevel('list');
       await loadData();
 
+      if (removedDays.length > 0 && editingSchedule) {
+        const currentDefinition = definitions.find(d => d.id === editingSchedule.daypart_definition_id);
+
+        if (currentDefinition) {
+          const allSchedulesForDaypart = schedules.filter(s => s.daypart_definition_id === currentDefinition.id);
+          const coveredDays = new Set<number>();
+
+          allSchedulesForDaypart.forEach(sched => {
+            sched.days_of_week.forEach(day => coveredDays.add(day));
+          });
+
+          const uncoveredRemovedDays = removedDays.filter(day => !coveredDays.has(day));
+
+          if (uncoveredRemovedDays.length > 0) {
+            setSavedScheduleData({
+              definitionId: currentDefinition.id,
+              schedule: {
+                ...schedule,
+                days_of_week: uncoveredRemovedDays
+              }
+            });
+            setRemovedDays(uncoveredRemovedDays);
+            setShowRemovedDaysPrompt(true);
+            return;
+          }
+        }
+      }
+
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       console.error('Error saving schedule:', err);
@@ -538,6 +569,43 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       ...prev,
       [defId]: !prev[defId]
     }));
+  };
+
+  const handleScheduleRemovedDays = () => {
+    if (savedScheduleData) {
+      const def = definitions.find(d => d.id === savedScheduleData.definitionId);
+      handleAddSchedule(
+        savedScheduleData.definitionId,
+        'regular',
+        removedDays,
+        savedScheduleData.schedule as DaypartSchedule
+      );
+      setShowRemovedDaysPrompt(false);
+      setSavedScheduleData(null);
+      setRemovedDays([]);
+    }
+  };
+
+  const handleSkipRemovedDays = () => {
+    setShowRemovedDaysPrompt(false);
+    setSavedScheduleData(null);
+    setRemovedDays([]);
+  };
+
+  const formatRemovedDays = (): string => {
+    const dayLabels = [
+      { value: 0, label: 'Sunday' },
+      { value: 1, label: 'Monday' },
+      { value: 2, label: 'Tuesday' },
+      { value: 3, label: 'Wednesday' },
+      { value: 4, label: 'Thursday' },
+      { value: 5, label: 'Friday' },
+      { value: 6, label: 'Saturday' }
+    ];
+    return removedDays
+      .map(day => dayLabels.find(d => d.value === day)?.label || '')
+      .filter(Boolean)
+      .join(', ');
   };
 
   const filteredDefinitions = definitions.filter(def =>
@@ -639,6 +707,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 setEditingDefinitionContext(null);
               }}
               onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+              onRemovedDays={setRemovedDays}
               level="site"
               skipDayValidation={false}
               disableCollisionDetection={false}
@@ -755,6 +824,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                       onSave={handleSaveSchedule}
                       onCancel={() => setEditingSchedule(null)}
                       onDelete={() => handleDeleteSchedule(editingSchedule.id!)}
+                      onRemovedDays={setRemovedDays}
                       level="site"
                     />
                   </div>
@@ -785,6 +855,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         setAddingScheduleForDef(null);
                         setNewSchedule(null);
                       }}
+                      onRemovedDays={setRemovedDays}
                       level="site"
                     />
                   </div>
@@ -1283,6 +1354,44 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showRemovedDaysPrompt && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                    Schedule Removed Days?
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    You removed {formatRemovedDays()} from this schedule. Would you like to create a new schedule for these days, or leave them unscheduled?
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleScheduleRemovedDays}
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Create New Schedule for These Days
+                </button>
+                <button
+                  onClick={handleSkipRemovedDays}
+                  className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                >
+                  Leave Unscheduled
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 import DaySelector from './DaySelector';
@@ -27,7 +27,18 @@ interface ScheduleGroupFormProps {
   skipDayValidation?: boolean;
   disableCollisionDetection?: boolean;
   onDelete?: (scheduleId: string, source?: 'site' | 'store') => Promise<void>;
+  onRemovedDays?: (days: number[]) => void;
 }
+
+const DAYS_OF_WEEK = [
+  { value: 0, label: 'Sunday', short: 'Sun' },
+  { value: 1, label: 'Monday', short: 'Mon' },
+  { value: 2, label: 'Tuesday', short: 'Tue' },
+  { value: 3, label: 'Wednesday', short: 'Wed' },
+  { value: 4, label: 'Thursday', short: 'Thu' },
+  { value: 5, label: 'Friday', short: 'Fri' },
+  { value: 6, label: 'Saturday', short: 'Sat' }
+];
 
 export default function ScheduleGroupForm({
   schedule,
@@ -42,7 +53,8 @@ export default function ScheduleGroupForm({
   onDaypartChange,
   skipDayValidation = false,
   disableCollisionDetection = false,
-  onDelete
+  onDelete,
+  onRemovedDays
 }: ScheduleGroupFormProps) {
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -51,6 +63,8 @@ export default function ScheduleGroupForm({
   const [eventDate, setEventDate] = useState(schedule.event_date || '');
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(schedule.recurrence_type || 'none');
   const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig>(schedule.recurrence_config || {});
+  const [initialDays] = useState<number[]>(schedule?.days_of_week || []);
+  const [removedDays, setRemovedDays] = useState<number[]>([]);
 
   const collision = useScheduleCollisionDetection(
     allSchedules,
@@ -59,6 +73,16 @@ export default function ScheduleGroupForm({
     localSchedule.id,
     scheduleType
   );
+
+  useEffect(() => {
+    if (schedule.id && initialDays.length > 0) {
+      const newRemovedDays = initialDays.filter(d => !localSchedule.days_of_week.includes(d));
+      setRemovedDays(newRemovedDays);
+      if (onRemovedDays) {
+        onRemovedDays(newRemovedDays);
+      }
+    }
+  }, [localSchedule.days_of_week, initialDays, schedule.id, onRemovedDays]);
 
   const handleToggleDay = (day: number) => {
     const newDays = localSchedule.days_of_week.includes(day)
