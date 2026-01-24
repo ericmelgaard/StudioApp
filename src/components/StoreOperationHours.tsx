@@ -455,13 +455,13 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                 )}
               </div>
             </div>
-            <div className="divide-y divide-slate-200">
+            <div className="p-3 space-y-3">
               {regularSchedules.map((schedule) => (
                 <button
                   key={schedule.id}
                   type="button"
                   onClick={() => handleEditSchedule(schedule)}
-                  className="w-full p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+                  className="w-full p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] shadow-sm text-left group"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -492,7 +492,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
+                    <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
                   </div>
                 </button>
               ))}
