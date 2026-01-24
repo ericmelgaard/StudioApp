@@ -62,7 +62,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
   const loadRoutines = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('site_daypart_routines')
+      .from('placement_daypart_overrides')
       .select('*')
       .eq('placement_group_id', placementGroupId)
       .order('daypart_name')
@@ -79,14 +79,14 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
   const handleSave = async (routine: Omit<DaypartRoutine, 'id' | 'created_at' | 'updated_at'>) => {
     if (editingRoutine) {
       const { error } = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .update(routine)
         .eq('id', editingRoutine.id);
 
       if (error) throw error;
     } else {
       const { error } = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .insert([routine]);
 
       if (error) throw error;
@@ -108,7 +108,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
     }
 
     const { error } = await supabase
-      .from('site_daypart_routines')
+      .from('placement_daypart_overrides')
       .delete()
       .eq('id', routineId);
 

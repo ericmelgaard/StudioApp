@@ -100,7 +100,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       setDaypartDefinitions(definitions);
 
       const schedulesResult = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .select('*')
         .eq('placement_group_id', groupId);
 

@@ -172,7 +172,7 @@ export default function ScheduleEditPage({
 
       if (schedule?.id && !isSchedulingRemovedDays) {
         const { error } = await supabase
-          .from('site_daypart_routines')
+          .from('placement_daypart_overrides')
           .update(data)
           .eq('id', schedule.id);
 
@@ -180,7 +180,7 @@ export default function ScheduleEditPage({
         scheduleId = schedule.id;
       } else {
         const { data: newSchedule, error } = await supabase
-          .from('site_daypart_routines')
+          .from('placement_daypart_overrides')
           .insert(data)
           .select('id')
           .single();
@@ -191,7 +191,7 @@ export default function ScheduleEditPage({
 
       // Check for mergeable schedules
       const { data: otherSchedules, error: queryError } = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .select('*')
         .eq('placement_group_id', groupId)
         .eq('daypart_definition_id', formData.daypart_definition_id)
@@ -209,7 +209,7 @@ export default function ScheduleEditPage({
       } else if (removedDays.length > 0) {
         // Check if removed days are already covered by other schedules for this daypart
         const { data: allSchedules, error: allSchedulesError } = await supabase
-          .from('site_daypart_routines')
+          .from('placement_daypart_overrides')
           .select('days_of_week')
           .eq('placement_group_id', groupId)
           .eq('daypart_definition_id', formData.daypart_definition_id)
@@ -256,7 +256,7 @@ export default function ScheduleEditPage({
     try {
       // Get the current schedule that was just saved
       const { data: currentSchedule, error: fetchError } = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .select('days_of_week')
         .eq('id', savedScheduleId)
         .maybeSingle();
@@ -277,7 +277,7 @@ export default function ScheduleEditPage({
       // Delete all other schedules FIRST to avoid collision
       const schedulesToDelete = mergeableSchedules.map(s => s.id);
       const { error: deleteError } = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .delete()
         .in('id', schedulesToDelete);
 
@@ -285,7 +285,7 @@ export default function ScheduleEditPage({
 
       // Now update the current schedule with combined days and clear the name
       const { error: updateError } = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .update({
           days_of_week: combinedDays,
           schedule_name: null

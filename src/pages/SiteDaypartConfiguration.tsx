@@ -271,7 +271,7 @@ export default function SiteDaypartConfiguration({ placementGroupId, siteName, o
 
   const loadSiteRoutines = async () => {
     const { data, error } = await supabase
-      .from('site_daypart_routines')
+      .from('placement_daypart_overrides')
       .select('*')
       .eq('placement_group_id', placementGroupId);
 
@@ -289,14 +289,14 @@ export default function SiteDaypartConfiguration({ placementGroupId, siteName, o
 
       if (existingIds.length > 0) {
         await supabase
-          .from('site_daypart_routines')
+          .from('placement_daypart_overrides')
           .delete()
           .in('id', existingIds);
       }
 
       if (routines.length > 0) {
         const { error: insertError } = await supabase
-          .from('site_daypart_routines')
+          .from('placement_daypart_overrides')
           .insert(routines.map(r => ({
             placement_group_id: placementGroupId,
             daypart_definition_id: daypartId,
@@ -327,7 +327,7 @@ export default function SiteDaypartConfiguration({ placementGroupId, siteName, o
 
     if (routinesToDelete.length > 0) {
       const { error } = await supabase
-        .from('site_daypart_routines')
+        .from('placement_daypart_overrides')
         .delete()
         .in('id', routinesToDelete);
 

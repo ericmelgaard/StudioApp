@@ -450,7 +450,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
         if (currentDefinition) {
           const { data: allSchedulesForDaypart, error: schedulesError } = await supabase
-            .from('site_daypart_routines')
+            .from('placement_daypart_overrides')
             .select('days_of_week')
             .eq('store_id', storeId)
             .eq('daypart_definition_id', currentDefinition.id);

@@ -159,7 +159,7 @@ export default function DaypartManagement() {
     }
 
     const { data, error } = await supabase
-      .from('site_daypart_routines')
+      .from('placement_daypart_overrides')
       .select('*')
       .eq('placement_group_id', siteRootPlacementId);
 

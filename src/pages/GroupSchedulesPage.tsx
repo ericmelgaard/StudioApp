@@ -113,7 +113,7 @@ export default function GroupSchedulesPage({ group, onBack }: GroupSchedulesPage
 
   const handleDelete = async (scheduleId: string) => {
     const { error } = await supabase
-      .from('site_daypart_routines')
+      .from('placement_daypart_overrides')
       .delete()
       .eq('id', scheduleId);
 
