@@ -288,13 +288,13 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
       <div className="space-y-5 mb-6">
         {regularSchedules.length === 0 && eventSchedules.length === 0 ? (
           <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-opacity">
-            <div className="px-4 py-3 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-100 text-slate-800 border-slate-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-1">
                   <Calendar className="w-4 h-4" />
                   <h4 className="font-semibold">Power Save</h4>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
-                    Global
+                    Store
                   </span>
                 </div>
               </div>
@@ -332,12 +332,12 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
           </div>
         ) : (
           <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-md">
-            <div className="px-4 py-3 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-100 text-slate-800 border-slate-300">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 <h4 className="font-semibold">Power Save</h4>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-slate-600/20 text-slate-900">
-                  Global
+                  Store
                 </span>
                 {eventSchedules.length > 0 && (
                   <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
@@ -374,7 +374,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                             return (
                               <span
                                 key={day}
-                                className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded font-medium"
+                                className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded font-medium"
                               >
                                 {dayInfo?.short}
                               </span>
@@ -483,7 +483,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
                                       return (
                                         <span
                                           key={day}
-                                          className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded font-medium"
+                                          className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded font-medium"
                                         >
                                           {dayInfo?.short}
                                         </span>
@@ -507,7 +507,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
         {(addingSchedule || editingSchedule) && (
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
+            <div className="p-4 border-b border-slate-200 bg-slate-100 text-slate-800 border-slate-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-slate-900">
@@ -559,7 +559,7 @@ export default function StoreOperationHours({ storeId }: StoreOperationHoursProp
 
         {addingEventSchedule && !editingSchedule && !addingSchedule && (
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-orange-100 text-orange-800 border-orange-300">
+            <div className="p-4 border-b border-slate-200 bg-slate-100 text-slate-800 border-slate-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-slate-900">
