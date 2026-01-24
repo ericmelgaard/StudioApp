@@ -440,40 +440,57 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         }
       }
 
+      const hasRemovedDays = removedDays.length > 0;
+      const currentEditingSchedule = editingSchedule;
+
+      console.log('After save - hasRemovedDays:', hasRemovedDays, 'removedDays:', removedDays, 'editingSchedule:', currentEditingSchedule);
+
+      await loadData();
+
+      if (hasRemovedDays && currentEditingSchedule) {
+        console.log('Checking for uncovered removed days...');
+        const currentDefinition = definitions.find(d => d.id === currentEditingSchedule.daypart_definition_id);
+
+        if (currentDefinition) {
+          const { data: allSchedulesForDaypart, error: schedulesError } = await supabase
+            .from('site_daypart_routines')
+            .select('days_of_week')
+            .eq('store_id', storeId)
+            .eq('daypart_definition_id', currentDefinition.id);
+
+          if (!schedulesError && allSchedulesForDaypart) {
+            const coveredDays = new Set<number>();
+            allSchedulesForDaypart.forEach(sched => {
+              sched.days_of_week.forEach((day: number) => coveredDays.add(day));
+            });
+
+            const uncoveredRemovedDays = removedDays.filter(day => !coveredDays.has(day));
+
+            if (uncoveredRemovedDays.length > 0) {
+              console.log('Found uncovered removed days:', uncoveredRemovedDays);
+              setSavedScheduleData({
+                definitionId: currentDefinition.id,
+                schedule: {
+                  ...schedule,
+                  days_of_week: uncoveredRemovedDays,
+                  start_time: currentEditingSchedule.start_time,
+                  end_time: currentEditingSchedule.end_time
+                }
+              });
+              setRemovedDays(uncoveredRemovedDays);
+              setShowRemovedDaysPrompt(true);
+              return;
+            }
+          }
+        }
+      }
+
       setEditingSchedule(null);
       setAddingScheduleForDef(null);
       setNewSchedule(null);
       setEditingDefinitionContext(null);
       setViewLevel('list');
-      await loadData();
-
-      if (removedDays.length > 0 && editingSchedule) {
-        const currentDefinition = definitions.find(d => d.id === editingSchedule.daypart_definition_id);
-
-        if (currentDefinition) {
-          const allSchedulesForDaypart = schedules.filter(s => s.daypart_definition_id === currentDefinition.id);
-          const coveredDays = new Set<number>();
-
-          allSchedulesForDaypart.forEach(sched => {
-            sched.days_of_week.forEach(day => coveredDays.add(day));
-          });
-
-          const uncoveredRemovedDays = removedDays.filter(day => !coveredDays.has(day));
-
-          if (uncoveredRemovedDays.length > 0) {
-            setSavedScheduleData({
-              definitionId: currentDefinition.id,
-              schedule: {
-                ...schedule,
-                days_of_week: uncoveredRemovedDays
-              }
-            });
-            setRemovedDays(uncoveredRemovedDays);
-            setShowRemovedDaysPrompt(true);
-            return;
-          }
-        }
-      }
+      setRemovedDays([]);
 
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {

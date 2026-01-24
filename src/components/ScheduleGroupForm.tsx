@@ -78,6 +78,7 @@ export default function ScheduleGroupForm({
     if (schedule.id && initialDays.length > 0) {
       const newRemovedDays = initialDays.filter(d => !localSchedule.days_of_week.includes(d));
       setRemovedDays(newRemovedDays);
+      console.log('Removed days detected:', newRemovedDays, 'from initial:', initialDays, 'current:', localSchedule.days_of_week);
       if (onRemovedDays) {
         onRemovedDays(newRemovedDays);
       }
