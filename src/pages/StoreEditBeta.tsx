@@ -285,10 +285,10 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
       { id: 'basic-info', label: 'Basic Information', icon: Info },
       { id: 'store-location', label: 'Store Location', icon: MapPin },
       { id: 'language', label: 'Language', icon: Globe },
+      { id: 'operation-hours', label: 'Power Save', icon: Calendar },
     ];
 
     if (storeId) {
-      sections.push({ id: 'operation-hours', label: 'Power Save', icon: Calendar });
       sections.push({ id: 'daypart-definitions', label: 'Daypart Schedules', icon: Clock });
     }
 
@@ -594,24 +594,22 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
                 </div>
               </div>
 
-              {storeId && (
-                <>
-                  <div
-                    id="operation-hours"
-                    ref={(el) => (sectionRefs.current['operation-hours'] = el)}
-                    className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
-                  >
-                    <StoreOperationHours storeId={storeId} conceptId={conceptId} viewLevel="store" />
-                  </div>
+              <div
+                id="operation-hours"
+                ref={(el) => (sectionRefs.current['operation-hours'] = el)}
+                className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+              >
+                <StoreOperationHours storeId={storeId} conceptId={conceptId} viewLevel="store" />
+              </div>
 
-                  <div
-                    id="daypart-definitions"
-                    ref={(el) => (sectionRefs.current['daypart-definitions'] = el)}
-                    className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
-                  >
-                    <StoreDaypartDefinitions storeId={storeId} />
-                  </div>
-                </>
+              {storeId && (
+                <div
+                  id="daypart-definitions"
+                  ref={(el) => (sectionRefs.current['daypart-definitions'] = el)}
+                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+                >
+                  <StoreDaypartDefinitions storeId={storeId} />
+                </div>
               )}
 
               {isDirty && (
