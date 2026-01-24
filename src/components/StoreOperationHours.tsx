@@ -400,6 +400,27 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                       <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
                     </div>
                   </button>
+                  {editingSchedule?.id === schedule.id && (
+                    <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
+                      <div className="pt-4">
+                        <ScheduleGroupForm
+                          schedule={editingSchedule}
+                          allSchedules={schedules}
+                          onUpdate={(updated) => {
+                            setEditingSchedule(updated as OperationSchedule);
+                          }}
+                          onSave={handleSaveSchedule}
+                          onCancel={() => {
+                            setEditingSchedule(null);
+                          }}
+                          onDelete={handleDeleteSchedule}
+                          level="site"
+                          skipDayValidation={true}
+                          disableCollisionDetection={true}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -511,6 +532,27 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                               <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                             </div>
                           </button>
+                          {editingSchedule?.id === schedule.id && (
+                            <div className="px-4 pb-4 border-t" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)', borderColor: 'rgba(222, 56, 222, 0.2)' }}>
+                              <div className="pt-4">
+                                <ScheduleGroupForm
+                                  schedule={editingSchedule}
+                                  allSchedules={schedules}
+                                  onUpdate={(updated) => {
+                                    setEditingSchedule(updated as OperationSchedule);
+                                  }}
+                                  onSave={handleSaveSchedule}
+                                  onCancel={() => {
+                                    setEditingSchedule(null);
+                                  }}
+                                  onDelete={handleDeleteSchedule}
+                                  level="site"
+                                  skipDayValidation={true}
+                                  disableCollisionDetection={true}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -521,7 +563,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
           </div>
         )}
 
-        {(addingSchedule || editingSchedule) && (
+        {addingSchedule && !editingSchedule && (
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-100 text-slate-800 border-slate-300">
               <div className="flex items-center justify-between">
@@ -529,27 +571,20 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                   <h3 className="font-semibold text-slate-900">
                     Power Save
                   </h3>
-                  <span className="text-sm text-slate-700">
-                    {editingSchedule ? 'Edit Schedule' : 'New Schedule'}
-                  </span>
+                  <span className="text-sm text-slate-700">New Schedule</span>
                 </div>
               </div>
             </div>
 
             <div className="p-4">
               <ScheduleGroupForm
-                schedule={editingSchedule || newSchedule}
+                schedule={newSchedule}
                 allSchedules={schedules}
                 onUpdate={(updated) => {
-                  if (editingSchedule) {
-                    setEditingSchedule(updated as OperationSchedule);
-                  } else {
-                    setNewSchedule(updated as OperationSchedule);
-                  }
+                  setNewSchedule(updated as OperationSchedule);
                 }}
                 onSave={handleSaveSchedule}
                 onCancel={() => {
-                  setEditingSchedule(null);
                   setNewSchedule({
                     store_id: storeId,
                     schedule_name: '',
@@ -562,9 +597,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                     runs_on_days: true
                   });
                   setAddingSchedule(false);
-                  setAddingEventSchedule(false);
                 }}
-                onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
                 level="site"
                 skipDayValidation={true}
                 disableCollisionDetection={true}
