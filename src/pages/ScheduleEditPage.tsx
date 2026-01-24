@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Clock, AlertCircle, Calendar, Sparkles, Combine } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Calendar, Sparkles, Combine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import TimeSelector from '../components/TimeSelector';
 
@@ -42,6 +42,25 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'S', fullLabel: 'Saturday' }
 ];
 
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};
+
+const getDaypartColorStyles = (color: string) => {
+  const rgb = hexToRgb(color);
+  if (!rgb) return { backgroundColor: '#00adf0' };
+  return {
+    backgroundColor: color,
+    '--hover-color': `rgb(${Math.max(0, rgb.r - 20)}, ${Math.max(0, rgb.g - 20)}, ${Math.max(0, rgb.b - 20)})`,
+    '--active-color': `rgb(${Math.max(0, rgb.r - 40)}, ${Math.max(0, rgb.g - 40)}, ${Math.max(0, rgb.b - 40)})`
+  } as React.CSSProperties;
+};
+
 export default function ScheduleEditPage({
   schedule,
   groupId,
@@ -53,7 +72,6 @@ export default function ScheduleEditPage({
 }: ScheduleEditPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scheduleType, setScheduleType] = useState<'regular' | 'event'>('regular');
   const [initialDays] = useState<number[]>(schedule?.days_of_week || []);
   const [removedDays, setRemovedDays] = useState<number[]>([]);
   const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
@@ -72,6 +90,10 @@ export default function ScheduleEditPage({
   const isNewSchedule = !schedule?.id || isSchedulingRemovedDays;
   const isSuggestedDays = isNewSchedule && initialDays.length > 0;
   const isDaypartLocked = (!!schedule?.id && !isSchedulingRemovedDays) || isSuggestedDays;
+
+  const selectedDaypart = dayparts.find(d => d.id === formData.daypart_definition_id);
+  const daypartColor = selectedDaypart?.color || '#00adf0';
+  const daypartColorStyles = getDaypartColorStyles(daypartColor);
 
   const handleDayToggle = (day: number) => {
     setFormData(prev => {
@@ -337,15 +359,15 @@ export default function ScheduleEditPage({
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="px-4 py-3">
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3">
             <button
               onClick={onBack}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </button>
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-              <Calendar className="w-5 h-5 text-white" />
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${daypartColor}20` }}>
+              <Calendar className="w-5 h-5" style={{ color: daypartColor }} />
             </div>
             <div className="flex-1">
               <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
@@ -378,41 +400,15 @@ export default function ScheduleEditPage({
               </div>
             )}
 
-            {/* Schedule Type Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-700">
-              <button
-                type="button"
-                onClick={() => setScheduleType('regular')}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                  scheduleType === 'regular'
-                    ? 'bg-slate-700 dark:bg-slate-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                Regular Schedule
-              </button>
-              <button
-                type="button"
-                onClick={() => setScheduleType('event')}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                  scheduleType === 'event'
-                    ? 'bg-slate-700 dark:bg-slate-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                Event / Holiday
-              </button>
-            </div>
-
             {/* Form Fields */}
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-6">
               {/* Daypart Type */}
               {isDaypartLocked ? (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Daypart Type
                   </label>
-                  <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+                  <div className="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {dayparts.find(d => d.id === formData.daypart_definition_id)?.display_label || 'Unknown Daypart'}
                     </p>
@@ -426,7 +422,8 @@ export default function ScheduleEditPage({
                   <select
                     value={formData.daypart_definition_id}
                     onChange={(e) => setFormData({ ...formData, daypart_definition_id: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:border-transparent"
+                    style={{ '--tw-ring-color': daypartColor } as React.CSSProperties}
                     required
                   >
                     <option value="">Select a daypart...</option>
@@ -444,24 +441,32 @@ export default function ScheduleEditPage({
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Days of the Week *
                 </label>
-                <div className="grid grid-cols-7 gap-2">
-                  {DAYS_OF_WEEK.map((day) => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => handleDayToggle(day.value)}
-                      className={`h-12 rounded-lg font-medium text-sm transition-all ${
-                        formData.days_of_week.includes(day.value)
-                          ? 'text-white'
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
-                      }`}
-                      style={formData.days_of_week.includes(day.value) ? { backgroundColor: '#00adf0' } : {}}
-                      title={day.fullLabel}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
+                <div className="flex justify-center gap-2">
+                  {DAYS_OF_WEEK.map((day) => {
+                    const isSelected = formData.days_of_week.includes(day.value);
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => handleDayToggle(day.value)}
+                        className={`w-10 h-10 rounded-full font-medium text-sm transition-all ${
+                          isSelected
+                            ? 'text-white shadow-md'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                        }`}
+                        style={isSelected ? daypartColorStyles : {}}
+                        title={day.fullLabel}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
                 </div>
+                {formData.days_of_week.length > 0 && (
+                  <div className="mt-2 text-xs text-center text-slate-600 dark:text-slate-400">
+                    {formData.days_of_week.length} {formData.days_of_week.length === 1 ? 'day' : 'days'} selected
+                  </div>
+                )}
               </div>
 
               {/* Schedule Name */}
@@ -495,11 +500,11 @@ export default function ScheduleEditPage({
 
               {/* Remove Schedule Button - Only shown when editing */}
               {schedule && onDelete && !isSchedulingRemovedDays && (
-                <div className="pt-8 mt-8 border-t border-slate-200 dark:border-slate-700">
+                <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
                     onClick={handleDeleteClick}
-                    className="w-full px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium border border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700"
+                    className="w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium border border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700"
                   >
                     Remove Schedule
                   </button>
@@ -512,24 +517,20 @@ export default function ScheduleEditPage({
 
       {/* Fixed Footer with Action Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onBack}
-              className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
+              className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium text-sm"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2.5 disabled:bg-slate-300 text-white rounded-lg transition-colors disabled:cursor-not-allowed font-medium"
-              style={!loading ? { backgroundColor: '#00adf0' } : {}}
-              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
-              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
-              onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
-              onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
+              className="px-6 py-2.5 disabled:bg-slate-300 disabled:text-slate-500 text-white rounded-lg transition-all disabled:cursor-not-allowed font-medium text-sm"
+              style={!loading ? daypartColorStyles : {}}
             >
               {loading ? 'Saving...' : (isNewSchedule ? 'Add' : 'Save')}
             </button>
@@ -540,11 +541,11 @@ export default function ScheduleEditPage({
       {/* Merge Prompt Modal */}
       {showMergePrompt && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="p-6">
               <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <Combine className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="p-2.5 rounded-xl" style={{ backgroundColor: `${daypartColor}20` }}>
+                  <Combine className="w-5 h-5" style={{ color: daypartColor }} />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
@@ -556,14 +557,14 @@ export default function ScheduleEditPage({
                 </div>
               </div>
 
-              <div className="space-y-2 mb-6">
-                {mergeableSchedules.map((sched, index) => (
+              <div className="space-y-2 mb-4">
+                {mergeableSchedules.map((sched) => (
                   <div
                     key={sched.id}
                     className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-slate-500" />
+                      <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                       <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                         {formatDaysList(sched.days_of_week)}
                       </span>
@@ -572,9 +573,9 @@ export default function ScheduleEditPage({
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-6">
-                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                <p className="text-sm text-blue-900 dark:text-blue-100">
+              <div className="flex items-center gap-2 p-3 rounded-lg mb-6" style={{ backgroundColor: `${daypartColor}15`, borderColor: `${daypartColor}40`, borderWidth: '1px' }}>
+                <Sparkles className="w-4 h-4 flex-shrink-0" style={{ color: daypartColor }} />
+                <p className="text-sm text-slate-900 dark:text-slate-100">
                   Combine into one schedule covering all days
                 </p>
               </div>
@@ -590,10 +591,8 @@ export default function ScheduleEditPage({
                 <button
                   onClick={handleMergeSchedules}
                   disabled={loading}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: '#00adf0' }}
-                  onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
-                  onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#00adf0')}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={!loading ? daypartColorStyles : {}}
                 >
                   {loading ? 'Merging...' : 'Merge Schedules'}
                 </button>
@@ -606,11 +605,11 @@ export default function ScheduleEditPage({
       {/* Removed Days Prompt Modal */}
       {showRemovedDaysPrompt && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="p-6">
               <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                  <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
@@ -622,7 +621,7 @@ export default function ScheduleEditPage({
                 </div>
               </div>
 
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-6">
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-6">
                 <p className="text-sm text-amber-900 dark:text-amber-100">
                   This daypart will not run on these days unless you create a separate schedule for them.
                 </p>
@@ -637,10 +636,8 @@ export default function ScheduleEditPage({
                 </button>
                 <button
                   onClick={handleScheduleRemovedDays}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors"
-                  style={{ backgroundColor: '#00adf0' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0099d6'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00adf0'}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-all"
+                  style={daypartColorStyles}
                 >
                   Schedule These Days
                 </button>
