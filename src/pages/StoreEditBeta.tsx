@@ -277,8 +277,8 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
     ];
 
     if (storeId) {
-      sections.push({ id: 'daypart-definitions', label: 'Daypart Schedules', icon: Clock });
       sections.push({ id: 'operation-hours', label: 'Power Save', icon: Calendar });
+      sections.push({ id: 'daypart-definitions', label: 'Daypart Schedules', icon: Clock });
     }
 
     return sections;
@@ -586,19 +586,19 @@ export default function StoreEditBeta({ storeId, companyId, conceptName, company
               {storeId && (
                 <>
                   <div
-                    id="daypart-definitions"
-                    ref={(el) => (sectionRefs.current['daypart-definitions'] = el)}
-                    className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
-                  >
-                    <StoreDaypartDefinitions storeId={storeId} />
-                  </div>
-
-                  <div
                     id="operation-hours"
                     ref={(el) => (sectionRefs.current['operation-hours'] = el)}
                     className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
                   >
                     <StoreOperationHours storeId={storeId} />
+                  </div>
+
+                  <div
+                    id="daypart-definitions"
+                    ref={(el) => (sectionRefs.current['daypart-definitions'] = el)}
+                    className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm scroll-mt-20"
+                  >
+                    <StoreDaypartDefinitions storeId={storeId} />
                   </div>
                 </>
               )}
