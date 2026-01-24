@@ -116,6 +116,8 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       const storeSchedules = storeSchedulesResult.data || [];
 
       const customizationMap = new Map<string, Schedule>();
+      const daypartCustomizations = new Map<string, boolean>();
+
       console.log('=== PLACEMENT SCHEDULES FOR', groupName, '===');
       placementSchedules.forEach(custom => {
         const def = definitions.find((d: DaypartDefinition) => d.id === custom.daypart_definition_id);
@@ -123,6 +125,9 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
           const key = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}_${custom.schedule_name || ''}`;
           console.log('  Placement schedule:', def.daypart_name, 'key:', key, 'schedule:', custom);
           customizationMap.set(key, custom);
+
+          const daypartKey = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}`;
+          daypartCustomizations.set(daypartKey, true);
         }
       });
 
@@ -133,10 +138,15 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
         if (!definition) return;
 
         const key = `${definition.daypart_name}_${schedule.schedule_type || 'regular'}_${schedule.event_date || ''}_${schedule.schedule_name || ''}`;
-        const hasCustomization = customizationMap.has(key);
-        console.log('  Store schedule:', definition.daypart_name, 'key:', key, 'has customization:', hasCustomization);
+        const daypartKey = `${definition.daypart_name}_${schedule.schedule_type || 'regular'}_${schedule.event_date || ''}`;
 
-        if (!hasCustomization) {
+        const hasExactMatch = customizationMap.has(key);
+        const hasDaypartCustomization = daypartCustomizations.has(daypartKey);
+
+        console.log('  Store schedule:', definition.daypart_name, 'key:', key);
+        console.log('    exact match:', hasExactMatch, 'daypart customized:', hasDaypartCustomization);
+
+        if (!hasExactMatch && !hasDaypartCustomization) {
           console.log('    -> Marked as INHERITED');
           inherited.push({
             ...schedule,
@@ -146,7 +156,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
             schedule_type: schedule.schedule_type || 'regular'
           });
         } else {
-          console.log('    -> SKIPPED (has placement customization)');
+          console.log('    -> SKIPPED (placement has this daypart customized)');
         }
       });
 
