@@ -531,7 +531,7 @@ export default function ScheduleEditPage({
               onMouseDown={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0085bc')}
               onMouseUp={(e) => !loading && (e.currentTarget.style.backgroundColor = '#0099d6')}
             >
-              {loading ? 'Saving...' : (isNewSchedule ? 'Add Schedule' : 'Save Schedule')}
+              {loading ? 'Saving...' : (isNewSchedule ? 'Add' : 'Save')}
             </button>
           </div>
         </div>

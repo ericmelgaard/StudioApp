@@ -573,7 +573,7 @@ export default function DaypartRoutineForm({
               className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Delete Schedule
+              Delete
             </button>
           ) : (
             <div />
@@ -592,9 +592,12 @@ export default function DaypartRoutineForm({
               type="button"
               onClick={handleSubmit}
               disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 active:bg-cyan-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+              style={{ backgroundColor: saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0)) ? undefined : '#00adf0' }}
+              className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+              onMouseEnter={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
+              onMouseLeave={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
             >
-              {saving ? 'Saving...' : 'Save Schedule'}
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>

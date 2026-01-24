@@ -468,7 +468,7 @@ export default function ScheduleGroupForm({
             className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            Delete Schedule
+            Delete
           </button>
         ) : (
           <div />
@@ -486,9 +486,12 @@ export default function ScheduleGroupForm({
             type="button"
             onClick={handleSave}
             disabled={!!error}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            style={{ backgroundColor: '#00adf0' }}
+            className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            onMouseEnter={(e) => !error && (e.currentTarget.style.backgroundColor = '#00c3ff')}
+            onMouseLeave={(e) => !error && (e.currentTarget.style.backgroundColor = '#00adf0')}
           >
-            Save Schedule
+            Save
           </button>
         </div>
       </div>
