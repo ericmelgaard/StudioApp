@@ -1,11 +1,13 @@
 // Service Worker for PWA with automatic updates
-const CACHE_VERSION = 'v4';
-const CACHE_NAME = `wand-operator-hub-${CACHE_VERSION}-${Date.now()}`;
+const CACHE_VERSION = 'v4-20260124-2';
+const BUILD_TIMESTAMP = '20260124-2';
+const CACHE_NAME = `wand-operator-hub-${CACHE_VERSION}`;
 const HTML_CACHE = `wand-html-${CACHE_VERSION}`;
 const ASSETS_CACHE = `wand-assets-${CACHE_VERSION}`;
 
-// Install event - cache critical assets
+// Install event - cache critical assets and skip waiting immediately
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing new service worker:', CACHE_VERSION);
   event.waitUntil(
     caches.open(ASSETS_CACHE).then((cache) => {
       return cache.addAll([
@@ -15,22 +17,29 @@ self.addEventListener('install', (event) => {
       ]);
     })
   );
+  // Force immediate activation
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - aggressively clean up ALL old caches
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating new service worker:', CACHE_VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => !name.startsWith(`wand-html-${CACHE_VERSION}`) &&
-                           !name.startsWith(`wand-assets-${CACHE_VERSION}`))
-          .map((name) => caches.delete(name))
+          .filter((name) => name !== HTML_CACHE && name !== ASSETS_CACHE && name !== CACHE_NAME)
+          .map((name) => {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          })
       );
+    }).then(() => {
+      console.log('[SW] All old caches cleared');
+      // Force immediate control of all clients
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
 // Fetch event - network-first for HTML, cache-first for assets
@@ -89,9 +98,33 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Listen for messages from the app to check for updates
+// Listen for messages from the app
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+
+  // Handle cache clearing request
+  if (event.data === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        console.log('[SW] Clearing all caches on request');
+        return Promise.all(
+          cacheNames.map((name) => caches.delete(name))
+        );
+      }).then(() => {
+        console.log('[SW] All caches cleared');
+        // Notify the client that cache is cleared
+        event.ports[0].postMessage({ status: 'success', message: 'Cache cleared' });
+      })
+    );
+  }
+
+  // Return current version
+  if (event.data === 'GET_VERSION') {
+    event.ports[0].postMessage({
+      version: CACHE_VERSION,
+      buildTimestamp: BUILD_TIMESTAMP
+    });
   }
 });

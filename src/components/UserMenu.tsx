@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, RefreshCw } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -16,9 +16,30 @@ interface UserMenuProps {
 
 export default function UserMenu({ role, user, onBackToRoles }: UserMenuProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(word => word[0]).join('').toUpperCase();
+  };
+
+  const handleClearCache = async () => {
+    setIsClearing(true);
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const messageChannel = new MessageChannel();
+
+      messageChannel.port1.onmessage = (event) => {
+        console.log('Cache cleared:', event.data);
+        window.location.reload();
+      };
+
+      navigator.serviceWorker.controller.postMessage('CLEAR_CACHE', [messageChannel.port2]);
+    } else {
+      await caches.keys().then((names) => {
+        return Promise.all(names.map((name) => caches.delete(name)));
+      });
+      window.location.reload();
+    }
   };
 
   const getRoleDisplay = (role: string) => {
@@ -92,6 +113,17 @@ export default function UserMenu({ role, user, onBackToRoles }: UserMenuProps) {
             </div>
 
             <div className="py-2">
+              <button
+                onClick={handleClearCache}
+                disabled={isClearing}
+                className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors flex items-center gap-3 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-4 h-4 ${isClearing ? 'animate-spin' : ''}`} />
+                <span className="text-sm font-medium">
+                  {isClearing ? 'Clearing Cache...' : 'Clear Cache & Reload'}
+                </span>
+              </button>
+
               <button
                 onClick={() => {
                   setShowMenu(false);
