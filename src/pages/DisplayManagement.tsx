@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars } from 'lucide-react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
@@ -295,26 +295,15 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   };
 
   const loadActiveDayparts = async () => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentTime = now.toTimeString().slice(0, 5);
-
-    const { data: activeDisplays } = await supabase
+    const { data: allDisplays } = await supabase
       .from('displays')
-      .select('id, placement_group_id, media_player:media_players!inner(store_id, status)')
-      .eq('media_player.store_id', storeId)
-      .eq('media_player.status', 'online');
+      .select('id, placement_group_id')
+      .eq('store_id', storeId);
 
-    if (!activeDisplays || activeDisplays.length === 0) {
+    if (!allDisplays || allDisplays.length === 0) {
       setDaypartBadges([]);
       return;
     }
-
-    const placementIds = [...new Set(activeDisplays.map(d => d.placement_group_id).filter(Boolean))];
-    const ungroupedDisplays = activeDisplays.filter(d => !d.placement_group_id);
-
-    const daypartCounts: Record<string, { label: string; color: string; icon: string; count: number; isCustom: boolean }> = {};
-    const customizedDayparts = new Set<string>();
 
     const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
       p_store_id: storeId
@@ -325,213 +314,34 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       return;
     }
 
+    const placementIds = [...new Set(allDisplays.map(d => d.placement_group_id).filter(Boolean))];
+    const customizedDayparts = new Set<string>();
+
     for (const placementId of placementIds) {
       const { data: overrides } = await supabase
         .from('placement_daypart_overrides')
-        .select('daypart_name, days_of_week, start_time, end_time')
+        .select('daypart_name')
         .eq('placement_group_id', placementId);
 
       if (overrides && overrides.length > 0) {
         overrides.forEach(o => customizedDayparts.add(o.daypart_name));
       }
-
-      let daypartName: string | null = null;
-
-      for (const definition of definitions) {
-        const daypartOverrides = overrides?.filter(o => o.daypart_name === definition.daypart_name) || [];
-        let foundMatch = false;
-
-        if (daypartOverrides.length > 0) {
-          for (const override of daypartOverrides) {
-            const daysOfWeek = override.days_of_week as number[];
-            if (daysOfWeek.includes(currentDay)) {
-              const startTime = override.start_time;
-              const endTime = override.end_time;
-
-              if (startTime <= endTime) {
-                if (currentTime >= startTime && currentTime < endTime) {
-                  daypartName = override.daypart_name;
-                  foundMatch = true;
-                  break;
-                }
-              } else {
-                if (currentTime >= startTime || currentTime < endTime) {
-                  daypartName = override.daypart_name;
-                  foundMatch = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        if (!foundMatch) {
-          const defIds = [definition.id];
-          const { data: schedules } = await supabase
-            .from('daypart_schedules')
-            .select('daypart_definition_id, days_of_week, start_time, end_time')
-            .in('daypart_definition_id', defIds);
-
-          if (schedules && schedules.length > 0) {
-            for (const schedule of schedules) {
-              const daysOfWeek = schedule.days_of_week as number[];
-              if (daysOfWeek.includes(currentDay)) {
-                const startTime = schedule.start_time;
-                const endTime = schedule.end_time;
-
-                if (startTime <= endTime) {
-                  if (currentTime >= startTime && currentTime < endTime) {
-                    daypartName = definition.daypart_name;
-                    foundMatch = true;
-                    break;
-                  }
-                } else {
-                  if (currentTime >= startTime || currentTime < endTime) {
-                    daypartName = definition.daypart_name;
-                    foundMatch = true;
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        if (foundMatch) break;
-      }
-
-      if (daypartName) {
-        const displayCount = activeDisplays.filter(d => d.placement_group_id === placementId).length;
-
-        if (!daypartCounts[daypartName]) {
-          const definition = definitions.find((d: any) => d.daypart_name === daypartName);
-
-          if (definition) {
-            daypartCounts[daypartName] = {
-              label: definition.display_label || daypartName,
-              color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
-              icon: definition.icon || 'Clock',
-              count: displayCount,
-              isCustom: customizedDayparts.has(daypartName)
-            };
-          }
-        } else {
-          daypartCounts[daypartName].count += displayCount;
-        }
-      }
     }
 
-    if (ungroupedDisplays.length > 0) {
-      const { data: placementGroups } = await supabase
-        .from('placement_groups')
-        .select('id')
-        .eq('store_id', storeId)
-        .limit(1);
+    const badges = definitions.map((definition: any) => {
+      const displayCount = allDisplays.filter(d => {
+        return d.placement_group_id && placementIds.includes(d.placement_group_id);
+      }).length;
 
-      if (placementGroups && placementGroups.length > 0) {
-        const defaultGroupId = placementGroups[0].id;
-
-        let daypartName: string | null = null;
-
-        const { data: routines } = await supabase
-          .from('site_daypart_routines')
-          .select('daypart_name, days_of_week, start_time, end_time')
-          .eq('placement_group_id', defaultGroupId);
-
-        if (routines && routines.length > 0) {
-          for (const routine of routines) {
-            const daysOfWeek = routine.days_of_week as number[];
-            if (daysOfWeek.includes(currentDay)) {
-              const startTime = routine.start_time;
-              const endTime = routine.end_time;
-
-              if (startTime <= endTime) {
-                if (currentTime >= startTime && currentTime < endTime) {
-                  daypartName = routine.daypart_name;
-                  break;
-                }
-              } else {
-                if (currentTime >= startTime || currentTime < endTime) {
-                  daypartName = routine.daypart_name;
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        if (!daypartName) {
-          const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
-            p_store_id: storeId
-          });
-
-          if (definitions && definitions.length > 0) {
-            const defIds = definitions.map((d: any) => d.id);
-            const { data: schedules } = await supabase
-              .from('daypart_schedules')
-              .select('daypart_definition_id, days_of_week, start_time, end_time')
-              .in('daypart_definition_id', defIds);
-
-            if (schedules && schedules.length > 0) {
-              for (const schedule of schedules) {
-                const daysOfWeek = schedule.days_of_week as number[];
-                if (daysOfWeek.includes(currentDay)) {
-                  const startTime = schedule.start_time;
-                  const endTime = schedule.end_time;
-
-                  if (startTime <= endTime) {
-                    if (currentTime >= startTime && currentTime < endTime) {
-                      const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
-                      if (definition) {
-                        daypartName = definition.daypart_name;
-                        break;
-                      }
-                    }
-                  } else {
-                    if (currentTime >= startTime || currentTime < endTime) {
-                      const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
-                      if (definition) {
-                        daypartName = definition.daypart_name;
-                        break;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        if (daypartName) {
-          if (!daypartCounts[daypartName]) {
-            const definition = definitions.find((d: any) => d.daypart_name === daypartName);
-
-            if (definition) {
-              daypartCounts[daypartName] = {
-                label: definition.display_label || daypartName,
-                color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
-                icon: definition.icon || 'Clock',
-                count: ungroupedDisplays.length,
-                isCustom: customizedDayparts.has(daypartName)
-              };
-            }
-          } else {
-            daypartCounts[daypartName].count += ungroupedDisplays.length;
-          }
-        }
-      }
-    }
-
-    const badges = Object.entries(daypartCounts)
-      .map(([name, data]) => ({
-        name,
-        label: data.label,
-        color: data.color,
-        icon: data.icon,
-        count: data.count,
-        isCustom: data.isCustom
-      }))
-      .sort((a, b) => b.count - a.count);
+      return {
+        name: definition.daypart_name,
+        label: definition.display_label || definition.daypart_name,
+        color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
+        icon: definition.icon || 'Clock',
+        count: displayCount,
+        isCustom: customizedDayparts.has(definition.daypart_name)
+      };
+    }).filter(badge => badge.count > 0);
 
     setDaypartBadges(badges);
   };
