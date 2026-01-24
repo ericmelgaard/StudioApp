@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Sparkles } from 'lucide-react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
@@ -305,6 +305,13 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       return;
     }
 
+    const placementIds = [...new Set(allDisplays.map(d => d.placement_group_id).filter(Boolean))];
+
+    if (placementIds.length === 0) {
+      setDaypartBadges([]);
+      return;
+    }
+
     const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
       p_store_id: storeId
     });
@@ -314,34 +321,57 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       return;
     }
 
-    const placementIds = [...new Set(allDisplays.map(d => d.placement_group_id).filter(Boolean))];
-    const customizedDayparts = new Set<string>();
+    const { data: storeSchedules } = await supabase
+      .from('daypart_schedules')
+      .select('daypart_definition_id')
+      .eq('store_id', storeId);
+
+    const storeScheduleDefIds = new Set(storeSchedules?.map(s => s.daypart_definition_id) || []);
+
+    const { data: placementOverrides } = await supabase
+      .from('placement_daypart_overrides')
+      .select('placement_group_id, daypart_name')
+      .in('placement_group_id', placementIds);
+
+    const daypartToPlacementsMap = new Map<string, Set<string>>();
 
     for (const placementId of placementIds) {
-      const { data: overrides } = await supabase
-        .from('placement_daypart_overrides')
-        .select('daypart_name')
-        .eq('placement_group_id', placementId);
+      const overrides = placementOverrides?.filter(o => o.placement_group_id === placementId) || [];
 
-      if (overrides && overrides.length > 0) {
-        overrides.forEach(o => customizedDayparts.add(o.daypart_name));
+      if (overrides.length > 0) {
+        overrides.forEach(override => {
+          if (!daypartToPlacementsMap.has(override.daypart_name)) {
+            daypartToPlacementsMap.set(override.daypart_name, new Set());
+          }
+          daypartToPlacementsMap.get(override.daypart_name)!.add(placementId);
+        });
+      } else {
+        definitions.forEach((def: any) => {
+          if (storeScheduleDefIds.has(def.id)) {
+            if (!daypartToPlacementsMap.has(def.daypart_name)) {
+              daypartToPlacementsMap.set(def.daypart_name, new Set());
+            }
+            daypartToPlacementsMap.get(def.daypart_name)!.add(placementId);
+          }
+        });
       }
     }
 
-    const badges = definitions.map((definition: any) => {
-      const displayCount = allDisplays.filter(d => {
-        return d.placement_group_id && placementIds.includes(d.placement_group_id);
-      }).length;
+    const badges = definitions
+      .filter((definition: any) => daypartToPlacementsMap.has(definition.daypart_name))
+      .map((definition: any) => {
+        const placementCount = daypartToPlacementsMap.get(definition.daypart_name)?.size || 0;
 
-      return {
-        name: definition.daypart_name,
-        label: definition.display_label || definition.daypart_name,
-        color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
-        icon: definition.icon || 'Clock',
-        count: displayCount,
-        isCustom: customizedDayparts.has(definition.daypart_name)
-      };
-    }).filter(badge => badge.count > 0);
+        return {
+          name: definition.daypart_name,
+          label: definition.display_label || definition.daypart_name,
+          color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
+          icon: definition.icon || 'Clock',
+          count: placementCount,
+          isCustom: false
+        };
+      })
+      .filter(badge => badge.count > 0);
 
     setDaypartBadges(badges);
   };
@@ -524,7 +554,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
               const IconComponent = getIconComponent(badge.icon);
               return (
                 <div key={badge.name} className="flex flex-col items-center gap-2 flex-shrink-0">
-                  <div className="relative pt-1 pr-1">
+                  <div className="relative">
                     <div
                       className={`w-20 h-12 rounded-full flex items-center justify-center border-4 ${badge.color}`}
                     >
@@ -533,11 +563,6 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                     <div className="absolute top-0 right-0 w-6 h-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center text-xs font-bold shadow-md">
                       {badge.count}
                     </div>
-                    {badge.isCustom && (
-                      <div className="absolute -top-1 -left-1 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md" title="Custom schedule">
-                        <Sparkles className="w-3 h-3" />
-                      </div>
-                    )}
                   </div>
                   <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     {badge.label}
