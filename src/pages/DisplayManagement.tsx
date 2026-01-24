@@ -321,22 +321,50 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       return;
     }
 
+    const now = new Date();
+    const currentDayOfWeek = now.getDay();
+    const currentTime = now.toTimeString().slice(0, 8);
+
     const { data: storeSchedules } = await supabase
       .from('daypart_schedules')
-      .select('daypart_definition_id')
-      .eq('store_id', storeId);
+      .select('daypart_definition_id, days_of_week, start_time, end_time')
+      .eq('store_id', storeId)
+      .contains('days_of_week', [currentDayOfWeek]);
 
-    const storeScheduleDefIds = new Set(storeSchedules?.map(s => s.daypart_definition_id) || []);
+    const activeStoreSchedules = storeSchedules?.filter(schedule => {
+      const startTime = schedule.start_time;
+      const endTime = schedule.end_time;
+
+      if (endTime < startTime) {
+        return currentTime >= startTime || currentTime < endTime;
+      } else {
+        return currentTime >= startTime && currentTime < endTime;
+      }
+    }) || [];
+
+    const activeStoreScheduleDefIds = new Set(activeStoreSchedules.map(s => s.daypart_definition_id));
 
     const { data: placementOverrides } = await supabase
       .from('placement_daypart_overrides')
-      .select('placement_group_id, daypart_name')
-      .in('placement_group_id', placementIds);
+      .select('placement_group_id, daypart_name, days_of_week, start_time, end_time')
+      .in('placement_group_id', placementIds)
+      .contains('days_of_week', [currentDayOfWeek]);
+
+    const activePlacementOverrides = placementOverrides?.filter(override => {
+      const startTime = override.start_time;
+      const endTime = override.end_time;
+
+      if (endTime < startTime) {
+        return currentTime >= startTime || currentTime < endTime;
+      } else {
+        return currentTime >= startTime && currentTime < endTime;
+      }
+    }) || [];
 
     const daypartToPlacementsMap = new Map<string, Set<string>>();
 
     for (const placementId of placementIds) {
-      const overrides = placementOverrides?.filter(o => o.placement_group_id === placementId) || [];
+      const overrides = activePlacementOverrides.filter(o => o.placement_group_id === placementId);
 
       if (overrides.length > 0) {
         overrides.forEach(override => {
@@ -347,7 +375,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         });
       } else {
         definitions.forEach((def: any) => {
-          if (storeScheduleDefIds.has(def.id)) {
+          if (activeStoreScheduleDefIds.has(def.id)) {
             if (!daypartToPlacementsMap.has(def.daypart_name)) {
               daypartToPlacementsMap.set(def.daypart_name, new Set());
             }
