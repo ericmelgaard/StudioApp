@@ -373,6 +373,48 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         }
       }
 
+      if (!daypartName) {
+        const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
+          p_store_id: storeId
+        });
+
+        if (definitions && definitions.length > 0) {
+          const defIds = definitions.map((d: any) => d.id);
+          const { data: schedules } = await supabase
+            .from('daypart_schedules')
+            .select('daypart_definition_id, days_of_week, start_time, end_time')
+            .in('daypart_definition_id', defIds);
+
+          if (schedules && schedules.length > 0) {
+            for (const schedule of schedules) {
+              const daysOfWeek = schedule.days_of_week as number[];
+              if (daysOfWeek.includes(currentDay)) {
+                const startTime = schedule.start_time;
+                const endTime = schedule.end_time;
+
+                if (startTime <= endTime) {
+                  if (currentTime >= startTime && currentTime < endTime) {
+                    const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
+                    if (definition) {
+                      daypartName = definition.daypart_name;
+                      break;
+                    }
+                  }
+                } else {
+                  if (currentTime >= startTime || currentTime < endTime) {
+                    const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
+                    if (definition) {
+                      daypartName = definition.daypart_name;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
       if (daypartName) {
         const displayCount = activeDisplays.filter(d => d.placement_group_id === placementId).length;
 
@@ -407,14 +449,14 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       if (placementGroups && placementGroups.length > 0) {
         const defaultGroupId = placementGroups[0].id;
 
+        let daypartName: string | null = null;
+
         const { data: routines } = await supabase
           .from('site_daypart_routines')
           .select('daypart_name, days_of_week, start_time, end_time')
           .eq('placement_group_id', defaultGroupId);
 
         if (routines && routines.length > 0) {
-          let daypartName: string | null = null;
-
           for (const routine of routines) {
             const daysOfWeek = routine.days_of_week as number[];
             if (daysOfWeek.includes(currentDay)) {
@@ -434,26 +476,68 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
               }
             }
           }
+        }
 
-          if (daypartName) {
-            if (!daypartCounts[daypartName]) {
-              const { data: definition } = await supabase
-                .from('daypart_definitions')
-                .select('display_label, color, icon')
-                .eq('daypart_name', daypartName)
-                .maybeSingle();
+        if (!daypartName) {
+          const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
+            p_store_id: storeId
+          });
 
-              if (definition) {
-                daypartCounts[daypartName] = {
-                  label: definition.display_label || daypartName,
-                  color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
-                  icon: definition.icon || 'Clock',
-                  count: ungroupedDisplays.length
-                };
+          if (definitions && definitions.length > 0) {
+            const defIds = definitions.map((d: any) => d.id);
+            const { data: schedules } = await supabase
+              .from('daypart_schedules')
+              .select('daypart_definition_id, days_of_week, start_time, end_time')
+              .in('daypart_definition_id', defIds);
+
+            if (schedules && schedules.length > 0) {
+              for (const schedule of schedules) {
+                const daysOfWeek = schedule.days_of_week as number[];
+                if (daysOfWeek.includes(currentDay)) {
+                  const startTime = schedule.start_time;
+                  const endTime = schedule.end_time;
+
+                  if (startTime <= endTime) {
+                    if (currentTime >= startTime && currentTime < endTime) {
+                      const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
+                      if (definition) {
+                        daypartName = definition.daypart_name;
+                        break;
+                      }
+                    }
+                  } else {
+                    if (currentTime >= startTime || currentTime < endTime) {
+                      const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
+                      if (definition) {
+                        daypartName = definition.daypart_name;
+                        break;
+                      }
+                    }
+                  }
+                }
               }
-            } else {
-              daypartCounts[daypartName].count += ungroupedDisplays.length;
             }
+          }
+        }
+
+        if (daypartName) {
+          if (!daypartCounts[daypartName]) {
+            const { data: definition } = await supabase
+              .from('daypart_definitions')
+              .select('display_label, color, icon')
+              .eq('daypart_name', daypartName)
+              .maybeSingle();
+
+            if (definition) {
+              daypartCounts[daypartName] = {
+                label: definition.display_label || daypartName,
+                color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
+                icon: definition.icon || 'Clock',
+                count: ungroupedDisplays.length
+              };
+            }
+          } else {
+            daypartCounts[daypartName].count += ungroupedDisplays.length;
           }
         }
       }
