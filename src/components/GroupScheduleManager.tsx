@@ -254,28 +254,28 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <div className="w-6 h-6 border-3 border-slate-200 border-t-cyan-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-3 border-slate-200 dark:border-slate-600 border-t-cyan-600 dark:border-t-cyan-400 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600" />
+      <div className="hidden md:block bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           Placement Schedules
         </h3>
-        <p className="text-sm text-slate-600 mt-1">
+        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
           Configure daypart hours and event/holiday schedules for this placement.
         </p>
       </div>
 
       {schedules.length === 0 && inheritedSchedules.length === 0 ? (
-        <div className="text-center py-16 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
-          <Clock className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No Daypart Schedules Configured</h3>
-          <p className="text-slate-600 text-sm px-4">
+        <div className="text-center py-16 bg-slate-50 dark:bg-slate-800 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600">
+          <Clock className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">No Daypart Schedules Configured</h3>
+          <p className="text-slate-600 dark:text-slate-400 text-sm px-4">
             Configure daypart schedules at the store level first
           </p>
         </div>
@@ -296,25 +296,25 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
             const colorClass = definition.color;
 
             return (
-              <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
+              <div key={daypartName} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                <div className={`px-4 py-3 border-b border-slate-200 dark:border-slate-700 ${colorClass}`}>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     <h4 className="font-semibold">{displayLabel}</h4>
                     {hasEvents && (
-                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                      <span className="hidden md:flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                         <Calendar className="w-3 h-3" />
                         {daypartEvents.length} Event{daypartEvents.length === 1 ? '' : 's'}
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-slate-200 dark:divide-slate-700">
                   {daypartSchedules.map((schedule) => (
                     <div key={schedule.id}>
                       <button
                         onClick={() => onEditSchedule?.(schedule)}
-                        className="w-full p-4 hover:bg-blue-50 active:bg-blue-100 transition-colors text-left"
+                        className="w-full p-4 hover:bg-blue-50 dark:hover:bg-slate-700 active:bg-blue-100 dark:active:bg-slate-600 transition-colors text-left"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
@@ -329,7 +329,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                                       isActive
                                         ? `${bgColor} ${textColor}`
-                                        : 'bg-slate-100 text-slate-400'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
                                     }`}
                                     title={day.label}
                                   >
@@ -338,7 +338,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                 );
                               })}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                               <Clock className="w-4 h-4" />
                               <span>
                                 {schedule.runs_on_days === false
@@ -347,7 +347,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                               </span>
                             </div>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
+                          <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-1" />
                         </div>
                       </button>
                     </div>
@@ -370,17 +370,17 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                               const template = daypartSchedules[0];
                               handleAddNew(daypartName, unscheduledDays, 'regular', template);
                             }}
-                            className="flex-1 min-w-[220px] p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                            className="flex-1 min-w-[220px] p-3 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
                           >
-                            <Plus className="w-4 h-4 text-slate-700" />
-                            <span className="text-xs md:text-sm font-medium text-slate-700">
+                            <Plus className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                            <span className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300">
                               Schedule Remaining Days ({unscheduledDays.length})
                             </span>
                           </button>
                         )}
                         <button
                           onClick={() => handleAddNew(daypartName, [], 'event_holiday')}
-                          className="flex-1 min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                          className="hidden md:flex flex-1 min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all items-center justify-center gap-2"
                           style={{
                             borderColor: 'rgba(222, 56, 222, 0.3)',
                             color: 'rgb(156, 39, 176)'
@@ -404,7 +404,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                   })()}
 
                   {hasEvents && (
-                    <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
+                    <div className="hidden md:block mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
                       <button
                         type="button"
                         onClick={() => toggleEventsExpanded(daypartName)}
@@ -469,17 +469,17 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
           })}
 
           {inheritedSchedules.length > 0 && (
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
               <button
                 type="button"
                 onClick={() => setInheritedSectionExpanded(!inheritedSectionExpanded)}
-                className="w-full px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between"
+                className="w-full px-4 py-3 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-900">
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
                     Store Dayparts
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium">
                     {allDayparts.filter(dp => {
                       const hasCustom = (groupedSchedules[dp]?.length || 0) + (groupedEvents[dp]?.length || 0) > 0;
                       const hasInherited = (groupedInheritedSchedules[dp]?.length || 0) + (groupedInheritedEvents[dp]?.length || 0) > 0;
@@ -488,9 +488,9 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                   </span>
                 </div>
                 {inheritedSectionExpanded ? (
-                  <ChevronDown className="w-5 h-5 text-slate-600" />
+                  <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-600" />
+                  <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 )}
               </button>
 
@@ -512,19 +512,19 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                     const colorClass = definition.color;
 
                     return (
-                      <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                        <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
+                      <div key={daypartName} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                        <div className={`px-4 py-3 border-b border-slate-200 dark:border-slate-700 ${colorClass}`}>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
                             <h4 className="font-semibold">{displayLabel}</h4>
                           </div>
                         </div>
-                        <div className="divide-y divide-slate-200">
+                        <div className="divide-y divide-slate-200 dark:divide-slate-700">
                           {daypartInheritedSchedules.map((schedule) => (
                             <div key={schedule.id}>
                               <button
                                 onClick={() => handleEditInherited(schedule)}
-                                className="w-full p-4 hover:bg-blue-50 active:bg-blue-100 transition-colors text-left opacity-75"
+                                className="w-full p-4 hover:bg-blue-50 dark:hover:bg-slate-700 active:bg-blue-100 dark:active:bg-slate-600 transition-colors text-left opacity-75 dark:opacity-60"
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="flex-1 min-w-0">
@@ -539,7 +539,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                                               isActive
                                                 ? `${bgColor} ${textColor}`
-                                                : 'bg-slate-100 text-slate-400'
+                                                : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
                                             }`}
                                             title={day.label}
                                           >
@@ -548,7 +548,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                         );
                                       })}
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                                       <Clock className="w-4 h-4" />
                                       <span>
                                         {schedule.runs_on_days === false
@@ -557,7 +557,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                       </span>
                                     </div>
                                   </div>
-                                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
+                                  <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-1" />
                                 </div>
                               </button>
                             </div>
