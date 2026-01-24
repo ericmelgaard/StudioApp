@@ -21,7 +21,6 @@ const WandIntegrationLibrary = lazy(() => import('./WandIntegrationLibrary'));
 const CoreAttributes = lazy(() => import('./CoreAttributes'));
 const WandProducts = lazy(() => import('./WandProducts'));
 const UserManagement = lazy(() => import('./UserManagement'));
-const SiteConfiguration = lazy(() => import('./SiteConfiguration'));
 const SiteConfigurationBeta = lazy(() => import('./SiteConfigurationBeta'));
 const DaypartManagement = lazy(() => import('./DaypartManagement'));
 const DevicesDisplaysDashboard = lazy(() => import('./DevicesDisplaysDashboard'));
@@ -67,7 +66,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'themes-beta' | 'theme-builder-beta' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'sites' | 'dayparts' | 'sites-beta' | 'devices-displays' | 'asset-library';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'themes-beta' | 'theme-builder-beta' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'dayparts' | 'sites-beta' | 'devices-displays' | 'asset-library';
 
 export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay, resetLocation } = useLocation('admin', user.id);
@@ -130,7 +129,6 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
       { id: 'wand-mapper' as ViewType, label: 'Map Integration Templates', icon: MapPin },
     ],
     beta: [
-      { id: 'sites' as ViewType, label: 'Location Manager (Legacy)', icon: MapPin },
       { id: 'asset-library' as ViewType, label: 'Asset Library', icon: Images },
       { id: 'themes-beta' as ViewType, label: 'Display Themes Beta', icon: Palette },
     ],
@@ -340,7 +338,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             <button
               onClick={() => setActiveMenu(activeMenu === 'beta' ? null : 'beta')}
               className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-1 ${
-                activeMenu === 'beta' || ['sites', 'asset-library', 'themes-beta', 'theme-builder-beta'].includes(currentView)
+                activeMenu === 'beta' || ['asset-library', 'themes-beta', 'theme-builder-beta'].includes(currentView)
                   ? 'text-[#00adf0] border-b-2 border-[#00adf0]'
                   : 'text-[#002e5e] hover:text-[#00adf0]'
               }`}
@@ -443,7 +441,6 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
                 }}
               />
             )}
-            {currentView === 'sites' && <SiteConfiguration role="admin" userId={user.id} />}
             {currentView === 'sites-beta' && <SiteConfigurationBeta role="admin" userId={user.id} />}
             {currentView === 'devices-displays' && <DevicesDisplaysDashboard />}
             {currentView === 'asset-library' && <AssetLibrary role="admin" userId={user.id} />}
