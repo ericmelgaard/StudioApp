@@ -365,6 +365,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
               {regularSchedules.map((schedule) => (
                 <div key={schedule.id}>
                   <button
+                    type="button"
                     onClick={() => handleEditSchedule(schedule)}
                     className="w-full p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
                   >
@@ -460,6 +461,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                       {eventSchedules.map((schedule) => (
                         <div key={schedule.id}>
                           <button
+                            type="button"
                             onClick={() => handleEditSchedule(schedule)}
                             className="w-full p-4 transition-colors text-left"
                             style={{ backgroundColor: 'transparent' }}
