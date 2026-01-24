@@ -297,8 +297,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   const loadActiveDayparts = async () => {
     const { data: allDisplays } = await supabase
       .from('displays')
-      .select('id, placement_group_id')
-      .eq('store_id', storeId);
+      .select('id, placement_group_id, media_player:media_players!inner(store_id)')
+      .eq('media_player.store_id', storeId);
 
     if (!allDisplays || allDisplays.length === 0) {
       setDaypartBadges([]);
