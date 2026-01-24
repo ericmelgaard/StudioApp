@@ -1052,7 +1052,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         >
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
-                            <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
+                            <span className="text-sm md:text-base font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
                               Event & Holiday Schedules
                             </span>
                             <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
