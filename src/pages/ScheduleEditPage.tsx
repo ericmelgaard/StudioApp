@@ -95,6 +95,11 @@ export default function ScheduleEditPage({
   const daypartColor = selectedDaypart?.color || '#00adf0';
   const daypartColorStyles = getDaypartColorStyles(daypartColor);
 
+  const getDayCollisionStatus = (day: number): boolean => {
+    if (!formData.daypart_definition_id || formData.days_of_week.includes(day)) return false;
+    return false;
+  };
+
   const handleDayToggle = (day: number) => {
     setFormData(prev => {
       const newDaysOfWeek = prev.days_of_week.includes(day)
@@ -355,36 +360,23 @@ export default function ScheduleEditPage({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </button>
-            <div className="p-2 rounded-lg" style={{ backgroundColor: `${daypartColor}20` }}>
-              <Calendar className="w-5 h-5" style={{ color: daypartColor }} />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                {!isNewSchedule ? 'Edit Schedule' : (isSuggestedDays ? 'Schedule Days' : 'Add Daypart')}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{groupName}</p>
-            </div>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Colored Header with Daypart Name */}
+        <div className="px-6 py-4" style={{ backgroundColor: daypartColor + '30' }}>
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              {selectedDaypart?.display_label || 'Daypart'}
+            </h2>
+            <span className="text-sm text-slate-700 dark:text-slate-300">Schedule</span>
           </div>
         </div>
-      </div>
 
-      {/* Form Content */}
-      <div className="max-w-3xl mx-auto p-4 pb-24">
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-          <form onSubmit={handleSubmit}>
+        {/* Form Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {error && (
-              <div className="flex items-start gap-2 p-3 m-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
@@ -392,7 +384,7 @@ export default function ScheduleEditPage({
 
             {/* Suggested Days Helper Text */}
             {isSuggestedDays && (
-              <div className="flex items-start gap-2 p-3 m-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="flex items-start gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
                 <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   Scheduling {formData.days_of_week.length} unscheduled day(s) for this daypart
@@ -400,148 +392,131 @@ export default function ScheduleEditPage({
               </div>
             )}
 
-            {/* Form Fields */}
-            <div className="p-4 space-y-6">
-              {/* Daypart Type */}
-              {isDaypartLocked ? (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Daypart Type
-                  </label>
-                  <div className="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {dayparts.find(d => d.id === formData.daypart_definition_id)?.display_label || 'Unknown Daypart'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Daypart Type *
-                  </label>
-                  <select
-                    value={formData.daypart_definition_id}
-                    onChange={(e) => setFormData({ ...formData, daypart_definition_id: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:border-transparent"
-                    style={{ '--tw-ring-color': daypartColor } as React.CSSProperties}
-                    required
-                  >
-                    <option value="">Select a daypart...</option>
-                    {dayparts.map((daypart) => (
-                      <option key={daypart.id} value={daypart.id}>
-                        {daypart.display_label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Days of Week */}
+            {/* Daypart Type - Only shown when adding new */}
+            {!isDaypartLocked && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Days of the Week *
+                  Daypart Type *
                 </label>
-                <div className="flex justify-center gap-2">
-                  {DAYS_OF_WEEK.map((day) => {
-                    const isSelected = formData.days_of_week.includes(day.value);
-                    return (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() => handleDayToggle(day.value)}
-                        className={`w-10 h-10 rounded-full font-medium text-sm transition-all ${
-                          isSelected
-                            ? 'text-white shadow-md'
-                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
-                        }`}
-                        style={isSelected ? daypartColorStyles : {}}
-                        title={day.fullLabel}
-                      >
-                        {day.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {formData.days_of_week.length > 0 && (
-                  <div className="mt-2 text-xs text-center text-slate-600 dark:text-slate-400">
-                    {formData.days_of_week.length} {formData.days_of_week.length === 1 ? 'day' : 'days'} selected
-                  </div>
-                )}
+                <select
+                  value={formData.daypart_definition_id}
+                  onChange={(e) => setFormData({ ...formData, daypart_definition_id: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ '--tw-ring-color': daypartColor } as React.CSSProperties}
+                  required
+                >
+                  <option value="">Select a daypart...</option>
+                  {dayparts.map((daypart) => (
+                    <option key={daypart.id} value={daypart.id}>
+                      {daypart.display_label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Days of Week */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Days of the Week *
+              </label>
+
+              {/* Collision Legend */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-3 h-3 rounded-full border-2 border-red-400"></div>
+                <span className="text-xs text-slate-600 dark:text-slate-400">Day has conflicting schedule</span>
               </div>
 
-              {/* Schedule Name */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Schedule Name (optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.schedule_name}
-                  onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
-                  placeholder="e.g., Weekend Hours, Summer Schedule"
-                  className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+              <div className="flex justify-center gap-2">
+                {DAYS_OF_WEEK.map((day) => {
+                  const isSelected = formData.days_of_week.includes(day.value);
+                  const hasCollision = getDayCollisionStatus(day.value);
+                  return (
+                    <button
+                      key={day.value}
+                      type="button"
+                      onClick={() => handleDayToggle(day.value)}
+                      className={`w-10 h-10 rounded-full font-medium text-sm transition-all ${
+                        isSelected
+                          ? 'text-white shadow-md'
+                          : hasCollision
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                      } ${hasCollision && !isSelected ? 'ring-2 ring-red-400' : ''}`}
+                      style={isSelected ? daypartColorStyles : {}}
+                      title={day.fullLabel}
+                    >
+                      {day.label}
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* Time Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <TimeSelector
-                  label="Start Time *"
-                  value={formData.start_time}
-                  onChange={(time) => setFormData({ ...formData, start_time: time })}
-                />
-
-                <TimeSelector
-                  label="End Time *"
-                  value={formData.end_time}
-                  onChange={(time) => setFormData({ ...formData, end_time: time })}
-                />
-              </div>
-
-              {/* Remove Schedule Button - Only shown when editing */}
-              {schedule && onDelete && !isSchedulingRemovedDays && (
-                <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
-                  <button
-                    type="button"
-                    onClick={handleDeleteClick}
-                    className="w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium border border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700"
-                  >
-                    Remove Schedule
-                  </button>
+              {formData.days_of_week.length > 0 && (
+                <div className="mt-2 text-xs text-center text-slate-600 dark:text-slate-400">
+                  {formData.days_of_week.length} {formData.days_of_week.length === 1 ? 'day' : 'days'} selected
                 </div>
               )}
             </div>
+
+            {/* Time Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <TimeSelector
+                label="Start Time *"
+                value={formData.start_time}
+                onChange={(time) => setFormData({ ...formData, start_time: time })}
+              />
+
+              <TimeSelector
+                label="End Time *"
+                value={formData.end_time}
+                onChange={(time) => setFormData({ ...formData, end_time: time })}
+              />
+            </div>
           </form>
         </div>
-      </div>
 
-      {/* Fixed Footer with Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg">
-        <div className="max-w-3xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="px-6 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-6 py-2.5 disabled:bg-slate-300 disabled:text-slate-500 text-white rounded-lg transition-all disabled:cursor-not-allowed font-medium text-sm"
-              style={!loading ? daypartColorStyles : {}}
-            >
-              {loading ? 'Saving...' : (isNewSchedule ? 'Add' : 'Save')}
-            </button>
+        {/* Footer with Buttons */}
+        <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Delete button on left */}
+            {schedule && onDelete && !isSchedulingRemovedDays ? (
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                className="px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
+              >
+                Delete
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {/* Cancel and Save on right */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onBack}
+                className="px-6 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="px-6 py-2 text-sm font-medium text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={!loading ? daypartColorStyles : {}}
+              >
+                {loading ? 'Saving...' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Merge Prompt Modal */}
       {showMergePrompt && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2.5 rounded-xl" style={{ backgroundColor: `${daypartColor}20` }}>
@@ -604,8 +579,8 @@ export default function ScheduleEditPage({
 
       {/* Removed Days Prompt Modal */}
       {showRemovedDaysPrompt && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
