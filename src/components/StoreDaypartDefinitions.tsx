@@ -443,12 +443,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       const hasRemovedDays = removedDays.length > 0;
       const currentEditingSchedule = editingSchedule;
 
-      console.log('After save - hasRemovedDays:', hasRemovedDays, 'removedDays:', removedDays, 'editingSchedule:', currentEditingSchedule);
-
       await loadData();
 
       if (hasRemovedDays && currentEditingSchedule) {
-        console.log('Checking for uncovered removed days...');
         const currentDefinition = definitions.find(d => d.id === currentEditingSchedule.daypart_definition_id);
 
         if (currentDefinition) {
@@ -467,7 +464,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             const uncoveredRemovedDays = removedDays.filter(day => !coveredDays.has(day));
 
             if (uncoveredRemovedDays.length > 0) {
-              console.log('Found uncovered removed days:', uncoveredRemovedDays);
               setSavedScheduleData({
                 definitionId: currentDefinition.id,
                 schedule: {

@@ -51,6 +51,9 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [cycleSettings, setCycleSettings] = useState<{ cycle_duration_weeks: number } | null>(null);
+  const [originalDays, setOriginalDays] = useState<number[]>([]);
+  const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
+  const [removedDaysData, setRemovedDaysData] = useState<{ placementId: string; days: number[]; templateRoutine: any } | null>(null);
 
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -139,13 +142,9 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       e.stopPropagation();
     }
 
-    console.log('=== STARTING EDIT ===');
-    console.log('Routine ID:', routine.id);
-    console.log('Current showAddForm:', showAddForm);
-    console.log('Current editingRoutineId:', editingRoutineId);
-
     setShowAddForm(true);
     setEditingRoutineId(routine.id!);
+    setOriginalDays([...routine.days_of_week]);
     setNewRoutine({
       placement_id: routine.placement_id,
       cycle_week: routine.cycle_week,
@@ -155,17 +154,12 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       schedule_name: routine.schedule_name || '',
       status: routine.status
     });
-
-    console.log('=== EDIT STATE SET ===');
-    console.log('New showAddForm: true');
-    console.log('New editingRoutineId:', routine.id);
   };
 
   const handleCancelEdit = () => {
-    console.log('=== CANCEL EDIT CALLED ===');
-    console.trace('Cancel edit stack trace');
     setEditingRoutineId(null);
     setShowAddForm(false);
+    setOriginalDays([]);
     setNewRoutine({
       placement_id: '',
       cycle_week: 1,
@@ -223,6 +217,10 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
         if (error) throw error;
       }
 
+      const wasEditing = editingRoutineId !== null;
+      const placementId = newRoutine.placement_id;
+      const currentRoutine = { ...newRoutine };
+
       setNewRoutine({
         placement_id: '',
         cycle_week: 1,
@@ -235,6 +233,38 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       setEditingRoutineId(null);
       setShowAddForm(false);
       await loadData();
+
+      if (wasEditing && originalDays.length > 0) {
+        const removedDays = originalDays.filter(d => !currentRoutine.days_of_week.includes(d));
+
+        if (removedDays.length > 0) {
+          const { data: allRoutinesForPlacement, error: routinesError } = await supabase
+            .from('placement_routines')
+            .select('days_of_week')
+            .eq('theme_id', themeId)
+            .eq('placement_id', placementId);
+
+          if (!routinesError && allRoutinesForPlacement) {
+            const coveredDays = new Set<number>();
+            allRoutinesForPlacement.forEach(routine => {
+              routine.days_of_week.forEach((day: number) => coveredDays.add(day));
+            });
+
+            const uncoveredDays = removedDays.filter(d => !coveredDays.has(d));
+
+            if (uncoveredDays.length > 0) {
+              setRemovedDaysData({
+                placementId,
+                days: uncoveredDays,
+                templateRoutine: currentRoutine
+              });
+              setShowRemovedDaysPrompt(true);
+            }
+          }
+        }
+      }
+
+      setOriginalDays([]);
     } catch (error: any) {
       console.error('Error saving routine:', error);
       alert(`Failed to save routine: ${error.message}`);
@@ -717,6 +747,51 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
           )}
         </div>
       </div>
+
+      {showRemovedDaysPrompt && removedDaysData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Unscheduled Days Detected</h3>
+            <p className="text-slate-600 mb-4">
+              You removed {removedDaysData.days.map(d => DAYS_OF_WEEK[d].label).join(', ')} from this placement routine,
+              and {removedDaysData.days.length === 1 ? 'this day is' : 'these days are'} not covered by any other routines for this placement.
+            </p>
+            <p className="text-slate-700 font-medium mb-4">
+              Would you like to create a new routine for {removedDaysData.days.length === 1 ? 'this day' : 'these days'}?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowRemovedDaysPrompt(false);
+                  setRemovedDaysData(null);
+                }}
+                className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                No, Leave Unscheduled
+              </button>
+              <button
+                onClick={() => {
+                  setNewRoutine({
+                    placement_id: removedDaysData.placementId,
+                    cycle_week: removedDaysData.templateRoutine.cycle_week,
+                    days_of_week: removedDaysData.days,
+                    start_time: removedDaysData.templateRoutine.start_time,
+                    end_time: removedDaysData.templateRoutine.end_time || '',
+                    schedule_name: removedDaysData.templateRoutine.schedule_name || '',
+                    status: 'active'
+                  });
+                  setShowAddForm(true);
+                  setShowRemovedDaysPrompt(false);
+                  setRemovedDaysData(null);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Yes, Schedule {removedDaysData.days.length === 1 ? 'This Day' : 'These Days'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
