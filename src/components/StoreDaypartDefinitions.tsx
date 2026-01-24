@@ -25,13 +25,13 @@ interface DaypartSchedule extends Schedule {
 }
 
 const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sunday', short: 'Sun' },
-  { value: 1, label: 'Monday', short: 'Mon' },
-  { value: 2, label: 'Tuesday', short: 'Tue' },
-  { value: 3, label: 'Wednesday', short: 'Wed' },
-  { value: 4, label: 'Thursday', short: 'Thu' },
-  { value: 5, label: 'Friday', short: 'Fri' },
-  { value: 6, label: 'Saturday', short: 'Sat' }
+  { value: 0, label: 'Sunday', short: 'Sun', letter: 'S' },
+  { value: 1, label: 'Monday', short: 'Mon', letter: 'M' },
+  { value: 2, label: 'Tuesday', short: 'Tue', letter: 'T' },
+  { value: 3, label: 'Wednesday', short: 'Wed', letter: 'W' },
+  { value: 4, label: 'Thursday', short: 'Thu', letter: 'T' },
+  { value: 5, label: 'Friday', short: 'Fri', letter: 'F' },
+  { value: 6, label: 'Saturday', short: 'Sat', letter: 'S' }
 ];
 
 function formatTime(time: string): string {
@@ -963,32 +963,33 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-2">
-                                {schedule.schedule_name && (
-                                  <span className="text-sm font-semibold text-slate-900">
-                                    {schedule.schedule_name}
-                                  </span>
-                                )}
-                                <span className={`text-sm ${schedule.schedule_name ? 'text-slate-600' : 'font-medium text-slate-900'}`}>
+                              <div className="flex gap-1 mb-2">
+                                {DAYS_OF_WEEK.map((day) => {
+                                  const isActive = schedule.days_of_week.includes(day.value);
+                                  const bgColor = definition.color.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                  const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                  return (
+                                    <div
+                                      key={day.value}
+                                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                        isActive
+                                          ? `${bgColor} ${textColor}`
+                                          : 'bg-slate-100 text-slate-400'
+                                      }`}
+                                      title={day.label}
+                                    >
+                                      {day.letter}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-slate-600">
+                                <Clock className="w-4 h-4" />
+                                <span>
                                   {schedule.runs_on_days === false
                                     ? 'Does Not Run'
                                     : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
                                 </span>
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                {schedule.days_of_week.sort().map(day => {
-                                  const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
-                                  const bgColor = definition.color.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-                                  const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
-                                  return (
-                                    <span
-                                      key={day}
-                                      className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
-                                    >
-                                      {dayInfo?.short}
-                                    </span>
-                                  );
-                                })}
                               </div>
                             </div>
                             <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
@@ -1079,12 +1080,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-3 mb-2">
-                                        {schedule.schedule_name && (
-                                          <span className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>
-                                            {schedule.schedule_name}
-                                          </span>
-                                        )}
-                                        <span className={schedule.schedule_name ? '' : 'font-medium'} style={{ color: 'rgb(156, 39, 176)' }}>
+                                        <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
                                           {schedule.event_name || 'Unnamed Event'}
                                         </span>
                                         <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
@@ -1112,18 +1108,23 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                           : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
                                       </div>
                                       {schedule.days_of_week.length > 0 && (
-                                        <div className="flex flex-wrap gap-1">
-                                          {schedule.days_of_week.sort().map(day => {
-                                            const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+                                        <div className="flex gap-1">
+                                          {DAYS_OF_WEEK.map((day) => {
+                                            const isActive = schedule.days_of_week.includes(day.value);
                                             const bgColor = definition.color.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
                                             const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
                                             return (
-                                              <span
-                                                key={day}
-                                                className={`px-2 py-1 ${bgColor} ${textColor} text-xs rounded font-medium`}
+                                              <div
+                                                key={day.value}
+                                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                                  isActive
+                                                    ? `${bgColor} ${textColor}`
+                                                    : 'bg-slate-100 text-slate-400'
+                                                }`}
+                                                title={day.label}
                                               >
-                                                {dayInfo?.short}
-                                              </span>
+                                                {day.letter}
+                                              </div>
                                             );
                                           })}
                                         </div>

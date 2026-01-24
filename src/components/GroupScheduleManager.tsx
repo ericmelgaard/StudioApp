@@ -342,17 +342,8 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
                       <div className="relative flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          {/* Title: Custom Schedule Name */}
-                          {schedule.schedule_name && (
-                            <div className="mb-2">
-                              <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
-                                {schedule.schedule_name}
-                              </span>
-                            </div>
-                          )}
-
                           {/* Day Badges */}
-                          <div className="flex flex-wrap gap-1 mb-2">
+                          <div className="flex gap-1 mb-2">
                             {DAYS_OF_WEEK.map((day) => {
                               const isActive = schedule.days_of_week.includes(day.value);
                               return (
@@ -363,6 +354,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                       ? `${colorClasses.bg} ${colorClasses.text} border ${colorClasses.border}`
                                       : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
                                   }`}
+                                  title={day.fullLabel}
                                 >
                                   {day.label}
                                 </div>
@@ -402,10 +394,10 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                           schedule_name: template.schedule_name
                         } as Schedule);
                       }}
-                      className="w-full p-3 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                      className="w-full min-w-[220px] p-3 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                     >
                       <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                      <span className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400">
                         Schedule Remaining Days ({unscheduledDays.length})
                       </span>
                     </button>
@@ -488,17 +480,8 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
                           <div className="relative flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              {/* Title: Custom Schedule Name */}
-                              {schedule.schedule_name && (
-                                <div className="mb-2">
-                                  <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
-                                    {schedule.schedule_name}
-                                  </span>
-                                </div>
-                              )}
-
                               {/* Day Badges */}
-                              <div className="flex flex-wrap gap-1 mb-2">
+                              <div className="flex gap-1 mb-2">
                                 {DAYS_OF_WEEK.map((day) => {
                                   const isActive = schedule.days_of_week.includes(day.value);
                                   return (
@@ -509,6 +492,7 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
                                           ? `${colorClasses.bg} ${colorClasses.text} border ${colorClasses.border}`
                                           : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
                                       }`}
+                                      title={day.fullLabel}
                                     >
                                       {day.label}
                                     </div>
