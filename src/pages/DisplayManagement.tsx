@@ -314,6 +314,15 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
     const daypartCounts: Record<string, { label: string; color: string; icon: string; count: number }> = {};
 
+    const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
+      p_store_id: storeId
+    });
+
+    if (!definitions || definitions.length === 0) {
+      setDaypartBadges([]);
+      return;
+    }
+
     for (const placementId of placementIds) {
       const { data: overrides } = await supabase
         .from('placement_daypart_overrides')
@@ -322,64 +331,36 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
       let daypartName: string | null = null;
 
-      if (overrides && overrides.length > 0) {
-        for (const override of overrides) {
-          const daysOfWeek = override.days_of_week as number[];
-          if (daysOfWeek.includes(currentDay)) {
-            const startTime = override.start_time;
-            const endTime = override.end_time;
+      for (const definition of definitions) {
+        const daypartOverrides = overrides?.filter(o => o.daypart_name === definition.daypart_name) || [];
+        let foundMatch = false;
 
-            if (startTime <= endTime) {
-              if (currentTime >= startTime && currentTime < endTime) {
-                daypartName = override.daypart_name;
-                break;
-              }
-            } else {
-              if (currentTime >= startTime || currentTime < endTime) {
-                daypartName = override.daypart_name;
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      if (!daypartName) {
-        const { data: routines } = await supabase
-          .from('site_daypart_routines')
-          .select('daypart_name, days_of_week, start_time, end_time')
-          .eq('placement_group_id', placementId);
-
-        if (routines && routines.length > 0) {
-          for (const routine of routines) {
-            const daysOfWeek = routine.days_of_week as number[];
+        if (daypartOverrides.length > 0) {
+          for (const override of daypartOverrides) {
+            const daysOfWeek = override.days_of_week as number[];
             if (daysOfWeek.includes(currentDay)) {
-              const startTime = routine.start_time;
-              const endTime = routine.end_time;
+              const startTime = override.start_time;
+              const endTime = override.end_time;
 
               if (startTime <= endTime) {
                 if (currentTime >= startTime && currentTime < endTime) {
-                  daypartName = routine.daypart_name;
+                  daypartName = override.daypart_name;
+                  foundMatch = true;
                   break;
                 }
               } else {
                 if (currentTime >= startTime || currentTime < endTime) {
-                  daypartName = routine.daypart_name;
+                  daypartName = override.daypart_name;
+                  foundMatch = true;
                   break;
                 }
               }
             }
           }
         }
-      }
 
-      if (!daypartName) {
-        const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
-          p_store_id: storeId
-        });
-
-        if (definitions && definitions.length > 0) {
-          const defIds = definitions.map((d: any) => d.id);
+        if (!foundMatch) {
+          const defIds = [definition.id];
           const { data: schedules } = await supabase
             .from('daypart_schedules')
             .select('daypart_definition_id, days_of_week, start_time, end_time')
@@ -394,25 +375,23 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
                 if (startTime <= endTime) {
                   if (currentTime >= startTime && currentTime < endTime) {
-                    const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
-                    if (definition) {
-                      daypartName = definition.daypart_name;
-                      break;
-                    }
+                    daypartName = definition.daypart_name;
+                    foundMatch = true;
+                    break;
                   }
                 } else {
                   if (currentTime >= startTime || currentTime < endTime) {
-                    const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
-                    if (definition) {
-                      daypartName = definition.daypart_name;
-                      break;
-                    }
+                    daypartName = definition.daypart_name;
+                    foundMatch = true;
+                    break;
                   }
                 }
               }
             }
           }
         }
+
+        if (foundMatch) break;
       }
 
       if (daypartName) {
