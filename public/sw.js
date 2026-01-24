@@ -1,5 +1,5 @@
 // Service Worker for PWA with automatic updates
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `wand-operator-hub-${CACHE_VERSION}-${Date.now()}`;
 const HTML_CACHE = `wand-html-${CACHE_VERSION}`;
 const ASSETS_CACHE = `wand-assets-${CACHE_VERSION}`;
@@ -37,6 +37,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // NEVER cache Supabase API calls - always fetch fresh
+  if (url.hostname.includes('supabase.co')) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   // Network-first strategy for HTML files (ensures updates are fetched)
   if (request.headers.get('accept').includes('text/html')) {
