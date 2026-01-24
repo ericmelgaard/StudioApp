@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, AlertCircle, Calendar, Sparkles, Combine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import TimeSelector from '../components/TimeSelector';
+import { getDayCollisionStatus as checkDayCollision, Schedule as CollisionSchedule } from '../hooks/useScheduleCollisionDetection';
 
 interface Schedule {
   id: string;
@@ -79,6 +80,7 @@ export default function ScheduleEditPage({
   const [mergeableSchedules, setMergeableSchedules] = useState<Schedule[]>([]);
   const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
   const [isSchedulingRemovedDays, setIsSchedulingRemovedDays] = useState(false);
+  const [allSchedules, setAllSchedules] = useState<CollisionSchedule[]>([]);
   const [formData, setFormData] = useState({
     daypart_definition_id: schedule?.daypart_definition_id || '',
     days_of_week: schedule?.days_of_week || [] as number[],
@@ -86,6 +88,12 @@ export default function ScheduleEditPage({
     end_time: schedule?.end_time || '11:00',
     schedule_name: schedule?.schedule_name || ''
   });
+
+  useEffect(() => {
+    if (dayparts.length > 0) {
+      loadExistingSchedules();
+    }
+  }, [groupId, dayparts]);
 
   const isNewSchedule = !schedule?.id || isSchedulingRemovedDays;
   const isSuggestedDays = isNewSchedule && initialDays.length > 0;
@@ -95,9 +103,47 @@ export default function ScheduleEditPage({
   const daypartColor = selectedDaypart?.color || '#00adf0';
   const daypartColorStyles = getDaypartColorStyles(daypartColor);
 
+  const loadExistingSchedules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('placement_daypart_overrides')
+        .select('id, daypart_definition_id, days_of_week, start_time, end_time, schedule_name, schedule_type')
+        .eq('placement_group_id', groupId);
+
+      if (error) throw error;
+
+      const schedulesWithNames: CollisionSchedule[] = (data || []).map(s => {
+        const daypart = dayparts.find(d => d.id === s.daypart_definition_id);
+        return {
+          id: s.id,
+          daypart_name: daypart?.daypart_name || '',
+          days_of_week: s.days_of_week,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          schedule_name: s.schedule_name,
+          schedule_type: s.schedule_type
+        };
+      });
+
+      setAllSchedules(schedulesWithNames);
+    } catch (err) {
+      console.error('Error loading schedules:', err);
+    }
+  };
+
   const getDayCollisionStatus = (day: number): boolean => {
     if (!formData.daypart_definition_id || formData.days_of_week.includes(day)) return false;
-    return false;
+
+    const currentDaypartName = selectedDaypart?.daypart_name;
+    if (!currentDaypartName) return false;
+
+    return checkDayCollision(
+      allSchedules,
+      currentDaypartName,
+      day,
+      formData.days_of_week,
+      schedule?.id
+    );
   };
 
   const handleDayToggle = (day: number) => {
