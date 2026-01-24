@@ -190,7 +190,7 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -198,58 +198,64 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              placeholder="e.g., Main Dining Area"
-            />
-          </div>
+          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h2>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              rows={3}
-              placeholder="Optional description"
-            />
-          </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., Main Dining Area"
+                />
+              </div>
 
-          {!isStoreRoot && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Parent Group
-              </label>
-              <select
-                value={formData.parent_id}
-                onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              >
-                <option value="">None (Root Level)</option>
-                {availableParents.map((parent) => (
-                  <option key={parent.id} value={parent.id}>
-                    {parent.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Optional description"
+                />
+              </div>
+
+              {!isStoreRoot && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Parent Group
+                  </label>
+                  <select
+                    value={formData.parent_id}
+                    onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">None (Root Level)</option>
+                    {availableParents.map((parent) => (
+                      <option key={parent.id} value={parent.id}>
+                        {parent.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {isStoreRoot && (
             <>
-              <div className="border-t border-slate-200 pt-6">
+              <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-amber-600" />
+                  <MapPin className="w-5 h-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-slate-900">Store Location</h3>
                 </div>
                 <div className="space-y-4">
@@ -261,7 +267,7 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                       type="text"
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="123 Main St, City, State 12345"
                     />
                   </div>
@@ -275,7 +281,7 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="(555) 123-4567"
                       />
                     </div>
@@ -287,7 +293,7 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                       <select
                         value={formData.timezone}
                         onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="America/New_York">Eastern Time</option>
                         <option value="America/Chicago">Central Time</option>
@@ -302,9 +308,9 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                 </div>
               </div>
 
-              <div className="border-t border-slate-200 pt-6">
+              <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-5 h-5 text-amber-600" />
+                  <Clock className="w-5 h-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-slate-900">Operating Hours</h3>
                 </div>
                 <div className="space-y-4">
@@ -337,20 +343,20 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
           )}
 
           {isStoreRoot && group?.id && (
-            <div className="border-t border-slate-200 pt-6">
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
               <SiteDaypartManager placementGroupId={group.id} />
             </div>
           )}
 
           {!isStoreRoot && group?.id && (
-            <div className="border-t border-slate-200 pt-6">
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
               <PlacementDaypartOverrides placementGroupId={group.id} />
             </div>
           )}
 
-          <div className="border-t border-slate-200 pt-6">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Utensils className="w-5 h-5 text-amber-600" />
+              <Utensils className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-semibold text-slate-900">Meal Stations</h3>
             </div>
             <div className="flex gap-2 mb-3">
@@ -359,13 +365,13 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                 value={newMealStation}
                 onChange={(e) => setNewMealStation(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMealStation())}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Add meal station (e.g., Grill, Salad Bar)"
               />
               <button
                 type="button"
                 onClick={addMealStation}
-                className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-medium"
+                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
               >
                 Add
               </button>
@@ -375,13 +381,13 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                 {mealStations.map(station => (
                   <div
                     key={station}
-                    className="flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-sm"
+                    className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-sm"
                   >
-                    <span className="text-amber-900">{station}</span>
+                    <span className="text-blue-900">{station}</span>
                     <button
                       type="button"
                       onClick={() => removeMealStation(station)}
-                      className="text-amber-600 hover:text-amber-800 transition-colors"
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -391,13 +397,13 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
             )}
           </div>
 
-          <div className="border-t border-slate-200 pt-6">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Palette className="w-5 h-5 text-amber-600" />
+              <Palette className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-semibold text-slate-900">Templates by Device Size</h3>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              Assign templates for different device sizes. Templates will be defined later.
+              Assign templates for different device sizes.
             </p>
             <div className="space-y-3">
               {DEVICE_SIZES.map(size => (
@@ -409,7 +415,7 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
                     type="text"
                     value={templates[size] || ''}
                     onChange={(e) => handleTemplateChange(size, e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     placeholder={`Template ID for ${size} devices`}
                   />
                 </div>
@@ -417,32 +423,32 @@ export default function PlacementGroupModal({ group, availableParents, storeId, 
             </div>
           </div>
 
-          <div className="border-t border-slate-200 pt-6">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Nfc className="w-5 h-5 text-amber-600" />
+              <Nfc className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-semibold text-slate-900">NFC URL</h3>
             </div>
             <input
               type="url"
               value={formData.nfc_url}
               onChange={(e) => setFormData({ ...formData, nfc_url: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="https://example.com/menu"
             />
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-slate-200">
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
