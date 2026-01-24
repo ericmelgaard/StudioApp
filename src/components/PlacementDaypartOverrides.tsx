@@ -138,6 +138,11 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         customizedDayparts.add(custom.daypart_name);
       });
 
+      console.log('=== DAYPART DEBUG ===');
+      console.log('Customizations:', customizations);
+      console.log('Customized dayparts Set:', Array.from(customizedDayparts));
+      console.log('Store schedules:', storeSchedules);
+
       // Build inherited schedules list (only dayparts with NO customizations at all)
       const inherited: EffectiveSchedule[] = [];
       storeSchedules.forEach((schedule: DaypartSchedule) => {
