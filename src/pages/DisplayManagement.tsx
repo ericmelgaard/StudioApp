@@ -77,6 +77,7 @@ interface DaypartBadge {
   color: string;
   icon: string;
   count: number;
+  isCustom: boolean;
 }
 
 type OperationStatus = 'open' | 'closed';
@@ -312,7 +313,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     const placementIds = [...new Set(activeDisplays.map(d => d.placement_group_id).filter(Boolean))];
     const ungroupedDisplays = activeDisplays.filter(d => !d.placement_group_id);
 
-    const daypartCounts: Record<string, { label: string; color: string; icon: string; count: number }> = {};
+    const daypartCounts: Record<string, { label: string; color: string; icon: string; count: number; isCustom: boolean }> = {};
+    const customizedDayparts = new Set<string>();
 
     const { data: definitions } = await supabase.rpc('get_effective_daypart_definitions', {
       p_store_id: storeId
@@ -328,6 +330,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         .from('placement_daypart_overrides')
         .select('daypart_name, days_of_week, start_time, end_time')
         .eq('placement_group_id', placementId);
+
+      if (overrides && overrides.length > 0) {
+        overrides.forEach(o => customizedDayparts.add(o.daypart_name));
+      }
 
       let daypartName: string | null = null;
 
@@ -405,7 +411,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
               label: definition.display_label || daypartName,
               color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
               icon: definition.icon || 'Clock',
-              count: displayCount
+              count: displayCount,
+              isCustom: customizedDayparts.has(daypartName)
             };
           }
         } else {
@@ -504,7 +511,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                 label: definition.display_label || daypartName,
                 color: definition.color || 'bg-slate-100 text-slate-800 border-slate-300',
                 icon: definition.icon || 'Clock',
-                count: ungroupedDisplays.length
+                count: ungroupedDisplays.length,
+                isCustom: customizedDayparts.has(daypartName)
               };
             }
           } else {
@@ -520,7 +528,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         label: data.label,
         color: data.color,
         icon: data.icon,
-        count: data.count
+        count: data.count,
+        isCustom: data.isCustom
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -714,6 +723,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                     <div className="absolute top-0 right-0 w-6 h-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full flex items-center justify-center text-xs font-bold shadow-md">
                       {badge.count}
                     </div>
+                    {badge.isCustom && (
+                      <div className="absolute -top-1 -left-1 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md" title="Custom schedule">
+                        <Sparkles className="w-3 h-3" />
+                      </div>
+                    )}
                   </div>
                   <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     {badge.label}
