@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, Clock, Palette, ChevronRight, ChevronDown, Sun, Moon, MoonStar, Coffee, Sunrise, Sunset } from 'lucide-react';
+import { Plus, Clock, Calendar, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface GroupScheduleManagerProps {
@@ -17,45 +17,52 @@ interface Schedule {
   end_time?: string;
   runs_on_days?: boolean;
   schedule_name?: string;
-  daypart_definitions?: {
-    id: string;
-    daypart_name: string;
-    display_label: string;
-    color: string;
-    icon: string | null;
-  };
+  schedule_type?: 'regular' | 'event_holiday';
+  event_name?: string;
+  event_date?: string;
+  recurrence_type?: string;
 }
 
-interface StoreSchedule extends Schedule {
+interface DaypartDefinition {
+  id: string;
+  daypart_name: string;
+  display_label: string;
+  color: string;
+  icon: string;
+  sort_order: number;
+}
+
+interface EffectiveSchedule extends Schedule {
   is_inherited: boolean;
+  daypart_name: string;
+  daypart_definition: DaypartDefinition;
 }
 
 const DAYS_OF_WEEK = [
-  { value: 0, label: 'S', fullLabel: 'Sunday' },
-  { value: 1, label: 'M', fullLabel: 'Monday' },
-  { value: 2, label: 'T', fullLabel: 'Tuesday' },
-  { value: 3, label: 'W', fullLabel: 'Wednesday' },
-  { value: 4, label: 'T', fullLabel: 'Thursday' },
-  { value: 5, label: 'F', fullLabel: 'Friday' },
-  { value: 6, label: 'S', fullLabel: 'Saturday' }
+  { value: 0, label: 'Sunday', short: 'Sun', letter: 'S' },
+  { value: 1, label: 'Monday', short: 'Mon', letter: 'M' },
+  { value: 2, label: 'Tuesday', short: 'Tue', letter: 'T' },
+  { value: 3, label: 'Wednesday', short: 'Wed', letter: 'W' },
+  { value: 4, label: 'Thursday', short: 'Thu', letter: 'T' },
+  { value: 5, label: 'Friday', short: 'Fri', letter: 'F' },
+  { value: 6, label: 'Saturday', short: 'Sat', letter: 'S' }
 ];
 
-const ICON_MAP: Record<string, any> = {
-  Sun,
-  Moon,
-  MoonStar,
-  Coffee,
-  Sunrise,
-  Sunset,
-  Palette
-};
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:${minutes} ${ampm}`;
+}
 
 export default function GroupScheduleManager({ groupId, groupName, onEditSchedule }: GroupScheduleManagerProps) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [storeSchedules, setStoreSchedules] = useState<StoreSchedule[]>([]);
-  const [daypartDefinitions, setDaypartDefinitions] = useState<any[]>([]);
+  const [inheritedSchedules, setInheritedSchedules] = useState<EffectiveSchedule[]>([]);
+  const [daypartDefinitions, setDaypartDefinitions] = useState<DaypartDefinition[]>([]);
   const [loading, setLoading] = useState(true);
-  const [storeSchedulesExpanded, setStoreSchedulesExpanded] = useState(false);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
+  const [inheritedSectionExpanded, setInheritedSectionExpanded] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -63,25 +70,24 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
 
   const loadData = async () => {
     setLoading(true);
+
     try {
-      // Get placement's store_id
-      const groupResult = await supabase
+      const placementResult = await supabase
         .from('placement_groups')
         .select('store_id')
         .eq('id', groupId)
-        .maybeSingle();
+        .single();
 
-      if (groupResult.error) throw groupResult.error;
-
-      const storeId = groupResult.data?.store_id;
-      if (!storeId) {
+      if (placementResult.error || !placementResult.data?.store_id) {
+        console.error('Error loading placement:', placementResult.error);
         setLoading(false);
         return;
       }
 
-      // Load daypart definitions for this store
+      const storeIdValue = placementResult.data.store_id;
+
       const defsResult = await supabase.rpc('get_effective_daypart_definitions', {
-        p_store_id: storeId
+        p_store_id: storeIdValue
       });
 
       if (defsResult.error) {
@@ -93,432 +99,455 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       const definitions = defsResult.data || [];
       setDaypartDefinitions(definitions);
 
-      // Check which dayparts are actually in use (in themes)
-      const defIds = definitions.map((d: any) => d.id);
-      const themeBoardsResult = await supabase
-        .from('theme_boards')
-        .select('daypart_id')
-        .in('daypart_id', defIds);
-
-      const inUseDaypartIds = new Set(
-        (themeBoardsResult.data || []).map((tb: any) => tb.daypart_id)
-      );
-
-      // Load placement customizations
       const schedulesResult = await supabase
         .from('site_daypart_routines')
-        .select('*, daypart_definitions(id, daypart_name, display_label, color, icon)')
-        .eq('placement_group_id', groupId)
-        .order('created_at', { ascending: false });
-
-      if (schedulesResult.error) throw schedulesResult.error;
+        .select('*')
+        .eq('placement_group_id', groupId);
 
       const placementSchedules = schedulesResult.data || [];
       setSchedules(placementSchedules);
 
-      // Load store-level schedules from daypart_schedules
+      const defIds = definitions.map((d: DaypartDefinition) => d.id);
       const storeSchedulesResult = await supabase
         .from('daypart_schedules')
         .select('*')
         .in('daypart_definition_id', defIds);
 
-      const allStoreSchedules = storeSchedulesResult.data || [];
+      const storeSchedules = storeSchedulesResult.data || [];
 
-      // Create a map of placement customizations by daypart_name
-      const customizedDayparts = new Set<string>();
+      const customizationMap = new Map<string, Schedule>();
       placementSchedules.forEach(custom => {
-        const def = definitions.find((d: any) => d.id === custom.daypart_definition_id);
+        const def = definitions.find((d: DaypartDefinition) => d.id === custom.daypart_definition_id);
         if (def) {
-          customizedDayparts.add(def.daypart_name);
+          const key = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}_${custom.schedule_name || ''}`;
+          customizationMap.set(key, custom);
         }
       });
 
-      // Build inherited schedules list (only dayparts NOT customized at placement level AND in use in themes)
-      const inherited: StoreSchedule[] = [];
-      allStoreSchedules.forEach((schedule: any) => {
-        const definition = definitions.find((d: any) => d.id === schedule.daypart_definition_id);
+      const inherited: EffectiveSchedule[] = [];
+      storeSchedules.forEach((schedule: any) => {
+        const definition = definitions.find((d: DaypartDefinition) => d.id === schedule.daypart_definition_id);
         if (!definition) return;
 
-        // Only add if:
-        // 1. The daypart is NOT customized at placement level
-        // 2. The daypart IS in use (referenced in theme_boards)
-        if (!customizedDayparts.has(definition.daypart_name) && inUseDaypartIds.has(definition.id)) {
+        const key = `${definition.daypart_name}_${schedule.schedule_type || 'regular'}_${schedule.event_date || ''}_${schedule.schedule_name || ''}`;
+
+        if (!customizationMap.has(key)) {
           inherited.push({
             ...schedule,
-            placement_group_id: groupId,
             is_inherited: true,
-            daypart_definitions: {
-              id: definition.id,
-              daypart_name: definition.daypart_name,
-              display_label: definition.display_label,
-              color: definition.color,
-              icon: definition.icon
-            }
+            daypart_name: definition.daypart_name,
+            daypart_definition: definition,
+            schedule_type: schedule.schedule_type || 'regular'
           });
         }
       });
 
-      setStoreSchedules(inherited);
+      setInheritedSchedules(inherited);
     } catch (error) {
-      console.error('Error loading schedule data:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const parseColorClasses = (colorString: string) => {
-    // Parse the color string like "bg-green-100 text-green-800 border-green-300"
-    const bgMatch = colorString.match(/bg-(\w+)-(\d+)/);
-    const textMatch = colorString.match(/text-(\w+)-(\d+)/);
-    const borderMatch = colorString.match(/border-(\w+)-(\d+)/);
+  const handleEditInherited = (schedule: EffectiveSchedule) => {
+    onEditSchedule?.(schedule, true);
+  };
 
-    if (!bgMatch || !textMatch || !borderMatch) {
-      return {
-        bg: 'bg-cyan-100',
-        text: 'text-cyan-800',
-        border: 'border-cyan-300',
-        bgLight: 'bg-cyan-50'
-      };
+  const handleAddNew = (
+    daypartName?: string,
+    daysOfWeek?: number[],
+    scheduleType: 'regular' | 'event_holiday' = 'regular',
+    template?: Schedule
+  ) => {
+    const definition = daypartDefinitions.find(d => d.daypart_name === daypartName);
+    if (!definition) return;
+
+    const newSchedule: Schedule = {
+      id: '',
+      daypart_definition_id: definition.id,
+      placement_group_id: groupId,
+      days_of_week: daysOfWeek || [],
+      start_time: template?.start_time || '09:00:00',
+      end_time: template?.end_time || '17:00:00',
+      runs_on_days: true,
+      schedule_name: template?.schedule_name,
+      schedule_type: scheduleType
+    };
+
+    onEditSchedule?.(newSchedule);
+  };
+
+  const regularSchedules = schedules.filter(s => s.schedule_type !== 'event_holiday');
+  const eventSchedules = schedules.filter(s => s.schedule_type === 'event_holiday');
+
+  const groupedSchedules = regularSchedules.reduce((acc, schedule) => {
+    const def = daypartDefinitions.find(d => d.id === schedule.daypart_definition_id);
+    if (!def) return acc;
+    if (!acc[def.daypart_name]) {
+      acc[def.daypart_name] = [];
     }
+    acc[def.daypart_name].push(schedule);
+    return acc;
+  }, {} as Record<string, Schedule[]>);
 
-    const [, colorName] = bgMatch;
+  const groupedEvents = eventSchedules.reduce((acc, schedule) => {
+    const def = daypartDefinitions.find(d => d.id === schedule.daypart_definition_id);
+    if (!def) return acc;
+    if (!acc[def.daypart_name]) {
+      acc[def.daypart_name] = [];
+    }
+    acc[def.daypart_name].push(schedule);
+    return acc;
+  }, {} as Record<string, Schedule[]>);
 
-    return {
-      bg: `bg-${colorName}-100`,
-      text: `text-${colorName}-800`,
-      border: `border-${colorName}-300`,
-      bgLight: `bg-${colorName}-50`
-    };
-  };
+  const inheritedRegular = inheritedSchedules.filter(s => s.schedule_type !== 'event_holiday');
+  const inheritedEvents = inheritedSchedules.filter(s => s.schedule_type === 'event_holiday');
 
-  // Get unscheduled days for a specific daypart
-  const getUnscheduledDays = (daypartId: string, daypartSchedules: Schedule[]): number[] => {
-    const scheduledDays = new Set<number>();
-    daypartSchedules.forEach(schedule => {
-      schedule.days_of_week.forEach(day => scheduledDays.add(day));
-    });
+  const groupedInheritedSchedules = inheritedRegular.reduce((acc, schedule) => {
+    if (!acc[schedule.daypart_name]) {
+      acc[schedule.daypart_name] = [];
+    }
+    acc[schedule.daypart_name].push(schedule);
+    return acc;
+  }, {} as Record<string, EffectiveSchedule[]>);
 
-    const allDays = [0, 1, 2, 3, 4, 5, 6];
-    return allDays.filter(day => !scheduledDays.has(day));
-  };
+  const groupedInheritedEvents = inheritedEvents.reduce((acc, schedule) => {
+    if (!acc[schedule.daypart_name]) {
+      acc[schedule.daypart_name] = [];
+    }
+    acc[schedule.daypart_name].push(schedule);
+    return acc;
+  }, {} as Record<string, EffectiveSchedule[]>);
 
-  // Get day coverage count for a daypart
-  const getDayCoverage = (daypartSchedules: Schedule[]): { scheduled: number; total: number } => {
-    const scheduledDays = new Set<number>();
-    daypartSchedules.forEach(schedule => {
-      schedule.days_of_week.forEach(day => scheduledDays.add(day));
-    });
+  const allDayparts = daypartDefinitions
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(d => d.daypart_name);
 
-    return {
-      scheduled: scheduledDays.size,
-      total: 7
-    };
-  };
-
-  // Group schedules by daypart
-  const groupSchedulesByDaypart = () => {
-    const groups: Record<string, Schedule[]> = {};
-
-    schedules.forEach(schedule => {
-      const key = schedule.daypart_definition_id || 'unassigned';
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-      groups[key].push(schedule);
-    });
-
-    // Sort schedules within each group by start time
-    Object.keys(groups).forEach(key => {
-      groups[key].sort((a, b) => {
-        // Sort by start time
-        return a.start_time.localeCompare(b.start_time);
-      });
-    });
-
-    return groups;
-  };
-
-  // Group store schedules by daypart
-  const groupStoreSchedulesByDaypart = () => {
-    const groups: Record<string, StoreSchedule[]> = {};
-
-    storeSchedules.forEach(schedule => {
-      const key = schedule.daypart_definition_id || 'unassigned';
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-      groups[key].push(schedule);
-    });
-
-    // Sort schedules within each group by start time
-    Object.keys(groups).forEach(key => {
-      groups[key].sort((a, b) => {
-        return a.start_time.localeCompare(b.start_time);
-      });
-    });
-
-    // Return as array for easier rendering
-    return Object.keys(groups).map(groupKey => ({
-      groupKey,
-      groupSchedules: groups[groupKey]
+  const toggleEventsExpanded = (daypartName: string) => {
+    setExpandedEvents(prev => ({
+      ...prev,
+      [daypartName]: !prev[daypartName]
     }));
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-4">
+        <div className="w-6 h-6 border-3 border-slate-200 border-t-cyan-600 rounded-full animate-spin" />
       </div>
     );
   }
 
-  const groupedSchedules = groupSchedulesByDaypart();
-  const groupKeys = Object.keys(groupedSchedules);
-
   return (
-    <div className="space-y-4">
-      {schedules.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="p-4 bg-slate-100 dark:bg-slate-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-slate-400 dark:text-slate-500" />
-          </div>
-          <p className="text-slate-600 dark:text-slate-400 mb-1">No schedules yet</p>
-          <p className="text-sm text-slate-500 dark:text-slate-500">Create a schedule to get started</p>
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-blue-600" />
+          Placement Schedules
+        </h3>
+        <p className="text-sm text-slate-600 mt-1">
+          Configure daypart hours and event/holiday schedules for this placement.
+        </p>
+      </div>
+
+      {schedules.length === 0 && inheritedSchedules.length === 0 ? (
+        <div className="text-center py-16 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+          <Clock className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No Daypart Schedules Configured</h3>
+          <p className="text-slate-600 text-sm px-4">
+            Configure daypart schedules at the store level first
+          </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {groupKeys.map((groupKey) => {
-            const groupSchedules = groupedSchedules[groupKey];
-            const firstSchedule = groupSchedules[0];
-            const daypartDef = firstSchedule.daypart_definitions;
+        <div className="space-y-5">
+          {allDayparts.map((daypartName) => {
+            const daypartSchedules = groupedSchedules[daypartName] || [];
+            const daypartEvents = groupedEvents[daypartName] || [];
+            const hasCustom = daypartSchedules.length > 0 || daypartEvents.length > 0;
 
-            const colorClasses = daypartDef?.color
-              ? parseColorClasses(daypartDef.color)
-              : { border: 'border-slate-300', bg: 'bg-slate-100', text: 'text-slate-800', bgLight: 'bg-slate-50' };
+            if (!hasCustom) return null;
 
-            const IconComponent = daypartDef?.icon
-              ? ICON_MAP[daypartDef.icon] || Palette
-              : Palette;
-
-            const daypartLabel = daypartDef?.display_label || 'Unassigned';
-
-            const unscheduledDays = getUnscheduledDays(groupKey, groupSchedules);
-            const coverage = getDayCoverage(groupSchedules);
-            const hasUnscheduledDays = unscheduledDays.length > 0;
+            const hasEvents = daypartEvents.length > 0;
+            const eventsExpanded = expandedEvents[daypartName];
+            const definition = daypartDefinitions.find(d => d.daypart_name === daypartName);
+            if (!definition) return null;
+            const displayLabel = definition.display_label;
+            const colorClass = definition.color;
 
             return (
-              <div key={groupKey} className="space-y-2">
-                {/* Daypart Group Header */}
-                <div className="px-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`p-1.5 rounded-lg ${colorClasses.bg}`}>
-                      <IconComponent className={`w-4 h-4 ${colorClasses.text}`} />
-                    </div>
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {daypartLabel}
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full font-medium ${colorClasses.bg} ${colorClasses.text}`}>
-                        {coverage.scheduled} active
+              <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <h4 className="font-semibold">{displayLabel}</h4>
+                    {hasEvents && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                        <Calendar className="w-3 h-3" />
+                        {daypartEvents.length} Event{daypartEvents.length === 1 ? '' : 's'}
                       </span>
-                      {coverage.scheduled < coverage.total && (
-                        <span className="px-2 py-0.5 rounded-full font-medium bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
-                          {coverage.total - coverage.scheduled} inactive
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Schedule Cards */}
-                <div className="space-y-2">
-                  {groupSchedules.map((schedule) => (
-                    <button
-                      key={schedule.id}
-                      onClick={() => onEditSchedule?.(schedule)}
-                      className={`w-full p-3 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 active:bg-blue-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden`}
-                    >
-                      <div className={`absolute inset-0 bg-blue-50 dark:bg-slate-800/50 opacity-20`}></div>
-
-                      <div className="relative flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          {/* Day Badges */}
-                          <div className="flex gap-1 mb-2">
-                            {DAYS_OF_WEEK.map((day) => {
-                              const isActive = schedule.days_of_week.includes(day.value);
-                              return (
-                                <div
-                                  key={day.value}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                                    isActive
-                                      ? `${colorClasses.bg} ${colorClasses.text} border ${colorClasses.border}`
-                                      : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
-                                  }`}
-                                  title={day.fullLabel}
-                                >
-                                  {day.label}
-                                </div>
-                              );
-                            })}
+                <div className="divide-y divide-slate-200">
+                  {daypartSchedules.map((schedule) => (
+                    <div key={schedule.id}>
+                      <button
+                        onClick={() => onEditSchedule?.(schedule)}
+                        className="w-full p-4 hover:bg-blue-50 active:bg-blue-100 transition-colors text-left"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex gap-1 mb-2">
+                              {DAYS_OF_WEEK.map((day) => {
+                                const isActive = schedule.days_of_week.includes(day.value);
+                                const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                return (
+                                  <div
+                                    key={day.value}
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                      isActive
+                                        ? `${bgColor} ${textColor}`
+                                        : 'bg-slate-100 text-slate-400'
+                                    }`}
+                                    title={day.label}
+                                  >
+                                    {day.letter}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                              <Clock className="w-4 h-4" />
+                              <span>
+                                {schedule.runs_on_days === false
+                                  ? 'Does Not Run'
+                                  : `${formatTime(schedule.start_time)} - ${schedule.end_time ? formatTime(schedule.end_time) : ''}`}
+                              </span>
+                            </div>
                           </div>
-
-                          {/* Time Range */}
-                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                            <Clock className="w-4 h-4" />
-                            <span>
-                              {schedule.end_time
-                                ? `${schedule.start_time} - ${schedule.end_time}`
-                                : `Starts at ${schedule.start_time}`
-                              }
-                            </span>
-                          </div>
+                          <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
                         </div>
-                        <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   ))}
 
-                  {/* Add Schedule for Remaining Days Button */}
-                  {hasUnscheduledDays && (
-                    <button
-                      onClick={() => {
-                        const template = groupSchedules[0];
-                        onEditSchedule?.({
-                          id: '',
-                          daypart_definition_id: template.daypart_definition_id,
-                          placement_group_id: groupId,
-                          days_of_week: unscheduledDays,
-                          start_time: template.start_time,
-                          end_time: template.end_time,
-                          runs_on_days: true,
-                          schedule_name: template.schedule_name
-                        } as Schedule);
-                      }}
-                      className="w-full min-w-[220px] p-3 bg-white dark:bg-slate-900 border-2 border-dashed border-blue-300 dark:border-slate-600 rounded-lg hover:border-blue-400 dark:hover:border-slate-500 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-4 h-4 text-blue-600 dark:text-slate-400" />
-                      <span className="text-xs md:text-sm font-medium text-blue-600 dark:text-slate-400">
-                        Schedule Remaining Days ({unscheduledDays.length})
-                      </span>
-                    </button>
+                  {daypartSchedules.length > 0 && (() => {
+                    const scheduledDays = new Set<number>();
+                    daypartSchedules.forEach(schedule => {
+                      schedule.days_of_week.forEach(day => scheduledDays.add(day));
+                    });
+                    const allDays = [0, 1, 2, 3, 4, 5, 6];
+                    const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
+                    const hasUnscheduledDays = unscheduledDays.length > 0;
+
+                    return (
+                      <div className="mx-3 mb-3 flex flex-wrap gap-3">
+                        {hasUnscheduledDays && (
+                          <button
+                            onClick={() => {
+                              const template = daypartSchedules[0];
+                              handleAddNew(daypartName, unscheduledDays, 'regular', template);
+                            }}
+                            className="flex-1 min-w-[220px] p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Plus className="w-4 h-4 text-slate-700" />
+                            <span className="text-xs md:text-sm font-medium text-slate-700">
+                              Schedule Remaining Days ({unscheduledDays.length})
+                            </span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleAddNew(daypartName, [], 'event_holiday')}
+                          className="flex-1 min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                          style={{
+                            borderColor: 'rgba(222, 56, 222, 0.3)',
+                            color: 'rgb(156, 39, 176)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                            e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span className="text-xs md:text-sm font-medium">
+                            Add Event/Holiday
+                          </span>
+                        </button>
+                      </div>
+                    );
+                  })()}
+
+                  {hasEvents && (
+                    <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleEventsExpanded(daypartName)}
+                        className="w-full px-4 py-3 transition-colors flex items-center justify-between group"
+                        style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                          <span className="text-sm md:text-base font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
+                            Event & Holiday Schedules
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                            {daypartEvents.length}
+                          </span>
+                        </div>
+                        {eventsExpanded ? (
+                          <ChevronDown className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
+                        ) : (
+                          <ChevronRight className="w-5 h-5" style={{ color: 'rgb(156, 39, 176)' }} />
+                        )}
+                      </button>
+
+                      {eventsExpanded && (
+                        <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
+                          {daypartEvents.map((schedule) => (
+                            <div key={schedule.id}>
+                              <button
+                                onClick={() => onEditSchedule?.(schedule)}
+                                className="w-full p-4 transition-colors text-left"
+                                style={{ backgroundColor: 'transparent' }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
+                                        {schedule.event_name || 'Unnamed Event'}
+                                      </span>
+                                    </div>
+                                    <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
+                                      <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                      {schedule.runs_on_days === false
+                                        ? 'Does Not Run'
+                                        : `${formatTime(schedule.start_time)} - ${schedule.end_time ? formatTime(schedule.end_time) : ''}`}
+                                    </div>
+                                  </div>
+                                  <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
+                                </div>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
 
-      {/* Store Dayparts Section */}
-      {storeSchedules.length > 0 && (
-        <div className="pt-4">
-          <button
-            type="button"
-            onClick={() => setStoreSchedulesExpanded(!storeSchedulesExpanded)}
-            className="w-full px-2 py-2 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-between rounded-lg"
-          >
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-blue-600 dark:text-blue-400">
-                Store Dayparts
-              </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-slate-700 text-blue-700 dark:text-blue-400 font-medium">
-                {groupStoreSchedulesByDaypart().length}
-              </span>
-            </div>
-            {storeSchedulesExpanded ? (
-              <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            )}
-          </button>
+          {inheritedSchedules.length > 0 && (
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+              <button
+                type="button"
+                onClick={() => setInheritedSectionExpanded(!inheritedSectionExpanded)}
+                className="w-full px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-900">
+                    Store Dayparts
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                    {allDayparts.filter(dp => {
+                      const hasCustom = (groupedSchedules[dp]?.length || 0) + (groupedEvents[dp]?.length || 0) > 0;
+                      const hasInherited = (groupedInheritedSchedules[dp]?.length || 0) + (groupedInheritedEvents[dp]?.length || 0) > 0;
+                      return !hasCustom && hasInherited;
+                    }).length}
+                  </span>
+                </div>
+                {inheritedSectionExpanded ? (
+                  <ChevronDown className="w-5 h-5 text-slate-600" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-slate-600" />
+                )}
+              </button>
 
-          {storeSchedulesExpanded && (
-            <div className="space-y-6 p-2 mt-2">
-              {groupStoreSchedulesByDaypart().map(({ groupKey, groupSchedules }) => {
-                const firstSchedule = groupSchedules[0];
-                const daypartDef = firstSchedule.daypart_definitions;
+              {inheritedSectionExpanded && (
+                <div className="p-4 space-y-5">
+                  {allDayparts.map((daypartName) => {
+                    const daypartSchedules = groupedSchedules[daypartName] || [];
+                    const daypartEvents = groupedEvents[daypartName] || [];
+                    const daypartInheritedSchedules = groupedInheritedSchedules[daypartName] || [];
+                    const daypartInheritedEvents = groupedInheritedEvents[daypartName] || [];
+                    const hasCustom = daypartSchedules.length > 0 || daypartEvents.length > 0;
+                    const hasInherited = daypartInheritedSchedules.length > 0 || daypartInheritedEvents.length > 0;
 
-                const colorClasses = daypartDef?.color
-                  ? parseColorClasses(daypartDef.color)
-                  : { border: 'border-slate-300', bg: 'bg-slate-100', text: 'text-slate-800', bgLight: 'bg-slate-50' };
+                    if (hasCustom || !hasInherited) return null;
 
-                const IconComponent = daypartDef?.icon
-                  ? ICON_MAP[daypartDef.icon] || Palette
-                  : Palette;
+                    const definition = daypartDefinitions.find(d => d.daypart_name === daypartName);
+                    if (!definition) return null;
+                    const displayLabel = definition.display_label;
+                    const colorClass = definition.color;
 
-                const daypartLabel = daypartDef?.display_label || 'Unassigned';
-                const coverage = getDayCoverage(groupSchedules);
-
-                return (
-                  <div key={groupKey} className="space-y-2">
-                    {/* Daypart Group Header */}
-                    <div className="px-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={`p-1.5 rounded-lg ${colorClasses.bg}`}>
-                          <IconComponent className={`w-4 h-4 ${colorClasses.text}`} />
+                    return (
+                      <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                        <div className={`px-4 py-3 border-b border-slate-200 ${colorClass}`}>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            <h4 className="font-semibold">{displayLabel}</h4>
+                          </div>
                         </div>
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          {daypartLabel}
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className={`px-2 py-0.5 rounded-full font-medium ${colorClasses.bg} ${colorClasses.text}`}>
-                            {coverage.scheduled} active
-                          </span>
+                        <div className="divide-y divide-slate-200">
+                          {daypartInheritedSchedules.map((schedule) => (
+                            <div key={schedule.id}>
+                              <button
+                                onClick={() => handleEditInherited(schedule)}
+                                className="w-full p-4 hover:bg-blue-50 active:bg-blue-100 transition-colors text-left opacity-75"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex gap-1 mb-2">
+                                      {DAYS_OF_WEEK.map((day) => {
+                                        const isActive = schedule.days_of_week.includes(day.value);
+                                        const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                        const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                        return (
+                                          <div
+                                            key={day.value}
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                              isActive
+                                                ? `${bgColor} ${textColor}`
+                                                : 'bg-slate-100 text-slate-400'
+                                            }`}
+                                            title={day.label}
+                                          >
+                                            {day.letter}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                      <Clock className="w-4 h-4" />
+                                      <span>
+                                        {schedule.runs_on_days === false
+                                          ? 'Does Not Run'
+                                          : `${formatTime(schedule.start_time)} - ${schedule.end_time ? formatTime(schedule.end_time) : ''}`}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
+                                </div>
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-
-                    {/* Store Schedule Cards */}
-                    <div className="space-y-2">
-                      {groupSchedules.map((schedule) => (
-                        <button
-                          key={schedule.id}
-                          onClick={() => onEditSchedule?.(schedule, true)}
-                          className={`w-full p-3 bg-white dark:bg-slate-900 border-l-4 border-r border-t border-b ${colorClasses.border} border-r-slate-200 border-t-slate-200 border-b-slate-200 dark:border-r-slate-700 dark:border-t-slate-700 dark:border-b-slate-700 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 active:bg-blue-100 dark:active:bg-slate-750 transition-colors text-left relative overflow-hidden opacity-75`}
-                        >
-                          <div className={`absolute inset-0 bg-blue-50 dark:bg-slate-800/50 opacity-10`}></div>
-
-                          <div className="relative flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              {/* Day Badges */}
-                              <div className="flex gap-1 mb-2">
-                                {DAYS_OF_WEEK.map((day) => {
-                                  const isActive = schedule.days_of_week.includes(day.value);
-                                  return (
-                                    <div
-                                      key={day.value}
-                                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                                        isActive
-                                          ? `${colorClasses.bg} ${colorClasses.text} border ${colorClasses.border}`
-                                          : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
-                                      }`}
-                                      title={day.fullLabel}
-                                    >
-                                      {day.label}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-
-                              {/* Time Range */}
-                              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                                <Clock className="w-4 h-4" />
-                                <span>
-                                  {schedule.end_time
-                                    ? `${schedule.start_time} - ${schedule.end_time}`
-                                    : `Starts at ${schedule.start_time}`
-                                  }
-                                </span>
-                              </div>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
