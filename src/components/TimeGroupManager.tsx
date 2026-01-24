@@ -18,13 +18,13 @@ interface TimeGroupManagerProps {
 }
 
 const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sunday', short: 'Sun' },
-  { value: 1, label: 'Monday', short: 'Mon' },
-  { value: 2, label: 'Tuesday', short: 'Tue' },
-  { value: 3, label: 'Wednesday', short: 'Wed' },
-  { value: 4, label: 'Thursday', short: 'Thu' },
-  { value: 5, label: 'Friday', short: 'Fri' },
-  { value: 6, label: 'Saturday', short: 'Sat' }
+  { value: 0, label: 'Sunday', short: 'Sun', letter: 'S' },
+  { value: 1, label: 'Monday', short: 'Mon', letter: 'M' },
+  { value: 2, label: 'Tuesday', short: 'Tue', letter: 'T' },
+  { value: 3, label: 'Wednesday', short: 'Wed', letter: 'W' },
+  { value: 4, label: 'Thursday', short: 'Thu', letter: 'T' },
+  { value: 5, label: 'Friday', short: 'Fri', letter: 'F' },
+  { value: 6, label: 'Saturday', short: 'Sat', letter: 'S' }
 ];
 
 const PRESETS = {
@@ -99,16 +99,21 @@ function TimeGroupCard({ group, onEdit, onDelete, color }: TimeGroupCardProps) {
           </button>
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        {group.days.sort().map((day) => {
-          const dayInfo = DAYS_OF_WEEK.find(d => d.value === day);
+      <div className="flex gap-1.5">
+        {DAYS_OF_WEEK.map((day) => {
+          const isActive = group.days.includes(day.value);
           return (
-            <span
-              key={day}
-              className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-md font-medium"
+            <div
+              key={day.value}
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                isActive
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-slate-100 text-slate-400'
+              }`}
+              title={day.label}
             >
-              {dayInfo?.short}
-            </span>
+              {day.letter}
+            </div>
           );
         })}
       </div>
@@ -178,7 +183,7 @@ function TimeGroupForm({ group, onUpdate, onSave, onCancel, usedDays }: TimeGrou
           </button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex justify-center gap-2">
           {DAYS_OF_WEEK.map((day) => {
             const isSelected = group.days.includes(day.value);
             const isUsed = isDayUsed(day.value);
@@ -189,7 +194,7 @@ function TimeGroupForm({ group, onUpdate, onSave, onCancel, usedDays }: TimeGrou
                 type="button"
                 onClick={() => toggleDay(day.value)}
                 disabled={isUsed}
-                className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-sm'
                     : isUsed
@@ -198,7 +203,7 @@ function TimeGroupForm({ group, onUpdate, onSave, onCancel, usedDays }: TimeGrou
                 }`}
                 title={isUsed ? `${day.label} is already in another group` : day.label}
               >
-                <div className="text-xs">{day.short}</div>
+                {day.letter}
               </button>
             );
           })}

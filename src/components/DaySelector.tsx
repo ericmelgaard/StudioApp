@@ -100,7 +100,7 @@ export default function DaySelector({
         </div>
       )}
 
-      <div className="flex justify-between gap-2">
+      <div className="flex justify-center gap-2">
         {DAYS_OF_WEEK.map((day) => {
           const isSelected = selectedDays.includes(day.value);
           const hasCollision = schedules.length > 0 && currentDaypartName
@@ -113,7 +113,7 @@ export default function DaySelector({
               type="button"
               onClick={() => (hasCollision && !isSelected) ? undefined : onToggleDay(day.value)}
               disabled={hasCollision && !isSelected}
-              className={`flex-1 h-12 rounded-lg text-sm font-medium transition-all ${
+              className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
                 isSelected
                   ? hasCollision
                     ? 'bg-slate-800 text-white shadow-md'
@@ -128,7 +128,7 @@ export default function DaySelector({
                   : day.label
               }
             >
-              <div className="text-xs">{day.short}</div>
+              {day.short}
             </button>
           );
         })}
