@@ -132,23 +132,20 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
       const storeSchedules = schedulesResult.data || [];
 
-      // Create a map of customizations to identify which inherited schedules are overridden
-      const customizationMap = new Map<string, DaypartRoutine>();
+      // Create a set of daypart names that have ANY customizations
+      const customizedDayparts = new Set<string>();
       customizations.forEach(custom => {
-        const key = `${custom.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}_${custom.schedule_name || ''}`;
-        customizationMap.set(key, custom);
+        customizedDayparts.add(custom.daypart_name);
       });
 
-      // Build inherited schedules list (only those NOT customized)
+      // Build inherited schedules list (only dayparts with NO customizations at all)
       const inherited: EffectiveSchedule[] = [];
       storeSchedules.forEach((schedule: DaypartSchedule) => {
         const definition = definitions.find((d: DaypartDefinition) => d.id === schedule.daypart_definition_id);
         if (!definition) return;
 
-        const key = `${definition.daypart_name}_${schedule.schedule_type || 'regular'}_${schedule.event_date || ''}_${schedule.schedule_name || ''}`;
-
-        // Only add if not customized
-        if (!customizationMap.has(key)) {
+        // Only add if this entire daypart has no customizations
+        if (!customizedDayparts.has(definition.daypart_name)) {
           inherited.push({
             ...schedule,
             is_inherited: true,
