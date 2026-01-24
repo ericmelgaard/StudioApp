@@ -398,11 +398,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         const displayCount = activeDisplays.filter(d => d.placement_group_id === placementId).length;
 
         if (!daypartCounts[daypartName]) {
-          const { data: definition } = await supabase
-            .from('daypart_definitions')
-            .select('display_label, color, icon')
-            .eq('daypart_name', daypartName)
-            .maybeSingle();
+          const definition = definitions.find((d: any) => d.daypart_name === daypartName);
 
           if (definition) {
             daypartCounts[daypartName] = {
@@ -501,11 +497,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
         if (daypartName) {
           if (!daypartCounts[daypartName]) {
-            const { data: definition } = await supabase
-              .from('daypart_definitions')
-              .select('display_label, color, icon')
-              .eq('daypart_name', daypartName)
-              .maybeSingle();
+            const definition = definitions.find((d: any) => d.daypart_name === daypartName);
 
             if (definition) {
               daypartCounts[daypartName] = {
