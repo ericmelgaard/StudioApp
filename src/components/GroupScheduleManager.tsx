@@ -116,22 +116,28 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
       const storeSchedules = storeSchedulesResult.data || [];
 
       const customizationMap = new Map<string, Schedule>();
+      console.log('=== PLACEMENT SCHEDULES FOR', groupName, '===');
       placementSchedules.forEach(custom => {
         const def = definitions.find((d: DaypartDefinition) => d.id === custom.daypart_definition_id);
         if (def) {
           const key = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}_${custom.schedule_name || ''}`;
+          console.log('  Placement schedule:', def.daypart_name, 'key:', key, 'schedule:', custom);
           customizationMap.set(key, custom);
         }
       });
 
+      console.log('=== STORE SCHEDULES ===');
       const inherited: EffectiveSchedule[] = [];
       storeSchedules.forEach((schedule: any) => {
         const definition = definitions.find((d: DaypartDefinition) => d.id === schedule.daypart_definition_id);
         if (!definition) return;
 
         const key = `${definition.daypart_name}_${schedule.schedule_type || 'regular'}_${schedule.event_date || ''}_${schedule.schedule_name || ''}`;
+        const hasCustomization = customizationMap.has(key);
+        console.log('  Store schedule:', definition.daypart_name, 'key:', key, 'has customization:', hasCustomization);
 
-        if (!customizationMap.has(key)) {
+        if (!hasCustomization) {
+          console.log('    -> Marked as INHERITED');
           inherited.push({
             ...schedule,
             is_inherited: true,
@@ -139,8 +145,12 @@ export default function GroupScheduleManager({ groupId, groupName, onEditSchedul
             daypart_definition: definition,
             schedule_type: schedule.schedule_type || 'regular'
           });
+        } else {
+          console.log('    -> SKIPPED (has placement customization)');
         }
       });
+
+      console.log('=== FINAL INHERITED COUNT:', inherited.length, '===');
 
       setInheritedSchedules(inherited);
     } catch (error) {
