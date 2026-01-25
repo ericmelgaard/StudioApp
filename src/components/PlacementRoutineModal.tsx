@@ -52,6 +52,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [cycleSettings, setCycleSettings] = useState<{ cycle_duration_weeks: number } | null>(null);
   const [originalDays, setOriginalDays] = useState<number[]>([]);
+  const [originalRoutine, setOriginalRoutine] = useState<typeof newRoutine | null>(null);
   const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
   const [removedDaysData, setRemovedDaysData] = useState<{ placementId: string; days: number[]; templateRoutine: any } | null>(null);
 
@@ -142,10 +143,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       e.stopPropagation();
     }
 
-    setShowAddForm(true);
-    setEditingRoutineId(routine.id!);
-    setOriginalDays([...routine.days_of_week]);
-    setNewRoutine({
+    const routineData = {
       placement_id: routine.placement_id,
       cycle_week: routine.cycle_week,
       days_of_week: [...routine.days_of_week],
@@ -153,13 +151,20 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       end_time: routine.end_time || '',
       schedule_name: routine.schedule_name || '',
       status: routine.status
-    });
+    };
+
+    setShowAddForm(true);
+    setEditingRoutineId(routine.id!);
+    setOriginalDays([...routine.days_of_week]);
+    setOriginalRoutine(routineData);
+    setNewRoutine(routineData);
   };
 
   const handleCancelEdit = () => {
     setEditingRoutineId(null);
     setShowAddForm(false);
     setOriginalDays([]);
+    setOriginalRoutine(null);
     setNewRoutine({
       placement_id: '',
       cycle_week: 1,
@@ -169,6 +174,20 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
       schedule_name: '',
       status: 'active'
     });
+  };
+
+  const hasChanges = () => {
+    if (!editingRoutineId || !originalRoutine) return true;
+
+    return (
+      newRoutine.placement_id !== originalRoutine.placement_id ||
+      newRoutine.cycle_week !== originalRoutine.cycle_week ||
+      newRoutine.start_time !== originalRoutine.start_time ||
+      newRoutine.end_time !== originalRoutine.end_time ||
+      newRoutine.schedule_name !== originalRoutine.schedule_name ||
+      newRoutine.status !== originalRoutine.status ||
+      JSON.stringify(newRoutine.days_of_week.sort()) !== JSON.stringify(originalRoutine.days_of_week.sort())
+    );
   };
 
   const handleSaveRoutine = async () => {
@@ -231,6 +250,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
         status: 'active'
       });
       setEditingRoutineId(null);
+      setOriginalRoutine(null);
       setShowAddForm(false);
       await loadData();
 
@@ -448,8 +468,24 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                 </div>
               )}
 
-              {showAddForm && (
+              {showAddForm && !editingRoutineId && (
                 <div ref={formRef} className="mb-6 bg-blue-50 rounded-lg border-2 border-blue-500 shadow-lg">
+                  {/* Header with Save button */}
+                  <div className="p-4 flex items-center justify-end border-b border-slate-200">
+                    <button
+                      type="button"
+                      onClick={handleSaveRoutine}
+                      disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0
+                          ? 'bg-blue-300 text-white cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+
                   <div className="divide-y divide-slate-200">
                     <div className="p-4">
                       <label className="text-sm font-medium text-slate-700 mb-2 block">
@@ -546,24 +582,6 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                           </button>
                         ))}
                       </div>
-                    </div>
-
-                    <div className="p-4 bg-white border-t border-slate-200 flex justify-end gap-3">
-                      <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                        className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSaveRoutine}
-                        disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                      >
-                        {saving ? (editingRoutineId ? 'Updating...' : 'Adding...') : (editingRoutineId ? 'Update Routine' : 'Add Routine')}
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -715,6 +733,22 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                             {/* Inline Edit Form */}
                             {editingRoutineId === routine.id && showAddForm && (
                               <div className="mt-2 bg-blue-50 rounded-lg border-2 border-blue-500 shadow-lg">
+                                {/* Header with Save button */}
+                                <div className="p-4 flex items-center justify-end border-b border-slate-200">
+                                  <button
+                                    type="button"
+                                    onClick={handleSaveRoutine}
+                                    disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0 || !hasChanges()}
+                                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                                      saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0 || !hasChanges()
+                                        ? 'bg-blue-300 text-white cursor-not-allowed'
+                                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                                    }`}
+                                  >
+                                    {saving ? 'Saving...' : 'Save'}
+                                  </button>
+                                </div>
+
                                 <div className="divide-y divide-slate-200">
                                   <div className="p-4">
                                     <label className="text-sm font-medium text-slate-700 mb-2 block">
@@ -813,21 +847,14 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                                     </div>
                                   </div>
 
-                                  <div className="p-4 bg-white border-t border-slate-200 flex justify-end gap-3">
+                                  {/* Delete button centered at bottom */}
+                                  <div className="p-4 bg-white border-t border-slate-200 flex justify-center">
                                     <button
                                       type="button"
-                                      onClick={handleCancelEdit}
-                                      className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                                      onClick={() => handleDeleteRoutine(routine.id!)}
+                                      className="px-6 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
                                     >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={handleSaveRoutine}
-                                      disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
-                                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                                    >
-                                      {saving ? 'Updating...' : 'Update Routine'}
+                                      Delete
                                     </button>
                                   </div>
                                 </div>
