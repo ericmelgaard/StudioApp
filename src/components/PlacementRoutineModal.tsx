@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
+import { X, Plus, Trash2, Calendar, MapPin, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import TimeSelector from './TimeSelector';
 
@@ -449,13 +449,7 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
               )}
 
               {showAddForm && (
-                <div ref={formRef} className="mb-6 bg-white rounded-lg border border-slate-200">
-                  <div className="p-4 border-b border-slate-200">
-                    <h3 className="font-semibold text-slate-900">
-                      {editingRoutineId ? 'Edit Routine' : 'New Routine'}
-                    </h3>
-                  </div>
-
+                <div ref={formRef} className="mb-6 bg-blue-50 rounded-lg border-2 border-blue-500 shadow-lg">
                   <div className="divide-y divide-slate-200">
                     <div className="p-4">
                       <label className="text-sm font-medium text-slate-700 mb-2 block">
@@ -553,6 +547,24 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                         ))}
                       </div>
                     </div>
+
+                    <div className="p-4 bg-white border-t border-slate-200 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveRoutine}
+                        disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        {saving ? (editingRoutineId ? 'Updating...' : 'Adding...') : (editingRoutineId ? 'Update Routine' : 'Add Routine')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -590,14 +602,27 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                         {/* Routine Cards */}
                         <div className="space-y-2">
                           {placementRoutines.map((routine) => (
-                            <div
-                              key={routine.id}
-                              className={`p-4 rounded-lg border ${
-                                routine.status === 'active'
-                                  ? 'bg-white border-slate-200'
-                                  : 'bg-slate-50 border-slate-300 opacity-60'
-                              }`}
-                            >
+                            <div key={routine.id}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (editingRoutineId === routine.id) {
+                                    handleCancelEdit();
+                                  } else {
+                                    handleStartEdit(routine, e);
+                                  }
+                                }}
+                                disabled={showAddForm && editingRoutineId !== routine.id}
+                                className={`w-full p-4 rounded-lg border transition-all text-left ${
+                                  editingRoutineId === routine.id
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : routine.status === 'active'
+                                      ? 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md shadow-sm'
+                                      : 'bg-slate-50 border-slate-300 opacity-60 hover:opacity-80'
+                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                              >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   {routine.schedule_name && (
@@ -647,54 +672,168 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      alert('BUTTON CLICKED! Routine ID: ' + routine.id);
-                                      console.log('BUTTON CLICKED!!!', routine.id);
-                                      console.log('showAddForm:', showAddForm, 'editingRoutineId:', editingRoutineId);
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleStartEdit(routine, e);
-                                    }}
-                                    disabled={showAddForm && editingRoutineId !== routine.id}
-                                    className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Edit routine"
-                                  >
-                                    {editingRoutineId === routine.id ? 'Editing...' : 'Edit'}
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleToggleStatus(routine);
-                                    }}
-                                    disabled={showAddForm}
-                                    className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      routine.status === 'active'
-                                        ? 'hover:bg-amber-50 text-amber-600'
-                                        : 'hover:bg-green-50 text-green-600'
-                                    }`}
-                                    title={routine.status === 'active' ? 'Pause routine' : 'Activate routine'}
-                                  >
-                                    {routine.status === 'active' ? 'Pause' : 'Activate'}
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleDeleteRoutine(routine.id!);
-                                    }}
-                                    disabled={showAddForm}
-                                    className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Delete routine"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </button>
+                                {editingRoutineId !== routine.id && (
+                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleToggleStatus(routine);
+                                      }}
+                                      disabled={showAddForm}
+                                      className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                        routine.status === 'active'
+                                          ? 'hover:bg-amber-50 text-amber-600'
+                                          : 'hover:bg-green-50 text-green-600'
+                                      }`}
+                                      title={routine.status === 'active' ? 'Pause routine' : 'Activate routine'}
+                                    >
+                                      {routine.status === 'active' ? 'Pause' : 'Activate'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDeleteRoutine(routine.id!);
+                                      }}
+                                      disabled={showAddForm}
+                                      className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Delete routine"
+                                    >
+                                      <Trash2 className="w-4 h-4 text-red-600" />
+                                    </button>
+                                  </div>
+                                )}
+                                {editingRoutineId === routine.id && (
+                                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
+                                )}
+                              </div>
+                            </button>
+
+                            {/* Inline Edit Form */}
+                            {editingRoutineId === routine.id && showAddForm && (
+                              <div className="mt-2 bg-blue-50 rounded-lg border-2 border-blue-500 shadow-lg">
+                                <div className="divide-y divide-slate-200">
+                                  <div className="p-4">
+                                    <label className="text-sm font-medium text-slate-700 mb-2 block">
+                                      Schedule Name (optional)
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={newRoutine.schedule_name}
+                                      onChange={(e) => setNewRoutine({ ...newRoutine, schedule_name: e.target.value })}
+                                      placeholder="e.g., Weekend Breakfast, Summer Hours"
+                                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
+                                    />
+                                  </div>
+
+                                  <div className="p-4">
+                                    <div className="flex items-center justify-between">
+                                      <label className="text-sm font-medium text-slate-700">
+                                        Placement
+                                      </label>
+                                      <span className="text-xs text-slate-500">Required</span>
+                                    </div>
+                                    <select
+                                      value={newRoutine.placement_id}
+                                      onChange={(e) => setNewRoutine({ ...newRoutine, placement_id: e.target.value })}
+                                      className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
+                                    >
+                                      <option value="">Select a placement...</option>
+                                      {placements.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                          {p.name}
+                                          {p.description && ` - ${p.description}`}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div className="p-4">
+                                    <div className="text-sm font-medium text-slate-700 mb-2">Schedule Time</div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                      <div>
+                                        <label className="text-xs text-slate-500 mb-1 block">Cycle Week</label>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          max={maxCycleWeek}
+                                          value={newRoutine.cycle_week}
+                                          onChange={(e) => setNewRoutine({ ...newRoutine, cycle_week: parseInt(e.target.value) || 1 })}
+                                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">Week 1-{maxCycleWeek}</p>
+                                      </div>
+                                      <div>
+                                        <TimeSelector
+                                          label="Start Time"
+                                          value={newRoutine.start_time}
+                                          onChange={(time) => setNewRoutine({ ...newRoutine, start_time: time })}
+                                        />
+                                      </div>
+                                      <div>
+                                        <TimeSelector
+                                          label="End Time (optional)"
+                                          value={newRoutine.end_time}
+                                          onChange={(time) => setNewRoutine({ ...newRoutine, end_time: time })}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <label className="text-sm font-medium text-slate-700">Days Of The Week</label>
+                                      <button
+                                        type="button"
+                                        onClick={newRoutine.days_of_week.length === 7 ? clearAllDays : selectAllDays}
+                                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                                      >
+                                        {newRoutine.days_of_week.length === 7 ? 'Clear All' : 'Select All'}
+                                      </button>
+                                    </div>
+                                    <div className="text-xs text-slate-500 mb-3">Enabled On</div>
+                                    <div className="flex justify-between gap-3">
+                                      {DAYS_OF_WEEK.map((day) => (
+                                        <button
+                                          key={day.value}
+                                          type="button"
+                                          onClick={() => toggleDay(day.value)}
+                                          className={`w-12 h-12 rounded-full text-sm font-medium transition-all ${
+                                            newRoutine.days_of_week.includes(day.value)
+                                              ? 'bg-slate-800 text-white shadow-md'
+                                              : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                                          }`}
+                                        >
+                                          {day.label.charAt(0)}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <div className="p-4 bg-white border-t border-slate-200 flex justify-end gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={handleCancelEdit}
+                                      className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={handleSaveRoutine}
+                                      disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
+                                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                    >
+                                      {saving ? 'Updating...' : 'Update Routine'}
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            )}
+                          </div>
                           ))}
 
                           {/* Add Schedule for Remaining Days Button */}
@@ -721,30 +860,12 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
         </div>
 
         <div className="flex justify-end gap-3 p-6 border-t border-slate-200">
-          {showAddForm ? (
-            <>
-              <button
-                onClick={handleCancelEdit}
-                className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveRoutine}
-                disabled={saving || !newRoutine.placement_id || newRoutine.days_of_week.length === 0}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                {saving ? (editingRoutineId ? 'Updating...' : 'Adding...') : (editingRoutineId ? 'Update Routine' : 'Add Routine')}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-            >
-              Close
-            </button>
-          )}
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+          >
+            Close
+          </button>
         </div>
       </div>
 
