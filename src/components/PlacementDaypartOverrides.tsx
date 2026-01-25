@@ -407,7 +407,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     });
 
     return (
-      <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
+      <div className="mb-3">
         <DaypartRoutineForm
           placementGroupId={placementGroupId}
           existingRoutines={allRoutinesForCollision}
