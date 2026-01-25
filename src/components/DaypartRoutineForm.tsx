@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles, Info, Trash2, ChevronUp } from 'lucide-react';
 import TimePickerRow from './TimePickerRow';
 import DaySelector from './DaySelector';
 import { supabase } from '../lib/supabase';
@@ -81,7 +81,7 @@ export default function DaypartRoutineForm({
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     schedule_type: editingRoutine?.schedule_type || preFillScheduleType || 'regular' as 'regular' | 'event_holiday',
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
     days_of_week: editingRoutine?.days_of_week || preFillDaysOfWeek || [] as number[],
@@ -92,9 +92,14 @@ export default function DaypartRoutineForm({
     event_date: editingRoutine?.event_date || '',
     recurrence_type: editingRoutine?.recurrence_type || 'none' as 'none' | 'annual_date' | 'monthly_date' | 'annual_relative' | 'annual_date_range',
     recurrence_config: editingRoutine?.recurrence_config || {}
-  });
+  };
+  const [formData, setFormData] = useState(initialFormData);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const hasChanges = () => {
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+  };
 
   useEffect(() => {
     loadDaypartTypes();
@@ -296,26 +301,37 @@ export default function DaypartRoutineForm({
               {formData.schedule_type === 'event_holiday' ? 'Event' : 'Schedule'}
             </span>
           </div>
-          <div className="flex gap-2">
+          {hasChanges() ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
+                style={{ backgroundColor: saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0)) ? undefined : '#00adf0' }}
+                className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                onMouseEnter={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
+                onMouseLeave={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Collapse"
             >
-              Cancel
+              <ChevronUp className="w-5 h-5" />
             </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-              style={{ backgroundColor: saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0)) ? undefined : '#00adf0' }}
-              className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-              onMouseEnter={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
-              onMouseLeave={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
