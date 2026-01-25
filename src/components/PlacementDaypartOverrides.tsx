@@ -233,21 +233,37 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     await loadData();
   };
 
-  const handleEdit = (routine: DaypartRoutine) => {
-    setExpandedScheduleId(routine.id!);
-    setEditingRoutine(routine);
+  const handleCancel = () => {
+    setExpandedScheduleId(null);
+    setEditingRoutine(null);
     setEditingInherited(null);
-    setIsAddingNew(false);
     setPreFillDaypart(undefined);
+    setIsAddingNew(false);
+  };
+
+  const handleEdit = (routine: DaypartRoutine) => {
+    if (expandedScheduleId === routine.id) {
+      handleCancel();
+    } else {
+      setExpandedScheduleId(routine.id!);
+      setEditingRoutine(routine);
+      setEditingInherited(null);
+      setIsAddingNew(false);
+      setPreFillDaypart(undefined);
+    }
   };
 
   const handleEditInherited = (schedule: EffectiveSchedule) => {
-    // Clicking an inherited schedule creates a customization
-    setExpandedScheduleId(schedule.id);
-    setEditingInherited(schedule);
-    setEditingRoutine(null);
-    setIsAddingNew(false);
-    setPreFillDaypart(undefined);
+    if (expandedScheduleId === schedule.id) {
+      handleCancel();
+    } else {
+      // Clicking an inherited schedule creates a customization
+      setExpandedScheduleId(schedule.id);
+      setEditingInherited(schedule);
+      setEditingRoutine(null);
+      setIsAddingNew(false);
+      setPreFillDaypart(undefined);
+    }
   };
 
   const handleDelete = async (routineId: string) => {
@@ -270,14 +286,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     setEditingInherited(null);
     setIsAddingNew(false);
     await loadData();
-  };
-
-  const handleCancel = () => {
-    setExpandedScheduleId(null);
-    setEditingRoutine(null);
-    setEditingInherited(null);
-    setPreFillDaypart(undefined);
-    setIsAddingNew(false);
   };
 
   const handleAddNew = (
