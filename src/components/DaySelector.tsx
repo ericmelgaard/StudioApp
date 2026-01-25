@@ -70,12 +70,12 @@ export default function DaySelector({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <label className="text-sm font-medium text-slate-700">Days of the Week *</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Days of the Week *</label>
         {showPresets && (
           <button
             type="button"
             onClick={selectedDays.length === 7 ? clearAll : () => applyPreset(PRESETS.allDays)}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
           >
             {selectedDays.length === 7 ? 'Clear All' : 'Select All'}
           </button>
@@ -87,21 +87,21 @@ export default function DaySelector({
           <button
             type="button"
             onClick={() => applyPreset(PRESETS.weekdays)}
-            className="px-3 py-1.5 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors"
+            className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
           >
             Weekdays
           </button>
           <button
             type="button"
             onClick={() => applyPreset(PRESETS.weekend)}
-            className="px-3 py-1.5 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors"
+            className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
           >
             Weekend
           </button>
           <button
             type="button"
             onClick={clearAll}
-            className="px-3 py-1.5 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors"
+            className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
           >
             Clear
           </button>
@@ -109,9 +109,9 @@ export default function DaySelector({
       )}
 
       {schedules.length > 0 && currentDaypartName && (
-        <div className="text-xs text-slate-500 mb-3">
+        <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded border-2 border-red-400"></div>
+            <div className="w-3 h-3 rounded border-2 border-red-400 dark:border-red-500"></div>
             <span>Day has conflicting schedule</span>
           </div>
         </div>
@@ -134,9 +134,9 @@ export default function DaySelector({
                 isSelected
                   ? 'shadow-md'
                   : hasCollision
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              } ${hasCollision ? 'ring-2 ring-red-400' : ''}`}
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+              } ${hasCollision ? 'ring-2 ring-red-400 dark:ring-red-500' : ''}`}
               style={
                 isSelected
                   ? { backgroundColor: colors.bg, color: colors.text }
@@ -155,7 +155,7 @@ export default function DaySelector({
       </div>
 
       {selectedDays.length > 0 && (
-        <div className="mt-2 text-xs text-slate-600">
+        <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
           {selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'} selected
         </div>
       )}

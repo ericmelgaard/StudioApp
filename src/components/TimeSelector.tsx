@@ -129,7 +129,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
 
   return (
     <div className="relative">
-      <label className="block text-sm font-medium text-slate-700 mb-2">
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
         <Clock className="w-4 h-4 inline mr-1" />
         {label}
       </label>
@@ -138,10 +138,10 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
         type="button"
         onClick={() => !disabled && setIsOpen(true)}
         disabled={disabled}
-        className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg font-mono text-base text-left transition-colors ${
+        className={`w-full px-3 py-2.5 border rounded-lg font-mono text-base text-left transition-colors ${
           disabled
-            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            : 'bg-white text-slate-900 hover:bg-slate-50 focus:ring-2 focus:ring-slate-400 focus:border-transparent'
+            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-300 dark:border-slate-600 cursor-not-allowed'
+            : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-transparent'
         }`}
       >
         {formatDisplayTime(value)}
