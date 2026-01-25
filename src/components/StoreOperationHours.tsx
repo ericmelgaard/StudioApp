@@ -42,7 +42,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'edit'>('list');
+  const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(null);
   const [addingSchedule, setAddingSchedule] = useState(false);
   const [addingEventSchedule, setAddingEventSchedule] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<OperationSchedule | null>(null);
@@ -111,6 +111,13 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
     }
   };
 
+  const handleCancel = () => {
+    setExpandedScheduleId(null);
+    setEditingSchedule(null);
+    setAddingSchedule(false);
+    setAddingEventSchedule(false);
+  };
+
   const handleAddSchedule = () => {
     setNewSchedule({
       store_id: storeId,
@@ -123,10 +130,10 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
       schedule_type: 'regular',
       runs_on_days: true
     });
+    setExpandedScheduleId('new-regular');
     setAddingSchedule(true);
     setAddingEventSchedule(false);
     setEditingSchedule(null);
-    setViewMode('edit');
   };
 
   const handleAddEventSchedule = () => {
@@ -141,24 +148,21 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
       schedule_type: 'event_holiday',
       runs_on_days: true
     });
+    setExpandedScheduleId('new-event');
     setAddingEventSchedule(true);
     setAddingSchedule(false);
     setEditingSchedule(null);
-    setViewMode('edit');
   };
 
   const handleEditSchedule = (schedule: OperationSchedule) => {
-    setEditingSchedule(schedule);
-    setAddingSchedule(false);
-    setAddingEventSchedule(false);
-    setViewMode('edit');
-  };
-
-  const handleBackToList = () => {
-    setViewMode('list');
-    setEditingSchedule(null);
-    setAddingSchedule(false);
-    setAddingEventSchedule(false);
+    if (expandedScheduleId === schedule.id) {
+      handleCancel();
+    } else {
+      setExpandedScheduleId(schedule.id!);
+      setEditingSchedule(schedule);
+      setAddingSchedule(false);
+      setAddingEventSchedule(false);
+    }
   };
 
   const handleSaveSchedule = async (schedule: Schedule) => {
@@ -209,10 +213,10 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
         setSuccess('Schedule created successfully');
       }
 
+      setExpandedScheduleId(null);
       setAddingSchedule(false);
       setAddingEventSchedule(false);
       setEditingSchedule(null);
-      setViewMode('list');
       await loadSchedules();
 
       setTimeout(() => setSuccess(null), 3000);
@@ -237,6 +241,8 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
 
       if (deleteError) throw deleteError;
 
+      setExpandedScheduleId(null);
+      setEditingSchedule(null);
       setSuccess('Schedule deleted successfully');
       await loadSchedules();
 
@@ -258,85 +264,35 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
   const regularSchedules = schedules.filter(s => s.schedule_type !== 'event_holiday');
   const eventSchedules = schedules.filter(s => s.schedule_type === 'event_holiday');
 
-  // Full-page edit view
-  if (viewMode === 'edit' && (editingSchedule || addingSchedule || addingEventSchedule)) {
+  // Helper to render inline edit form
+  const renderInlineEditForm = (scheduleId: string | null) => {
+    if (!scheduleId || expandedScheduleId !== scheduleId) return null;
+
     const currentSchedule = editingSchedule || newSchedule;
-    const scheduleName = currentSchedule?.schedule_name ||
-      (currentSchedule?.schedule_type === 'event_holiday' ? currentSchedule?.event_name : '') ||
-      (editingSchedule ? 'Edit Schedule' : 'New Schedule');
+    if (!currentSchedule) return null;
 
     return (
-      <div>
-        <button
-          onClick={handleBackToList}
-          className="mb-4 flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back to List</span>
-        </button>
-
-        <Breadcrumb
-          items={[
-            { label: 'Power Save Schedules', onClick: handleBackToList },
-            { label: currentSchedule?.schedule_type === 'event_holiday' ? 'Event' : 'Power Save' },
-            { label: scheduleName }
-          ]}
-          className="mb-4"
+      <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
+        <ScheduleGroupForm
+          schedule={currentSchedule!}
+          allSchedules={schedules}
+          onUpdate={(updated) => {
+            if (editingSchedule) {
+              setEditingSchedule(updated as OperationSchedule);
+            } else {
+              setNewSchedule(updated as OperationSchedule);
+            }
+          }}
+          onSave={handleSaveSchedule}
+          onCancel={handleCancel}
+          onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+          level="site"
+          skipDayValidation={true}
+          disableCollisionDetection={true}
         />
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-start gap-2">
-            <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{success}</span>
-          </div>
-        )}
-
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-100 text-slate-800 border-slate-300">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900">
-                  {currentSchedule?.schedule_type === 'event_holiday' ? 'Event' : 'Power Save'}
-                </h3>
-                <span className={`text-sm ${
-                  currentSchedule?.schedule_type === 'event_holiday' ? 'text-amber-900 font-medium' : 'text-slate-700'
-                }`}>
-                  {currentSchedule?.schedule_type === 'event_holiday' ? 'Schedule' : 'Schedule'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4">
-            <ScheduleGroupForm
-              schedule={currentSchedule!}
-              allSchedules={schedules}
-              onUpdate={(updated) => {
-                if (editingSchedule) {
-                  setEditingSchedule(updated as OperationSchedule);
-                } else {
-                  setNewSchedule(updated as OperationSchedule);
-                }
-              }}
-              onSave={handleSaveSchedule}
-              onCancel={handleBackToList}
-              onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
-              level="site"
-              skipDayValidation={true}
-              disableCollisionDetection={true}
-            />
-          </div>
-        </div>
       </div>
     );
-  }
+  };
 
   const eventCount = eventSchedules.length;
   const regularCount = regularSchedules.length;
@@ -457,12 +413,16 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
             </div>
             <div className="p-3 space-y-3">
               {regularSchedules.map((schedule) => (
-                <button
-                  key={schedule.id}
-                  type="button"
-                  onClick={() => handleEditSchedule(schedule)}
-                  className="w-full p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] shadow-sm text-left group"
-                >
+                <div key={schedule.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleEditSchedule(schedule)}
+                    className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group ${
+                      expandedScheduleId === schedule.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 hover:scale-[1.01] active:scale-[0.99]'
+                    }`}
+                  >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex gap-1 mb-2">
@@ -495,6 +455,8 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                     <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
                   </div>
                 </button>
+                  {renderInlineEditForm(schedule.id)}
+                </div>
               ))}
 
               {regularSchedules.length > 0 && (
@@ -523,6 +485,8 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                   </button>
                 </div>
               )}
+
+              {renderInlineEditForm('new-regular')}
 
               {eventSchedules.length > 0 && (
                 <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
@@ -553,15 +517,27 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                   {eventsExpanded && (
                     <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
                       {eventSchedules.map((schedule) => (
-                        <button
-                          key={schedule.id}
-                          type="button"
-                          onClick={() => handleEditSchedule(schedule)}
-                          className="w-full p-4 transition-colors text-left"
-                          style={{ backgroundColor: 'transparent' }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
+                        <div key={schedule.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleEditSchedule(schedule)}
+                            className={`w-full p-4 transition-colors text-left ${
+                              expandedScheduleId === schedule.id
+                                ? 'border-l-4 border-blue-500 bg-blue-50'
+                                : ''
+                            }`}
+                            style={{ backgroundColor: expandedScheduleId === schedule.id ? undefined : 'transparent' }}
+                            onMouseEnter={(e) => {
+                              if (expandedScheduleId !== schedule.id) {
+                                e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (expandedScheduleId !== schedule.id) {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }
+                            }}
+                          >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3 mb-2">
@@ -605,9 +581,12 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                             <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                           </div>
                         </button>
+                          {renderInlineEditForm(schedule.id)}
+                        </div>
                       ))}
                     </div>
                   )}
+                  {renderInlineEditForm('new-event')}
                 </div>
               )}
             </div>

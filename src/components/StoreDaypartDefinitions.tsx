@@ -60,7 +60,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [showUnused, setShowUnused] = useState(false);
   const [inUseStatus, setInUseStatus] = useState<Record<string, boolean>>({});
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
-  const [viewLevel, setViewLevel] = useState<'list' | 'edit-schedule'>('list');
+  const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(null);
   const [editingDefinitionContext, setEditingDefinitionContext] = useState<DaypartDefinition | null>(null);
   const [removedDays, setRemovedDays] = useState<number[]>([]);
   const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
@@ -235,6 +235,14 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     }
   };
 
+  const handleCancel = () => {
+    setExpandedScheduleId(null);
+    setEditingSchedule(null);
+    setAddingScheduleForDef(null);
+    setNewSchedule(null);
+    setEditingDefinitionContext(null);
+  };
+
   const handleAddSchedule = (
     defId: string,
     scheduleType: 'regular' | 'event_holiday' = 'regular',
@@ -250,22 +258,26 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       end_time: templateSchedule?.end_time || '11:00',
       schedule_type: scheduleType,
     });
+    setExpandedScheduleId('new-' + defId);
     setAddingScheduleForDef(defId);
     setEditingSchedule(null);
     setEditingDefinitionContext(def || null);
-    setViewLevel('edit-schedule');
   };
 
   const handleEditSchedule = (schedule: DaypartSchedule) => {
-    const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
-    const scheduleWithDaypartName = {
-      ...schedule,
-      daypart_name: definition?.daypart_name || schedule.daypart_name || ''
-    };
-    setEditingSchedule(scheduleWithDaypartName);
-    setAddingScheduleForDef(null);
-    setEditingDefinitionContext(definition || null);
-    setViewLevel('edit-schedule');
+    if (expandedScheduleId === schedule.id) {
+      handleCancel();
+    } else {
+      const definition = definitions.find(d => d.id === schedule.daypart_definition_id);
+      const scheduleWithDaypartName = {
+        ...schedule,
+        daypart_name: definition?.daypart_name || schedule.daypart_name || ''
+      };
+      setExpandedScheduleId(schedule.id!);
+      setEditingSchedule(scheduleWithDaypartName);
+      setAddingScheduleForDef(null);
+      setEditingDefinitionContext(definition || null);
+    }
   };
 
   const handleSaveSchedule = async (scheduleToSave?: Schedule) => {
@@ -481,12 +493,13 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         }
       }
 
+      setExpandedScheduleId(null);
       setEditingSchedule(null);
       setAddingScheduleForDef(null);
       setNewSchedule(null);
       setEditingDefinitionContext(null);
-      setViewLevel('list');
       setRemovedDays([]);
+      await loadData();
 
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -559,9 +572,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         if (deleteError) throw deleteError;
       }
 
+      setExpandedScheduleId(null);
       setEditingSchedule(null);
       setEditingDefinitionContext(null);
-      setViewLevel('list');
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -625,108 +638,41 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     showUnused || inUseStatus[def.id]
   );
 
+  // Helper to render inline edit form
+  const renderInlineEditForm = (scheduleId: string | null) => {
+    if (!scheduleId || expandedScheduleId !== scheduleId) return null;
+
+    const currentSchedule = editingSchedule || newSchedule;
+    if (!currentSchedule) return null;
+
+    return (
+      <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
+        <ScheduleGroupForm
+          schedule={currentSchedule!}
+          allSchedules={enrichedSchedules}
+          onUpdate={(updated) => {
+            if (editingSchedule) {
+              setEditingSchedule(updated as DaypartSchedule);
+            } else {
+              setNewSchedule(updated);
+            }
+          }}
+          onSave={handleSaveSchedule}
+          onCancel={handleCancel}
+          onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+          onRemovedDays={setRemovedDays}
+          level="site"
+          skipDayValidation={false}
+          disableCollisionDetection={false}
+        />
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-8 h-8 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (viewLevel === 'edit-schedule' && (editingSchedule || newSchedule)) {
-    const currentSchedule = editingSchedule || newSchedule;
-    const scheduleName = currentSchedule?.schedule_name ||
-      (currentSchedule?.schedule_type === 'event_holiday' ? currentSchedule?.event_name : '') ||
-      (editingSchedule ? 'Edit Schedule' : 'New Schedule');
-
-    return (
-      <div>
-        <button
-          onClick={() => {
-            setViewLevel('list');
-            setEditingSchedule(null);
-            setNewSchedule(null);
-            setAddingScheduleForDef(null);
-            setEditingDefinitionContext(null);
-          }}
-          className="mb-4 flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back to List</span>
-        </button>
-
-        <Breadcrumb
-          items={[
-            { label: 'Daypart Schedules', onClick: () => {
-              setViewLevel('list');
-              setEditingSchedule(null);
-              setNewSchedule(null);
-              setAddingScheduleForDef(null);
-              setEditingDefinitionContext(null);
-            }},
-            { label: editingDefinitionContext?.display_label || 'Schedule' },
-            { label: scheduleName }
-          ]}
-          className="mb-4"
-        />
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-start gap-2">
-            <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{success}</span>
-          </div>
-        )}
-
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <div className={`p-4 border-b border-slate-200 ${editingDefinitionContext?.color || 'bg-slate-100'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900">
-                  {editingDefinitionContext?.display_label || 'Schedule'}
-                </h3>
-                <span className={`text-sm ${
-                  currentSchedule?.schedule_type === 'event_holiday' ? 'text-amber-900 font-medium' : 'text-slate-700'
-                }`}>
-                  {currentSchedule?.schedule_type === 'event_holiday' ? 'Event' : 'Schedule'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4">
-            <ScheduleGroupForm
-              schedule={currentSchedule!}
-              allSchedules={enrichedSchedules}
-              onUpdate={(updated) => {
-                if (editingSchedule) {
-                  setEditingSchedule(updated as DaypartSchedule);
-                } else {
-                  setNewSchedule(updated);
-                }
-              }}
-              onSave={handleSaveSchedule}
-              onCancel={() => {
-                setViewLevel('list');
-                setEditingSchedule(null);
-                setNewSchedule(null);
-                setAddingScheduleForDef(null);
-                setEditingDefinitionContext(null);
-              }}
-              onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
-              onRemovedDays={setRemovedDays}
-              level="site"
-              skipDayValidation={false}
-              disableCollisionDetection={false}
-            />
-          </div>
-        </div>
       </div>
     );
   }
@@ -1040,11 +986,15 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                   </div>
                   <div className="p-3 space-y-3">
                     {regularSchedules.map((schedule) => (
-                      <button
-                        key={schedule.id}
-                        onClick={() => handleEditSchedule(schedule)}
-                        className="w-full p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] shadow-sm text-left group"
-                      >
+                      <div key={schedule.id}>
+                        <button
+                          onClick={() => handleEditSchedule(schedule)}
+                          className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group ${
+                            expandedScheduleId === schedule.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 hover:scale-[1.01] active:scale-[0.99]'
+                          }`}
+                        >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex gap-1 mb-2">
@@ -1079,6 +1029,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                           <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
                         </div>
                       </button>
+                        {renderInlineEditForm(schedule.id)}
+                      </div>
                     ))}
 
                     {regularSchedules.length > 0 && (
@@ -1123,6 +1075,8 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                       </div>
                     )}
 
+                    {renderInlineEditForm('new-' + definition.id)}
+
                     {hasEvents && (
                       <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
                         <button
@@ -1155,10 +1109,22 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                               <div key={schedule.id}>
                                 <button
                                   onClick={() => handleEditSchedule(schedule)}
-                                  className="w-full p-4 transition-colors text-left"
-                                  style={{ backgroundColor: 'transparent' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                  className={`w-full p-4 transition-colors text-left ${
+                                    expandedScheduleId === schedule.id
+                                      ? 'border-l-4 border-blue-500 bg-blue-50'
+                                      : ''
+                                  }`}
+                                  style={{ backgroundColor: expandedScheduleId === schedule.id ? undefined : 'transparent' }}
+                                  onMouseEnter={(e) => {
+                                    if (expandedScheduleId !== schedule.id) {
+                                      e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (expandedScheduleId !== schedule.id) {
+                                      e.currentTarget.style.backgroundColor = 'transparent';
+                                    }
+                                  }}
                                 >
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
@@ -1216,6 +1182,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                                     <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                                   </div>
                                 </button>
+                                {renderInlineEditForm(schedule.id)}
                               </div>
                             ))}
                           </div>
