@@ -323,6 +323,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
               if (schedule.event_date) baseData.event_date = schedule.event_date;
               if (schedule.recurrence_type) baseData.recurrence_type = schedule.recurrence_type;
               if (schedule.recurrence_config) baseData.recurrence_config = schedule.recurrence_config;
+              if (schedule.runs_on_days !== undefined) baseData.runs_on_days = schedule.runs_on_days;
             } else {
               if (s.schedule_name) baseData.schedule_name = s.schedule_name;
               if (s.schedule_type) baseData.schedule_type = s.schedule_type;
@@ -330,6 +331,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
               if (s.event_date) baseData.event_date = s.event_date;
               if (s.recurrence_type) baseData.recurrence_type = s.recurrence_type;
               if (s.recurrence_config) baseData.recurrence_config = s.recurrence_config;
+              if (s.runs_on_days !== undefined) baseData.runs_on_days = s.runs_on_days;
             }
 
             return baseData;
@@ -356,6 +358,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           if (schedule.event_date) updateData.event_date = schedule.event_date;
           if (schedule.recurrence_type) updateData.recurrence_type = schedule.recurrence_type;
           if (schedule.recurrence_config) updateData.recurrence_config = schedule.recurrence_config;
+          if (schedule.runs_on_days !== undefined) updateData.runs_on_days = schedule.runs_on_days;
 
           const { error: updateError } = await supabase
             .from('daypart_schedules')
@@ -404,6 +407,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             event_date: s.event_date || undefined,
             recurrence_type: s.recurrence_type || undefined,
             recurrence_config: s.recurrence_config || undefined,
+            runs_on_days: s.runs_on_days !== undefined ? s.runs_on_days : undefined,
           }));
 
           const newScheduleData: any = {
@@ -419,6 +423,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           if (schedule.event_date) newScheduleData.event_date = schedule.event_date;
           if (schedule.recurrence_type) newScheduleData.recurrence_type = schedule.recurrence_type;
           if (schedule.recurrence_config) newScheduleData.recurrence_config = schedule.recurrence_config;
+          if (schedule.runs_on_days !== undefined) newScheduleData.runs_on_days = schedule.runs_on_days;
 
           const allSchedulesToInsert = [...schedulesToCopy, newScheduleData];
 
@@ -443,6 +448,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           if (schedule.event_date) insertData.event_date = schedule.event_date;
           if (schedule.recurrence_type) insertData.recurrence_type = schedule.recurrence_type;
           if (schedule.recurrence_config) insertData.recurrence_config = schedule.recurrence_config;
+          if (schedule.runs_on_days !== undefined) insertData.runs_on_days = schedule.runs_on_days;
 
           const { error: insertError } = await supabase
             .from('daypart_schedules')
@@ -645,6 +651,12 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     const currentSchedule = editingSchedule || newSchedule;
     if (!currentSchedule) return null;
 
+    const currentDefinition = editingDefinitionContext || (currentSchedule && 'daypart_definition_id' in currentSchedule
+      ? definitions.find(d => d.id === currentSchedule.daypart_definition_id)
+      : null);
+
+    const canDelete = editingSchedule?.id && currentDefinition?.source_level === 'store' && currentDefinition?.is_customized;
+
     return (
       <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
         <ScheduleGroupForm
@@ -659,7 +671,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           }}
           onSave={handleSaveSchedule}
           onCancel={handleCancel}
-          onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+          onDelete={canDelete ? handleDeleteSchedule : undefined}
           onRemovedDays={setRemovedDays}
           level="site"
           skipDayValidation={false}
