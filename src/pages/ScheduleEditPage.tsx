@@ -89,6 +89,14 @@ export default function ScheduleEditPage({
     schedule_name: schedule?.schedule_name || ''
   });
 
+  const [initialFormData] = useState({
+    daypart_definition_id: schedule?.daypart_definition_id || '',
+    days_of_week: schedule?.days_of_week || [] as number[],
+    start_time: schedule?.start_time || '06:00',
+    end_time: schedule?.end_time || '11:00',
+    schedule_name: schedule?.schedule_name || ''
+  });
+
   useEffect(() => {
     if (dayparts.length > 0) {
       loadExistingSchedules();
@@ -102,6 +110,18 @@ export default function ScheduleEditPage({
   const selectedDaypart = dayparts.find(d => d.id === formData.daypart_definition_id);
   const daypartColor = selectedDaypart?.color || '#00adf0';
   const daypartColorStyles = getDaypartColorStyles(daypartColor);
+
+  const hasChanges = () => {
+    if (isNewSchedule) return true;
+
+    return (
+      formData.daypart_definition_id !== initialFormData.daypart_definition_id ||
+      formData.start_time !== initialFormData.start_time ||
+      formData.end_time !== initialFormData.end_time ||
+      formData.schedule_name !== initialFormData.schedule_name ||
+      JSON.stringify(formData.days_of_week.sort()) !== JSON.stringify(initialFormData.days_of_week.sort())
+    );
+  };
 
   const loadExistingSchedules = async () => {
     try {
@@ -408,13 +428,26 @@ export default function ScheduleEditPage({
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Colored Header with Daypart Name */}
+        {/* Colored Header with Daypart Name and Save Button */}
         <div className="px-6 py-4" style={{ backgroundColor: daypartColor + '30' }}>
-          <div className="flex items-baseline gap-2">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              {selectedDaypart?.display_label || 'Daypart'}
-            </h2>
-            <span className="text-sm text-slate-700 dark:text-slate-300">Schedule</span>
+          <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                {selectedDaypart?.display_label || 'Daypart'}
+              </h2>
+              <span className="text-sm text-slate-700 dark:text-slate-300">Schedule</span>
+            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !hasChanges()}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                loading || !hasChanges()
+                  ? 'bg-blue-300 text-white cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {loading ? 'Saving...' : 'Save'}
+            </button>
           </div>
         </div>
 
@@ -521,42 +554,20 @@ export default function ScheduleEditPage({
           </form>
         </div>
 
-        {/* Footer with Buttons */}
-        <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Delete button on left */}
-            {schedule && onDelete && !isSchedulingRemovedDays ? (
+        {/* Footer with Delete Button */}
+        {schedule && onDelete && !isSchedulingRemovedDays && (
+          <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-4">
+            <div className="flex justify-center">
               <button
                 type="button"
                 onClick={handleDeleteClick}
-                className="px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
+                className="px-6 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium transition-colors"
               >
                 Delete
               </button>
-            ) : (
-              <div />
-            )}
-
-            {/* Cancel and Save on right */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onBack}
-                className="px-6 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2 text-sm font-medium text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                style={!loading ? daypartColorStyles : {}}
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Merge Prompt Modal */}
