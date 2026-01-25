@@ -1,8 +1,5 @@
-import { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import GroupScheduleManager from '../components/GroupScheduleManager';
-import ScheduleEditPage from './ScheduleEditPage';
 
 interface GroupSchedulesPageProps {
   group: {
@@ -12,127 +9,7 @@ interface GroupSchedulesPageProps {
   onBack: () => void;
 }
 
-interface Schedule {
-  id: string;
-  daypart_definition_id: string;
-  placement_group_id: string;
-  days_of_week: number[];
-  start_time: string;
-  end_time?: string;
-  runs_on_days?: boolean;
-  schedule_name?: string;
-}
-
-interface Daypart {
-  id: string;
-  daypart_name: string;
-  display_label: string;
-  color: string;
-  icon: string | null;
-}
-
-type PageView = 'list' | 'edit';
-
 export default function GroupSchedulesPage({ group, onBack }: GroupSchedulesPageProps) {
-  const [currentView, setCurrentView] = useState<PageView>('list');
-  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
-  const [dayparts, setDayparts] = useState<Daypart[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadDayparts();
-  }, [group.id]);
-
-  const loadDayparts = async () => {
-    setLoading(true);
-    try {
-      const groupResult = await supabase
-        .from('placement_groups')
-        .select('store_id')
-        .eq('id', group.id)
-        .maybeSingle();
-
-      if (groupResult.error) throw groupResult.error;
-
-      const storeId = groupResult.data?.store_id;
-
-      const daypartsResult = storeId
-        ? await supabase.rpc('get_effective_daypart_definitions', { p_store_id: storeId })
-        : await supabase
-            .from('daypart_definitions')
-            .select('id, daypart_name, display_label, color, icon')
-            .is('concept_id', null)
-            .is('store_id', null)
-            .eq('is_active', true)
-            .order('sort_order');
-
-      if (daypartsResult.error) throw daypartsResult.error;
-
-      setDayparts(daypartsResult.data || []);
-    } catch (error) {
-      console.error('Error loading dayparts:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditSchedule = (schedule: Schedule | null, isStoreSchedule?: boolean) => {
-    if (isStoreSchedule && schedule) {
-      // Convert store schedule to a new placement schedule
-      setEditingSchedule({
-        id: '', // Empty ID means create new
-        daypart_definition_id: schedule.daypart_definition_id,
-        placement_group_id: group.id,
-        days_of_week: schedule.days_of_week,
-        start_time: schedule.start_time,
-        end_time: schedule.end_time,
-        runs_on_days: schedule.runs_on_days,
-        schedule_name: schedule.schedule_name
-      });
-    } else {
-      setEditingSchedule(schedule);
-    }
-    setCurrentView('edit');
-  };
-
-  const handleAddScheduleForDays = (schedule: Schedule) => {
-    // Handle adding a schedule for specific days (from "Schedule Remaining Days")
-    setEditingSchedule(schedule);
-    setCurrentView('edit');
-  };
-
-  const handleBackToList = () => {
-    setCurrentView('list');
-    setEditingSchedule(null);
-  };
-
-  const handleSuccess = () => {
-    setCurrentView('list');
-    setEditingSchedule(null);
-  };
-
-  const handleDelete = async (scheduleId: string) => {
-    const { error } = await supabase
-      .from('placement_daypart_overrides')
-      .delete()
-      .eq('id', scheduleId);
-
-    if (error) throw error;
-  };
-
-  if (currentView === 'edit') {
-    return (
-      <ScheduleEditPage
-        schedule={editingSchedule}
-        groupId={group.id}
-        groupName={group.name}
-        dayparts={dayparts}
-        onBack={handleBackToList}
-        onSuccess={handleSuccess}
-        onDelete={editingSchedule ? handleDelete : undefined}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -156,17 +33,10 @@ export default function GroupSchedulesPage({ group, onBack }: GroupSchedulesPage
 
       <div className="p-4">
         <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : (
-            <GroupScheduleManager
-              groupId={group.id}
-              groupName={group.name}
-              onEditSchedule={handleEditSchedule}
-            />
-          )}
+          <GroupScheduleManager
+            groupId={group.id}
+            groupName={group.name}
+          />
         </div>
       </div>
     </div>
