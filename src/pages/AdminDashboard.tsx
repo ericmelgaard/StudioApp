@@ -92,6 +92,20 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
     }
   }, []);
 
+  // Force light mode for admin dashboard
+  useEffect(() => {
+    const root = document.documentElement;
+    const hadDarkClass = root.classList.contains('dark');
+
+    root.classList.remove('dark');
+
+    return () => {
+      if (hadDarkClass) {
+        root.classList.add('dark');
+      }
+    };
+  }, []);
+
   // Sync local state with global location context on mount and location changes
   useEffect(() => {
     setSelectedConcept(location.concept || null);
