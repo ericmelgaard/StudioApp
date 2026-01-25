@@ -289,6 +289,25 @@ export default function DaypartRoutineForm({
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      {/* Header with Save Button */}
+      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <h3 className="font-semibold text-slate-900">
+          {editingRoutine ? 'Edit Schedule' : 'New Schedule'}
+        </h3>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
+          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+            !hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))
+              ? 'bg-blue-300 text-white cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+      </div>
+
       <div className="p-4 space-y-4">
 
         {formData.schedule_type === 'event_holiday' && (
@@ -538,41 +557,23 @@ export default function DaypartRoutineForm({
           />
         </div>
 
-        <div className="pt-4 mt-4 border-t border-slate-200 flex justify-between items-center gap-3">
-          {editingRoutine && onDelete ? (
+      </div>
+
+      {/* Footer with Delete Button */}
+      {editingRoutine && onDelete && (
+        <div className="border-t border-slate-200 px-4 py-3 bg-slate-50">
+          <div className="flex justify-center">
             <button
               type="button"
               onClick={handleDelete}
-              className="px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+              className="px-6 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
               Delete
             </button>
-          ) : (
-            <div />
-          )}
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-              style={{ backgroundColor: (!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) ? undefined : '#00adf0' }}
-              className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-              onMouseEnter={(e) => (hasChanges() && !saving && !(formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
-              onMouseLeave={(e) => (hasChanges() && !saving && !(formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {showTemplatePicker && (
         <HolidayTemplatePicker
