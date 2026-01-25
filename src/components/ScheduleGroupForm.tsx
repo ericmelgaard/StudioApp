@@ -214,15 +214,15 @@ export default function ScheduleGroupForm({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
-        <h3 className="font-semibold text-slate-900">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100">
           {schedule.id ? 'Edit Schedule' : 'New Schedule'}
         </h3>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium"
+            className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium"
           >
             Cancel
           </button>
@@ -233,7 +233,7 @@ export default function ScheduleGroupForm({
             className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
               canSave
                 ? 'bg-[#00adf0] text-white hover:bg-[#00c3ff]'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
             }`}
           >
             Save
@@ -243,18 +243,18 @@ export default function ScheduleGroupForm({
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {scheduleType === 'event_holiday' && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-900">
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
+          <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-900 dark:text-blue-100">
             <p className="font-medium mb-1">Event schedules override all regular schedules</p>
-            <p className="text-blue-700">No collision checking needed for events and holidays</p>
+            <p className="text-blue-700 dark:text-blue-300">No collision checking needed for events and holidays</p>
           </div>
         </div>
       )}
 
       {showDaypartSelector && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Daypart Type *
           </label>
           <select
@@ -265,7 +265,7 @@ export default function ScheduleGroupForm({
                 onDaypartChange(selectedOption.id, selectedOption.daypart_name);
               }
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >
             <option value="">Select a daypart...</option>
@@ -279,7 +279,7 @@ export default function ScheduleGroupForm({
       )}
 
       {error && scheduleType === 'regular' && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-start gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -290,14 +290,14 @@ export default function ScheduleGroupForm({
           <button
             type="button"
             onClick={() => setShowTemplatePicker(true)}
-            className="w-full px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+            className="w-full px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors font-medium text-sm flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             Quick Add from Holiday Template
           </button>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Event Name *
             </label>
             <input
@@ -305,18 +305,18 @@ export default function ScheduleGroupForm({
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
               placeholder="e.g., Christmas Day, Holiday Season"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Recurrence Type
             </label>
             <select
               value={recurrenceType}
               onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               <option value="none">One-time Date</option>
               <option value="annual_date">Annual (same date)</option>
@@ -328,14 +328,14 @@ export default function ScheduleGroupForm({
 
           {recurrenceType === 'none' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Event Date
               </label>
               <input
                 type="date"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
           )}
@@ -343,13 +343,13 @@ export default function ScheduleGroupForm({
           {recurrenceType === 'annual_date' && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Month
                 </label>
                 <select
                   value={recurrenceConfig.month || ''}
                   onChange={(e) => handleRecurrenceConfigChange('month', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select month</option>
                   {MONTH_NAMES.map((name, idx) => (
@@ -358,13 +358,13 @@ export default function ScheduleGroupForm({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Day
                 </label>
                 <select
                   value={recurrenceConfig.day_of_month || ''}
                   onChange={(e) => handleRecurrenceConfigChange('day_of_month', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select day</option>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
@@ -377,13 +377,13 @@ export default function ScheduleGroupForm({
 
           {recurrenceType === 'monthly_date' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Day of Month
               </label>
               <select
                 value={recurrenceConfig.day_of_month || ''}
                 onChange={(e) => handleRecurrenceConfigChange('day_of_month', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
                 <option value="">Select day</option>
                 {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
@@ -396,13 +396,13 @@ export default function ScheduleGroupForm({
           {recurrenceType === 'annual_relative' && (
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Position
                 </label>
                 <select
                   value={recurrenceConfig.position || ''}
                   onChange={(e) => handleRecurrenceConfigChange('position', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select</option>
                   <option value="first">First</option>
@@ -413,13 +413,13 @@ export default function ScheduleGroupForm({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Weekday
                 </label>
                 <select
                   value={recurrenceConfig.weekday !== undefined ? recurrenceConfig.weekday : ''}
                   onChange={(e) => handleRecurrenceConfigChange('weekday', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select</option>
                   {DAY_NAMES.map((name, idx) => (
@@ -428,13 +428,13 @@ export default function ScheduleGroupForm({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Month
                 </label>
                 <select
                   value={recurrenceConfig.month || ''}
                   onChange={(e) => handleRecurrenceConfigChange('month', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select</option>
                   {MONTH_NAMES.map((name, idx) => (
@@ -448,35 +448,35 @@ export default function ScheduleGroupForm({
           {recurrenceType === 'annual_date_range' && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={recurrenceConfig.range_start_date || ''}
                   onChange={(e) => handleRecurrenceConfigChange('range_start_date', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   End Date
                 </label>
                 <input
                   type="date"
                   value={recurrenceConfig.range_end_date || ''}
                   onChange={(e) => handleRecurrenceConfigChange('range_end_date', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
             </div>
           )}
 
           {recurrenceType && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
               <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-amber-600" />
-                <span className="font-medium text-amber-900">
+                <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span className="font-medium text-amber-900 dark:text-amber-100">
                   {formatRecurrenceText(recurrenceType, recurrenceConfig, eventDate)}
                 </span>
               </div>
@@ -484,7 +484,7 @@ export default function ScheduleGroupForm({
           )}
 
           {scheduleType === 'event_holiday' && (
-            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
               <span className="font-medium">
                 Priority: {getPriorityLevel(recurrenceType) === 100 ? 'Single Day' : 'Date Range'}
               </span>
@@ -519,11 +519,11 @@ export default function ScheduleGroupForm({
       </div>
 
       {schedule.id && onDelete && (
-        <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 flex justify-center">
+        <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 flex justify-center">
           <button
             type="button"
             onClick={handleDelete}
-            className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+            className="px-4 py-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
             Delete Schedule
