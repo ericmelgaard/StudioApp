@@ -621,118 +621,8 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                         <div className="space-y-2">
                           {placementRoutines.map((routine) => (
                             <div key={routine.id}>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (editingRoutineId === routine.id) {
-                                    handleCancelEdit();
-                                  } else {
-                                    handleStartEdit(routine, e);
-                                  }
-                                }}
-                                disabled={showAddForm && editingRoutineId !== routine.id}
-                                className={`w-full p-4 rounded-lg border transition-all text-left ${
-                                  editingRoutineId === routine.id
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : routine.status === 'active'
-                                      ? 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md shadow-sm'
-                                      : 'bg-slate-50 border-slate-300 opacity-60 hover:opacity-80'
-                                } disabled:cursor-not-allowed disabled:opacity-50`}
-                              >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  {routine.schedule_name && (
-                                    <div className="text-xs text-slate-500 mb-1">
-                                      {routine.schedule_name}
-                                    </div>
-                                  )}
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex gap-6">
-                                      <div>
-                                        <span className="text-slate-500">Week:</span>
-                                        <span className="ml-2 font-medium text-slate-900">
-                                          Week {routine.cycle_week}
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <span className="text-slate-500">Time:</span>
-                                        <span className="ml-2 font-medium text-slate-900">
-                                          {routine.end_time
-                                            ? `${routine.start_time} - ${routine.end_time}`
-                                            : routine.start_time
-                                          }
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <span className={`text-xs px-2 py-1 rounded ${
-                                          routine.status === 'active'
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-slate-100 text-slate-700'
-                                        }`}>
-                                          {routine.status}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500">Days:</span>
-                                      <div className="inline-flex flex-wrap gap-1 ml-2">
-                                        {routine.days_of_week?.map(day => (
-                                          <span
-                                            key={day}
-                                            className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded"
-                                          >
-                                            {DAYS_OF_WEEK.find(d => d.value === day)?.label}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                                {editingRoutineId !== routine.id && (
-                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleToggleStatus(routine);
-                                      }}
-                                      disabled={showAddForm}
-                                      className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                        routine.status === 'active'
-                                          ? 'hover:bg-amber-50 text-amber-600'
-                                          : 'hover:bg-green-50 text-green-600'
-                                      }`}
-                                      title={routine.status === 'active' ? 'Pause routine' : 'Activate routine'}
-                                    >
-                                      {routine.status === 'active' ? 'Pause' : 'Activate'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleDeleteRoutine(routine.id!);
-                                      }}
-                                      disabled={showAddForm}
-                                      className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                      title="Delete routine"
-                                    >
-                                      <Trash2 className="w-4 h-4 text-red-600" />
-                                    </button>
-                                  </div>
-                                )}
-                                {editingRoutineId === routine.id && (
-                                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1" />
-                                )}
-                              </div>
-                            </button>
-
-                            {/* Inline Edit Form */}
-                            {editingRoutineId === routine.id && showAddForm && (
-                              <div className="mt-2 bg-blue-50 rounded-lg border-2 border-blue-500 shadow-lg">
+                              {editingRoutineId === routine.id && showAddForm ? (
+                              <div className="bg-blue-50 rounded-lg border-2 border-blue-500 shadow-lg">
                                 {/* Header with Save button */}
                                 <div className="p-4 flex items-center justify-end border-b border-slate-200">
                                   <button
@@ -859,8 +749,79 @@ export default function PlacementRoutineModal({ themeId, themeName, onClose, onS
                                   </div>
                                 </div>
                               </div>
-                            )}
-                          </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (editingRoutineId === routine.id) {
+                                      handleCancelEdit();
+                                    } else {
+                                      handleStartEdit(routine, e);
+                                    }
+                                  }}
+                                  disabled={showAddForm && editingRoutineId !== routine.id}
+                                  className={`w-full p-4 rounded-lg border transition-all text-left group ${
+                                    routine.status === 'active'
+                                      ? 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md shadow-sm'
+                                      : 'bg-slate-50 border-slate-300 opacity-60 hover:opacity-80'
+                                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      {routine.schedule_name && (
+                                        <div className="text-xs text-slate-500 mb-1">
+                                          {routine.schedule_name}
+                                        </div>
+                                      )}
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex gap-6">
+                                          <div>
+                                            <span className="text-slate-500">Week:</span>
+                                            <span className="ml-2 font-medium text-slate-900">
+                                              Week {routine.cycle_week}
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <span className="text-slate-500">Time:</span>
+                                            <span className="ml-2 font-medium text-slate-900">
+                                              {routine.end_time
+                                                ? `${routine.start_time} - ${routine.end_time}`
+                                                : routine.start_time
+                                              }
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <span className={`text-xs px-2 py-1 rounded ${
+                                              routine.status === 'active'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-slate-100 text-slate-700'
+                                            }`}>
+                                              {routine.status}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-500">Days:</span>
+                                          <div className="inline-flex flex-wrap gap-1 ml-2">
+                                            {routine.days_of_week?.map(day => (
+                                              <span
+                                                key={day}
+                                                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded"
+                                              >
+                                                {DAYS_OF_WEEK.find(d => d.value === day)?.label}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
+                                  </div>
+                                </button>
+                              )}
+                            </div>
                           ))}
 
                           {/* Add Schedule for Remaining Days Button */}
