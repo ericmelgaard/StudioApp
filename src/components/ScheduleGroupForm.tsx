@@ -192,8 +192,56 @@ export default function ScheduleGroupForm({
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+  const hasChanges = () => {
+    if (!schedule.id) return true;
+
+    const regularFieldsChanged =
+      JSON.stringify(schedule.days_of_week) !== JSON.stringify(localSchedule.days_of_week) ||
+      schedule.start_time !== localSchedule.start_time ||
+      schedule.end_time !== localSchedule.end_time;
+
+    const eventFieldsChanged = scheduleType === 'event_holiday' && (
+      schedule.event_name !== eventName ||
+      schedule.event_date !== eventDate ||
+      schedule.recurrence_type !== recurrenceType ||
+      JSON.stringify(schedule.recurrence_config) !== JSON.stringify(recurrenceConfig)
+    );
+
+    return regularFieldsChanged || eventFieldsChanged;
+  };
+
+  const canSave = !error && hasChanges();
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+        <h3 className="font-semibold text-slate-900">
+          {schedule.id ? 'Edit Schedule' : 'New Schedule'}
+        </h3>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!canSave}
+            className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
+              canSave
+                ? 'bg-[#00adf0] text-white hover:bg-[#00c3ff]'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {scheduleType === 'event_holiday' && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
           <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -468,42 +516,20 @@ export default function ScheduleGroupForm({
           onChange={(time) => handleTimeChange('end_time', time)}
         />
       </div>
+      </div>
 
-      <div className="flex items-center justify-between gap-4">
-        {schedule.id && onDelete ? (
+      {schedule.id && onDelete && (
+        <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 flex justify-center">
           <button
             type="button"
             onClick={handleDelete}
             className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
-        ) : (
-          <div />
-        )}
-
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!!error}
-            style={{ backgroundColor: '#00adf0' }}
-            className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-            onMouseEnter={(e) => !error && (e.currentTarget.style.backgroundColor = '#00c3ff')}
-            onMouseLeave={(e) => !error && (e.currentTarget.style.backgroundColor = '#00adf0')}
-          >
-            Save
+            Delete Schedule
           </button>
         </div>
-      </div>
+      )}
 
       {showTemplatePicker && (
         <HolidayTemplatePicker
