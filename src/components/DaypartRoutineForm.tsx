@@ -289,41 +289,6 @@ export default function DaypartRoutineForm({
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      <div className={`p-4 border-b border-slate-200 ${daypartColor}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-slate-900">
-              {selectedDaypartLabel}
-            </h3>
-            <span className={`text-sm ${
-              formData.schedule_type === 'event_holiday' ? 'text-amber-900 font-medium' : 'text-slate-700'
-            }`}>
-              {formData.schedule_type === 'event_holiday' ? 'Event' : 'Schedule'}
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-              style={{ backgroundColor: (!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) ? undefined : '#00adf0' }}
-              className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-              onMouseEnter={(e) => (hasChanges() && !saving && !(formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
-              onMouseLeave={(e) => (hasChanges() && !saving && !(formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="p-4 space-y-4">
 
         {formData.schedule_type === 'event_holiday' && (
@@ -573,18 +538,40 @@ export default function DaypartRoutineForm({
           />
         </div>
 
-        {editingRoutine && onDelete && (
-          <div className="pt-4 mt-4 border-t border-slate-200">
+        <div className="pt-4 mt-4 border-t border-slate-200 flex justify-between items-center gap-3">
+          {editingRoutine && onDelete ? (
             <button
               type="button"
               onClick={handleDelete}
-              className="w-full px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2"
+              className="px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Delete Schedule
+              Delete
+            </button>
+          ) : (
+            <div />
+          )}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
+              style={{ backgroundColor: (!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) ? undefined : '#00adf0' }}
+              className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+              onMouseEnter={(e) => (hasChanges() && !saving && !(formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
+              onMouseLeave={(e) => (hasChanges() && !saving && !(formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
+            >
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
-        )}
+        </div>
       </div>
 
       {showTemplatePicker && (
