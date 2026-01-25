@@ -548,7 +548,8 @@ export default function DaypartManagement() {
                     if (isEditing) {
                       return (
                         <div key={schedule.id} className="bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                          <div className="flex items-center justify-end mb-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h5 className="font-semibold text-slate-900 dark:text-slate-100">Edit Schedule</h5>
                             <button
                               onClick={() => setEditingSchedule(null)}
                               className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
