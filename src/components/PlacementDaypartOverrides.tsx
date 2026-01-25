@@ -64,7 +64,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [inheritedSchedules, setInheritedSchedules] = useState<EffectiveSchedule[]>([]);
   const [daypartDefinitions, setDaypartDefinitions] = useState<DaypartDefinition[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewLevel, setViewLevel] = useState<'list' | 'edit-schedule'>('list');
+  const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(null);
   const [editingRoutine, setEditingRoutine] = useState<DaypartRoutine | null>(null);
   const [editingInherited, setEditingInherited] = useState<EffectiveSchedule | null>(null);
   const [preFillDaypart, setPreFillDaypart] = useState<string | undefined>(undefined);
@@ -75,6 +75,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [storeId, setStoreId] = useState<number | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
   const [expandedInherited, setExpandedInherited] = useState<Record<string, boolean>>({});
+  const [isAddingNew, setIsAddingNew] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -225,23 +226,28 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       console.log('Insert successful:', data);
     }
 
-    setViewLevel('list');
+    setExpandedScheduleId(null);
     setEditingRoutine(null);
     setEditingInherited(null);
+    setIsAddingNew(false);
     await loadData();
   };
 
   const handleEdit = (routine: DaypartRoutine) => {
+    setExpandedScheduleId(routine.id!);
     setEditingRoutine(routine);
     setEditingInherited(null);
-    setViewLevel('edit-schedule');
+    setIsAddingNew(false);
+    setPreFillDaypart(undefined);
   };
 
   const handleEditInherited = (schedule: EffectiveSchedule) => {
     // Clicking an inherited schedule creates a customization
+    setExpandedScheduleId(schedule.id);
     setEditingInherited(schedule);
     setEditingRoutine(null);
-    setViewLevel('edit-schedule');
+    setIsAddingNew(false);
+    setPreFillDaypart(undefined);
   };
 
   const handleDelete = async (routineId: string) => {
@@ -259,17 +265,19 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       throw new Error(error.message);
     }
 
-    setViewLevel('list');
+    setExpandedScheduleId(null);
     setEditingRoutine(null);
     setEditingInherited(null);
+    setIsAddingNew(false);
     await loadData();
   };
 
   const handleCancel = () => {
-    setViewLevel('list');
+    setExpandedScheduleId(null);
     setEditingRoutine(null);
     setEditingInherited(null);
     setPreFillDaypart(undefined);
+    setIsAddingNew(false);
   };
 
   const handleAddNew = (
@@ -278,13 +286,16 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     daysOfWeek?: number[],
     template?: DaypartRoutine
   ) => {
+    const newId = `new-${daypartName}-${scheduleType}-${Date.now()}`;
+    setExpandedScheduleId(newId);
     setEditingRoutine(null);
+    setEditingInherited(null);
     setPreFillDaypart(daypartName);
     setPreFillScheduleType(scheduleType);
     setPreFillDaysOfWeek(daysOfWeek);
     setPreFillStartTime(template?.start_time);
     setPreFillEndTime(template?.end_time);
-    setViewLevel('edit-schedule');
+    setIsAddingNew(true);
   };
 
   // Group placement-specific schedules
@@ -377,43 +388,18 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     );
   }
 
-  // Edit Schedule View
-  if (viewLevel === 'edit-schedule') {
-    const currentDaypart = preFillDaypart || editingRoutine?.daypart_name || editingInherited?.daypart_name;
-    const currentDefinition = daypartDefinitions.find(d => d.daypart_name === currentDaypart);
-    const daypartLabel = currentDefinition?.display_label || currentDaypart;
-    const scheduleTypeLabel = (preFillScheduleType || editingRoutine?.schedule_type || editingInherited?.schedule_type) === 'event_holiday' ? 'Event' : 'Schedule';
+  // Helper to render inline edit form
+  const renderInlineEditForm = (scheduleId: string, daypartName: string) => {
+    if (expandedScheduleId !== scheduleId) return null;
 
-    const breadcrumbLabel = editingRoutine
-      ? `Edit ${daypartLabel} ${scheduleTypeLabel}`
-      : editingInherited
-        ? `Customize ${daypartLabel} ${scheduleTypeLabel}`
-        : `Add ${daypartLabel} ${scheduleTypeLabel}`;
-
+    const currentDefinition = daypartDefinitions.find(d => d.daypart_name === daypartName);
     const allRoutinesForCollision: DaypartRoutine[] = routines.filter(routine => {
       if (editingRoutine && routine.id === editingRoutine.id) return false;
       return true;
     });
 
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleCancel}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
-          <div>
-            <Breadcrumb
-              items={[
-                { label: 'Placement Schedules', onClick: handleCancel },
-                { label: breadcrumbLabel }
-              ]}
-            />
-          </div>
-        </div>
-
+      <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
         <DaypartRoutineForm
           placementGroupId={placementGroupId}
           existingRoutines={allRoutinesForCollision}
@@ -445,7 +431,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         />
       </div>
     );
-  }
+  };
 
   // List View
   return (
@@ -502,45 +488,51 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 </div>
               <div className="p-3 space-y-3">
                 {daypartSchedules.map((schedule) => (
-                  <button
-                    key={schedule.id}
-                    onClick={() => handleEdit(schedule)}
-                    className="w-full p-4 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 active:bg-blue-100 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] shadow-sm text-left group"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex gap-1 mb-2">
-                          {DAYS_OF_WEEK.map((day) => {
-                            const isActive = schedule.days_of_week.includes(day.value);
-                            const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-                            const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
-                            return (
-                              <div
-                                key={day.value}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                  isActive
-                                    ? `${bgColor} ${textColor}`
-                                    : 'bg-slate-100 text-slate-400'
-                                }`}
-                                title={day.label}
-                              >
-                                {day.letter}
-                              </div>
-                            );
-                          })}
+                  <div key={schedule.id}>
+                    <button
+                      onClick={() => handleEdit(schedule)}
+                      className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group ${
+                        expandedScheduleId === schedule.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-200 bg-white hover:bg-blue-50 active:bg-blue-100 hover:scale-[1.01] active:scale-[0.99]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex gap-1 mb-2">
+                            {DAYS_OF_WEEK.map((day) => {
+                              const isActive = schedule.days_of_week.includes(day.value);
+                              const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                              const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                              return (
+                                <div
+                                  key={day.value}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                    isActive
+                                      ? `${bgColor} ${textColor}`
+                                      : 'bg-slate-100 text-slate-400'
+                                  }`}
+                                  title={day.label}
+                                >
+                                  {day.letter}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              {schedule.runs_on_days === false
+                                ? 'Does Not Run'
+                                : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Clock className="w-4 h-4" />
-                          <span>
-                            {schedule.runs_on_days === false
-                              ? 'Does Not Run'
-                              : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                          </span>
-                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
                       </div>
-                      <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
-                    </div>
-                  </button>
+                    </button>
+                    {renderInlineEditForm(schedule.id!, schedule.daypart_name)}
+                  </div>
                 ))}
 
                 {daypartSchedules.length === 0 && !hasEvents && (
@@ -574,6 +566,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     </button>
                   </div>
                 )}
+
+                {/* Add New Schedule Inline Form */}
+                {isAddingNew && preFillDaypart === daypartName && renderInlineEditForm(`new-${daypartName}`, daypartName)}
 
                 {/* Action Buttons Grid */}
                 {daypartSchedules.length > 0 && (() => {
@@ -783,45 +778,51 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                         <div className="p-3 space-y-3">
                           {/* Inherited Regular Schedules */}
                           {daypartInheritedSchedules.map((schedule) => (
-                            <button
-                              key={schedule.id}
-                              onClick={() => handleEditInherited(schedule)}
-                              className="w-full p-4 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 active:bg-blue-100 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] shadow-sm text-left opacity-75 group"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex gap-1 mb-2">
-                                    {DAYS_OF_WEEK.map((day) => {
-                                      const isActive = schedule.days_of_week.includes(day.value);
-                                      const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-                                      const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
-                                      return (
-                                        <div
-                                          key={day.value}
-                                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                            isActive
-                                              ? `${bgColor} ${textColor}`
-                                              : 'bg-slate-100 text-slate-400'
-                                          }`}
-                                          title={day.label}
-                                        >
-                                          {day.letter}
-                                        </div>
-                                      );
-                                    })}
+                            <div key={schedule.id}>
+                              <button
+                                onClick={() => handleEditInherited(schedule)}
+                                className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left opacity-75 group ${
+                                  expandedScheduleId === schedule.id
+                                    ? 'border-blue-500 bg-blue-50 opacity-100'
+                                    : 'border-slate-200 bg-white hover:bg-blue-50 active:bg-blue-100 hover:scale-[1.01] active:scale-[0.99]'
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex gap-1 mb-2">
+                                      {DAYS_OF_WEEK.map((day) => {
+                                        const isActive = schedule.days_of_week.includes(day.value);
+                                        const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                        const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                        return (
+                                          <div
+                                            key={day.value}
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                              isActive
+                                                ? `${bgColor} ${textColor}`
+                                                : 'bg-slate-100 text-slate-400'
+                                            }`}
+                                            title={day.label}
+                                          >
+                                            {day.letter}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                      <Clock className="w-4 h-4" />
+                                      <span>
+                                        {schedule.runs_on_days === false
+                                          ? 'Does Not Run'
+                                          : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                                    <Clock className="w-4 h-4" />
-                                    <span>
-                                      {schedule.runs_on_days === false
-                                        ? 'Does Not Run'
-                                        : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                                    </span>
-                                  </div>
+                                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
-                              </div>
-                            </button>
+                              </button>
+                              {renderInlineEditForm(schedule.id, schedule.daypart_name)}
+                            </div>
                           ))}
 
                           {/* Inherited Event Schedules */}

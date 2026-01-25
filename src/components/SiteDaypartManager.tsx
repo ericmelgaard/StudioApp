@@ -36,8 +36,9 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
   const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
   const [daypartDefinitions, setDaypartDefinitions] = useState<Record<string, DaypartDefinition>>({});
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [expandedRoutineId, setExpandedRoutineId] = useState<string | null>(null);
   const [editingRoutine, setEditingRoutine] = useState<DaypartRoutine | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
 
   useEffect(() => {
     loadDaypartDefinitions();
@@ -92,14 +93,16 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
       if (error) throw error;
     }
 
-    setShowForm(false);
+    setExpandedRoutineId(null);
     setEditingRoutine(null);
+    setIsAddingNew(false);
     await loadRoutines();
   };
 
   const handleEdit = (routine: DaypartRoutine) => {
+    setExpandedRoutineId(routine.id!);
     setEditingRoutine(routine);
-    setShowForm(true);
+    setIsAddingNew(false);
   };
 
   const handleDelete = async (routineId: string) => {
@@ -116,18 +119,24 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
       console.error('Error deleting routine:', error);
       alert(`Failed to delete routine: ${error.message}`);
     } else {
+      setExpandedRoutineId(null);
+      setEditingRoutine(null);
+      setIsAddingNew(false);
       await loadRoutines();
     }
   };
 
   const handleCancel = () => {
-    setShowForm(false);
+    setExpandedRoutineId(null);
     setEditingRoutine(null);
+    setIsAddingNew(false);
   };
 
   const handleAddNew = () => {
+    const newId = `new-${Date.now()}`;
+    setExpandedRoutineId(newId);
     setEditingRoutine(null);
-    setShowForm(true);
+    setIsAddingNew(true);
   };
 
   const groupedRoutines = routines.reduce((acc, routine) => {
@@ -158,7 +167,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
             Configure when each daypart is active. Each daypart can have multiple routines for different days.
           </p>
         </div>
-        {!showForm && (
+        {!isAddingNew && (
           <button
             onClick={handleAddNew}
             className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
@@ -173,17 +182,19 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
         <DaypartTimelineView routines={routines} />
       )}
 
-      {showForm && !editingRoutine && (
-        <DaypartRoutineForm
-          placementGroupId={placementGroupId}
-          existingRoutines={routines}
-          onSave={handleSave}
-          onCancel={handleCancel}
-          editingRoutine={null}
-        />
+      {isAddingNew && expandedRoutineId && (
+        <div className="border-l-4 border-amber-500 bg-amber-50/50 p-4 rounded-r-lg">
+          <DaypartRoutineForm
+            placementGroupId={placementGroupId}
+            existingRoutines={routines}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            editingRoutine={null}
+          />
+        </div>
       )}
 
-      {routines.length === 0 && !showForm ? (
+      {routines.length === 0 && !isAddingNew ? (
         <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
           <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-semibold text-slate-900 mb-2">No Daypart Routines</h3>
@@ -260,17 +271,15 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
                         </div>
                       </div>
                     </div>
-                    {editingRoutine?.id === routine.id && (
-                      <div className="px-4 pb-4 bg-amber-50 border-t border-amber-200">
-                        <div className="pt-4">
-                          <DaypartRoutineForm
-                            placementGroupId={placementGroupId}
-                            existingRoutines={routines}
-                            onSave={handleSave}
-                            onCancel={handleCancel}
-                            editingRoutine={editingRoutine}
-                          />
-                        </div>
+                    {expandedRoutineId === routine.id && (
+                      <div className="border-l-4 border-amber-500 bg-amber-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
+                        <DaypartRoutineForm
+                          placementGroupId={placementGroupId}
+                          existingRoutines={routines.filter(r => r.id !== routine.id)}
+                          onSave={handleSave}
+                          onCancel={handleCancel}
+                          editingRoutine={editingRoutine}
+                        />
                       </div>
                     )}
                   </div>
