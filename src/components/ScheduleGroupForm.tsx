@@ -214,31 +214,26 @@ export default function ScheduleGroupForm({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-          {schedule.id ? 'Edit Schedule' : 'New Schedule'}
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!canSave}
-            className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
-              canSave
-                ? 'bg-[#00adf0] text-white hover:bg-[#00c3ff]'
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-            }`}
-          >
-            Save
-          </button>
-        </div>
+      <div className="flex items-center justify-end gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!canSave}
+          className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
+            canSave
+              ? 'bg-[#00adf0] text-white hover:bg-[#00c3ff]'
+              : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+          }`}
+        >
+          Save
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
