@@ -7,6 +7,7 @@ interface DaySelectorProps {
   currentDaypartName?: string;
   editingScheduleId?: string;
   showPresets?: boolean;
+  daypartColor?: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -31,8 +32,13 @@ export default function DaySelector({
   schedules = [],
   currentDaypartName = '',
   editingScheduleId,
-  showPresets = true
+  showPresets = true,
+  daypartColor
 }: DaySelectorProps) {
+  const bgColor = daypartColor?.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-800';
+  const textColorBase = bgColor.replace('bg-', '').replace(/\d+$/, '700');
+  const colorName = bgColor.match(/bg-(\w+)-/)?.[1] || 'slate';
+  const textColor = `text-${colorName}-${textColorBase.match(/\d+$/)?.[0] || '700'}`;
   const applyPreset = (preset: number[]) => {
     preset.forEach(day => {
       if (!selectedDays.includes(day)) {
@@ -115,9 +121,7 @@ export default function DaySelector({
               disabled={hasCollision && !isSelected}
               className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
                 isSelected
-                  ? hasCollision
-                    ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-md'
-                    : 'bg-slate-800 dark:bg-slate-700 text-white shadow-md'
+                  ? `${bgColor} ${textColor} shadow-md`
                   : hasCollision
                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'

@@ -556,6 +556,7 @@ export default function DaypartManagement() {
                             onCancel={() => setEditingSchedule(null)}
                             onDelete={editingSchedule.id ? () => handleDeleteSchedule(editingSchedule.id!) : undefined}
                             level="site"
+                            daypartColor={definition.color}
                           />
                         </div>
                       );
@@ -633,6 +634,7 @@ export default function DaypartManagement() {
                         onSave={(updatedSchedule) => handleSaveSchedule(updatedSchedule)}
                         onCancel={() => setAddingScheduleForDef(null)}
                         level="site"
+                        daypartColor={definition.color}
                       />
                     </div>
                   )}
@@ -688,6 +690,7 @@ export default function DaypartManagement() {
                                     onCancel={() => setEditingSchedule(null)}
                                     onDelete={editingSchedule.id ? () => handleDeleteSchedule(editingSchedule.id!) : undefined}
                                     level="site"
+                                    daypartColor={definition.color}
                                   />
                                 </div>
                               );
