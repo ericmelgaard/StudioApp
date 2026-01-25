@@ -490,6 +490,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                 {daypartSchedules.map((schedule) => (
                   <div key={schedule.id}>
                     <button
+                      type="button"
                       onClick={() => handleEdit(schedule)}
                       className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group ${
                         expandedScheduleId === schedule.id
@@ -544,6 +545,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                       </p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => handleAddNew('event_holiday', daypartName)}
                       className="w-full min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
                       style={{
@@ -584,6 +586,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     <div className="mx-3 mb-3 flex flex-wrap gap-3">
                       {hasUnscheduledDays && (
                         <button
+                          type="button"
                           onClick={() => {
                             const template = daypartSchedules[0];
                             handleAddNew('regular', daypartName, unscheduledDays, template);
@@ -597,6 +600,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={() => handleAddNew('event_holiday', daypartName)}
                         className="flex-1 min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
                         style={{
@@ -652,6 +656,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                         {daypartEvents.map((schedule) => (
                           <div key={schedule.id}>
                             <button
+                              type="button"
                               onClick={() => handleEdit(schedule)}
                               className="w-full p-4 transition-colors text-left"
                               style={{ backgroundColor: 'transparent' }}
@@ -780,6 +785,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                           {daypartInheritedSchedules.map((schedule) => (
                             <div key={schedule.id}>
                               <button
+                                type="button"
                                 onClick={() => handleEditInherited(schedule)}
                                 className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left opacity-75 group ${
                                   expandedScheduleId === schedule.id
@@ -857,6 +863,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                   {daypartInheritedEvents.map((schedule) => (
                                     <div key={schedule.id}>
                                       <button
+                                        type="button"
                                         onClick={() => handleEditInherited(schedule)}
                                         className="w-full p-4 transition-colors text-left"
                                         style={{ backgroundColor: 'transparent' }}

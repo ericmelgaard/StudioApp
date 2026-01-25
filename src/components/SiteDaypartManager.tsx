@@ -169,6 +169,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
         </div>
         {!isAddingNew && (
           <button
+            type="button"
             onClick={handleAddNew}
             className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
           >
@@ -202,6 +203,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
             Add daypart routines to define operating hours for different meal periods
           </p>
           <button
+            type="button"
             onClick={handleAddNew}
             className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
           >
@@ -255,6 +257,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
+                            type="button"
                             onClick={() => handleEdit(routine)}
                             className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                             title="Edit routine"
@@ -262,6 +265,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDelete(routine.id!)}
                             className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Delete routine"
