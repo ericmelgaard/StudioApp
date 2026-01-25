@@ -944,6 +944,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     {regularSchedules.map((schedule) => (
                       <div key={schedule.id}>
                         <button
+                          type="button"
                           onClick={() => handleEditSchedule(schedule)}
                           className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group ${
                             expandedScheduleId === schedule.id
@@ -1064,6 +1065,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                             {eventSchedules.map((schedule) => (
                               <div key={schedule.id}>
                                 <button
+                                  type="button"
                                   onClick={() => handleEditSchedule(schedule)}
                                   className={`w-full p-4 transition-colors text-left ${
                                     expandedScheduleId === schedule.id
