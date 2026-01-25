@@ -417,7 +417,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 
                     if (isEditing) {
                       return (
-                        <div key={schedule.id} className="bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl overflow-hidden">
+                        <div key={schedule.id} className="bg-blue-50 border-2 border-blue-200 rounded-xl overflow-hidden">
                           <ScheduleGroupForm
                             schedule={{ ...editingSchedule, daypart_name: daypartName }}
                             allSchedules={schedules}
