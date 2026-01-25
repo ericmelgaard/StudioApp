@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Clock, Calendar, ChevronRight, ChevronDown, Sparkles, Plus } from 'lucide-react';
+import { Plus, Clock, Calendar, ChevronRight, ChevronDown, Sparkles, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import ScheduleEditPage from '../pages/ScheduleEditPage';
+import ScheduleGroupForm from './ScheduleGroupForm';
 
 interface GroupScheduleManagerProps {
   groupId: string;
@@ -66,7 +66,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [editingDaypartName, setEditingDaypartName] = useState<string | null>(null);
   const [isInheritedEdit, setIsInheritedEdit] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'edit'>('list');
 
   useEffect(() => {
     loadData();
@@ -184,20 +183,17 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
       end_time: schedule.end_time,
       runs_on_days: schedule.runs_on_days,
       schedule_name: schedule.schedule_name,
-      schedule_type: schedule.schedule_type,
-      daypart_name: schedule.daypart_name
+      schedule_type: schedule.schedule_type
     };
     setEditingSchedule(newSchedule);
     setEditingDaypartName(schedule.daypart_name);
     setIsInheritedEdit(true);
-    setViewMode('edit');
   };
 
   const handleEditSchedule = (schedule: Schedule, daypartName: string) => {
-    setEditingSchedule({ ...schedule, daypart_name: daypartName });
+    setEditingSchedule(schedule);
     setEditingDaypartName(daypartName);
     setIsInheritedEdit(false);
-    setViewMode('edit');
   };
 
   const handleAddNew = (
@@ -218,14 +214,12 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
       end_time: template?.end_time || '17:00:00',
       runs_on_days: true,
       schedule_name: template?.schedule_name,
-      schedule_type: scheduleType,
-      daypart_name: daypartName || ''
+      schedule_type: scheduleType
     };
 
     setEditingSchedule(newSchedule);
     setEditingDaypartName(daypartName || null);
     setIsInheritedEdit(false);
-    setViewMode('edit');
   };
 
   const handleSave = async (schedule: Schedule) => {
@@ -274,7 +268,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
       setEditingSchedule(null);
       setEditingDaypartName(null);
       setIsInheritedEdit(false);
-      setViewMode('list');
       await loadData();
     } catch (error) {
       console.error('Error saving schedule:', error);
@@ -294,7 +287,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
       setEditingSchedule(null);
       setEditingDaypartName(null);
       setIsInheritedEdit(false);
-      setViewMode('list');
       await loadData();
     } catch (error) {
       console.error('Error deleting schedule:', error);
@@ -306,7 +298,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
     setEditingSchedule(null);
     setEditingDaypartName(null);
     setIsInheritedEdit(false);
-    setViewMode('list');
   };
 
   const regularSchedules = schedules.filter(s => s.schedule_type !== 'event_holiday');
@@ -370,21 +361,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
     );
   }
 
-  if (viewMode === 'edit' && editingSchedule) {
-    return (
-      <ScheduleEditPage
-        schedule={editingSchedule}
-        allSchedules={schedules}
-        daypartDefinitions={daypartDefinitions}
-        placementName={groupName}
-        isInheritedEdit={isInheritedEdit}
-        onSave={handleSave}
-        onDelete={editingSchedule.id ? handleDelete : undefined}
-        onCancel={handleCancel}
-      />
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="hidden md:block bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
@@ -436,7 +412,35 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                   </div>
                 </div>
                 <div className="p-3 space-y-3">
-                  {daypartSchedules.map((schedule) => (
+                  {daypartSchedules.map((schedule) => {
+                    const isEditing = editingSchedule?.id === schedule.id && editingDaypartName === daypartName;
+
+                    if (isEditing) {
+                      return (
+                        <div key={schedule.id} className="bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h5 className="font-semibold text-slate-900 dark:text-slate-100">Edit Schedule</h5>
+                            <button
+                              onClick={handleCancel}
+                              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                            >
+                              <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                            </button>
+                          </div>
+                          <ScheduleGroupForm
+                            schedule={{ ...editingSchedule, daypart_name: daypartName }}
+                            allSchedules={schedules}
+                            onUpdate={setEditingSchedule}
+                            onSave={() => handleSave(editingSchedule!)}
+                            onCancel={handleCancel}
+                            onDelete={editingSchedule.id ? handleDelete : undefined}
+                            level="placement"
+                          />
+                        </div>
+                      );
+                    }
+
+                    return (
                       <button
                         key={schedule.id}
                         onClick={() => handleEditSchedule(schedule, daypartName)}
@@ -476,9 +480,30 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-1 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
 
-                  {(
+                  {editingSchedule && !editingSchedule.id && editingDaypartName === daypartName && editingSchedule.schedule_type === 'regular' ? (
+                    <div className="bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h5 className="font-semibold text-slate-900 dark:text-slate-100">Add Schedule</h5>
+                        <button
+                          onClick={handleCancel}
+                          className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                        >
+                          <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                        </button>
+                      </div>
+                      <ScheduleGroupForm
+                        schedule={{ ...editingSchedule, daypart_name: daypartName }}
+                        allSchedules={schedules}
+                        onUpdate={setEditingSchedule}
+                        onSave={() => handleSave(editingSchedule!)}
+                        onCancel={handleCancel}
+                        level="placement"
+                      />
+                    </div>
+                  ) : (
                     daypartSchedules.length > 0 && (() => {
                       const scheduledDays = new Set<number>();
                       daypartSchedules.forEach(schedule => {
@@ -558,7 +583,35 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 
                       {eventsExpanded && (
                         <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
-                          {daypartEvents.map((schedule) => (
+                          {daypartEvents.map((schedule) => {
+                            const isEditing = editingSchedule?.id === schedule.id && editingDaypartName === daypartName;
+
+                            if (isEditing) {
+                              return (
+                                <div key={schedule.id} className="p-4" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}>
+                                  <div className="flex items-center justify-between mb-4">
+                                    <h5 className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>Edit Event</h5>
+                                    <button
+                                      onClick={handleCancel}
+                                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                                    >
+                                      <X className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                                    </button>
+                                  </div>
+                                  <ScheduleGroupForm
+                                    schedule={{ ...editingSchedule, daypart_name: daypartName }}
+                                    allSchedules={schedules}
+                                    onUpdate={setEditingSchedule}
+                                    onSave={() => handleSave(editingSchedule!)}
+                                    onCancel={handleCancel}
+                                    onDelete={editingSchedule.id ? handleDelete : undefined}
+                                    level="placement"
+                                  />
+                                </div>
+                              );
+                            }
+
+                            return (
                               <div key={schedule.id}>
                                 <button
                                   onClick={() => handleEditSchedule(schedule, daypartName)}
@@ -585,7 +638,30 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                   </div>
                                 </button>
                               </div>
-                          ))}
+                            );
+                          })}
+
+                          {editingSchedule && !editingSchedule.id && editingDaypartName === daypartName && editingSchedule.schedule_type === 'event_holiday' && (
+                            <div className="p-4" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}>
+                              <div className="flex items-center justify-between mb-4">
+                                <h5 className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>Add Event</h5>
+                                <button
+                                  onClick={handleCancel}
+                                  className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                                >
+                                  <X className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                                </button>
+                              </div>
+                              <ScheduleGroupForm
+                                schedule={{ ...editingSchedule, daypart_name: daypartName }}
+                                allSchedules={schedules}
+                                onUpdate={setEditingSchedule}
+                                onSave={() => handleSave(editingSchedule!)}
+                                onCancel={handleCancel}
+                                level="placement"
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
