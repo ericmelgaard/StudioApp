@@ -655,7 +655,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       ? definitions.find(d => d.id === currentSchedule.daypart_definition_id)
       : null);
 
-    const canDelete = editingSchedule?.id && currentDefinition?.source_level === 'store' && currentDefinition?.is_customized;
+    const canDelete = editingSchedule?.id && currentDefinition?.source_level === 'store';
 
     return (
       <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
@@ -747,62 +747,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           const allDays = [0, 1, 2, 3, 4, 5, 6];
           const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
           const hasUnscheduledDays = unscheduledDays.length > 0;
-
-          if (editingSchedule?.daypart_definition_id === definition.id) {
-            return (
-              <div key={definition.id} className={`bg-white rounded-xl border-2 overflow-hidden transition-opacity ${
-                isInUse ? 'border-slate-200 shadow-sm' : 'border-slate-300 opacity-60'
-              }`}>
-                <div className={`px-4 py-3 border-b border-slate-200 ${definition.color}`}>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <h4 className="font-semibold">{definition.display_label}</h4>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        definition.source_level === 'store'
-                          ? 'bg-blue-600/20 text-blue-900'
-                          : definition.source_level === 'concept'
-                          ? 'bg-purple-600/20 text-purple-900'
-                          : 'bg-slate-600/20 text-slate-900'
-                      }`}
-                    >
-                      {definition.source_level === 'store'
-                        ? 'Store'
-                        : definition.source_level === 'concept'
-                        ? 'Concept'
-                        : 'Global'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleInUseStatus(definition.id)}
-                      className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
-                        isInUse
-                          ? 'bg-green-600/20 text-green-900 hover:bg-green-600/30'
-                          : 'bg-slate-600/20 text-slate-900 hover:bg-slate-600/30'
-                      }`}
-                      title={isInUse ? 'Mark as not in use' : 'Mark as in use'}
-                    >
-                      {isInUse ? 'In Use' : 'Not In Use'}
-                    </button>
-                  </div>
-                </div>
-                <div className="px-4 pb-4 bg-slate-50">
-                  <div className="pt-4">
-                    <ScheduleGroupForm
-                      schedule={editingSchedule}
-                      allSchedules={defSchedules}
-                      onUpdate={setEditingSchedule}
-                      onSave={handleSaveSchedule}
-                      onCancel={() => setEditingSchedule(null)}
-                      onDelete={() => handleDeleteSchedule(editingSchedule.id!)}
-                      onRemovedDays={setRemovedDays}
-                      level="site"
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          }
 
           if (addingScheduleForDef === definition.id && newSchedule) {
             return (
