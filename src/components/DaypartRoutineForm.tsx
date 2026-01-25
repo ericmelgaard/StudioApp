@@ -288,49 +288,44 @@ export default function DaypartRoutineForm({
   const daypartColor = daypartDefinition?.color || 'bg-slate-100';
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
       {/* Header with Cancel and Save Buttons */}
-      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-        <h3 className="font-semibold text-slate-900">
-          {editingRoutine ? 'Edit Schedule' : 'New Schedule'}
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-            className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
-              !hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
+      <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-100 text-sm font-medium transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
+          className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
+            !hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))
+              ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
       </div>
 
       <div className="p-4 space-y-4">
 
         {formData.schedule_type === 'event_holiday' && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
-            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-900">
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
+            <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900 dark:text-blue-100">
               <p className="font-medium mb-1">Event schedules override all regular schedules</p>
-              <p className="text-blue-700">No collision checking needed for events and holidays</p>
+              <p className="text-blue-700 dark:text-blue-300">No collision checking needed for events and holidays</p>
             </div>
           </div>
         )}
 
         {error && formData.schedule_type === 'regular' && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-start gap-2">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -341,14 +336,14 @@ export default function DaypartRoutineForm({
             <button
               type="button"
               onClick={() => setShowTemplatePicker(true)}
-              className="w-full px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+              className="w-full px-4 py-2 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/30 transition-colors font-medium text-sm flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               Quick Add from Holiday Template
             </button>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Event Name *
               </label>
               <input
@@ -356,18 +351,18 @@ export default function DaypartRoutineForm({
                 value={formData.event_name}
                 onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
                 placeholder="e.g., Christmas Day, Holiday Season"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Recurrence Type
               </label>
               <select
                 value={formData.recurrence_type}
                 onChange={(e) => setFormData({ ...formData, recurrence_type: e.target.value as any })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
                 <option value="none">One-time Date</option>
                 <option value="annual_date">Annual (same date)</option>
@@ -379,14 +374,14 @@ export default function DaypartRoutineForm({
 
             {formData.recurrence_type === 'none' && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Event Date
                 </label>
                 <input
                   type="date"
                   value={formData.event_date}
                   onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
             )}
@@ -394,13 +389,13 @@ export default function DaypartRoutineForm({
             {formData.recurrence_type === 'annual_date' && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Month
                   </label>
                   <select
                     value={formData.recurrence_config.month || ''}
                     onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, month: parseInt(e.target.value) } })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="">Select month</option>
                     {MONTH_NAMES.map((name, idx) => (
@@ -409,13 +404,13 @@ export default function DaypartRoutineForm({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Day
                   </label>
                   <select
                     value={formData.recurrence_config.day_of_month || ''}
                     onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, day_of_month: parseInt(e.target.value) } })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="">Select day</option>
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
@@ -428,13 +423,13 @@ export default function DaypartRoutineForm({
 
             {formData.recurrence_type === 'monthly_date' && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Day of Month
                 </label>
                 <select
                   value={formData.recurrence_config.day_of_month || ''}
                   onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, day_of_month: parseInt(e.target.value) } })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select day</option>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
@@ -447,13 +442,13 @@ export default function DaypartRoutineForm({
             {formData.recurrence_type === 'annual_relative' && (
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Position
                   </label>
                   <select
                     value={formData.recurrence_config.position || ''}
                     onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, position: e.target.value } })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="">Select</option>
                     <option value="first">First</option>
@@ -464,13 +459,13 @@ export default function DaypartRoutineForm({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Weekday
                   </label>
                   <select
                     value={formData.recurrence_config.weekday !== undefined ? formData.recurrence_config.weekday : ''}
                     onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, weekday: parseInt(e.target.value) } })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="">Select</option>
                     {DAY_NAMES.map((name, idx) => (
@@ -479,13 +474,13 @@ export default function DaypartRoutineForm({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Month
                   </label>
                   <select
                     value={formData.recurrence_config.month || ''}
                     onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, month: parseInt(e.target.value) } })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="">Select</option>
                     {MONTH_NAMES.map((name, idx) => (
@@ -499,42 +494,42 @@ export default function DaypartRoutineForm({
             {formData.recurrence_type === 'annual_date_range' && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={formData.recurrence_config.range_start_date || ''}
                     onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, range_start_date: e.target.value } })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     End Date
                   </label>
                   <input
                     type="date"
                     value={formData.recurrence_config.range_end_date || ''}
                     onChange={(e) => setFormData({ ...formData, recurrence_config: { ...formData.recurrence_config, range_end_date: e.target.value } })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
             )}
 
             {formData.recurrence_type && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                 <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                  <span className="font-medium text-amber-900">
+                  <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span className="font-medium text-amber-900 dark:text-amber-100">
                     {formatRecurrenceText(formData.recurrence_type, formData.recurrence_config, formData.event_date)}
                   </span>
                 </div>
               </div>
             )}
 
-            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
               <span className="font-medium">
                 Priority: {getPriorityLevel(formData.recurrence_type) === 100 ? 'Single Day' : 'Date Range'}
               </span>
@@ -570,12 +565,12 @@ export default function DaypartRoutineForm({
 
       {/* Footer with Delete Button */}
       {editingRoutine && onDelete && (
-        <div className="border-t border-slate-200 px-4 py-3 bg-slate-50">
+        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3 bg-slate-50 dark:bg-slate-800">
           <div className="flex justify-center">
             <button
               type="button"
               onClick={handleDelete}
-              className="px-6 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-2"
+              className="px-6 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
               Delete Schedule

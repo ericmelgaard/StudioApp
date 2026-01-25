@@ -135,20 +135,20 @@ export default function TimePickerRow({ label, value, onChange, disabled = false
         disabled={disabled}
         className={`w-full flex items-center justify-between px-4 py-3.5 rounded-lg transition-all group ${
           disabled
-            ? 'bg-slate-50 cursor-not-allowed'
-            : 'bg-slate-50 hover:bg-slate-100 active:bg-slate-200'
+            ? 'bg-slate-50 dark:bg-slate-700 cursor-not-allowed'
+            : 'bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 active:bg-slate-200 dark:active:bg-slate-500'
         }`}
       >
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <Clock className="w-4 h-4 text-slate-500" />
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 min-w-[90px]">
+          <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
           {label}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-slate-900 font-mono">
+          <span className="text-lg font-semibold text-slate-900 dark:text-slate-100 font-mono min-w-[90px]">
             {formatDisplayTime(value)}
           </span>
           {!disabled && (
-            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+            <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
           )}
         </div>
       </button>
