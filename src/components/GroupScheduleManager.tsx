@@ -426,6 +426,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                             onCancel={handleCancel}
                             onDelete={editingSchedule.id ? handleDelete : undefined}
                             level="placement"
+                            daypartColor={definition.color}
                           />
                         </div>
                       );
@@ -492,6 +493,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onSave={() => handleSave(editingSchedule!)}
                         onCancel={handleCancel}
                         level="placement"
+                        daypartColor={definition.color}
                       />
                     </div>
                   ) : (
@@ -597,6 +599,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                     onCancel={handleCancel}
                                     onDelete={editingSchedule.id ? handleDelete : undefined}
                                     level="placement"
+                                    daypartColor={definition.color}
                                   />
                                 </div>
                               );
@@ -650,6 +653,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                 onSave={() => handleSave(editingSchedule!)}
                                 onCancel={handleCancel}
                                 level="placement"
+                                daypartColor={definition.color}
                               />
                             </div>
                           )}

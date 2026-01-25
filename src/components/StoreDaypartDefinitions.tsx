@@ -676,6 +676,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           level="site"
           skipDayValidation={false}
           disableCollisionDetection={false}
+          daypartColor={currentDefinition?.color}
         />
       </div>
     );
@@ -772,6 +773,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                       }}
                       onRemovedDays={setRemovedDays}
                       level="site"
+                      daypartColor={definition.color}
                     />
                   </div>
                 </div>
