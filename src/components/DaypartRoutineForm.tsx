@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
-import TimeSelector from './TimeSelector';
+import TimePickerRow from './TimePickerRow';
 import DaySelector from './DaySelector';
 import { supabase } from '../lib/supabase';
 import HolidayTemplatePicker from './HolidayTemplatePicker';
@@ -535,55 +535,51 @@ export default function DaypartRoutineForm({
           />
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <TimeSelector
-            label="Start Time *"
+        <div className="space-y-3">
+          <TimePickerRow
+            label="Start Time"
             value={formData.start_time || '06:00'}
             onChange={(time) => setFormData({ ...formData, start_time: time })}
           />
-          <TimeSelector
-            label="End Time *"
+          <TimePickerRow
+            label="End Time"
             value={formData.end_time || '11:00'}
             onChange={(time) => setFormData({ ...formData, end_time: time })}
           />
         </div>
 
-        <div className="flex items-center justify-between gap-4">
-          {/* Delete Button - Far Left */}
-          {editingRoutine && onDelete ? (
+        {editingRoutine && onDelete && (
+          <div className="pt-2 border-t border-slate-200">
             <button
               type="button"
               onClick={handleDelete}
-              className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+              className="w-full px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {/* Save and Cancel - Right Side */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-              style={{ backgroundColor: saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0)) ? undefined : '#00adf0' }}
-              className="px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-              onMouseEnter={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
-              onMouseLeave={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
-            >
-              {saving ? 'Saving...' : 'Save'}
+              Delete Schedule
             </button>
           </div>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
+            style={{ backgroundColor: saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0)) ? undefined : '#00adf0' }}
+            className="flex-1 px-4 py-2.5 text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            onMouseEnter={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00c3ff')}
+            onMouseLeave={(e) => !(saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))) && (e.currentTarget.style.backgroundColor = '#00adf0')}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </div>
 
