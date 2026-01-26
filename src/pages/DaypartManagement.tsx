@@ -555,15 +555,6 @@ export default function DaypartManagement() {
                             onSave={() => handleSaveSchedule(editingSchedule)}
                             onCancel={() => setEditingSchedule(null)}
                             onDelete={editingSchedule.id ? () => handleDeleteSchedule(editingSchedule.id!) : undefined}
-                            onScheduleUnscheduledDays={(days, template) => {
-                              setEditingSchedule({
-                                daypart_name: definition.daypart_name,
-                                daypart_definition_id: definition.id,
-                                days_of_week: days,
-                                start_time: template.start_time,
-                                end_time: template.end_time,
-                              });
-                            }}
                             level="site"
                             daypartColor={definition.color}
                           />
@@ -641,15 +632,6 @@ export default function DaypartManagement() {
                         allSchedules={defSchedules}
                         onUpdate={() => {}}
                         onSave={(updatedSchedule) => handleSaveSchedule(updatedSchedule)}
-                        onScheduleUnscheduledDays={(days, template) => {
-                          handleSaveSchedule({
-                            daypart_name: definition.daypart_name,
-                            daypart_definition_id: definition.id,
-                            days_of_week: days,
-                            start_time: template.start_time,
-                            end_time: template.end_time,
-                          });
-                        }}
                         onCancel={() => setAddingScheduleForDef(null)}
                         level="site"
                         daypartColor={definition.color}
@@ -707,15 +689,6 @@ export default function DaypartManagement() {
                                     onSave={() => handleSaveSchedule(editingSchedule)}
                                     onCancel={() => setEditingSchedule(null)}
                                     onDelete={editingSchedule.id ? () => handleDeleteSchedule(editingSchedule.id!) : undefined}
-                                    onScheduleUnscheduledDays={(days, template) => {
-                                      setEditingSchedule({
-                                        daypart_name: definition.daypart_name,
-                                        daypart_definition_id: definition.id,
-                                        days_of_week: days,
-                                        start_time: template.start_time,
-                                        end_time: template.end_time,
-                                      });
-                                    }}
                                     level="site"
                                     daypartColor={definition.color}
                                   />
