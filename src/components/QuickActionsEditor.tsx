@@ -72,6 +72,8 @@ const AVAILABLE_ACTIONS: QuickActionDefinition[] = [
 export default function QuickActionsEditor({ onClose, onSave, currentActions, storeId }: QuickActionsEditorProps) {
   const [visibleActions, setVisibleActions] = useState<string[]>(currentActions);
   const [saving, setSaving] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const allActions = AVAILABLE_ACTIONS.map(a => a.id);
   const hiddenActions = allActions.filter(id => !visibleActions.includes(id));
@@ -96,6 +98,44 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
     } else {
       setVisibleActions([...visibleActions, actionId]);
     }
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newActions = [...visibleActions];
+    const draggedItem = newActions[draggedIndex];
+
+    newActions.splice(draggedIndex, 1);
+    newActions.splice(dropIndex, 0, draggedItem);
+
+    setVisibleActions(newActions);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleSave = async () => {
@@ -156,7 +196,7 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
               <h3 className="text-base sm:text-lg font-semibold text-slate-900">
                 Visible Actions ({visibleActions.length})
               </h3>
-              <span className="text-xs sm:text-sm text-slate-500">Tap to hide or reorder</span>
+              <span className="text-xs sm:text-sm text-slate-500">Drag to reorder or use arrows</span>
             </div>
 
             {visibleActions.length === 0 ? (
@@ -169,12 +209,27 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
                 {visibleActions.map((actionId, index) => {
                   const action = getActionDefinition(actionId);
                   const Icon = action.icon;
+                  const isDragging = draggedIndex === index;
+                  const isDragOver = dragOverIndex === index;
+
                   return (
                     <div
                       key={actionId}
-                      className="flex items-center gap-3 bg-white border-2 border-slate-200 rounded-lg p-3 sm:p-4 shadow-sm"
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`flex items-center gap-3 bg-white border-2 rounded-lg p-3 sm:p-4 shadow-sm transition-all cursor-move ${
+                        isDragging
+                          ? 'opacity-50 scale-95 border-blue-400'
+                          : isDragOver
+                          ? 'border-blue-500 shadow-lg scale-105'
+                          : 'border-slate-200'
+                      }`}
                     >
-                      <GripVertical className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                      <GripVertical className="w-5 h-5 text-slate-400 flex-shrink-0 cursor-grab active:cursor-grabbing" />
 
                       <div
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0"
