@@ -672,6 +672,23 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           onSave={handleSaveSchedule}
           onCancel={handleCancel}
           onDelete={canDelete ? handleDeleteSchedule : undefined}
+          onScheduleUnscheduledDays={(days, template) => {
+            if (editingSchedule) {
+              setEditingSchedule({
+                ...editingSchedule,
+                days_of_week: days,
+                start_time: template.start_time,
+                end_time: template.end_time,
+              });
+            } else if (newSchedule) {
+              setNewSchedule({
+                ...newSchedule,
+                days_of_week: days,
+                start_time: template.start_time,
+                end_time: template.end_time,
+              });
+            }
+          }}
           onRemovedDays={setRemovedDays}
           level="site"
           skipDayValidation={false}
@@ -770,6 +787,14 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                       onCancel={() => {
                         setAddingScheduleForDef(null);
                         setNewSchedule(null);
+                      }}
+                      onScheduleUnscheduledDays={(days, template) => {
+                        handleSaveSchedule({
+                          ...newSchedule,
+                          days_of_week: days,
+                          start_time: template.start_time,
+                          end_time: template.end_time,
+                        });
                       }}
                       onRemovedDays={setRemovedDays}
                       level="site"
