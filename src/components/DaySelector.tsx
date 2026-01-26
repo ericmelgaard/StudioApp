@@ -26,18 +26,6 @@ const PRESETS = {
   allDays: [0, 1, 2, 3, 4, 5, 6]
 };
 
-const COLOR_MAP: Record<string, { bg: string; text: string }> = {
-  'bg-blue-100': { bg: '#dbeafe', text: '#1e40af' },
-  'bg-green-100': { bg: '#dcfce7', text: '#15803d' },
-  'bg-yellow-100': { bg: '#fef3c7', text: '#a16207' },
-  'bg-orange-100': { bg: '#ffedd5', text: '#c2410c' },
-  'bg-purple-100': { bg: '#f3e8ff', text: '#7e22ce' },
-  'bg-pink-100': { bg: '#fce7f3', text: '#be185d' },
-  'bg-red-100': { bg: '#fee2e2', text: '#b91c1c' },
-  'bg-indigo-100': { bg: '#e0e7ff', text: '#4338ca' },
-  'bg-slate-100': { bg: '#f1f5f9', text: '#334155' },
-};
-
 export default function DaySelector({
   selectedDays,
   onToggleDay,
@@ -47,8 +35,6 @@ export default function DaySelector({
   showPresets = true,
   daypartColor
 }: DaySelectorProps) {
-  const bgColorClass = daypartColor?.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-  const colors = COLOR_MAP[bgColorClass] || COLOR_MAP['bg-slate-100'];
 
   const applyPreset = (preset: number[]) => {
     preset.forEach(day => {
@@ -132,16 +118,11 @@ export default function DaySelector({
               disabled={hasCollision && !isSelected}
               className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
                 isSelected
-                  ? 'shadow-md'
+                  ? 'bg-[#00adf0] text-white shadow-md hover:bg-[#0094d1]'
                   : hasCollision
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
               } ${hasCollision ? 'ring-2 ring-red-400 dark:ring-red-500' : ''}`}
-              style={
-                isSelected
-                  ? { backgroundColor: colors.bg, color: colors.text }
-                  : undefined
-              }
               title={
                 hasCollision
                   ? `${day.label} already scheduled in this daypart${isSelected ? ' - click to remove' : ''}`
