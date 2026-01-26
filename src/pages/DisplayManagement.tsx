@@ -366,24 +366,25 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
     for (const placementId of placementIds) {
       const overrides = activePlacementOverrides.filter(o => o.placement_group_id === placementId);
+      const overriddenDayparts = new Set(overrides.map(o => o.daypart_name));
 
-      if (overrides.length > 0) {
-        overrides.forEach(override => {
-          if (!daypartToPlacementsMap.has(override.daypart_name)) {
-            daypartToPlacementsMap.set(override.daypart_name, new Set());
+      // Add placement-specific overrides
+      overrides.forEach(override => {
+        if (!daypartToPlacementsMap.has(override.daypart_name)) {
+          daypartToPlacementsMap.set(override.daypart_name, new Set());
+        }
+        daypartToPlacementsMap.get(override.daypart_name)!.add(placementId);
+      });
+
+      // Add inherited store schedules for dayparts WITHOUT overrides
+      definitions.forEach((def: any) => {
+        if (!overriddenDayparts.has(def.daypart_name) && activeStoreScheduleDefIds.has(def.id)) {
+          if (!daypartToPlacementsMap.has(def.daypart_name)) {
+            daypartToPlacementsMap.set(def.daypart_name, new Set());
           }
-          daypartToPlacementsMap.get(override.daypart_name)!.add(placementId);
-        });
-      } else {
-        definitions.forEach((def: any) => {
-          if (activeStoreScheduleDefIds.has(def.id)) {
-            if (!daypartToPlacementsMap.has(def.daypart_name)) {
-              daypartToPlacementsMap.set(def.daypart_name, new Set());
-            }
-            daypartToPlacementsMap.get(def.daypart_name)!.add(placementId);
-          }
-        });
-      }
+          daypartToPlacementsMap.get(def.daypart_name)!.add(placementId);
+        }
+      });
     }
 
     const badges = definitions
