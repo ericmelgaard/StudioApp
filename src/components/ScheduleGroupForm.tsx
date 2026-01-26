@@ -67,6 +67,8 @@ export default function ScheduleGroupForm({
   const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig>(schedule.recurrence_config || {});
   const [initialDays] = useState<number[]>(schedule?.days_of_week || []);
   const [removedDays, setRemovedDays] = useState<number[]>([]);
+  const [showUnscheduledPrompt, setShowUnscheduledPrompt] = useState(false);
+  const [unscheduledDays, setUnscheduledDays] = useState<number[]>([]);
 
   const collision = useScheduleCollisionDetection(
     allSchedules,
@@ -123,6 +125,21 @@ export default function ScheduleGroupForm({
     setRecurrenceConfig({ ...recurrenceConfig, [field]: value });
   };
 
+  const getUnscheduledDays = (): number[] => {
+    const allDays = [0, 1, 2, 3, 4, 5, 6];
+    const scheduledDays = new Set<number>();
+
+    allSchedules
+      .filter(s => s.schedule_type === 'regular' && s.daypart_name === localSchedule.daypart_name)
+      .forEach(s => {
+        s.days_of_week?.forEach(day => scheduledDays.add(day));
+      });
+
+    localSchedule.days_of_week?.forEach(day => scheduledDays.add(day));
+
+    return allDays.filter(day => !scheduledDays.has(day));
+  };
+
   const handleSave = () => {
     if (showDaypartSelector && !selectedDaypartId) {
       return;
@@ -143,6 +160,19 @@ export default function ScheduleGroupForm({
       return;
     }
 
+    if (scheduleType === 'regular' && !skipDayValidation) {
+      const remaining = getUnscheduledDays();
+      if (remaining.length > 0) {
+        setUnscheduledDays(remaining);
+        setShowUnscheduledPrompt(true);
+        return;
+      }
+    }
+
+    completeSave();
+  };
+
+  const completeSave = () => {
     const updatedSchedule: Schedule = {
       ...localSchedule,
       schedule_type: scheduleType,
@@ -535,6 +565,49 @@ export default function ScheduleGroupForm({
           onClose={() => setShowTemplatePicker(false)}
           allowMultiple={false}
         />
+      )}
+
+      {showUnscheduledPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                  Unscheduled Days Detected
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')} {unscheduledDays.length === 1 ? 'is' : 'are'} not scheduled for this daypart.
+                </p>
+                <p className="text-sm text-slate-600 mt-2">
+                  Would you like to save anyway or schedule these days?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setShowUnscheduledPrompt(false);
+                  completeSave();
+                }}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+              >
+                Save Anyway
+              </button>
+              <button
+                onClick={() => {
+                  setShowUnscheduledPrompt(false);
+                }}
+                className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
