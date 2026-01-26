@@ -605,11 +605,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <button
             onClick={() => setCurrentPage('devices')}
             className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
-            aria-label="View displays"
+            aria-label="View devices"
           >
             <div className="flex items-center gap-2 mb-1">
               <Monitor className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Displays</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Devices</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDevices}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineDevices} online</p>
@@ -659,7 +659,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Devices</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Displays</h2>
           <button
             onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -672,7 +672,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
-            placeholder="Search devices..."
+            placeholder="Search displays..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
@@ -682,12 +682,12 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">Loading devices...</p>
+            <p className="mt-4 text-slate-600 dark:text-slate-400">Loading displays...</p>
           </div>
         ) : filteredDisplays.length === 0 ? (
           <div className="text-center py-12">
             <Monitor className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400">No devices found</p>
+            <p className="text-slate-600 dark:text-slate-400">No displays found</p>
           </div>
         ) : (
           <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
