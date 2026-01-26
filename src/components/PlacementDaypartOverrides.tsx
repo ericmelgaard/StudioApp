@@ -436,28 +436,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           preFillEndTime={preFillEndTime}
           daypartDefinition={currentDefinition}
           onDelete={editingRoutine ? handleDelete : undefined}
-          onScheduleUnscheduledDays={(days, template) => {
-            if (editingRoutine) {
-              setEditingRoutine({
-                ...editingRoutine,
-                days_of_week: days,
-                start_time: template.start_time,
-                end_time: template.end_time,
-              });
-            } else if (editingInherited) {
-              setEditingInherited({
-                ...editingInherited,
-                days_of_week: days,
-                start_time: template.start_time,
-                end_time: template.end_time,
-              });
-            } else {
-              setPreFillDaysOfWeek(days);
-              setPreFillStartTime(template.start_time);
-              setPreFillEndTime(template.end_time);
-            }
-            setExpandedScheduleId(`new-${template.daypart_name}`);
-          }}
         />
       </div>
     );
