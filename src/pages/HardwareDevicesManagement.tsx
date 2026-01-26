@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Edit, Trash2, Search, Cpu, AlertCircle } from 'lucide-react';
+import { useLocation } from '../hooks/useLocation';
 
 interface HardwareDevice {
   id: string;
@@ -19,6 +20,7 @@ interface HardwareDevice {
 }
 
 export default function HardwareDevicesManagement() {
+  const { location } = useLocation();
   const [devices, setDevices] = useState<HardwareDevice[]>([]);
   const [filteredDevices, setFilteredDevices] = useState<HardwareDevice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ export default function HardwareDevicesManagement() {
 
   useEffect(() => {
     loadDevices();
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     filterDevices();
@@ -46,6 +48,77 @@ export default function HardwareDevicesManagement() {
 
   const loadDevices = async () => {
     try {
+      // Get relevant store IDs based on current location
+      let storeIds: number[] = [];
+
+      if (location.store) {
+        // Single store selected
+        storeIds = [location.store.id];
+      } else if (location.group) {
+        // Get all stores in this group
+        const { data: stores } = await supabase
+          .from('stores')
+          .select('id')
+          .eq('location_group_id', location.group.id);
+        storeIds = stores?.map(s => s.id) || [];
+      } else if (location.company) {
+        // Get all stores in all groups under this company
+        const { data: groups } = await supabase
+          .from('location_groups')
+          .select('id')
+          .eq('company_id', location.company.id);
+        const groupIds = groups?.map(g => g.id) || [];
+
+        if (groupIds.length > 0) {
+          const { data: stores } = await supabase
+            .from('stores')
+            .select('id')
+            .in('location_group_id', groupIds);
+          storeIds = stores?.map(s => s.id) || [];
+        }
+      } else if (location.concept) {
+        // Get all stores under all companies in this concept
+        const { data: companies } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('concept_id', location.concept.id);
+        const companyIds = companies?.map(c => c.id) || [];
+
+        if (companyIds.length > 0) {
+          const { data: groups } = await supabase
+            .from('location_groups')
+            .select('id')
+            .in('company_id', companyIds);
+          const groupIds = groups?.map(g => g.id) || [];
+
+          if (groupIds.length > 0) {
+            const { data: stores } = await supabase
+              .from('stores')
+              .select('id')
+              .in('location_group_id', groupIds);
+            storeIds = stores?.map(s => s.id) || [];
+          }
+        }
+      }
+
+      // Get media players for the relevant stores
+      let mediaPlayersQuery = supabase
+        .from('media_players')
+        .select('id, name, hardware_device_id, store_id');
+
+      if (storeIds.length > 0) {
+        mediaPlayersQuery = mediaPlayersQuery.in('store_id', storeIds);
+      }
+
+      const { data: mediaPlayers, error: playersError } = await mediaPlayersQuery;
+      if (playersError) throw playersError;
+
+      // Get hardware device IDs that are assigned to these media players
+      const assignedDeviceIds = new Set(
+        mediaPlayers?.filter(mp => mp.hardware_device_id).map(mp => mp.hardware_device_id) || []
+      );
+
+      // Get all hardware devices
       const { data: devicesData, error: devicesError } = await supabase
         .from('hardware_devices')
         .select('*')
@@ -53,15 +126,19 @@ export default function HardwareDevicesManagement() {
 
       if (devicesError) throw devicesError;
 
-      const { data: mediaPlayers, error: playersError } = await supabase
-        .from('media_players')
-        .select('id, name, hardware_device_id');
+      // Filter to only show devices relevant to current location:
+      // - If location is selected: show devices assigned to media players in that location + available devices
+      // - If no location: show all devices
+      let filteredDevices = devicesData;
+      if (storeIds.length > 0) {
+        filteredDevices = devicesData.filter(device =>
+          device.status === 'available' || assignedDeviceIds.has(device.id)
+        );
+      }
 
-      if (playersError) throw playersError;
-
-      const devicesWithPlayers = devicesData.map(device => ({
+      const devicesWithPlayers = filteredDevices.map(device => ({
         ...device,
-        media_player: mediaPlayers.find(mp => mp.hardware_device_id === device.id) || null
+        media_player: mediaPlayers?.find(mp => mp.hardware_device_id === device.id) || null
       }));
 
       setDevices(devicesWithPlayers);
