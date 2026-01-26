@@ -722,47 +722,62 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                           </div>
                         </div>
                         <div className="p-3 space-y-3">
-                          {daypartInheritedSchedules.map((schedule) => (
-                            <button
-                              key={schedule.id}
-                              onClick={() => handleEditInherited(schedule)}
-                              className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 active:bg-blue-100 dark:active:bg-slate-600 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] shadow-sm text-left opacity-75 dark:opacity-60 group"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex gap-1 mb-2">
-                                    {DAYS_OF_WEEK.map((day) => {
-                                      const isActive = schedule.days_of_week.includes(day.value);
-                                      const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-                                      const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
-                                      return (
-                                        <div
-                                          key={day.value}
-                                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                            isActive
-                                              ? `${bgColor} ${textColor}`
-                                              : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
-                                          }`}
-                                          title={day.label}
-                                        >
-                                          {day.letter}
-                                        </div>
-                                      );
-                                    })}
+                          {editingSchedule && !editingSchedule.id && editingDaypartName === daypartName && isInheritedEdit ? (
+                            <div className="bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl overflow-hidden">
+                              <ScheduleGroupForm
+                                schedule={{ ...editingSchedule, daypart_name: daypartName }}
+                                allSchedules={schedules}
+                                onUpdate={setEditingSchedule}
+                                onSave={() => handleSave(editingSchedule!)}
+                                onCancel={handleCancel}
+                                onDelete={undefined}
+                                level="placement"
+                                daypartColor={definition.color}
+                              />
+                            </div>
+                          ) : (
+                            daypartInheritedSchedules.map((schedule) => (
+                              <button
+                                key={schedule.id}
+                                onClick={() => handleEditInherited(schedule)}
+                                className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 active:bg-blue-100 dark:active:bg-slate-600 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] shadow-sm text-left opacity-75 dark:opacity-60 group"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex gap-1 mb-2">
+                                      {DAYS_OF_WEEK.map((day) => {
+                                        const isActive = schedule.days_of_week.includes(day.value);
+                                        const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                        const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                        return (
+                                          <div
+                                            key={day.value}
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                              isActive
+                                                ? `${bgColor} ${textColor}`
+                                                : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
+                                            }`}
+                                            title={day.label}
+                                          >
+                                            {day.letter}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                      <Clock className="w-4 h-4" />
+                                      <span>
+                                        {schedule.runs_on_days === false
+                                          ? 'Does Not Run'
+                                          : `${formatTime(schedule.start_time)} - ${schedule.end_time ? formatTime(schedule.end_time) : ''}`}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                                    <Clock className="w-4 h-4" />
-                                    <span>
-                                      {schedule.runs_on_days === false
-                                        ? 'Does Not Run'
-                                        : `${formatTime(schedule.start_time)} - ${schedule.end_time ? formatTime(schedule.end_time) : ''}`}
-                                    </span>
-                                  </div>
+                                  <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-1 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-1 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-                              </div>
-                            </button>
-                          ))}
+                              </button>
+                            ))
+                          )}
                         </div>
                       </div>
                     );
