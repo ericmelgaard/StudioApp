@@ -272,7 +272,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
     if (!currentSchedule) return null;
 
     return (
-      <div className="mb-3">
+      <div className="mb-3 bg-white rounded-lg border border-slate-200 overflow-hidden">
         <ScheduleGroupForm
           schedule={currentSchedule!}
           allSchedules={schedules}

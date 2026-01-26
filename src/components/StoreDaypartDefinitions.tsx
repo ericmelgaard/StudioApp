@@ -658,7 +658,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     const canDelete = editingSchedule?.id && currentDefinition?.source_level === 'store';
 
     return (
-      <div className="mb-3">
+      <div className="mb-3 bg-white rounded-lg border border-slate-200 overflow-hidden">
         <ScheduleGroupForm
           schedule={currentSchedule!}
           allSchedules={enrichedSchedules}
