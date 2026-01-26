@@ -272,7 +272,7 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
     if (!currentSchedule) return null;
 
     return (
-      <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
+      <div className="mb-3">
         <ScheduleGroupForm
           schedule={currentSchedule!}
           allSchedules={schedules}
@@ -414,48 +414,47 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
             <div className="p-3 space-y-3">
               {regularSchedules.map((schedule) => (
                 <div key={schedule.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleEditSchedule(schedule)}
-                    className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group ${
-                      expandedScheduleId === schedule.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 hover:scale-[1.01] active:scale-[0.99]'
-                    }`}
-                  >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex gap-1 mb-2">
-                        {DAYS_OF_WEEK.map((day) => {
-                          const isActive = schedule.days_of_week.includes(day.value);
-                          return (
-                            <div
-                              key={day.value}
-                              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                isActive
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-slate-100 text-slate-400'
-                              }`}
-                              title={day.label}
-                            >
-                              {day.letter}
-                            </div>
-                          );
-                        })}
+                  {expandedScheduleId === schedule.id ? (
+                    renderInlineEditForm(schedule.id)
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleEditSchedule(schedule)}
+                      className="w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group border-slate-200 bg-white hover:bg-blue-50 active:bg-blue-100 hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex gap-1 mb-2">
+                            {DAYS_OF_WEEK.map((day) => {
+                              const isActive = schedule.days_of_week.includes(day.value);
+                              return (
+                                <div
+                                  key={day.value}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                    isActive
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-slate-100 text-slate-400'
+                                  }`}
+                                  title={day.label}
+                                >
+                                  {day.letter}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              {schedule.runs_on_days === false
+                                ? 'Does Not Run'
+                                : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <Clock className="w-4 h-4" />
-                        <span>
-                          {schedule.runs_on_days === false
-                            ? 'Does Not Run'
-                            : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
-                  </div>
-                </button>
-                  {renderInlineEditForm(schedule.id)}
+                    </button>
+                  )}
                 </div>
               ))}
 
@@ -518,70 +517,61 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                     <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
                       {eventSchedules.map((schedule) => (
                         <div key={schedule.id}>
-                          <button
-                            type="button"
-                            onClick={() => handleEditSchedule(schedule)}
-                            className={`w-full p-4 transition-colors text-left ${
-                              expandedScheduleId === schedule.id
-                                ? 'border-l-4 border-blue-500 bg-blue-50'
-                                : ''
-                            }`}
-                            style={{ backgroundColor: expandedScheduleId === schedule.id ? undefined : 'transparent' }}
-                            onMouseEnter={(e) => {
-                              if (expandedScheduleId !== schedule.id) {
-                                e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (expandedScheduleId !== schedule.id) {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                              }
-                            }}
-                          >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-2">
-                                <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
-                                  {schedule.event_name || 'Unnamed Event'}
-                                </span>
-                                <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
-                                  {getRecurrenceLabel(schedule.recurrence_type)}
-                                </span>
-                              </div>
-                              <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
-                                <Calendar className="w-3.5 h-3.5 inline mr-1" />
-                                {formatEventDate(schedule.event_date, schedule.recurrence_type)}
-                                <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
-                                <Clock className="w-3.5 h-3.5 inline mr-1" />
-                                {schedule.runs_on_days === false
-                                  ? 'Does Not Run'
-                                  : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                              </div>
-                              {schedule.days_of_week.length > 0 && (
-                                <div className="flex gap-1">
-                                  {DAYS_OF_WEEK.map((day) => {
-                                    const isActive = schedule.days_of_week.includes(day.value);
-                                    return (
-                                      <div
-                                        key={day.value}
-                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                          isActive
-                                            ? 'bg-purple-100 text-purple-700'
-                                            : 'bg-slate-100 text-slate-400'
-                                        }`}
-                                        title={day.label}
-                                      >
-                                        {day.letter}
-                                      </div>
-                                    );
-                                  })}
+                          {expandedScheduleId === schedule.id ? (
+                            renderInlineEditForm(schedule.id)
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleEditSchedule(schedule)}
+                              className="w-full p-4 transition-colors text-left"
+                              style={{ backgroundColor: 'transparent' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
+                                      {schedule.event_name || 'Unnamed Event'}
+                                    </span>
+                                    <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                                      {getRecurrenceLabel(schedule.recurrence_type)}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
+                                    <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                    {formatEventDate(schedule.event_date, schedule.recurrence_type)}
+                                    <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
+                                    <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                    {schedule.runs_on_days === false
+                                      ? 'Does Not Run'
+                                      : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                  </div>
+                                  {schedule.days_of_week.length > 0 && (
+                                    <div className="flex gap-1">
+                                      {DAYS_OF_WEEK.map((day) => {
+                                        const isActive = schedule.days_of_week.includes(day.value);
+                                        return (
+                                          <div
+                                            key={day.value}
+                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                              isActive
+                                                ? 'bg-purple-100 text-purple-700'
+                                                : 'bg-slate-100 text-slate-400'
+                                            }`}
+                                            title={day.label}
+                                          >
+                                            {day.letter}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
-                          </div>
-                        </button>
-                          {renderInlineEditForm(schedule.id)}
+                                <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
+                              </div>
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
