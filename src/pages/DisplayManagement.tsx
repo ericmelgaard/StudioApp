@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars } from 'lucide-react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Edit3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
 import StoreDevicesManagement from './StoreDevicesManagement';
 import StoreGroupsManagement from './StoreGroupsManagement';
+import QuickActionsEditor from '../components/QuickActionsEditor';
 
 interface DisplayManagementProps {
   storeId: number;
@@ -118,12 +119,39 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [previewModal, setPreviewModal] = useState<{ display: Display; name: string; orientation: 'horizontal' | 'vertical' } | null>(null);
   const [contentModal, setContentModal] = useState<Display | null>(null);
+  const [showQuickActionsEditor, setShowQuickActionsEditor] = useState(false);
+  const [visibleQuickActions, setVisibleQuickActions] = useState<string[]>([
+    'devices',
+    'groups',
+    'activity',
+    'products',
+    'signage',
+    'smart_labels',
+    'webview_kiosks'
+  ]);
 
   useEffect(() => {
     loadStoreOperationStatus();
     loadDisplayData();
     loadActiveDayparts();
+    loadQuickActionsPreferences();
   }, [storeId]);
+
+  const loadQuickActionsPreferences = async () => {
+    try {
+      const { data } = await supabase
+        .from('quick_actions_preferences')
+        .select('visible_actions')
+        .eq('store_id', storeId)
+        .maybeSingle();
+
+      if (data?.visible_actions) {
+        setVisibleQuickActions(data.visible_actions as string[]);
+      }
+    } catch (error) {
+      console.error('Error loading quick actions preferences:', error);
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -618,76 +646,114 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         </div>
 
         <div className="px-4 py-4 flex gap-3 overflow-x-auto no-scrollbar bg-white dark:bg-slate-800 max-h-[180px] md:max-h-none">
-          <button
-            onClick={() => setCurrentPage('devices')}
-            className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
-            aria-label="View devices"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Monitor className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Devices</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDevices}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineDevices} online</p>
-          </button>
+          {visibleQuickActions.map(actionId => {
+            if (actionId === 'devices') {
+              return (
+                <button
+                  key="devices"
+                  onClick={() => setCurrentPage('devices')}
+                  className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
+                  aria-label="View devices"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Monitor className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#3b82f6' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Devices</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDevices}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineDevices} online</p>
+                </button>
+              );
+            }
+            if (actionId === 'groups') {
+              return (
+                <button
+                  key="groups"
+                  onClick={() => setCurrentPage('groups')}
+                  className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
+                  aria-label="View groups"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Layers className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#06b6d4' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Groups</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalGroups}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">placement groups</p>
+                </button>
+              );
+            }
+            if (actionId === 'activity') {
+              return (
+                <div key="activity" className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <History className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Activity</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.recentActions}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">recent actions</p>
+                </div>
+              );
+            }
+            if (actionId === 'products') {
+              return (
+                <div key="products" className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Package className="w-4 h-4" style={{ color: '#10b981' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Products</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalProducts}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.activeProducts} active</p>
+                </div>
+              );
+            }
+            if (actionId === 'signage') {
+              return (
+                <div key="signage" className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Monitor className="w-4 h-4" style={{ color: '#3b82f6' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Signage</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSignagePlayers}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSignagePlayers} online</p>
+                </div>
+              );
+            }
+            if (actionId === 'smart_labels') {
+              return (
+                <div key="smart_labels" className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Package className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Smart Labels</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSmartLabels}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSmartLabels} online</p>
+                </div>
+              );
+            }
+            if (actionId === 'webview_kiosks') {
+              return (
+                <div key="webview_kiosks" className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Globe className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Webview Kiosks</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalWebviewKiosks}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineWebviewKiosks} online</p>
+                </div>
+              );
+            }
+            return null;
+          })}
 
           <button
-            onClick={() => setCurrentPage('groups')}
-            className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
-            aria-label="View groups"
+            onClick={() => setShowQuickActionsEditor(true)}
+            className="flex-shrink-0 bg-slate-100 dark:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 cursor-pointer group flex items-center justify-center"
+            aria-label="Customize quick actions"
           >
-            <div className="flex items-center gap-2 mb-1">
-              <Layers className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Groups</span>
+            <div className="flex flex-col items-center gap-2">
+              <Edit3 className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300">Customize</span>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalGroups}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">placement groups</p>
           </button>
-
-          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <History className="w-4 h-4" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Activity</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.recentActions}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">recent actions</p>
-          </div>
-
-          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <Package className="w-4 h-4" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Products</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalProducts}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.activeProducts} active</p>
-          </div>
-
-          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <Monitor className="w-4 h-4" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Signage</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSignagePlayers}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSignagePlayers} online</p>
-          </div>
-
-          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <Package className="w-4 h-4" style={{ color: '#f59e0b' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Smart Labels</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSmartLabels}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSmartLabels} online</p>
-          </div>
-
-          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <Globe className="w-4 h-4" style={{ color: '#8b5cf6' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Webview Kiosks</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalWebviewKiosks}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineWebviewKiosks} online</p>
-          </div>
         </div>
       </div>
 
@@ -884,6 +950,18 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             setContentModal(null);
             loadDisplayData();
           }}
+        />
+      )}
+
+      {showQuickActionsEditor && (
+        <QuickActionsEditor
+          onClose={() => setShowQuickActionsEditor(false)}
+          onSave={(actions) => {
+            setVisibleQuickActions(actions);
+            setShowQuickActionsEditor(false);
+          }}
+          currentActions={visibleQuickActions}
+          storeId={storeId}
         />
       )}
     </div>
