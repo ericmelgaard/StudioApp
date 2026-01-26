@@ -231,12 +231,7 @@ export default function ScheduleGroupForm({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!canSave}
-            className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
-              canSave
-                ? 'bg-[#00adf0] text-white hover:bg-[#00c3ff]'
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-            }`}
+            className="px-4 py-1.5 rounded-lg font-medium text-sm transition-all bg-[#00adf0] text-white hover:bg-[#00c3ff]"
           >
             Save
           </button>

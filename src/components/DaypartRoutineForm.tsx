@@ -301,12 +301,7 @@ export default function DaypartRoutineForm({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))}
-          className={`px-4 py-1.5 rounded-lg font-medium text-sm transition-all ${
-            !hasChanges() || saving || (formData.schedule_type === 'regular' && (!!error || !formData.daypart_name || formData.days_of_week.length === 0))
-              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
+          className="px-4 py-1.5 rounded-lg font-medium text-sm transition-all bg-blue-600 text-white hover:bg-blue-700"
         >
           {saving ? 'Saving...' : 'Save'}
         </button>
