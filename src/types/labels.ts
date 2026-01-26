@@ -2,7 +2,10 @@ export interface HardwareDevice {
   id: string;
   device_id: string;
   device_type: string;
-  status: 'available' | 'assigned' | 'maintenance' | 'retired';
+  status: 'available' | 'assigned' | 'maintenance' | 'retired' | 'activated';
+  activation_id?: string;
+  client_version?: string;
+  activated_at?: string;
   battery_level: number | null;
   last_seen: string | null;
   notes: string;

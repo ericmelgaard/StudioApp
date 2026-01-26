@@ -30,6 +30,8 @@ interface MediaPlayer {
     device_type: string;
     status: string;
     serial_number: string | null;
+    activation_id?: string;
+    client_version?: string;
   } | null;
   placement_group?: {
     id: string;
@@ -61,7 +63,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
         .from('media_players')
         .select(`
           *,
-          hardware_devices(device_id, device_type, status, serial_number)
+          hardware_devices(device_id, device_type, status, serial_number, activation_id, client_version)
         `)
         .eq('store_id', storeId)
         .order('name');
@@ -272,6 +274,11 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
                             {device.hardware_device.device_type}
                           </span>
                         )}
+                        {device.hardware_device?.activation_id && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-xs font-mono text-emerald-700 dark:text-emerald-400 rounded">
+                            {device.hardware_device.activation_id}
+                          </span>
+                        )}
                         {device.placement_group && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-xs text-blue-700 dark:text-blue-400 rounded">
                             {device.placement_group.name}
@@ -335,9 +342,9 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Firmware</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Client Version</p>
                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {device.firmware_version || 'N/A'}
+                      {device.hardware_device?.client_version || 'N/A'}
                     </p>
                   </div>
                   <div>
