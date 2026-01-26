@@ -259,9 +259,17 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   };
 
   const handleEditInherited = (schedule: EffectiveSchedule) => {
+    console.log('handleEditInherited clicked', {
+      scheduleId: schedule.id,
+      daypartName: schedule.daypart_name,
+      currentExpandedId: expandedScheduleId
+    });
+
     if (expandedScheduleId === schedule.id) {
+      console.log('Canceling (already expanded)');
       handleCancel();
     } else {
+      console.log('Setting expanded to', schedule.id);
       // Clicking an inherited schedule creates a customization
       setExpandedScheduleId(schedule.id);
       setEditingInherited(schedule);
@@ -403,7 +411,16 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
   // Helper to render inline edit form
   const renderInlineEditForm = (scheduleId: string, daypartName: string) => {
+    console.log('renderInlineEditForm called', {
+      scheduleId,
+      daypartName,
+      expandedScheduleId,
+      match: expandedScheduleId === scheduleId
+    });
+
     if (expandedScheduleId !== scheduleId) return null;
+
+    console.log('Rendering form for', scheduleId, { editingInherited, editingRoutine });
 
     const currentDefinition = daypartDefinitions.find(d => d.daypart_name === daypartName);
     const allRoutinesForCollision: DaypartRoutine[] = routines.filter(routine => {
