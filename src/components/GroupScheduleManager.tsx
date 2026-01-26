@@ -425,16 +425,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                             onSave={() => handleSave(editingSchedule!)}
                             onCancel={handleCancel}
                             onDelete={editingSchedule.id ? handleDelete : undefined}
-                            onScheduleUnscheduledDays={(days, template) => {
-                              setEditingSchedule({
-                                daypart_name: daypartName,
-                                daypart_definition_id: definition.id,
-                                placement_group_id: groupId,
-                                days_of_week: days,
-                                start_time: template.start_time,
-                                end_time: template.end_time,
-                              });
-                            }}
                             level="placement"
                             daypartColor={definition.color}
                           />
@@ -502,16 +492,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onUpdate={setEditingSchedule}
                         onSave={() => handleSave(editingSchedule!)}
                         onCancel={handleCancel}
-                        onScheduleUnscheduledDays={(days, template) => {
-                          handleSave({
-                            daypart_name: daypartName,
-                            daypart_definition_id: definition.id,
-                            placement_group_id: groupId,
-                            days_of_week: days,
-                            start_time: template.start_time,
-                            end_time: template.end_time,
-                          });
-                        }}
                         level="placement"
                         daypartColor={definition.color}
                       />
@@ -618,16 +598,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                     onSave={() => handleSave(editingSchedule!)}
                                     onCancel={handleCancel}
                                     onDelete={editingSchedule.id ? handleDelete : undefined}
-                                    onScheduleUnscheduledDays={(days, template) => {
-                                      setEditingSchedule({
-                                        daypart_name: daypartName,
-                                        daypart_definition_id: definition.id,
-                                        placement_group_id: groupId,
-                                        days_of_week: days,
-                                        start_time: template.start_time,
-                                        end_time: template.end_time,
-                                      });
-                                    }}
                                     level="placement"
                                     daypartColor={definition.color}
                                   />
@@ -682,16 +652,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                 onUpdate={setEditingSchedule}
                                 onSave={() => handleSave(editingSchedule!)}
                                 onCancel={handleCancel}
-                                onScheduleUnscheduledDays={(days, template) => {
-                                  handleSave({
-                                    daypart_name: daypartName,
-                                    daypart_definition_id: definition.id,
-                                    placement_group_id: groupId,
-                                    days_of_week: days,
-                                    start_time: template.start_time,
-                                    end_time: template.end_time,
-                                  });
-                                }}
                                 level="placement"
                                 daypartColor={definition.color}
                               />
