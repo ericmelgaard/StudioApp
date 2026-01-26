@@ -325,10 +325,11 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     const currentDayOfWeek = now.getDay();
     const currentTime = now.toTimeString().slice(0, 8);
 
+    const defIds = definitions.map((d: any) => d.id);
     const { data: storeSchedules } = await supabase
       .from('daypart_schedules')
       .select('daypart_definition_id, days_of_week, start_time, end_time')
-      .eq('store_id', storeId)
+      .in('daypart_definition_id', defIds)
       .contains('days_of_week', [currentDayOfWeek]);
 
     const activeStoreSchedules = storeSchedules?.filter(schedule => {
