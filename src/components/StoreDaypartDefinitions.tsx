@@ -658,7 +658,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     const canDelete = editingSchedule?.id && currentDefinition?.source_level === 'store';
 
     return (
-      <div className="border-l-4 border-blue-500 bg-blue-50/50 p-4 ml-4 mr-4 mb-3 rounded-r-lg">
+      <div className="mb-3">
         <ScheduleGroupForm
           schedule={currentSchedule!}
           allSchedules={enrichedSchedules}
@@ -945,50 +945,49 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                   <div className="p-3 space-y-3">
                     {regularSchedules.map((schedule) => (
                       <div key={schedule.id}>
-                        <button
-                          type="button"
-                          onClick={() => handleEditSchedule(schedule)}
-                          className={`w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group ${
-                            expandedScheduleId === schedule.id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 hover:scale-[1.01] active:scale-[0.99]'
-                          }`}
-                        >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex gap-1 mb-2">
-                              {DAYS_OF_WEEK.map((day) => {
-                                const isActive = schedule.days_of_week.includes(day.value);
-                                const bgColor = definition.color.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-                                const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
-                                return (
-                                  <div
-                                    key={day.value}
-                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                      isActive
-                                        ? `${bgColor} ${textColor}`
-                                        : 'bg-slate-100 text-slate-400'
-                                    }`}
-                                    title={day.label}
-                                  >
-                                    {day.letter}
-                                  </div>
-                                );
-                              })}
+                        {expandedScheduleId === schedule.id ? (
+                          renderInlineEditForm(schedule.id)
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleEditSchedule(schedule)}
+                            className="w-full p-4 rounded-xl border transition-all hover:shadow-md shadow-sm text-left group border-slate-200 bg-white hover:bg-blue-50 active:bg-blue-100 hover:scale-[1.01] active:scale-[0.99]"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex gap-1 mb-2">
+                                  {DAYS_OF_WEEK.map((day) => {
+                                    const isActive = schedule.days_of_week.includes(day.value);
+                                    const bgColor = definition.color.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                    const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                    return (
+                                      <div
+                                        key={day.value}
+                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                          isActive
+                                            ? `${bgColor} ${textColor}`
+                                            : 'bg-slate-100 text-slate-400'
+                                        }`}
+                                        title={day.label}
+                                      >
+                                        {day.letter}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-slate-600">
+                                  <Clock className="w-4 h-4" />
+                                  <span>
+                                    {schedule.runs_on_days === false
+                                      ? 'Does Not Run'
+                                      : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                  </span>
+                                </div>
+                              </div>
+                              <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <Clock className="w-4 h-4" />
-                              <span>
-                                {schedule.runs_on_days === false
-                                  ? 'Does Not Run'
-                                  : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                              </span>
-                            </div>
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-1 group-hover:text-slate-600 transition-colors" />
-                        </div>
-                      </button>
-                        {renderInlineEditForm(schedule.id)}
+                          </button>
+                        )}
                       </div>
                     ))}
 
