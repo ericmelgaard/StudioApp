@@ -249,16 +249,15 @@ export default function DaypartRoutineForm({
       return;
     }
 
+    await completeSave();
+
     if (formData.schedule_type === 'regular') {
       const remaining = getUnscheduledDays();
       if (remaining.length > 0) {
         setUnscheduledDays(remaining);
         setShowUnscheduledPrompt(true);
-        return;
       }
     }
-
-    await completeSave();
   };
 
   const completeSave = async () => {
@@ -621,10 +620,7 @@ export default function DaypartRoutineForm({
       {showUnscheduledPrompt && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
-          onClick={async () => {
-            setShowUnscheduledPrompt(false);
-            await completeSave();
-          }}
+          onClick={() => setShowUnscheduledPrompt(false)}
         >
           <div
             className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200"
@@ -694,9 +690,8 @@ export default function DaypartRoutineForm({
                   </button>
                 )}
                 <button
-                  onClick={async () => {
+                  onClick={() => {
                     setShowUnscheduledPrompt(false);
-                    await completeSave();
                   }}
                   className="w-full px-4 py-3 border-2 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
                   style={{
