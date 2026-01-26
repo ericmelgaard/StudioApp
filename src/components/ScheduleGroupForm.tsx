@@ -166,16 +166,15 @@ export default function ScheduleGroupForm({
       return;
     }
 
+    completeSave();
+
     if (scheduleType === 'regular' && !skipDayValidation) {
       const remaining = getUnscheduledDays();
       if (remaining.length > 0) {
         setUnscheduledDays(remaining);
         setShowUnscheduledPrompt(true);
-        return;
       }
     }
-
-    completeSave();
   };
 
   const completeSave = () => {
@@ -574,53 +573,76 @@ export default function ScheduleGroupForm({
       )}
 
       {showUnscheduledPrompt && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-amber-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                  Unscheduled Days
-                </h3>
-                <p className="text-sm text-slate-600">
-                  {unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')} {unscheduledDays.length === 1 ? 'has' : 'have'} no schedule for this daypart.
-                </p>
-              </div>
-            </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div
+              className="h-2"
+              style={{
+                backgroundColor: daypartColor || '#3b82f6'
+              }}
+            />
 
-            <div className="flex flex-col gap-2">
-              {onScheduleUnscheduledDays && (
+            <div className="p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div
+                  className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{
+                    backgroundColor: daypartColor ? `${daypartColor}20` : '#dbeafe'
+                  }}
+                >
+                  <Calendar
+                    className="w-6 h-6"
+                    style={{ color: daypartColor || '#3b82f6' }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    Schedule Saved Successfully
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Your schedule has been saved. However, <span className="font-medium text-slate-900">{unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')}</span> {unscheduledDays.length === 1 ? 'still has' : 'still have'} no schedule for this daypart.
+                  </p>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Would you like to create a schedule for {unscheduledDays.length === 1 ? 'this day' : 'these days'} now?
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 mt-6">
+                {onScheduleUnscheduledDays && (
+                  <button
+                    onClick={() => {
+                      setShowUnscheduledPrompt(false);
+                      onScheduleUnscheduledDays(unscheduledDays, localSchedule);
+                    }}
+                    className="w-full px-4 py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg text-white"
+                    style={{
+                      backgroundColor: daypartColor || '#3b82f6'
+                    }}
+                    onMouseEnter={(e) => {
+                      const color = daypartColor || '#3b82f6';
+                      e.currentTarget.style.filter = 'brightness(0.9)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1)';
+                    }}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Add Schedule for {unscheduledDays.length === 1 ? 'This Day' : 'These Days'}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setShowUnscheduledPrompt(false);
-                    completeSave();
-                    onScheduleUnscheduledDays(unscheduledDays, localSchedule);
                   }}
-                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 border-2 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                  style={{
+                    borderColor: daypartColor ? `${daypartColor}40` : '#cbd5e1'
+                  }}
                 >
-                  <Calendar className="w-4 h-4" />
-                  Schedule These Days
+                  {onScheduleUnscheduledDays ? 'Skip for Now' : 'Dismiss'}
                 </button>
-              )}
-              <button
-                onClick={() => {
-                  setShowUnscheduledPrompt(false);
-                  completeSave();
-                }}
-                className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
-              >
-                {onScheduleUnscheduledDays ? 'Leave Unscheduled' : 'Save Anyway'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowUnscheduledPrompt(false);
-                }}
-                className="w-full px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium text-sm"
-              >
-                Cancel
-              </button>
+              </div>
             </div>
           </div>
         </div>
