@@ -26,6 +26,7 @@ interface ParsedRow {
   row: number;
   name: string;
   player_type: string;
+  is_webview_kiosk?: string;
   hardware_device_id: string;
   store_id: string;
   placement_group_id: string;
@@ -72,7 +73,8 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
     count: '10',
     store_id: currentLocation.store ? currentLocation.store.id.toString() : '',
     placement_group_id: '',
-    player_type: 'signage' as 'signage' | 'label' | 'webview_kiosk',
+    player_type: 'signage' as 'signage' | 'label',
+    is_webview_kiosk: false,
     auto_assign_hardware: false,
     create_displays: false,
     display_type_id: '',
@@ -161,6 +163,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
           store_id: parseInt(formData.store_id),
           placement_group_id: formData.placement_group_id || null,
           player_type: formData.player_type,
+          is_webview_kiosk: formData.player_type === 'signage' ? formData.is_webview_kiosk : false,
           status: 'offline',
         };
 
@@ -335,6 +338,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
         device_id: `MP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: row.name,
         player_type: row.player_type || 'signage',
+        is_webview_kiosk: row.is_webview_kiosk === 'true' || row.is_webview_kiosk === '1',
         hardware_device_id: row.hardware_device_id || null,
         store_id: parseInt(row.store_id),
         placement_group_id: row.placement_group_id || null,
@@ -753,19 +757,49 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
               <select
                 required
                 value={formData.player_type}
-                onChange={(e) => setFormData({ ...formData, player_type: e.target.value as 'signage' | 'label' | 'webview_kiosk' })}
+                onChange={(e) => {
+                  const newType = e.target.value as 'signage' | 'label';
+                  setFormData({
+                    ...formData,
+                    player_type: newType,
+                    is_webview_kiosk: newType === 'label' ? false : formData.is_webview_kiosk
+                  });
+                }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="signage">Signage Player</option>
-                <option value="label">Label Player</option>
-                <option value="webview_kiosk">Webview Kiosk</option>
+                <option value="label">Smart Label Player</option>
               </select>
               <p className="text-xs text-slate-500 mt-1">
-                {formData.player_type === 'signage' && 'For digital signage displays'}
-                {formData.player_type === 'label' && 'For electronic shelf labels'}
-                {formData.player_type === 'webview_kiosk' && 'For webview-based kiosk displays'}
+                {formData.player_type === 'signage' ? 'For digital signage displays and webview kiosks' : 'For electronic shelf labels'}
               </p>
             </div>
+
+            {formData.player_type === 'signage' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Webview Kiosk Mode
+                </label>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_webview_kiosk}
+                      onChange={(e) => setFormData({ ...formData, is_webview_kiosk: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-slate-900">Configure as webview kiosk</span>
+                  </label>
+                  {formData.is_webview_kiosk && (
+                    <div className="ml-6 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
+                      <p className="text-xs text-purple-800">
+                        These signage players will be configured to display webview content for kiosk applications
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">

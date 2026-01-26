@@ -4,7 +4,7 @@ import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers } from 'luci
 import BulkAddMediaPlayersModal from '../components/BulkAddMediaPlayersModal';
 import { useLocation } from '../hooks/useLocation';
 
-type PlayerType = 'signage' | 'label' | 'webview_kiosk';
+type PlayerType = 'signage' | 'label';
 
 interface MediaPlayer {
   id: string;
@@ -15,6 +15,7 @@ interface MediaPlayer {
   mac_address: string | null;
   status: string;
   player_type: PlayerType;
+  is_webview_kiosk: boolean;
   last_heartbeat: string | null;
   firmware_version: string | null;
   store_id: number | null;
@@ -68,7 +69,8 @@ export default function MediaPlayersManagement() {
     store_id: '',
     ip_address: '',
     firmware_version: '',
-    player_type: 'signage' as PlayerType
+    player_type: 'signage' as PlayerType,
+    is_webview_kiosk: false
   });
 
   useEffect(() => {
@@ -351,9 +353,8 @@ export default function MediaPlayersManagement() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">All Types</option>
-            <option value="signage">Signage</option>
-            <option value="label">Label</option>
-            <option value="webview_kiosk">Kiosk</option>
+            <option value="signage">Signage Players</option>
+            <option value="label">Smart Labels</option>
           </select>
           <select
             value={statusFilter}
@@ -429,15 +430,19 @@ export default function MediaPlayersManagement() {
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    player.player_type === 'signage' ? 'bg-blue-100 text-blue-800' :
-                    player.player_type === 'label' ? 'bg-amber-100 text-amber-800' :
-                    'bg-purple-100 text-purple-800'
-                  }`}>
-                    {player.player_type === 'signage' ? 'Signage' :
-                     player.player_type === 'label' ? 'Label' :
-                     'Kiosk'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      player.player_type === 'signage' ? 'bg-blue-100 text-blue-800' :
+                      'bg-amber-100 text-amber-800'
+                    }`}>
+                      {player.player_type === 'signage' ? 'Signage' : 'Smart Label'}
+                    </span>
+                    {player.player_type === 'signage' && player.is_webview_kiosk && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        Webview
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(player.status)}`}>

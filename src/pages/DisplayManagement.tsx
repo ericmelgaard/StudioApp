@@ -13,7 +13,7 @@ interface DisplayManagementProps {
   isHomePage?: boolean;
 }
 
-type PlayerType = 'signage' | 'label' | 'webview_kiosk';
+type PlayerType = 'signage' | 'label';
 
 interface MediaPlayer {
   id: string;
@@ -23,6 +23,7 @@ interface MediaPlayer {
   mac_address: string;
   status: 'online' | 'offline' | 'error' | 'identify';
   player_type: PlayerType;
+  is_webview_kiosk: boolean;
   last_heartbeat: string;
   firmware_version: string;
   placement_group_id: string | null;
@@ -108,8 +109,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     activeProducts: 0,
     totalSignagePlayers: 0,
     onlineSignagePlayers: 0,
-    totalLabelPlayers: 0,
-    onlineLabelPlayers: 0,
+    totalSmartLabels: 0,
+    onlineSmartLabels: 0,
     totalWebviewKiosks: 0,
     onlineWebviewKiosks: 0
   });
@@ -273,8 +274,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     const totalOnline = mediaPlayers?.filter(mp => mp.status === 'online').length || 0;
 
     const signagePlayers = mediaPlayers?.filter(mp => mp.player_type === 'signage') || [];
-    const labelPlayers = mediaPlayers?.filter(mp => mp.player_type === 'label') || [];
-    const webviewKiosks = mediaPlayers?.filter(mp => mp.player_type === 'webview_kiosk') || [];
+    const smartLabels = mediaPlayers?.filter(mp => mp.player_type === 'label') || [];
+    const webviewKiosks = signagePlayers.filter(mp => mp.is_webview_kiosk) || [];
 
     setStats({
       totalDevices: mediaPlayers?.length || 0,
@@ -285,8 +286,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       activeProducts: 0,
       totalSignagePlayers: signagePlayers.length,
       onlineSignagePlayers: signagePlayers.filter(mp => mp.status === 'online').length,
-      totalLabelPlayers: labelPlayers.length,
-      onlineLabelPlayers: labelPlayers.filter(mp => mp.status === 'online').length,
+      totalSmartLabels: smartLabels.length,
+      onlineSmartLabels: smartLabels.filter(mp => mp.status === 'online').length,
       totalWebviewKiosks: webviewKiosks.length,
       onlineWebviewKiosks: webviewKiosks.filter(mp => mp.status === 'online').length
     });
@@ -673,16 +674,16 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <Package className="w-4 h-4" style={{ color: '#f59e0b' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Labels</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Smart Labels</span>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalLabelPlayers}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineLabelPlayers} online</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSmartLabels}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSmartLabels} online</p>
           </div>
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <Globe className="w-4 h-4" style={{ color: '#8b5cf6' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Kiosks</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Webview Kiosks</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalWebviewKiosks}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineWebviewKiosks} online</p>
