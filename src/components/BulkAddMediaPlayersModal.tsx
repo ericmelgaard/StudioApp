@@ -25,6 +25,7 @@ interface ValidationError {
 interface ParsedRow {
   row: number;
   name: string;
+  player_type: string;
   hardware_device_id: string;
   store_id: string;
   placement_group_id: string;
@@ -71,6 +72,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
     count: '10',
     store_id: currentLocation.store ? currentLocation.store.id.toString() : '',
     placement_group_id: '',
+    player_type: 'signage' as 'signage' | 'label' | 'webview_kiosk',
     auto_assign_hardware: false,
     create_displays: false,
     display_type_id: '',
@@ -158,6 +160,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
           name: `Media Player ${deviceId}`,
           store_id: parseInt(formData.store_id),
           placement_group_id: formData.placement_group_id || null,
+          player_type: formData.player_type,
           status: 'offline',
         };
 
@@ -331,6 +334,7 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
       const mediaPlayers = rowsToImport.map(row => ({
         device_id: `MP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: row.name,
+        player_type: row.player_type || 'signage',
         hardware_device_id: row.hardware_device_id || null,
         store_id: parseInt(row.store_id),
         placement_group_id: row.placement_group_id || null,
@@ -739,6 +743,27 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
                 {currentLocation.store
                   ? 'Media players will be added to this store'
                   : 'Media players are unique to each store'}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Player Type *
+              </label>
+              <select
+                required
+                value={formData.player_type}
+                onChange={(e) => setFormData({ ...formData, player_type: e.target.value as 'signage' | 'label' | 'webview_kiosk' })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="signage">Signage Player</option>
+                <option value="label">Label Player</option>
+                <option value="webview_kiosk">Webview Kiosk</option>
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                {formData.player_type === 'signage' && 'For digital signage displays'}
+                {formData.player_type === 'label' && 'For electronic shelf labels'}
+                {formData.player_type === 'webview_kiosk' && 'For webview-based kiosk displays'}
               </p>
             </div>
 

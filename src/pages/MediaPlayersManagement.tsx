@@ -4,6 +4,8 @@ import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers } from 'luci
 import BulkAddMediaPlayersModal from '../components/BulkAddMediaPlayersModal';
 import { useLocation } from '../hooks/useLocation';
 
+type PlayerType = 'signage' | 'label' | 'webview_kiosk';
+
 interface MediaPlayer {
   id: string;
   name: string;
@@ -12,6 +14,7 @@ interface MediaPlayer {
   ip_address: string | null;
   mac_address: string | null;
   status: string;
+  player_type: PlayerType;
   last_heartbeat: string | null;
   firmware_version: string | null;
   store_id: number | null;
@@ -55,6 +58,7 @@ export default function MediaPlayersManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [playerTypeFilter, setPlayerTypeFilter] = useState<'all' | PlayerType>('all');
   const [showModal, setShowModal] = useState(false);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<MediaPlayer | null>(null);
@@ -63,7 +67,8 @@ export default function MediaPlayersManagement() {
     hardware_device_id: '',
     store_id: '',
     ip_address: '',
-    firmware_version: ''
+    firmware_version: '',
+    player_type: 'signage' as PlayerType
   });
 
   useEffect(() => {
@@ -72,7 +77,7 @@ export default function MediaPlayersManagement() {
 
   useEffect(() => {
     filterPlayers();
-  }, [searchTerm, statusFilter, mediaPlayers]);
+  }, [searchTerm, statusFilter, playerTypeFilter, mediaPlayers]);
 
   const loadData = async () => {
     setLoading(true);
@@ -138,6 +143,10 @@ export default function MediaPlayersManagement() {
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(player => player.status === statusFilter);
+    }
+
+    if (playerTypeFilter !== 'all') {
+      filtered = filtered.filter(player => player.player_type === playerTypeFilter);
     }
 
     setFilteredPlayers(filtered);
@@ -337,6 +346,16 @@ export default function MediaPlayersManagement() {
             />
           </div>
           <select
+            value={playerTypeFilter}
+            onChange={(e) => setPlayerTypeFilter(e.target.value as 'all' | PlayerType)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">All Types</option>
+            <option value="signage">Signage</option>
+            <option value="label">Label</option>
+            <option value="webview_kiosk">Kiosk</option>
+          </select>
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -362,6 +381,9 @@ export default function MediaPlayersManagement() {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Store
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
@@ -405,6 +427,17 @@ export default function MediaPlayersManagement() {
                   ) : (
                     <span className="text-gray-400">Unassigned</span>
                   )}
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    player.player_type === 'signage' ? 'bg-blue-100 text-blue-800' :
+                    player.player_type === 'label' ? 'bg-amber-100 text-amber-800' :
+                    'bg-purple-100 text-purple-800'
+                  }`}>
+                    {player.player_type === 'signage' ? 'Signage' :
+                     player.player_type === 'label' ? 'Label' :
+                     'Kiosk'}
+                  </span>
                 </td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(player.status)}`}>

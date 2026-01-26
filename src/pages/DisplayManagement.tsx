@@ -13,6 +13,8 @@ interface DisplayManagementProps {
   isHomePage?: boolean;
 }
 
+type PlayerType = 'signage' | 'label' | 'webview_kiosk';
+
 interface MediaPlayer {
   id: string;
   device_id: string;
@@ -20,6 +22,7 @@ interface MediaPlayer {
   ip_address: string;
   mac_address: string;
   status: 'online' | 'offline' | 'error' | 'identify';
+  player_type: PlayerType;
   last_heartbeat: string;
   firmware_version: string;
   placement_group_id: string | null;
@@ -82,7 +85,7 @@ interface DaypartBadge {
 
 type OperationStatus = 'open' | 'closed';
 type ViewMode = 'list' | 'grid';
-type PageView = 'home' | 'devices' | 'groups' | 'activity' | 'products' | 'urlplayers';
+type PageView = 'home' | 'devices' | 'groups' | 'activity' | 'products';
 
 export default function DisplayManagement({ storeId, storeName, onBack, isHomePage = false }: DisplayManagementProps) {
   const [operationStatus, setOperationStatus] = useState<OperationStatus>('open');
@@ -103,8 +106,12 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     recentActions: 0,
     totalProducts: 0,
     activeProducts: 0,
-    totalUrlPlayers: 0,
-    onlineUrlPlayers: 0
+    totalSignagePlayers: 0,
+    onlineSignagePlayers: 0,
+    totalLabelPlayers: 0,
+    onlineLabelPlayers: 0,
+    totalWebviewKiosks: 0,
+    onlineWebviewKiosks: 0
   });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -265,6 +272,10 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
     const totalOnline = mediaPlayers?.filter(mp => mp.status === 'online').length || 0;
 
+    const signagePlayers = mediaPlayers?.filter(mp => mp.player_type === 'signage') || [];
+    const labelPlayers = mediaPlayers?.filter(mp => mp.player_type === 'label') || [];
+    const webviewKiosks = mediaPlayers?.filter(mp => mp.player_type === 'webview_kiosk') || [];
+
     setStats({
       totalDevices: mediaPlayers?.length || 0,
       onlineDevices: totalOnline,
@@ -272,8 +283,12 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       recentActions: 0,
       totalProducts: 0,
       activeProducts: 0,
-      totalUrlPlayers: 0,
-      onlineUrlPlayers: 0
+      totalSignagePlayers: signagePlayers.length,
+      onlineSignagePlayers: signagePlayers.filter(mp => mp.status === 'online').length,
+      totalLabelPlayers: labelPlayers.length,
+      onlineLabelPlayers: labelPlayers.filter(mp => mp.status === 'online').length,
+      totalWebviewKiosks: webviewKiosks.length,
+      onlineWebviewKiosks: webviewKiosks.filter(mp => mp.status === 'online').length
     });
 
     setLoading(false);
@@ -648,11 +663,29 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
           <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Globe className="w-4 h-4" style={{ color: '#00adf0' }} />
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">URL Players</span>
+              <Monitor className="w-4 h-4" style={{ color: '#00adf0' }} />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Signage</span>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalUrlPlayers}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineUrlPlayers} online</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSignagePlayers}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSignagePlayers} online</p>
+          </div>
+
+          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <Package className="w-4 h-4" style={{ color: '#f59e0b' }} />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Labels</span>
+            </div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalLabelPlayers}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineLabelPlayers} online</p>
+          </div>
+
+          <div className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <Globe className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Kiosks</span>
+            </div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalWebviewKiosks}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineWebviewKiosks} online</p>
           </div>
         </div>
       </div>

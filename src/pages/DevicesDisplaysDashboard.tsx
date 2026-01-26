@@ -115,7 +115,7 @@ export default function DevicesDisplaysDashboard() {
     { id: 'overview' as Tab, name: 'Overview', icon: Grid },
     { id: 'display-types' as Tab, name: 'Display Types', icon: Layers },
     { id: 'hardware' as Tab, name: 'Hardware Devices', icon: Cpu },
-    { id: 'media-players' as Tab, name: 'Media Players', icon: Monitor },
+    { id: 'media-players' as Tab, name: 'Signage Players', icon: Monitor },
     { id: 'displays' as Tab, name: 'Displays', icon: Monitor }
   ];
 
@@ -125,7 +125,7 @@ export default function DevicesDisplaysDashboard() {
         <div className="px-6">
           <div className="py-4">
             <h1 className="text-2xl font-bold text-gray-900">Devices & Displays</h1>
-            <p className="text-gray-600 mt-1">Manage display hardware, media players, and display configurations</p>
+            <p className="text-gray-600 mt-1">Manage display hardware, signage players, shelf labels, and display configurations</p>
           </div>
           <div className="flex space-x-1">
             {tabs.map((tab) => {
@@ -213,8 +213,8 @@ export default function DevicesDisplaysDashboard() {
 
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-medium text-gray-600">Media Players</h3>
-                      <Monitor className="w-8 h-8 text-purple-500" />
+                      <h3 className="text-sm font-medium text-gray-600">Signage Players</h3>
+                      <Monitor className="w-8 h-8 text-blue-500" />
                     </div>
                     <div className="text-3xl font-bold text-gray-900 mb-2">{stats.mediaPlayers.total}</div>
                     <div className="text-sm text-gray-600 space-y-1">
@@ -231,7 +231,7 @@ export default function DevicesDisplaysDashboard() {
                       onClick={() => setActiveTab('media-players')}
                       className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
                     >
-                      Manage Players →
+                      Manage Signage Players →
                     </button>
                   </div>
 

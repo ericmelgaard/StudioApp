@@ -30,10 +30,14 @@ interface Display {
   };
 }
 
+type PlayerType = 'signage' | 'label' | 'webview_kiosk';
+type DisplayCategory = 'signage' | 'label';
+
 interface MediaPlayer {
   id: string;
   name: string;
   device_id: string;
+  player_type: PlayerType;
   store_id: number | null;
   stores?: {
     name: string;
@@ -45,6 +49,7 @@ interface DisplayType {
   id: string;
   name: string;
   category: string;
+  display_category: DisplayCategory;
   specifications: any;
 }
 
