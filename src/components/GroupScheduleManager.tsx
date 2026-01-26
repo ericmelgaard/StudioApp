@@ -228,6 +228,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
         const { error } = await supabase
           .from('placement_daypart_overrides')
           .update({
+            daypart_name: schedule.daypart_name,
             days_of_week: schedule.days_of_week,
             start_time: schedule.start_time,
             end_time: schedule.end_time,
@@ -236,9 +237,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
             schedule_type: schedule.schedule_type,
             event_name: schedule.event_name,
             event_date: schedule.event_date,
-            recurrence_type: schedule.recurrence_type,
-            recurrence_config: schedule.recurrence_config,
-            priority_level: schedule.priority_level
+            recurrence_type: schedule.recurrence_type
           })
           .eq('id', schedule.id);
 
@@ -248,7 +247,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
           .from('placement_daypart_overrides')
           .insert({
             placement_group_id: groupId,
-            daypart_definition_id: schedule.daypart_definition_id,
+            daypart_name: schedule.daypart_name,
             days_of_week: schedule.days_of_week,
             start_time: schedule.start_time,
             end_time: schedule.end_time,
@@ -257,9 +256,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
             schedule_type: schedule.schedule_type,
             event_name: schedule.event_name,
             event_date: schedule.event_date,
-            recurrence_type: schedule.recurrence_type,
-            recurrence_config: schedule.recurrence_config,
-            priority_level: schedule.priority_level
+            recurrence_type: schedule.recurrence_type
           });
 
         if (error) throw error;
