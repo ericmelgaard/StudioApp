@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
-import TimePickerRow from './TimePickerRow';
+import TimeSelector from './TimeSelector';
 import DaySelector from './DaySelector';
 import { supabase } from '../lib/supabase';
 import HolidayTemplatePicker from './HolidayTemplatePicker';
@@ -578,14 +578,14 @@ export default function DaypartRoutineForm({
           />
         )}
 
-        <div className="space-y-3">
-          <TimePickerRow
-            label="Start Time"
+        <div className="grid grid-cols-2 gap-4">
+          <TimeSelector
+            label="Start Time *"
             value={formData.start_time || '06:00'}
             onChange={(time) => setFormData({ ...formData, start_time: time })}
           />
-          <TimePickerRow
-            label="End Time"
+          <TimeSelector
+            label="End Time *"
             value={formData.end_time || '11:00'}
             onChange={(time) => setFormData({ ...formData, end_time: time })}
           />
