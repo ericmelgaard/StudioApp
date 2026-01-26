@@ -163,6 +163,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
       });
 
       console.log('=== FINAL INHERITED COUNT:', inherited.length, '===');
+      console.log('=== INHERITED SCHEDULES DATA ===', inherited);
 
       setInheritedSchedules(inherited);
     } catch (error) {
@@ -173,6 +174,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
   };
 
   const handleEditInherited = (schedule: EffectiveSchedule) => {
+    console.log('=== CLICKED INHERITED SCHEDULE ===', schedule);
     const newSchedule: Schedule = {
       id: '',
       daypart_name: schedule.daypart_name,
@@ -184,9 +186,11 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
       schedule_name: schedule.schedule_name,
       schedule_type: schedule.schedule_type
     };
+    console.log('=== CREATED NEW SCHEDULE ===', newSchedule);
     setEditingSchedule(newSchedule);
     setEditingDaypartName(schedule.daypart_name);
     setIsInheritedEdit(true);
+    console.log('=== STATE SET - Should now show editor ===');
   };
 
   const handleEditSchedule = (schedule: Schedule, daypartName: string) => {
@@ -695,6 +699,12 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                     const daypartInheritedEvents = groupedInheritedEvents[daypartName] || [];
                     const hasCustom = daypartSchedules.length > 0 || daypartEvents.length > 0;
                     const hasInherited = daypartInheritedSchedules.length > 0 || daypartInheritedEvents.length > 0;
+
+                    console.log(`Rendering inherited section for ${daypartName}:`, {
+                      hasCustom,
+                      hasInherited,
+                      daypartInheritedSchedules: daypartInheritedSchedules.length
+                    });
 
                     if (hasCustom || !hasInherited) return null;
 
