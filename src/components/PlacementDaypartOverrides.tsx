@@ -133,10 +133,14 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
       const storeSchedules = schedulesResult.data || [];
 
-      // Create a set of daypart names that have ANY customizations
+      // Create a set of daypart names that have REGULAR schedule customizations
+      // Event/holiday customizations alone should NOT prevent inherited regular schedules from showing
       const customizedDayparts = new Set<string>();
       customizations.forEach(custom => {
-        customizedDayparts.add(custom.daypart_name);
+        // Only count as customized if it has at least one regular schedule
+        if (custom.schedule_type === 'regular' || !custom.schedule_type) {
+          customizedDayparts.add(custom.daypart_name);
+        }
       });
 
       console.log('=== DAYPART DEBUG ===');
@@ -144,13 +148,14 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       console.log('Customized dayparts Set:', Array.from(customizedDayparts));
       console.log('Store schedules:', storeSchedules);
 
-      // Build inherited schedules list (only dayparts with NO customizations at all)
+      // Build inherited schedules list (only dayparts with NO regular schedule customizations)
+      // Dayparts with only event/holiday customizations will still show inherited regular schedules
       const inherited: EffectiveSchedule[] = [];
       storeSchedules.forEach((schedule: DaypartSchedule) => {
         const definition = definitions.find((d: DaypartDefinition) => d.id === schedule.daypart_definition_id);
         if (!definition) return;
 
-        // Only add if this entire daypart has no customizations
+        // Only add if this entire daypart has no regular schedule customizations
         if (!customizedDayparts.has(definition.daypart_name)) {
           inherited.push({
             ...schedule,
@@ -468,9 +473,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           {allDayparts.map((daypartName) => {
             const daypartSchedules = groupedRoutines[daypartName] || [];
             const daypartEvents = groupedEventRoutines[daypartName] || [];
-            const hasCustom = daypartSchedules.length > 0 || daypartEvents.length > 0;
+            const hasCustom = daypartSchedules.length > 0; // Only regular schedules make it "custom"
 
-            // Only show if has customizations
+            // Only show if has custom regular schedules
             if (!hasCustom) return null;
 
             const hasEvents = daypartEvents.length > 0;
@@ -740,7 +745,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
                     {allDayparts.filter(dp => {
-                      const hasCustom = (groupedRoutines[dp]?.length || 0) + (groupedEventRoutines[dp]?.length || 0) > 0;
+                      const hasCustom = (groupedRoutines[dp]?.length || 0) > 0; // Only regular schedules count as custom
                       const hasInherited = (groupedInheritedRoutines[dp]?.length || 0) + (groupedInheritedEvents[dp]?.length || 0) > 0;
                       return !hasCustom && hasInherited;
                     }).length}
@@ -760,7 +765,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     const daypartEvents = groupedEventRoutines[daypartName] || [];
                     const daypartInheritedSchedules = groupedInheritedRoutines[daypartName] || [];
                     const daypartInheritedEvents = groupedInheritedEvents[daypartName] || [];
-                    const hasCustom = daypartSchedules.length > 0 || daypartEvents.length > 0;
+                    const hasCustom = daypartSchedules.length > 0; // Only regular schedules count as custom
                     const hasInherited = daypartInheritedSchedules.length > 0 || daypartInheritedEvents.length > 0;
 
                     // Only show dayparts that are ONLY inherited (no customizations)
@@ -771,7 +776,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     if (!definition) return null;
                     const displayLabel = definition.display_label;
                     const colorClass = definition.color;
-                    const hasInheritedEvents = daypartInheritedEvents.length > 0;
+                    // Include both inherited and custom events since this daypart has no custom regular schedules
+                    const hasEvents = daypartInheritedEvents.length > 0 || daypartEvents.length > 0;
+                    const totalEvents = daypartInheritedEvents.length + daypartEvents.length;
 
                     return (
                       <div key={daypartName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
@@ -779,10 +786,10 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
                             <h4 className="font-semibold">{displayLabel}</h4>
-                            {hasInheritedEvents && (
+                            {hasEvents && (
                               <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
                                 <Calendar className="w-3 h-3" />
-                                {daypartInheritedEvents.length} {daypartInheritedEvents.length === 1 ? 'Event' : 'Events'}
+                                {totalEvents} {totalEvents === 1 ? 'Event' : 'Events'}
                               </span>
                             )}
                           </div>
@@ -837,8 +844,8 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                             </div>
                           ))}
 
-                          {/* Inherited Event Schedules */}
-                          {hasInheritedEvents && (
+                          {/* Event & Holiday Schedules (both inherited and custom) */}
+                          {hasEvents && (
                             <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
                               <button
                                 type="button"
@@ -854,7 +861,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                     Event & Holiday Schedules
                                   </span>
                                   <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
-                                    {daypartInheritedEvents.length}
+                                    {totalEvents}
                                   </span>
                                 </div>
                                 {eventsExpanded ? (
@@ -866,6 +873,68 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
                               {eventsExpanded && (
                                 <div className="divide-y" style={{ borderColor: 'rgba(222, 56, 222, 0.1)' }}>
+                                  {/* Custom Event Schedules */}
+                                  {daypartEvents.map((schedule) => (
+                                    <div key={schedule.id}>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEdit(schedule)}
+                                        className="w-full p-4 transition-colors text-left relative group/event"
+                                        style={{ backgroundColor: 'transparent' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                      >
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 mb-2">
+                                              <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
+                                                {schedule.event_name || 'Unnamed Event'}
+                                              </span>
+                                              <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                                                {getRecurrenceLabel(schedule.recurrence_type)}
+                                              </span>
+                                              <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
+                                                Custom
+                                              </span>
+                                            </div>
+                                            <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
+                                              <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                              {formatEventDate(schedule.event_date, schedule.recurrence_type)}
+                                              <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
+                                              <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                              {schedule.runs_on_days === false
+                                                ? 'Does Not Run'
+                                                : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                            </div>
+                                            {schedule.days_of_week.length > 0 && (
+                                              <div className="flex gap-1">
+                                                {DAYS_OF_WEEK.map((day) => {
+                                                  const isActive = schedule.days_of_week.includes(day.value);
+                                                  const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                                  const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                                  return (
+                                                    <div
+                                                      key={day.value}
+                                                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                                        isActive
+                                                          ? `${bgColor} ${textColor}`
+                                                          : 'bg-slate-100 text-slate-400'
+                                                      }`}
+                                                      title={day.label}
+                                                    >
+                                                      {day.letter}
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1 transition-colors" style={{ color: 'rgb(156, 39, 176)' }} />
+                                        </div>
+                                      </button>
+                                    </div>
+                                  ))}
+                                  {/* Inherited Event Schedules */}
                                   {daypartInheritedEvents.map((schedule) => (
                                     <div key={schedule.id}>
                                       <button
