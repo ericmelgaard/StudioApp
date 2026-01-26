@@ -61,8 +61,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
         .from('media_players')
         .select(`
           *,
-          hardware_devices(device_id, device_type, status, serial_number),
-          placement_groups(id, name)
+          hardware_devices(device_id, device_type, status, serial_number)
         `)
         .eq('store_id', storeId)
         .order('name');
@@ -71,7 +70,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
 
       const { data: displays, error: displaysError } = await supabase
         .from('displays')
-        .select('id, media_player_id')
+        .select('id, media_player_id, placement_group_id, placement_groups(id, name)')
         .in('media_player_id', mediaPlayers?.map(mp => mp.id) || []);
 
       if (displaysError) throw displaysError;
