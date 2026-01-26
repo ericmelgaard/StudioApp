@@ -286,6 +286,23 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
           onSave={handleSaveSchedule}
           onCancel={handleCancel}
           onDelete={editingSchedule?.id ? handleDeleteSchedule : undefined}
+          onScheduleUnscheduledDays={(days, template) => {
+            if (editingSchedule) {
+              setEditingSchedule({
+                ...editingSchedule,
+                days_of_week: days,
+                start_time: template.start_time,
+                end_time: template.end_time,
+              });
+            } else if (newSchedule) {
+              setNewSchedule({
+                ...newSchedule,
+                days_of_week: days,
+                start_time: template.start_time,
+                end_time: template.end_time,
+              });
+            }
+          }}
           level="site"
           skipDayValidation={true}
           disableCollisionDetection={true}

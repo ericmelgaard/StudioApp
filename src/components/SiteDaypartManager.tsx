@@ -191,6 +191,9 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
             onSave={handleSave}
             onCancel={handleCancel}
             editingRoutine={null}
+            onScheduleUnscheduledDays={(days, template) => {
+              handleSave(template);
+            }}
           />
         </div>
       )}
@@ -283,6 +286,14 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
                           onSave={handleSave}
                           onCancel={handleCancel}
                           editingRoutine={editingRoutine}
+                          onScheduleUnscheduledDays={(days, template) => {
+                            setEditingRoutine({
+                              ...editingRoutine!,
+                              days_of_week: days,
+                              start_time: template.start_time,
+                              end_time: template.end_time,
+                            });
+                          }}
                         />
                       </div>
                     )}

@@ -23,6 +23,7 @@ interface DaypartRoutineFormProps {
     color?: string;
   };
   onDelete?: (routineId: string) => Promise<void>;
+  onScheduleUnscheduledDays?: (days: number[], template: DaypartRoutine) => void;
 }
 
 export interface DaypartRoutine {
@@ -77,7 +78,8 @@ export default function DaypartRoutineForm({
   preFillStartTime,
   preFillEndTime,
   daypartDefinition,
-  onDelete
+  onDelete,
+  onScheduleUnscheduledDays
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -96,6 +98,8 @@ export default function DaypartRoutineForm({
   const [formData, setFormData] = useState(initialFormData);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showUnscheduledPrompt, setShowUnscheduledPrompt] = useState(false);
+  const [unscheduledDays, setUnscheduledDays] = useState<number[]>([]);
 
   const hasChanges = () => {
     return JSON.stringify(formData) !== JSON.stringify(initialFormData);
@@ -195,6 +199,25 @@ export default function DaypartRoutineForm({
     return getPriorityLevel(formData.recurrence_type);
   };
 
+  const getUnscheduledDays = (): number[] => {
+    const allDays = [0, 1, 2, 3, 4, 5, 6];
+    const scheduledDays = new Set<number>();
+
+    existingRoutines
+      .filter(r =>
+        r.schedule_type === 'regular' &&
+        r.daypart_name === formData.daypart_name &&
+        r.id !== editingRoutine?.id
+      )
+      .forEach(r => {
+        r.days_of_week?.forEach(day => scheduledDays.add(day));
+      });
+
+    formData.days_of_week?.forEach(day => scheduledDays.add(day));
+
+    return allDays.filter(day => !scheduledDays.has(day));
+  };
+
   const handleSubmit = async () => {
     if (!formData.daypart_name) {
       setError('Please select a daypart type');
@@ -224,6 +247,15 @@ export default function DaypartRoutineForm({
     if (formData.start_time === formData.end_time) {
       setError('Start time and end time must be different');
       return;
+    }
+
+    if (formData.schedule_type === 'regular') {
+      const remaining = getUnscheduledDays();
+      if (remaining.length > 0) {
+        setUnscheduledDays(remaining);
+        setShowUnscheduledPrompt(true);
+        return;
+      }
     }
 
     await completeSave();
@@ -586,6 +618,98 @@ export default function DaypartRoutineForm({
         />
       )}
 
+      {showUnscheduledPrompt && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
+          onClick={async () => {
+            setShowUnscheduledPrompt(false);
+            await completeSave();
+          }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="h-2"
+              style={{
+                backgroundColor: daypartDefinition?.color || '#3b82f6'
+              }}
+            />
+
+            <div className="p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div
+                  className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{
+                    backgroundColor: daypartDefinition?.color ? `${daypartDefinition.color}20` : '#dbeafe'
+                  }}
+                >
+                  <Calendar
+                    className="w-6 h-6"
+                    style={{ color: daypartDefinition?.color || '#3b82f6' }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    Schedule Saved Successfully
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Your schedule has been saved. However, <span className="font-medium text-slate-900">{unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')}</span> {unscheduledDays.length === 1 ? 'still has' : 'still have'} no schedule for this daypart.
+                  </p>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Would you like to create a schedule for {unscheduledDays.length === 1 ? 'this day' : 'these days'} now?
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 mt-6">
+                {onScheduleUnscheduledDays && (
+                  <button
+                    onClick={() => {
+                      setShowUnscheduledPrompt(false);
+                      onScheduleUnscheduledDays(unscheduledDays, {
+                        placement_group_id: placementGroupId,
+                        daypart_name: formData.daypart_name,
+                        days_of_week: unscheduledDays,
+                        start_time: formData.start_time,
+                        end_time: formData.end_time,
+                        schedule_type: 'regular',
+                        runs_on_days: true
+                      });
+                    }}
+                    className="w-full px-4 py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg text-white"
+                    style={{
+                      backgroundColor: daypartDefinition?.color || '#3b82f6'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.filter = 'brightness(0.9)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1)';
+                    }}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Add Schedule for {unscheduledDays.length === 1 ? 'This Day' : 'These Days'}
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    setShowUnscheduledPrompt(false);
+                    await completeSave();
+                  }}
+                  className="w-full px-4 py-3 border-2 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                  style={{
+                    borderColor: daypartDefinition?.color ? `${daypartDefinition.color}40` : '#cbd5e1'
+                  }}
+                >
+                  {onScheduleUnscheduledDays ? 'Skip for Now' : 'Dismiss'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
