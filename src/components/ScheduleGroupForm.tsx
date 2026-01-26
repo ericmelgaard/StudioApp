@@ -28,6 +28,7 @@ interface ScheduleGroupFormProps {
   disableCollisionDetection?: boolean;
   onDelete?: (scheduleId: string, source?: 'site' | 'store') => Promise<void>;
   onRemovedDays?: (days: number[]) => void;
+  onScheduleUnscheduledDays?: (days: number[], template: Schedule) => void;
   daypartColor?: string;
 }
 
@@ -56,7 +57,8 @@ export default function ScheduleGroupForm({
   skipDayValidation = false,
   disableCollisionDetection = false,
   onDelete,
-  onRemovedDays
+  onRemovedDays,
+  onScheduleUnscheduledDays
 }: ScheduleGroupFormProps) {
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -130,7 +132,11 @@ export default function ScheduleGroupForm({
     const scheduledDays = new Set<number>();
 
     allSchedules
-      .filter(s => s.schedule_type === 'regular' && s.daypart_name === localSchedule.daypart_name)
+      .filter(s =>
+        s.schedule_type === 'regular' &&
+        s.daypart_name === localSchedule.daypart_name &&
+        s.id !== localSchedule.id
+      )
       .forEach(s => {
         s.days_of_week?.forEach(day => scheduledDays.add(day));
       });
@@ -576,32 +582,42 @@ export default function ScheduleGroupForm({
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                  Unscheduled Days Detected
+                  Unscheduled Days
                 </h3>
                 <p className="text-sm text-slate-600">
-                  {unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')} {unscheduledDays.length === 1 ? 'is' : 'are'} not scheduled for this daypart.
-                </p>
-                <p className="text-sm text-slate-600 mt-2">
-                  Would you like to save anyway or schedule these days?
+                  {unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')} {unscheduledDays.length === 1 ? 'has' : 'have'} no schedule for this daypart.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
+              {onScheduleUnscheduledDays && (
+                <button
+                  onClick={() => {
+                    setShowUnscheduledPrompt(false);
+                    completeSave();
+                    onScheduleUnscheduledDays(unscheduledDays, localSchedule);
+                  }}
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Schedule These Days
+                </button>
+              )}
               <button
                 onClick={() => {
                   setShowUnscheduledPrompt(false);
                   completeSave();
                 }}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
               >
-                Save Anyway
+                {onScheduleUnscheduledDays ? 'Leave Unscheduled' : 'Save Anyway'}
               </button>
               <button
                 onClick={() => {
                   setShowUnscheduledPrompt(false);
                 }}
-                className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                className="w-full px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium text-sm"
               >
                 Cancel
               </button>

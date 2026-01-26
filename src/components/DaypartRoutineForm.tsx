@@ -23,6 +23,7 @@ interface DaypartRoutineFormProps {
     color?: string;
   };
   onDelete?: (routineId: string) => Promise<void>;
+  onScheduleUnscheduledDays?: (days: number[], template: DaypartRoutine) => void;
 }
 
 export interface DaypartRoutine {
@@ -77,7 +78,8 @@ export default function DaypartRoutineForm({
   preFillStartTime,
   preFillEndTime,
   daypartDefinition,
-  onDelete
+  onDelete,
+  onScheduleUnscheduledDays
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -202,7 +204,11 @@ export default function DaypartRoutineForm({
     const scheduledDays = new Set<number>();
 
     existingRoutines
-      .filter(r => r.schedule_type === 'regular' && r.daypart_name === formData.daypart_name)
+      .filter(r =>
+        r.schedule_type === 'regular' &&
+        r.daypart_name === formData.daypart_name &&
+        r.id !== editingRoutine?.id
+      )
       .forEach(r => {
         r.days_of_week?.forEach(day => scheduledDays.add(day));
       });
@@ -621,32 +627,50 @@ export default function DaypartRoutineForm({
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                  Unscheduled Days Detected
+                  Unscheduled Days
                 </h3>
                 <p className="text-sm text-slate-600">
-                  {unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')} {unscheduledDays.length === 1 ? 'is' : 'are'} not scheduled for this daypart.
-                </p>
-                <p className="text-sm text-slate-600 mt-2">
-                  Would you like to save anyway or schedule these days?
+                  {unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')} {unscheduledDays.length === 1 ? 'has' : 'have'} no schedule for this daypart.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
+              {onScheduleUnscheduledDays && (
+                <button
+                  onClick={async () => {
+                    setShowUnscheduledPrompt(false);
+                    await completeSave();
+                    onScheduleUnscheduledDays(unscheduledDays, {
+                      placement_group_id: placementGroupId,
+                      daypart_name: formData.daypart_name,
+                      days_of_week: unscheduledDays,
+                      start_time: formData.start_time,
+                      end_time: formData.end_time,
+                      schedule_type: 'regular',
+                      runs_on_days: true
+                    });
+                  }}
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Schedule These Days
+                </button>
+              )}
               <button
                 onClick={async () => {
                   setShowUnscheduledPrompt(false);
                   await completeSave();
                 }}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
               >
-                Save Anyway
+                {onScheduleUnscheduledDays ? 'Leave Unscheduled' : 'Save Anyway'}
               </button>
               <button
                 onClick={() => {
                   setShowUnscheduledPrompt(false);
                 }}
-                className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                className="w-full px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium text-sm"
               >
                 Cancel
               </button>
