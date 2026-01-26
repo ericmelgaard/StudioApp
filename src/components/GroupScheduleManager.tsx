@@ -10,7 +10,7 @@ interface GroupScheduleManagerProps {
 
 interface Schedule {
   id: string;
-  daypart_definition_id: string;
+  daypart_name: string;
   placement_group_id: string;
   days_of_week: number[];
   start_time: string;
@@ -123,13 +123,12 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 
       console.log('=== PLACEMENT SCHEDULES FOR', groupName, '===');
       placementSchedules.forEach(custom => {
-        const def = definitions.find((d: DaypartDefinition) => d.id === custom.daypart_definition_id);
-        if (def) {
-          const key = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}_${custom.schedule_name || ''}`;
-          console.log('  Placement schedule:', def.daypart_name, 'key:', key, 'schedule:', custom);
+        if (custom.daypart_name) {
+          const key = `${custom.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}_${custom.schedule_name || ''}`;
+          console.log('  Placement schedule:', custom.daypart_name, 'key:', key, 'schedule:', custom);
           customizationMap.set(key, custom);
 
-          const daypartKey = `${def.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}`;
+          const daypartKey = `${custom.daypart_name}_${custom.schedule_type || 'regular'}_${custom.event_date || ''}`;
           daypartCustomizations.set(daypartKey, true);
         }
       });
@@ -176,7 +175,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
   const handleEditInherited = (schedule: EffectiveSchedule) => {
     const newSchedule: Schedule = {
       id: '',
-      daypart_definition_id: schedule.daypart_definition_id,
+      daypart_name: schedule.daypart_name,
       placement_group_id: groupId,
       days_of_week: schedule.days_of_week,
       start_time: schedule.start_time,
@@ -207,7 +206,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 
     const newSchedule: Schedule = {
       id: '',
-      daypart_definition_id: definition.id,
+      daypart_name: definition.daypart_name,
       placement_group_id: groupId,
       days_of_week: daysOfWeek || [],
       start_time: template?.start_time || '09:00:00',
@@ -301,22 +300,20 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
   const eventSchedules = schedules.filter(s => s.schedule_type === 'event_holiday');
 
   const groupedSchedules = regularSchedules.reduce((acc, schedule) => {
-    const def = daypartDefinitions.find(d => d.id === schedule.daypart_definition_id);
-    if (!def) return acc;
-    if (!acc[def.daypart_name]) {
-      acc[def.daypart_name] = [];
+    if (!schedule.daypart_name) return acc;
+    if (!acc[schedule.daypart_name]) {
+      acc[schedule.daypart_name] = [];
     }
-    acc[def.daypart_name].push(schedule);
+    acc[schedule.daypart_name].push(schedule);
     return acc;
   }, {} as Record<string, Schedule[]>);
 
   const groupedEvents = eventSchedules.reduce((acc, schedule) => {
-    const def = daypartDefinitions.find(d => d.id === schedule.daypart_definition_id);
-    if (!def) return acc;
-    if (!acc[def.daypart_name]) {
-      acc[def.daypart_name] = [];
+    if (!schedule.daypart_name) return acc;
+    if (!acc[schedule.daypart_name]) {
+      acc[schedule.daypart_name] = [];
     }
-    acc[def.daypart_name].push(schedule);
+    acc[schedule.daypart_name].push(schedule);
     return acc;
   }, {} as Record<string, Schedule[]>);
 
