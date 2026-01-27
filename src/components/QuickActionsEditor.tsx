@@ -173,18 +173,18 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4">
-      <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-xl flex flex-col shadow-2xl">
+      <div className="bg-white dark:bg-slate-800 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-xl flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 bg-slate-50 sm:rounded-t-xl">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 sm:rounded-t-xl">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Customize Quick Actions</h2>
-            <p className="text-sm text-slate-600 mt-1">Show, hide, and reorder your quick action cards</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Customize Quick Actions</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Show, hide, and reorder your quick action cards</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-900 dark:text-slate-100" />
           </button>
         </div>
 
@@ -193,14 +193,14 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
           {/* Visible Actions */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Visible Actions ({visibleActions.length})
               </h3>
-              <span className="text-xs sm:text-sm text-slate-500">Drag to reorder or use arrows</span>
+              <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Drag to reorder or use arrows</span>
             </div>
 
             {visibleActions.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                 <Eye className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p className="text-sm">No actions visible. Add some from below!</p>
               </div>
@@ -221,15 +221,15 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, index)}
                       onDragEnd={handleDragEnd}
-                      className={`flex items-center gap-3 bg-white border-2 rounded-lg p-3 sm:p-4 shadow-sm transition-all cursor-move ${
+                      className={`flex items-center gap-3 bg-white dark:bg-slate-700 border-2 rounded-lg p-3 sm:p-4 shadow-sm transition-all cursor-move ${
                         isDragging
-                          ? 'opacity-50 scale-95 border-blue-400'
+                          ? 'opacity-50 scale-95 border-blue-400 dark:border-blue-500'
                           : isDragOver
-                          ? 'border-blue-500 shadow-lg scale-105'
-                          : 'border-slate-200'
+                          ? 'border-blue-500 dark:border-blue-400 shadow-lg scale-105'
+                          : 'border-slate-200 dark:border-slate-600'
                       }`}
                     >
-                      <GripVertical className="w-5 h-5 text-slate-400 flex-shrink-0 cursor-grab active:cursor-grabbing" />
+                      <GripVertical className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0 cursor-grab active:cursor-grabbing" />
 
                       <div
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -239,8 +239,8 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm sm:text-base">{action.label}</p>
-                        <p className="text-xs sm:text-sm text-slate-500 truncate">{action.description}</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base">{action.label}</p>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">{action.description}</p>
                       </div>
 
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -249,8 +249,8 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
                           disabled={index === 0}
                           className={`p-2 rounded-lg transition-colors ${
                             index === 0
-                              ? 'text-slate-300 cursor-not-allowed'
-                              : 'text-slate-600 hover:bg-slate-100'
+                              ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600'
                           }`}
                         >
                           <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -260,15 +260,15 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
                           disabled={index === visibleActions.length - 1}
                           className={`p-2 rounded-lg transition-colors ${
                             index === visibleActions.length - 1
-                              ? 'text-slate-300 cursor-not-allowed'
-                              : 'text-slate-600 hover:bg-slate-100'
+                              ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600'
                           }`}
                         >
                           <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <button
                           onClick={() => toggleVisibility(actionId)}
-                          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors ml-1"
+                          className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg transition-colors ml-1"
                         >
                           <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
@@ -284,10 +284,10 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
           {hiddenActions.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base sm:text-lg font-semibold text-slate-900">
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Hidden Actions ({hiddenActions.length})
                 </h3>
-                <span className="text-xs sm:text-sm text-slate-500">Tap to show</span>
+                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Tap to show</span>
               </div>
 
               <div className="space-y-2">
@@ -297,7 +297,7 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
                   return (
                     <div
                       key={actionId}
-                      className="flex items-center gap-3 bg-slate-50 border-2 border-slate-200 border-dashed rounded-lg p-3 sm:p-4 opacity-60"
+                      className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 border-dashed rounded-lg p-3 sm:p-4 opacity-60"
                     >
                       <div
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -307,13 +307,13 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm sm:text-base">{action.label}</p>
-                        <p className="text-xs sm:text-sm text-slate-500 truncate">{action.description}</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base">{action.label}</p>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">{action.description}</p>
                       </div>
 
                       <button
                         onClick={() => toggleVisibility(actionId)}
-                        className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors flex-shrink-0"
+                        className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
                       >
                         <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
@@ -326,10 +326,10 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-slate-200 bg-slate-50 sm:rounded-b-xl">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 sm:rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-4 sm:px-6 py-2.5 sm:py-3 text-slate-700 hover:bg-slate-200 rounded-lg font-medium transition-colors text-sm sm:text-base"
+            className="px-4 sm:px-6 py-2.5 sm:py-3 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg font-medium transition-colors text-sm sm:text-base"
           >
             Cancel
           </button>
