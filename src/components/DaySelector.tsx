@@ -116,7 +116,7 @@ export default function DaySelector({
               type="button"
               onClick={() => (hasCollision && !isSelected) ? undefined : onToggleDay(day.value)}
               disabled={hasCollision && !isSelected}
-              className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
+              className={`w-8 h-8 rounded-full text-sm font-medium transition-all ${
                 isSelected
                   ? 'bg-[#00adf0] text-white shadow-md hover:bg-[#0094d1]'
                   : hasCollision
