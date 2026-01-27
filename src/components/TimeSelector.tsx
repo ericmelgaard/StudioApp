@@ -154,10 +154,10 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl w-80 overflow-hidden border border-slate-200">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-80 overflow-hidden border border-slate-200 dark:border-slate-700">
             {!manualMode ? (
               <>
-                <div className="bg-slate-100 p-6 text-slate-900">
+                <div className="bg-slate-100 dark:bg-slate-700 p-6 text-slate-900 dark:text-slate-100">
                   <div className="text-6xl font-light tracking-tight flex items-baseline justify-center gap-1">
                     <button
                       type="button"
@@ -180,7 +180,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                       type="button"
                       onClick={() => togglePeriod(false)}
                       className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                        !isPM ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                        !isPM ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-500'
                       }`}
                     >
                       AM
@@ -189,7 +189,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                       type="button"
                       onClick={() => togglePeriod(true)}
                       className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                        isPM ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                        isPM ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-500'
                       }`}
                     >
                       PM
@@ -197,13 +197,13 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                   </div>
                 </div>
 
-                <div className="p-8 bg-white">
+                <div className="p-8 bg-white dark:bg-slate-800">
                   <div
                     ref={clockRef}
                     onClick={handleClockClick}
                     className="relative w-full aspect-square cursor-pointer"
                   >
-                    <div className="absolute inset-0 rounded-full bg-slate-100">
+                    <div className="absolute inset-0 rounded-full bg-slate-100 dark:bg-slate-700">
                       {getClockNumbers().map((num, i) => {
                         const totalNumbers = selectionMode === 'hour' ? 12 : 4;
                         const angle = (i * 360 / totalNumbers - 90) * (Math.PI / 180);
@@ -221,7 +221,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                             className={`absolute w-10 h-10 flex items-center justify-center rounded-full text-lg transition-colors ${
                               isSelected
                                 ? 'text-white font-semibold'
-                                : 'text-slate-600 hover:bg-slate-200'
+                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                             }`}
                             style={{
                               left: `${x}%`,
@@ -250,7 +250,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                         }}
                       >
                         <div
-                          className="absolute right-0 top-1/2 w-10 h-10 rounded-full -translate-y-1/2 translate-x-1/2 border-4 border-white"
+                          className="absolute right-0 top-1/2 w-10 h-10 rounded-full -translate-y-1/2 translate-x-1/2 border-4 border-white dark:border-slate-800"
                           style={{ backgroundColor: 'rgb(0, 173, 240)' }}
                         />
                       </div>
@@ -258,21 +258,21 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border-t border-slate-200">
+                <div className="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
                     onClick={() => {
                       setManualMode(true);
                     }}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                   >
-                    <Keyboard className="w-6 h-6 text-slate-600" />
+                    <Keyboard className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                   </button>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => setIsOpen(false)}
-                      className="px-6 py-2 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                      className="px-6 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
                       style={{ color: 'rgb(0, 173, 240)' }}
                     >
                       CANCEL
@@ -280,7 +280,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                     <button
                       type="button"
                       onClick={handleOK}
-                      className="px-6 py-2 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                      className="px-6 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
                       style={{ color: 'rgb(0, 173, 240)' }}
                     >
                       OK
@@ -290,12 +290,12 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
               </>
             ) : (
               <>
-                <div className="bg-slate-100 p-6">
-                  <div className="text-xl font-medium text-slate-900">Set time</div>
+                <div className="bg-slate-100 dark:bg-slate-700 p-6">
+                  <div className="text-xl font-medium text-slate-900 dark:text-slate-100">Set time</div>
                 </div>
 
-                <div className="p-6 bg-white">
-                  <div className="text-sm text-slate-600 mb-3">Type in time</div>
+                <div className="p-6 bg-white dark:bg-slate-800">
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Type in time</div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1">
                       <input
@@ -308,7 +308,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                           }
                         }}
                         placeholder="1"
-                        className="w-full px-4 py-3 bg-slate-100 text-slate-900 text-4xl font-light text-center rounded-lg focus:ring-2 focus:outline-none border-b-2 border-transparent"
+                        className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-4xl font-light text-center rounded-lg focus:ring-2 focus:outline-none border-b-2 border-transparent"
                         style={{
                           boxShadow: 'none'
                         }}
@@ -323,10 +323,10 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                         maxLength={2}
                         autoFocus
                       />
-                      <div className="text-xs text-slate-600 text-center mt-1">hour</div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 text-center mt-1">hour</div>
                     </div>
 
-                    <div className="text-4xl text-slate-900 font-light pb-5">:</div>
+                    <div className="text-4xl text-slate-900 dark:text-slate-100 font-light pb-5">:</div>
 
                     <div className="flex-1">
                       <input
@@ -358,20 +358,20 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                           e.target.style.boxShadow = '0 0 0 2px rgb(0, 173, 240)';
                         }}
                         placeholder="00"
-                        className="w-full px-4 py-3 bg-slate-100 text-slate-900 text-4xl font-light text-center rounded-lg focus:ring-2 focus:outline-none"
+                        className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-4xl font-light text-center rounded-lg focus:ring-2 focus:outline-none"
                         style={{
                           boxShadow: 'none'
                         }}
                         maxLength={2}
                       />
-                      <div className="text-xs text-slate-600 text-center mt-1">minute</div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 text-center mt-1">minute</div>
                     </div>
 
                     <div className="flex-1 relative">
                       <select
                         value={manualPeriod}
                         onChange={(e) => setManualPeriod(e.target.value as 'AM' | 'PM')}
-                        className="w-full px-2 py-3 pr-8 bg-slate-100 text-slate-900 text-2xl font-light text-center rounded-lg focus:ring-2 focus:outline-none appearance-none cursor-pointer"
+                        className="w-full px-2 py-3 pr-8 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-2xl font-light text-center rounded-lg focus:ring-2 focus:outline-none appearance-none cursor-pointer"
                         style={{
                           boxShadow: 'none'
                         }}
@@ -385,24 +385,24 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                         <option value="AM">AM</option>
                         <option value="PM">PM</option>
                       </select>
-                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 pointer-events-none pb-5" />
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-slate-400 pointer-events-none pb-5" />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border-t border-slate-200">
+                <div className="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
                     onClick={() => setManualMode(false)}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                   >
-                    <Clock className="w-6 h-6 text-slate-600" />
+                    <Clock className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                   </button>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => setIsOpen(false)}
-                      className="px-6 py-2 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                      className="px-6 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
                       style={{ color: 'rgb(0, 173, 240)' }}
                     >
                       CANCEL
@@ -410,7 +410,7 @@ export default function TimeSelector({ value, onChange, label, disabled = false 
                     <button
                       type="button"
                       onClick={handleManualSubmit}
-                      className="px-6 py-2 hover:bg-slate-100 rounded-lg transition-colors font-medium disabled:opacity-50"
+                      className="px-6 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium disabled:opacity-50"
                       style={{ color: !manualHour || !manualMinute ? '' : 'rgb(0, 173, 240)' }}
                       disabled={!manualHour || !manualMinute}
                     >
