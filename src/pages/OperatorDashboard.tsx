@@ -223,7 +223,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation flex-shrink-0"
                 aria-label="Open navigation menu"
               >
-                <Menu className="w-6 h-6 text-slate-700 dark:text-slate-300" />
+                <Menu className="w-6 h-6" style={{ color: '#00adf0' }} />
               </button>
               <Suspense fallback={<div className="w-48 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>}>
                 <HeaderNavigation
@@ -238,10 +238,10 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
                 href="https://shop.wanddigital.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
                 title="WAND Digital Shop"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="w-5 h-5" style={{ color: '#00adf0' }} />
               </a>
               <div className="hidden md:flex items-center gap-1">
                 <NotificationPanel />
@@ -325,7 +325,7 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation flex-shrink-0"
               aria-label="Open navigation menu"
             >
-              <Menu className="w-6 h-6 text-slate-700 dark:text-slate-300" />
+              <Menu className="w-6 h-6" style={{ color: '#00adf0' }} />
             </button>
             <Suspense fallback={<div className="w-48 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>}>
               <HeaderNavigation
@@ -340,10 +340,10 @@ export default function OperatorDashboard({ onBack, user }: OperatorDashboardPro
               href="https://shop.wanddigital.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors touch-manipulation"
               title="WAND Digital Shop"
             >
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5" style={{ color: '#00adf0' }} />
             </a>
             <div className="hidden md:flex items-center gap-1">
               <NotificationPanel />

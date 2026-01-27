@@ -358,39 +358,38 @@ export default function HeaderNavigation({
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg transition-colors border border-slate-200"
+          className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
         >
-          {getCurrentIcon()}
-          <span className="text-sm font-medium text-slate-900 max-w-[200px] truncate">
+          <span className="text-base font-semibold text-slate-900 dark:text-slate-100 max-w-[250px] truncate">
             {loading ? 'Loading...' : getCurrentDisplayName()}
           </span>
-          {hasDropdownContent && <ChevronDown className="w-4 h-4 text-slate-500" />}
+          {hasDropdownContent && <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />}
         </button>
 
         {/* Desktop Dropdown */}
         {!isMobile && hasDropdownContent && isDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 w-[360px] bg-white rounded-lg shadow-lg border border-slate-200 transition-all max-h-[32rem] overflow-hidden z-50">
+          <div className="absolute top-full left-0 mt-1 w-[360px] bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 transition-all max-h-[32rem] overflow-hidden z-50">
             {/* Go to Parent Link */}
             {parentLocation && parentName && (
               <button
                 onClick={() => handleSelectLocation(parentLocation)}
-                className="w-full px-4 py-3 text-left flex items-center gap-2 hover:bg-slate-50 transition-colors border-b border-slate-200"
+                className="w-full px-4 py-3 text-left flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-b border-slate-200 dark:border-slate-700"
               >
-                <ArrowUp className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-600">Go to {parentName}</span>
+                <ArrowUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Go to {parentName}</span>
               </button>
             )}
 
             {/* Filter Input */}
-            <div className="p-3 border-b border-slate-200 bg-white sticky top-0">
+            <div className="p-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 sticky top-0">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="Filter locations..."
                   value={filterText}
                   onChange={(e) => setFilterText(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -403,8 +402,8 @@ export default function HeaderNavigation({
                     <button
                       key={concept.id}
                       onClick={() => handleSelectLocation({ concept })}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                        location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 ${
+                        location.concept?.id === concept.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       {getLocationIcon('concept', "w-4 h-4 flex-shrink-0")}
@@ -432,8 +431,8 @@ export default function HeaderNavigation({
                           company
                         });
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                        location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 ${
+                        location.company?.id === company.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       {getLocationIcon('company', "w-4 h-4 flex-shrink-0")}
@@ -449,10 +448,10 @@ export default function HeaderNavigation({
                   {filteredCompaniesWithStores.map((company) => (
                     <div key={company.id}>
                       {/* Company Header (non-clickable) */}
-                      <div className="px-4 py-2 bg-slate-50 border-b border-slate-200">
+                      <div className="px-4 py-2 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
                         <div className="flex items-center gap-2">
-                          {getLocationIcon('company', "w-4 h-4 text-slate-500")}
-                          <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                          {getLocationIcon('company', "w-4 h-4 text-slate-500 dark:text-slate-400")}
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                             {company.name}
                           </span>
                         </div>
@@ -479,8 +478,8 @@ export default function HeaderNavigation({
                                   store
                                 });
                               }}
-                              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                                location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 ${
+                                location.store?.id === store.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
                               }`}
                             >
                               {getLocationIcon('store', "w-4 h-4 flex-shrink-0")}
@@ -499,20 +498,20 @@ export default function HeaderNavigation({
 
       {/* Mobile Full-Screen Modal */}
       {isMobile && hasDropdownContent && isDropdownOpen && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col">
+        <div className="fixed inset-0 bg-white dark:bg-slate-800 z-50 flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {getCurrentIcon()}
-              <span className="text-base font-semibold text-slate-900 truncate">
+              <span className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
                 Quick Navigation
               </span>
             </div>
             <button
               onClick={handleCloseDropdown}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
             >
-              <X className="w-5 h-5 text-slate-600" />
+              <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </button>
           </div>
 
@@ -520,23 +519,23 @@ export default function HeaderNavigation({
           {parentLocation && parentName && (
             <button
               onClick={() => handleSelectLocation(parentLocation)}
-              className="w-full px-4 py-4 text-left flex items-center gap-3 hover:bg-slate-50 transition-colors border-b border-slate-200"
+              className="w-full px-4 py-4 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-b border-slate-200 dark:border-slate-700"
             >
-              <ArrowUp className="w-5 h-5 text-blue-600" />
-              <span className="text-base font-medium text-blue-600">Go to {parentName}</span>
+              <ArrowUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <span className="text-base font-medium text-blue-600 dark:text-blue-400">Go to {parentName}</span>
             </button>
           )}
 
           {/* Filter Input */}
-          <div className="p-4 border-b border-slate-200 bg-white">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Filter locations..."
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
-                className="w-full pl-10 pr-3 py-3 text-base border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-3 text-base border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -549,8 +548,8 @@ export default function HeaderNavigation({
                 <button
                   key={concept.id}
                   onClick={() => handleSelectLocation({ concept })}
-                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
-                    location.concept?.id === concept.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3 border-b border-slate-100 dark:border-slate-700 ${
+                    location.concept?.id === concept.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
                   }`}
                   style={{ minHeight: '44px' }}
                 >
@@ -575,8 +574,8 @@ export default function HeaderNavigation({
                       company
                     });
                   }}
-                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
-                    location.company?.id === company.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3 border-b border-slate-100 dark:border-slate-700 ${
+                    location.company?.id === company.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
                   }`}
                   style={{ minHeight: '44px' }}
                 >
@@ -589,10 +588,10 @@ export default function HeaderNavigation({
               {showStores && filteredCompaniesWithStores.map((company) => (
                 <div key={company.id}>
                   {/* Company Header (non-clickable) */}
-                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 sticky top-0">
+                  <div className="px-4 py-3 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 sticky top-0">
                     <div className="flex items-center gap-2">
-                      {getLocationIcon('company', "w-5 h-5 text-slate-500")}
-                      <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                      {getLocationIcon('company', "w-5 h-5 text-slate-500 dark:text-slate-400")}
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                         {company.name}
                       </span>
                     </div>
@@ -618,8 +617,8 @@ export default function HeaderNavigation({
                             store
                           });
                         }}
-                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 ${
-                          location.store?.id === store.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3 border-b border-slate-100 dark:border-slate-700 ${
+                          location.store?.id === store.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
                         }`}
                         style={{ minHeight: '44px' }}
                       >
@@ -637,10 +636,10 @@ export default function HeaderNavigation({
       {/* Map Icon Button - Hidden on mobile */}
       <button
         onClick={onOpenFullNavigator}
-        className="hidden md:flex items-center justify-center p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+        className="hidden md:flex items-center justify-center p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
         title="Open full navigation"
       >
-        <Map className="w-4 h-4 text-slate-600" />
+        <Map className="w-4 h-4" style={{ color: '#00adf0' }} />
       </button>
 
       {/* Action Button */}
