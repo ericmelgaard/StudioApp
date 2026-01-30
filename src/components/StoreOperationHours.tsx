@@ -364,34 +364,42 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
               </div>
             </div>
             <div className="p-6 space-y-4">
-              <div className="text-center">
-                <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-slate-600 text-sm">
-                  No power save schedules configured yet.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleAddEventSchedule}
-                className="w-full min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                style={{
-                  borderColor: 'rgba(222, 56, 222, 0.3)',
-                  color: 'rgb(156, 39, 176)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                  e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <Sparkles className="w-4 h-4" />
-                <span className="text-xs md:text-sm font-medium">
-                  Add Event/Holiday
-                </span>
-              </button>
+              {addingEventSchedule ? (
+                <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)', border: '2px solid rgba(222, 56, 222, 0.2)' }}>
+                  {renderInlineEditForm('new-event')}
+                </div>
+              ) : (
+                <>
+                  <div className="text-center">
+                    <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-slate-600 text-sm">
+                      No power save schedules configured yet.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddEventSchedule}
+                    className="w-full min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                    style={{
+                      borderColor: 'rgba(222, 56, 222, 0.3)',
+                      color: 'rgb(156, 39, 176)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                      e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-xs md:text-sm font-medium">
+                      Add Event/Holiday
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ) : (
@@ -458,34 +466,40 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                 </div>
               ))}
 
-              {regularSchedules.length > 0 && (
-                <div className="mx-3 mb-3 mt-3">
-                  <button
-                    type="button"
-                    onClick={handleAddEventSchedule}
-                    className="w-full min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                    style={{
-                      borderColor: 'rgba(222, 56, 222, 0.3)',
-                      color: 'rgb(156, 39, 176)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                      e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span className="text-xs md:text-sm font-medium">
-                      Add Event/Holiday
-                    </span>
-                  </button>
+              {addingEventSchedule ? (
+                <div className="mx-3 mb-3 mt-3 p-4 rounded-xl" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)', border: '2px solid rgba(222, 56, 222, 0.2)' }}>
+                  {renderInlineEditForm('new-event')}
                 </div>
+              ) : addingSchedule ? (
+                renderInlineEditForm('new-regular')
+              ) : (
+                regularSchedules.length > 0 && (
+                  <div className="mx-3 mb-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={handleAddEventSchedule}
+                      className="w-full min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                      style={{
+                        borderColor: 'rgba(222, 56, 222, 0.3)',
+                        color: 'rgb(156, 39, 176)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                        e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-xs md:text-sm font-medium">
+                        Add Event/Holiday
+                      </span>
+                    </button>
+                  </div>
+                )
               )}
-
-              {renderInlineEditForm('new-regular')}
 
               {eventSchedules.length > 0 && (
                 <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
@@ -576,7 +590,6 @@ export default function StoreOperationHours({ storeId, conceptId, viewLevel = 's
                       ))}
                     </div>
                   )}
-                  {renderInlineEditForm('new-event')}
                 </div>
               )}
             </div>
