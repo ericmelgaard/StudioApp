@@ -8,6 +8,7 @@ interface DaySelectorProps {
   editingScheduleId?: string;
   showPresets?: boolean;
   daypartColor?: string;
+  disableCollisionDetection?: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -33,7 +34,8 @@ export default function DaySelector({
   currentDaypartName = '',
   editingScheduleId,
   showPresets = true,
-  daypartColor
+  daypartColor,
+  disableCollisionDetection = false
 }: DaySelectorProps) {
 
   const applyPreset = (preset: number[]) => {
@@ -94,7 +96,7 @@ export default function DaySelector({
         </div>
       )}
 
-      {schedules.length > 0 && currentDaypartName && (
+      {schedules.length > 0 && currentDaypartName && !disableCollisionDetection && (
         <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded border-2 border-red-400 dark:border-red-500"></div>
@@ -106,9 +108,12 @@ export default function DaySelector({
       <div className="flex justify-center gap-2">
         {DAYS_OF_WEEK.map((day) => {
           const isSelected = selectedDays.includes(day.value);
-          const hasCollision = schedules.length > 0 && currentDaypartName
+          const hasCollision = !disableCollisionDetection && schedules.length > 0 && currentDaypartName
             ? getDayCollisionStatus(schedules, currentDaypartName, day.value, selectedDays, editingScheduleId)
             : false;
+
+          const selectedBgColor = daypartColor || '#00adf0';
+          const selectedHoverColor = daypartColor ? `${daypartColor}dd` : '#0094d1';
 
           return (
             <button
@@ -118,11 +123,24 @@ export default function DaySelector({
               disabled={hasCollision && !isSelected}
               className={`w-8 h-8 rounded-full text-sm font-medium transition-all ${
                 isSelected
-                  ? 'bg-[#00adf0] text-white shadow-md hover:bg-[#0094d1]'
+                  ? 'text-white shadow-md'
                   : hasCollision
                   ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                   : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
               } ${hasCollision ? 'ring-2 ring-red-400 dark:ring-red-500' : ''}`}
+              style={isSelected ? {
+                backgroundColor: selectedBgColor
+              } : {}}
+              onMouseEnter={(e) => {
+                if (isSelected) {
+                  e.currentTarget.style.backgroundColor = selectedHoverColor;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (isSelected) {
+                  e.currentTarget.style.backgroundColor = selectedBgColor;
+                }
+              }}
               title={
                 hasCollision
                   ? `${day.label} already scheduled in this daypart${isSelected ? ' - click to remove' : ''}`

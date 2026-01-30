@@ -224,7 +224,9 @@ export default function ScheduleGroupForm({
     ? 'Event name is required'
     : null;
 
-  const error = daypartError || (disableCollisionDetection ? null : collision.collisionMessage) || timeError || daysError || eventNameError;
+  const collisionError = scheduleType !== 'event_holiday' && !disableCollisionDetection ? collision.collisionMessage : null;
+
+  const error = daypartError || collisionError || timeError || daysError || eventNameError;
 
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -347,7 +349,15 @@ export default function ScheduleGroupForm({
             </label>
             <select
               value={recurrenceType}
-              onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
+              onChange={(e) => {
+                const newType = e.target.value as RecurrenceType;
+                setRecurrenceType(newType);
+                if (newType !== 'annual_date_range') {
+                  const updated = { ...localSchedule, days_of_week: [] };
+                  setLocalSchedule(updated);
+                  onUpdate(updated);
+                }
+              }}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400"
             >
               <option value="none">One-time Date</option>
@@ -478,27 +488,47 @@ export default function ScheduleGroupForm({
           )}
 
           {recurrenceType === 'annual_date_range' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={recurrenceConfig.range_start_date || ''}
-                  onChange={(e) => handleRecurrenceConfigChange('range_start_date', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400"
-                />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={recurrenceConfig.range_start_date || ''}
+                    onChange={(e) => handleRecurrenceConfigChange('range_start_date', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={recurrenceConfig.range_end_date || ''}
+                    onChange={(e) => handleRecurrenceConfigChange('range_end_date', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  End Date
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Active Days (optional)
                 </label>
-                <input
-                  type="date"
-                  value={recurrenceConfig.range_end_date || ''}
-                  onChange={(e) => handleRecurrenceConfigChange('range_end_date', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400"
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                  Select specific days this event applies to, or leave empty to apply to all days in the date range
+                </p>
+                <DaySelector
+                  selectedDays={localSchedule.days_of_week}
+                  onToggleDay={handleToggleDay}
+                  schedules={[]}
+                  currentDaypartName={localSchedule.daypart_name}
+                  editingScheduleId={localSchedule.id}
+                  showPresets={true}
+                  daypartColor="#d97706"
+                  disableCollisionDetection={true}
                 />
               </div>
             </div>
