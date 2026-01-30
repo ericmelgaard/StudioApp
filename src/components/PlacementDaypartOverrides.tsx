@@ -428,37 +428,73 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       return true;
     });
 
+    const isEventHoliday = preFillScheduleType === 'event_holiday' || editingRoutine?.schedule_type === 'event_holiday' || editingInherited?.schedule_type === 'event_holiday';
+
     return (
-      <div className="mb-3">
-        <DaypartRoutineForm
-          placementGroupId={placementGroupId}
-          existingRoutines={allRoutinesForCollision}
-          onSave={handleSave}
-          onCancel={handleCancel}
-          editingRoutine={editingInherited ? {
-            id: undefined,
-            placement_group_id: placementGroupId,
-            daypart_name: editingInherited.daypart_name,
-            days_of_week: editingInherited.days_of_week,
-            start_time: editingInherited.start_time,
-            end_time: editingInherited.end_time,
-            schedule_name: editingInherited.schedule_name,
-            runs_on_days: editingInherited.runs_on_days,
-            schedule_type: editingInherited.schedule_type,
-            event_name: editingInherited.event_name,
-            event_date: editingInherited.event_date,
-            recurrence_type: editingInherited.recurrence_type,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          } as DaypartRoutine : editingRoutine}
-          preFillDaypart={preFillDaypart}
-          preFillScheduleType={preFillScheduleType}
-          preFillDaysOfWeek={preFillDaysOfWeek}
-          preFillStartTime={preFillStartTime}
-          preFillEndTime={preFillEndTime}
-          daypartDefinition={currentDefinition}
-          onDelete={editingRoutine ? handleDelete : undefined}
-        />
+      <div
+        className="p-4 rounded-xl overflow-hidden"
+        style={isEventHoliday ? {
+          backgroundColor: 'rgba(222, 56, 222, 0.08)',
+          border: '2px solid rgba(222, 56, 222, 0.2)'
+        } : undefined}
+      >
+        <div className={!isEventHoliday ? "bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4" : ""}>
+          {!isEventHoliday && (
+            <div className="flex items-center justify-between mb-4">
+              <h5 className="font-semibold text-slate-900 dark:text-slate-100">
+                {editingRoutine ? 'Edit Schedule' : 'Add Schedule'}
+              </h5>
+              <button
+                onClick={handleCancel}
+                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
+          )}
+          {isEventHoliday && (
+            <div className="flex items-center justify-between mb-4">
+              <h5 className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>
+                {editingRoutine || editingInherited ? 'Edit Event' : 'Add Event/Holiday'}
+              </h5>
+              <button
+                onClick={handleCancel}
+                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+              >
+                <X className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+              </button>
+            </div>
+          )}
+          <DaypartRoutineForm
+            placementGroupId={placementGroupId}
+            existingRoutines={allRoutinesForCollision}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            editingRoutine={editingInherited ? {
+              id: undefined,
+              placement_group_id: placementGroupId,
+              daypart_name: editingInherited.daypart_name,
+              days_of_week: editingInherited.days_of_week,
+              start_time: editingInherited.start_time,
+              end_time: editingInherited.end_time,
+              schedule_name: editingInherited.schedule_name,
+              runs_on_days: editingInherited.runs_on_days,
+              schedule_type: editingInherited.schedule_type,
+              event_name: editingInherited.event_name,
+              event_date: editingInherited.event_date,
+              recurrence_type: editingInherited.recurrence_type,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            } as DaypartRoutine : editingRoutine}
+            preFillDaypart={preFillDaypart}
+            preFillScheduleType={preFillScheduleType}
+            preFillDaysOfWeek={preFillDaysOfWeek}
+            preFillStartTime={preFillStartTime}
+            preFillEndTime={preFillEndTime}
+            daypartDefinition={currentDefinition}
+            onDelete={editingRoutine ? handleDelete : undefined}
+          />
+        </div>
       </div>
     );
   };
@@ -565,94 +601,100 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                   </div>
                 ))}
 
-                {daypartSchedules.length === 0 && !hasEvents && (
-                  <div className="p-6 space-y-4">
-                    <div className="text-center">
-                      <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-slate-600 text-sm">
-                        No schedules configured for this daypart.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAddNew('event_holiday', daypartName)}
-                      className="w-full min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                      style={{
-                        borderColor: 'rgba(222, 56, 222, 0.3)',
-                        color: 'rgb(156, 39, 176)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                        e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span className="text-xs md:text-sm font-medium">
-                        Add Event/Holiday
-                      </span>
-                    </button>
-                  </div>
-                )}
-
                 {/* Add New Schedule Inline Form */}
-                {isAddingNew && preFillDaypart === daypartName && renderInlineEditForm(`new-${daypartName}`, daypartName)}
-
-                {/* Action Buttons Grid */}
-                {daypartSchedules.length > 0 && (() => {
-                  const scheduledDays = new Set<number>();
-                  daypartSchedules.forEach(schedule => {
-                    schedule.days_of_week.forEach(day => scheduledDays.add(day));
-                  });
-                  const allDays = [0, 1, 2, 3, 4, 5, 6];
-                  const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
-                  const hasUnscheduledDays = unscheduledDays.length > 0;
-
-                  return (
-                    <div className="mx-3 mb-3 flex flex-wrap gap-3">
-                      {hasUnscheduledDays && (
+                {isAddingNew && preFillDaypart === daypartName ? (
+                  <div className="mx-3 mb-3">
+                    {renderInlineEditForm(`new-${daypartName}`, daypartName)}
+                  </div>
+                ) : (
+                  <>
+                    {daypartSchedules.length === 0 && !hasEvents && (
+                      <div className="p-6 space-y-4">
+                        <div className="text-center">
+                          <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-slate-600 text-sm">
+                            No schedules configured for this daypart.
+                          </p>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => {
-                            const template = daypartSchedules[0];
-                            handleAddNew('regular', daypartName, unscheduledDays, template);
+                          onClick={() => handleAddNew('event_holiday', daypartName)}
+                          className="w-full min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                          style={{
+                            borderColor: 'rgba(222, 56, 222, 0.3)',
+                            color: 'rgb(156, 39, 176)'
                           }}
-                          className="flex-1 min-w-[220px] p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                            e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
                         >
-                          <Plus className="w-4 h-4 text-slate-700" />
-                          <span className="text-xs md:text-sm font-medium text-slate-700">
-                            Schedule Remaining Days ({unscheduledDays.length})
+                          <Sparkles className="w-4 h-4" />
+                          <span className="text-xs md:text-sm font-medium">
+                            Add Event/Holiday
                           </span>
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleAddNew('event_holiday', daypartName)}
-                        className="flex-1 min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                        style={{
-                          borderColor: 'rgba(222, 56, 222, 0.3)',
-                          color: 'rgb(156, 39, 176)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                          e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        <span className="text-xs md:text-sm font-medium">
-                          Add Event/Holiday
-                        </span>
-                      </button>
-                    </div>
-                  );
-                })()}
+                      </div>
+                    )}
+
+                    {/* Action Buttons Grid */}
+                    {daypartSchedules.length > 0 && (() => {
+                      const scheduledDays = new Set<number>();
+                      daypartSchedules.forEach(schedule => {
+                        schedule.days_of_week.forEach(day => scheduledDays.add(day));
+                      });
+                      const allDays = [0, 1, 2, 3, 4, 5, 6];
+                      const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
+                      const hasUnscheduledDays = unscheduledDays.length > 0;
+
+                      return (
+                        <div className="mx-3 mb-3 flex flex-wrap gap-3">
+                          {hasUnscheduledDays && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const template = daypartSchedules[0];
+                                handleAddNew('regular', daypartName, unscheduledDays, template);
+                              }}
+                              className="flex-1 min-w-[220px] p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                            >
+                              <Plus className="w-4 h-4 text-slate-700" />
+                              <span className="text-xs md:text-sm font-medium text-slate-700">
+                                Schedule Remaining Days ({unscheduledDays.length})
+                              </span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleAddNew('event_holiday', daypartName)}
+                            className="flex-1 min-w-[180px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                            style={{
+                              borderColor: 'rgba(222, 56, 222, 0.3)',
+                              color: 'rgb(156, 39, 176)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                              e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            <span className="text-xs md:text-sm font-medium">
+                              Add Event/Holiday
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
 
                 {hasEvents && (
                   <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
