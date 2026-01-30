@@ -494,6 +494,27 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         daypartColor={definition.color}
                       />
                     </div>
+                  ) : editingSchedule && !editingSchedule.id && editingDaypartName === daypartName && editingSchedule.schedule_type === 'event_holiday' ? (
+                    <div className="mx-3 mb-3 p-4 rounded-xl" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)', border: '2px solid rgba(222, 56, 222, 0.2)' }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h5 className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>Add Event</h5>
+                        <button
+                          onClick={handleCancel}
+                          className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                        >
+                          <X className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
+                        </button>
+                      </div>
+                      <ScheduleGroupForm
+                        schedule={{ ...editingSchedule, daypart_name: daypartName }}
+                        allSchedules={schedules}
+                        onUpdate={setEditingSchedule}
+                        onSave={() => handleSave(editingSchedule!)}
+                        onCancel={handleCancel}
+                        level="placement"
+                        daypartColor={definition.color}
+                      />
+                    </div>
                   ) : (
                     daypartSchedules.length > 0 && (() => {
                       const scheduledDays = new Set<number>();
@@ -632,29 +653,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                               </div>
                             );
                           })}
-
-                          {editingSchedule && !editingSchedule.id && editingDaypartName === daypartName && editingSchedule.schedule_type === 'event_holiday' && (
-                            <div className="p-4" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)' }}>
-                              <div className="flex items-center justify-between mb-4">
-                                <h5 className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>Add Event</h5>
-                                <button
-                                  onClick={handleCancel}
-                                  className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
-                                >
-                                  <X className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
-                                </button>
-                              </div>
-                              <ScheduleGroupForm
-                                schedule={{ ...editingSchedule, daypart_name: daypartName }}
-                                allSchedules={schedules}
-                                onUpdate={setEditingSchedule}
-                                onSave={() => handleSave(editingSchedule!)}
-                                onCancel={handleCancel}
-                                level="placement"
-                                daypartColor={definition.color}
-                              />
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
