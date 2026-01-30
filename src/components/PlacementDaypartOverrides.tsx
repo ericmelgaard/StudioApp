@@ -660,10 +660,22 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                 const template = daypartSchedules[0];
                                 handleAddNew('regular', daypartName, unscheduledDays, template);
                               }}
-                              className="flex-1 min-w-[220px] p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                              className="flex-1 min-w-[240px] p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                              style={{
+                                borderColor: 'rgba(37, 99, 235, 0.3)',
+                                color: 'rgb(30, 64, 175)'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.5)';
+                                e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.3)';
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
                             >
-                              <Plus className="w-4 h-4 text-slate-700" />
-                              <span className="text-xs md:text-sm font-medium text-slate-700">
+                              <Plus className="w-4 h-4" />
+                              <span className="text-xs md:text-sm font-medium">
                                 Schedule Remaining Days ({unscheduledDays.length})
                               </span>
                             </button>
