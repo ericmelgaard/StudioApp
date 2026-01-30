@@ -991,47 +991,45 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                       </div>
                     ))}
 
-                    {regularSchedules.length > 0 && (
-                      <div className={`mx-3 mb-3 mt-3 grid ${hasUnscheduledDays ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
-                        {hasUnscheduledDays && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const template = regularSchedules[0];
-                              handleAddSchedule(definition.id, 'regular', unscheduledDays, template);
-                            }}
-                            className="p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                          >
-                            <Plus className="w-4 h-4 text-slate-700" />
-                            <span className="text-sm font-medium text-slate-700">
-                              Add Missing Days ({unscheduledDays.length})
-                            </span>
-                          </button>
-                        )}
+                    <div className={`mx-3 mb-3 mt-3 grid ${hasUnscheduledDays && regularSchedules.length > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                      {hasUnscheduledDays && regularSchedules.length > 0 && (
                         <button
                           type="button"
-                          onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
-                          className="p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                          style={{
-                            borderColor: 'rgba(222, 56, 222, 0.3)',
-                            color: 'rgb(156, 39, 176)'
+                          onClick={() => {
+                            const template = regularSchedules[0];
+                            handleAddSchedule(definition.id, 'regular', unscheduledDays, template);
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                            e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
+                          className="p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                         >
-                          <Sparkles className="w-4 h-4" />
-                          <span className="text-sm font-medium">
-                            Add Event/Holiday
+                          <Plus className="w-4 h-4 text-slate-700" />
+                          <span className="text-sm font-medium text-slate-700">
+                            Add Missing Days ({unscheduledDays.length})
                           </span>
                         </button>
-                      </div>
-                    )}
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
+                        className="p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                        style={{
+                          borderColor: 'rgba(222, 56, 222, 0.3)',
+                          color: 'rgb(156, 39, 176)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                          e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                          Add Event/Holiday
+                        </span>
+                      </button>
+                    </div>
 
                     {renderInlineEditForm('new-' + definition.id)}
 
