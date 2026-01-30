@@ -307,7 +307,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     daysOfWeek?: number[],
     template?: DaypartRoutine
   ) => {
-    const newId = `new-${daypartName}-${scheduleType}-${Date.now()}`;
+    const newId = `new-${daypartName}`;
     setExpandedScheduleId(newId);
     setEditingRoutine(null);
     setEditingInherited(null);
