@@ -9,6 +9,7 @@ interface DaySelectorProps {
   showPresets?: boolean;
   daypartColor?: string;
   disableCollisionDetection?: boolean;
+  hideLabel?: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -35,7 +36,8 @@ export default function DaySelector({
   editingScheduleId,
   showPresets = true,
   daypartColor,
-  disableCollisionDetection = false
+  disableCollisionDetection = false,
+  hideLabel = false
 }: DaySelectorProps) {
 
   const applyPreset = (preset: number[]) => {
@@ -57,43 +59,47 @@ export default function DaySelector({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Days of the Week *</label>
-        {showPresets && (
-          <button
-            type="button"
-            onClick={selectedDays.length === 7 ? clearAll : () => applyPreset(PRESETS.allDays)}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-          >
-            {selectedDays.length === 7 ? 'Clear All' : 'Select All'}
-          </button>
-        )}
-      </div>
+      {!hideLabel && (
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Days of the Week *</label>
+            {showPresets && (
+              <button
+                type="button"
+                onClick={selectedDays.length === 7 ? clearAll : () => applyPreset(PRESETS.allDays)}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              >
+                {selectedDays.length === 7 ? 'Clear All' : 'Select All'}
+              </button>
+            )}
+          </div>
 
-      {showPresets && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          <button
-            type="button"
-            onClick={() => applyPreset(PRESETS.weekdays)}
-            className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
-          >
-            Weekdays
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset(PRESETS.weekend)}
-            className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
-          >
-            Weekend
-          </button>
-          <button
-            type="button"
-            onClick={clearAll}
-            className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
-          >
-            Clear
-          </button>
-        </div>
+          {showPresets && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => applyPreset(PRESETS.weekdays)}
+                className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+              >
+                Weekdays
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset(PRESETS.weekend)}
+                className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+              >
+                Weekend
+              </button>
+              <button
+                type="button"
+                onClick={clearAll}
+                className="px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {schedules.length > 0 && currentDaypartName && !disableCollisionDetection && (

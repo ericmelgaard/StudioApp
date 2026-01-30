@@ -352,7 +352,11 @@ export default function ScheduleGroupForm({
               onChange={(e) => {
                 const newType = e.target.value as RecurrenceType;
                 setRecurrenceType(newType);
-                if (newType !== 'annual_date_range') {
+                if (newType === 'annual_date_range') {
+                  const updated = { ...localSchedule, days_of_week: [0, 1, 2, 3, 4, 5, 6] };
+                  setLocalSchedule(updated);
+                  onUpdate(updated);
+                } else {
                   const updated = { ...localSchedule, days_of_week: [] };
                   setLocalSchedule(updated);
                   onUpdate(updated);
@@ -515,10 +519,10 @@ export default function ScheduleGroupForm({
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Active Days (optional)
+                  Active Days
                 </label>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                  Select specific days this event applies to, or leave empty to apply to all days in the date range
+                  Select which days this event applies to within the date range
                 </p>
                 <DaySelector
                   selectedDays={localSchedule.days_of_week}
@@ -526,9 +530,10 @@ export default function ScheduleGroupForm({
                   schedules={[]}
                   currentDaypartName={localSchedule.daypart_name}
                   editingScheduleId={localSchedule.id}
-                  showPresets={true}
+                  showPresets={false}
                   daypartColor="#d97706"
                   disableCollisionDetection={true}
+                  hideLabel={true}
                 />
               </div>
             </div>
