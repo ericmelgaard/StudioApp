@@ -815,7 +815,17 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
-                    {!addingScheduleForDef && (
+                    {addingScheduleForDef === definition.id ? (
+                      newSchedule?.schedule_type === 'event_holiday' ? (
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)', border: '2px solid rgba(222, 56, 222, 0.2)' }}>
+                          {renderInlineEditForm('new-' + definition.id)}
+                        </div>
+                      ) : (
+                        <div className="bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                          {renderInlineEditForm('new-' + definition.id)}
+                        </div>
+                      )
+                    ) : (
                       <>
                         <div className="text-center">
                           <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
@@ -847,7 +857,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                         </button>
                       </>
                     )}
-                    {renderInlineEditForm('new-' + definition.id)}
                   </div>
                 </div>
               ) : (
@@ -964,47 +973,57 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                       </div>
                     ))}
 
-                    <div className={`mx-3 mb-3 mt-3 grid ${hasUnscheduledDays && regularSchedules.length > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
-                      {hasUnscheduledDays && regularSchedules.length > 0 && (
+                    {addingScheduleForDef === definition.id ? (
+                      newSchedule?.schedule_type === 'event_holiday' ? (
+                        <div className="mx-3 mb-3 mt-3 p-4 rounded-xl" style={{ backgroundColor: 'rgba(222, 56, 222, 0.08)', border: '2px solid rgba(222, 56, 222, 0.2)' }}>
+                          {renderInlineEditForm('new-' + definition.id)}
+                        </div>
+                      ) : (
+                        <div className="mx-3 mb-3 mt-3 bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                          {renderInlineEditForm('new-' + definition.id)}
+                        </div>
+                      )
+                    ) : (
+                      <div className={`mx-3 mb-3 mt-3 grid ${hasUnscheduledDays && regularSchedules.length > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                        {hasUnscheduledDays && regularSchedules.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const template = regularSchedules[0];
+                              handleAddSchedule(definition.id, 'regular', unscheduledDays, template);
+                            }}
+                            className="p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Plus className="w-4 h-4 text-slate-700" />
+                            <span className="text-sm font-medium text-slate-700">
+                              Add Missing Days ({unscheduledDays.length})
+                            </span>
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => {
-                            const template = regularSchedules[0];
-                            handleAddSchedule(definition.id, 'regular', unscheduledDays, template);
+                          onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
+                          className="p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                          style={{
+                            borderColor: 'rgba(222, 56, 222, 0.3)',
+                            color: 'rgb(156, 39, 176)'
                           }}
-                          className="p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                            e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
                         >
-                          <Plus className="w-4 h-4 text-slate-700" />
-                          <span className="text-sm font-medium text-slate-700">
-                            Add Missing Days ({unscheduledDays.length})
+                          <Sparkles className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Add Event/Holiday
                           </span>
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
-                        className="p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                        style={{
-                          borderColor: 'rgba(222, 56, 222, 0.3)',
-                          color: 'rgb(156, 39, 176)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                          e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        <span className="text-sm font-medium">
-                          Add Event/Holiday
-                        </span>
-                      </button>
-                    </div>
-
-                    {renderInlineEditForm('new-' + definition.id)}
+                      </div>
+                    )}
 
                     {hasEvents && (
                       <div className="mx-3 mb-3 mt-2 rounded-lg overflow-hidden" style={{ border: '2px solid rgba(222, 56, 222, 0.2)', backgroundColor: 'rgba(222, 56, 222, 0.03)' }}>
