@@ -749,38 +749,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           const unscheduledDays = allDays.filter(day => !scheduledDays.has(day));
           const hasUnscheduledDays = unscheduledDays.length > 0;
 
-          if (addingScheduleForDef === definition.id && newSchedule) {
-            return (
-              <div key={definition.id} className={`bg-white rounded-xl border-2 overflow-hidden transition-opacity ${
-                isInUse ? 'border-slate-200 shadow-sm' : 'border-slate-300 opacity-60'
-              }`}>
-                <div className={`px-4 py-3 border-b border-slate-200 ${definition.color}`}>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <h4 className="font-semibold">{definition.display_label}</h4>
-                  </div>
-                </div>
-                <div className="px-4 pb-4 bg-slate-50">
-                  <div className="pt-4">
-                    <ScheduleGroupForm
-                      schedule={newSchedule}
-                      allSchedules={defSchedules}
-                      onUpdate={setNewSchedule}
-                      onSave={handleSaveSchedule}
-                      onCancel={() => {
-                        setAddingScheduleForDef(null);
-                        setNewSchedule(null);
-                      }}
-                      onRemovedDays={setRemovedDays}
-                      level="site"
-                      daypartColor={definition.color}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
           return (
             <div key={definition.id}>
               {regularSchedules.length === 0 && !hasEvents ? (
@@ -847,34 +815,39 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
-                    <div className="text-center">
-                      <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-slate-600 text-sm">
-                        No schedules configured for this daypart.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
-                      className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
-                      style={{
-                        borderColor: 'rgba(222, 56, 222, 0.3)',
-                        color: 'rgb(156, 39, 176)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
-                        e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span className="text-sm font-medium">
-                        Add Event/Holiday
-                      </span>
-                    </button>
+                    {!addingScheduleForDef && (
+                      <>
+                        <div className="text-center">
+                          <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-slate-600 text-sm">
+                            No schedules configured for this daypart.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddSchedule(definition.id, 'event_holiday')}
+                          className="w-full p-3 border-2 border-dashed rounded-lg transition-all flex items-center justify-center gap-2"
+                          style={{
+                            borderColor: 'rgba(222, 56, 222, 0.3)',
+                            color: 'rgb(156, 39, 176)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.5)';
+                            e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(222, 56, 222, 0.3)';
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Add Event/Holiday
+                          </span>
+                        </button>
+                      </>
+                    )}
+                    {renderInlineEditForm('new-' + definition.id)}
                   </div>
                 </div>
               ) : (
