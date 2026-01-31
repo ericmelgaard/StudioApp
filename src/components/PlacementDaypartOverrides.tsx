@@ -432,13 +432,13 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
     return (
       <div
-        className="p-4 rounded-xl overflow-hidden"
+        className="rounded-xl overflow-hidden"
         style={isEventHoliday ? {
           backgroundColor: 'rgba(222, 56, 222, 0.08)',
           border: '2px solid rgba(222, 56, 222, 0.2)'
         } : undefined}
       >
-        <div className={!isEventHoliday ? "bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4" : ""}>
+        <div className={!isEventHoliday ? "bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4" : "p-4"}>
           {!isEventHoliday && (
             <div className="flex items-center justify-between mb-4">
               <h5 className="font-semibold text-slate-900 dark:text-slate-100">
