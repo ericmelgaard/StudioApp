@@ -373,7 +373,7 @@ export default function FieldLinkModal({
                 }`}
               >
                 <Calculator className="w-4 h-4" />
-                Calculation
+                Bundle Price
               </button>
             </div>
           </div>
