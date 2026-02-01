@@ -82,10 +82,12 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   const [showApiLinkModal, setShowApiLinkModal] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [openOptionDropdown, setOpenOptionDropdown] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newOption, setNewOption] = useState<Option | null>(null);
 
-  const addOption = () => {
+  const startAddOption = () => {
     const maxSortOrder = options.length > 0 ? Math.max(...options.map(o => o.sort_order)) : 0;
-    const newOption: Option = {
+    const option: Option = {
       id: crypto.randomUUID(),
       label: '',
       description: '',
@@ -93,7 +95,21 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
       calories: 0,
       sort_order: maxSortOrder + 1,
     };
-    onChange([...options, newOption]);
+    setNewOption(option);
+    setShowAddForm(true);
+  };
+
+  const saveNewOption = () => {
+    if (newOption) {
+      onChange([...options, newOption]);
+      setNewOption(null);
+      setShowAddForm(false);
+    }
+  };
+
+  const cancelAddOption = () => {
+    setNewOption(null);
+    setShowAddForm(false);
   };
 
   const updateOption = (id: string, updates: Partial<Option>) => {
@@ -588,13 +604,116 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
         );
       })}
 
-      <button
-        onClick={addOption}
-        className="w-full py-3 px-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-      >
-        <Plus className="w-5 h-5" />
-        Add Option
-      </button>
+      {showAddForm && newOption ? (
+        <div className="bg-white border-2 border-blue-500 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={cancelAddOption}
+              className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveNewOption}
+              disabled={!newOption.label}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                newOption.label
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              }`}
+            >
+              Save
+            </button>
+          </div>
+
+          <div className="p-5">
+            <div className="flex gap-4">
+              <div className="flex items-start pt-2">
+                <GripVertical className="w-5 h-5 text-slate-400" />
+              </div>
+
+              <div className="flex-1 space-y-4">
+                <div className="flex items-start justify-between">
+                  <span className="text-sm font-medium text-slate-500">#{newOption.sort_order}</span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-slate-700">Label</label>
+                      <span className="text-xs text-red-600">Required</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={newOption.label}
+                      onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
+                      placeholder="e.g., Small, Medium, Large"
+                      className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description (optional)</label>
+                    <input
+                      type="text"
+                      value={newOption.description}
+                      onChange={(e) => setNewOption({ ...newOption, description: e.target.value })}
+                      placeholder="e.g., 12 oz"
+                      className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-700 mb-1.5 block">Price</label>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={newOption.price || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                            setNewOption({ ...newOption, price: parseFloat(value) || 0 });
+                          }
+                        }}
+                        placeholder="0.00"
+                        className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-700 mb-1.5 block">Calories</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={newOption.calories || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^\d*$/.test(value)) {
+                            setNewOption({ ...newOption, calories: parseInt(value) || 0 });
+                          }
+                        }}
+                        placeholder="0"
+                        className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={startAddOption}
+          className="w-full py-3 px-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+        >
+          <Plus className="w-5 h-5" />
+          Add Option
+        </button>
+      )}
 
       {showApiLinkModal && (
         <ApiLinkModal
@@ -2541,10 +2660,11 @@ export default function EditProductModal({ isOpen, onClose, product, onSuccess, 
                         const isLocalOnly = syncStatus?.localOnly[key] !== undefined;
                         const actualValue = value ?? (isOverridden ? isOverridden.current : syncStatus?.synced[key]);
                         const meta = getAttributeMeta(key);
+                        const label = meta?.type === 'sizes' ? 'Options' : getFieldLabel(key);
 
                         return (
                           <div key={key}>
-                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">{getFieldLabel(key)}</h3>
+                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">{label}</h3>
                             {renderAttributeField(key, actualValue, syncStatus, isOverridden, isLocalOnly)}
                           </div>
                         );
