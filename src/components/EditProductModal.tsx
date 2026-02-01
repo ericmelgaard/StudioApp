@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Save, Trash2, RotateCcw, Link, Link2, Unlink, ChevronDown, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText, Copy, Pencil } from 'lucide-react';
+import { X, Save, Trash2, RotateCcw, Link, Link2, Unlink, ChevronDown, ChevronLeft, Plus, Calendar, Clock, Calculator, Globe, Check, AlertCircle, Lock, GripVertical, FileText, Copy, Pencil, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageUploadField from './ImageUploadField';
 import RichTextEditor from './RichTextEditor';
@@ -84,11 +84,17 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [openOptionDropdown, setOpenOptionDropdown] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [addMode, setAddMode] = useState<'select' | 'catalog' | 'custom' | null>(null);
   const [newOption, setNewOption] = useState<Option | null>(null);
   const [editingOptionId, setEditingOptionId] = useState<string | null>(null);
   const [editingOption, setEditingOption] = useState<Option | null>(null);
 
   const startAddOption = () => {
+    setAddMode('select');
+    setShowAddForm(true);
+  };
+
+  const startAddCustomOption = () => {
     const maxSortOrder = options.length > 0 ? Math.max(...options.map(o => o.sort_order)) : 0;
     const option: Option = {
       id: crypto.randomUUID(),
@@ -100,7 +106,11 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
       active: true,
     };
     setNewOption(option);
-    setShowAddForm(true);
+    setAddMode('custom');
+  };
+
+  const startAddFromCatalog = () => {
+    setAddMode('catalog');
   };
 
   const saveNewOption = () => {
@@ -114,6 +124,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   const cancelAddOption = () => {
     setNewOption(null);
     setShowAddForm(false);
+    setAddMode(null);
   };
 
   const startEditOption = (option: Option) => {
@@ -169,15 +180,27 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
 
   const handleIntegrationLink = (mapping_id: string, integration_type: 'product' | 'modifier' | 'discount') => {
     if (linkingOptionId && integrationSourceId) {
-      updateOption(linkingOptionId, {
-        integration_link: {
-          mapping_id,
-          integration_type,
-          integration_source_id: integrationSourceId
-        }
-      });
+      if (newOption && newOption.id === linkingOptionId) {
+        setNewOption({
+          ...newOption,
+          integration_link: {
+            mapping_id,
+            integration_type,
+            integration_source_id: integrationSourceId
+          }
+        });
+      } else {
+        updateOption(linkingOptionId, {
+          integration_link: {
+            mapping_id,
+            integration_type,
+            integration_source_id: integrationSourceId
+          }
+        });
+      }
     }
     setShowApiLinkModal(false);
+    setLinkingOptionId(null);
   };
 
   const handleIntegrationUnlink = (optionId: string) => {
@@ -404,9 +427,62 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
         );
       })}
 
-      {showAddForm && newOption ? (
+      {showAddForm && addMode === 'select' ? (
+        <div className="bg-white border-2 border-blue-500 rounded-xl p-5">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">Add Option</h3>
+            <p className="text-sm text-slate-600">Choose how you want to add a new option</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={startAddFromCatalog}
+              className="p-6 border-2 border-slate-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                  <Search className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900 mb-1">From Catalog</div>
+                  <div className="text-xs text-slate-600">Browse and link API options</div>
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={startAddCustomOption}
+              className="p-6 border-2 border-slate-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                  <Plus className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900 mb-1">Create Custom</div>
+                  <div className="text-xs text-slate-600">Enter option details manually</div>
+                </div>
+              </div>
+            </button>
+          </div>
+          <button
+            onClick={cancelAddOption}
+            className="w-full mt-4 py-2 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : showAddForm && addMode === 'catalog' ? (
         <div className="bg-white border-2 border-blue-500 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAddMode('select')}
+                className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                title="Back"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h3 className="text-sm font-semibold text-slate-900">Browse Catalog</h3>
+            </div>
             <button
               type="button"
               onClick={cancelAddOption}
@@ -414,18 +490,74 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
             >
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={saveNewOption}
-              disabled={!newOption.label}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                newOption.label
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              Save
-            </button>
+          </div>
+          <div className="p-5">
+            <p className="text-sm text-slate-600 text-center py-8">Catalog integration coming soon...</p>
+          </div>
+        </div>
+      ) : showAddForm && addMode === 'custom' && newOption ? (
+        <div className="bg-white border-2 border-blue-500 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setNewOption(null);
+                  setAddMode('select');
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                title="Back"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-900">Create Custom Option</span>
+                {!newOption.integration_link && integrationSourceId && (
+                  <button
+                    onClick={() => {
+                      setLinkingOptionId(newOption.id);
+                      setShowApiLinkModal(true);
+                    }}
+                    className="px-2 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors flex items-center gap-1"
+                  >
+                    <Link className="w-3 h-3" />
+                    Link to API
+                  </button>
+                )}
+                {newOption.integration_link && (
+                  <div className="flex items-center gap-2">
+                    <StateBadge variant="api" text="Linked to API" />
+                    <button
+                      onClick={() => setNewOption({ ...newOption, integration_link: undefined, local_fields: undefined })}
+                      className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Unlink from integration"
+                    >
+                      <Unlink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={cancelAddOption}
+                className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveNewOption}
+                disabled={!newOption.label}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  newOption.label
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                Save
+              </button>
+            </div>
           </div>
 
           <div className="p-5">
@@ -469,19 +601,35 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium text-slate-700 mb-1.5 block">Price</label>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={newOption.price || ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                            setNewOption({ ...newOption, price: parseFloat(value) || 0 });
-                          }
-                        }}
-                        placeholder="0.00"
-                        className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={newOption.price || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                              setNewOption({ ...newOption, price: parseFloat(value) || 0 });
+                            }
+                          }}
+                          placeholder="0.00"
+                          disabled={!!newOption.price_calculation}
+                          className="w-full pl-7 pr-10 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                        />
+                        {integrationSourceId && (
+                          <button
+                            onClick={() => {
+                              setLinkingOptionId(newOption.id);
+                              setShowPriceCalcModal(true);
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Add price calculation"
+                          >
+                            <Calculator className={`w-4 h-4 ${newOption.price_calculation ? 'text-blue-600' : ''}`} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label className="text-xs font-medium text-slate-700 mb-1.5 block">Calories</label>
@@ -536,14 +684,26 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
           }}
           onSave={(config) => {
             if (linkingOptionId) {
-              updateOption(linkingOptionId, { price_calculation: config });
+              if (newOption && newOption.id === linkingOptionId) {
+                setNewOption({ ...newOption, price_calculation: config });
+              } else {
+                updateOption(linkingOptionId, { price_calculation: config });
+              }
             }
             setShowPriceCalcModal(false);
             setLinkingOptionId(null);
           }}
           entityType="product"
-          currentConfig={options.find(o => o.id === linkingOptionId)?.price_calculation || null}
-          currentValue={options.find(o => o.id === linkingOptionId)?.price || 0}
+          currentConfig={
+            newOption && newOption.id === linkingOptionId
+              ? newOption.price_calculation || null
+              : options.find(o => o.id === linkingOptionId)?.price_calculation || null
+          }
+          currentValue={
+            newOption && newOption.id === linkingOptionId
+              ? newOption.price || 0
+              : options.find(o => o.id === linkingOptionId)?.price || 0
+          }
           integrationSourceId={integrationSourceId || undefined}
         />
       )}
