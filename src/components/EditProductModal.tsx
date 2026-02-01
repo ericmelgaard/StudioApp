@@ -59,6 +59,7 @@ interface Option {
   price: number;
   calories?: number;
   sort_order: number;
+  active?: boolean;
   integration_link?: {
     mapping_id: string;
     integration_type: 'product' | 'modifier' | 'discount';
@@ -84,6 +85,8 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   const [openOptionDropdown, setOpenOptionDropdown] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newOption, setNewOption] = useState<Option | null>(null);
+  const [editingOptionId, setEditingOptionId] = useState<string | null>(null);
+  const [editingOption, setEditingOption] = useState<Option | null>(null);
 
   const startAddOption = () => {
     const maxSortOrder = options.length > 0 ? Math.max(...options.map(o => o.sort_order)) : 0;
@@ -94,6 +97,7 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
       price: 0,
       calories: 0,
       sort_order: maxSortOrder + 1,
+      active: true,
     };
     setNewOption(option);
     setShowAddForm(true);
@@ -110,6 +114,24 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   const cancelAddOption = () => {
     setNewOption(null);
     setShowAddForm(false);
+  };
+
+  const startEditOption = (option: Option) => {
+    setEditingOptionId(option.id);
+    setEditingOption({ ...option });
+  };
+
+  const saveEditOption = () => {
+    if (editingOption) {
+      onChange(options.map(o => o.id === editingOption.id ? editingOption : o));
+      setEditingOptionId(null);
+      setEditingOption(null);
+    }
+  };
+
+  const cancelEditOption = () => {
+    setEditingOptionId(null);
+    setEditingOption(null);
   };
 
   const updateOption = (id: string, updates: Partial<Option>) => {
@@ -185,12 +207,142 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
   };
 
   const sortedOptions = [...options].sort((a, b) => a.sort_order - b.sort_order);
+  const isEditing = (optionId: string) => editingOptionId === optionId;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {sortedOptions.map((option, index) => {
         const hasIntegrationLink = !!option.integration_link;
         const localFields = option.local_fields || [];
+        const editing = isEditing(option.id);
+        const displayOption = editing ? editingOption! : option;
+
+        if (editing) {
+          return (
+            <div key={option.id} className="bg-white border-2 border-blue-500 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={cancelEditOption}
+                  className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEditOption}
+                  disabled={!editingOption?.label}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    editingOption?.label
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  Save
+                </button>
+              </div>
+
+              <div className="p-5">
+                <div className="flex gap-4">
+                  <div className="flex items-start pt-2 cursor-grab active:cursor-grabbing">
+                    <GripVertical className="w-5 h-5 text-slate-400" />
+                  </div>
+
+                  <div className="flex-1 space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-slate-500">#{displayOption.sort_order}</span>
+                        {hasIntegrationLink && (
+                          <div className="flex items-center gap-2">
+                            <StateBadge variant="api" text="Linked to API" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-medium text-slate-700">Label</label>
+                          <span className="text-xs text-red-600">Required</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={displayOption.label}
+                          onChange={(e) => setEditingOption({ ...displayOption, label: e.target.value })}
+                          placeholder="e.g., Small, Medium, Large"
+                          className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-slate-700 mb-1.5 block">Description (optional)</label>
+                        <input
+                          type="text"
+                          value={displayOption.description || ''}
+                          onChange={(e) => setEditingOption({ ...displayOption, description: e.target.value })}
+                          placeholder="e.g., 12 oz"
+                          className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-slate-700 mb-1.5 block">Price</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={displayOption.price || ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                  setEditingOption({ ...displayOption, price: parseFloat(value) || 0 });
+                                }
+                              }}
+                              placeholder="0.00"
+                              className="w-full pl-7 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-700 mb-1.5 block">Calories</label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={displayOption.calories || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || /^\d*$/.test(value)) {
+                                setEditingOption({ ...displayOption, calories: parseInt(value) || 0 });
+                              }
+                            }}
+                            placeholder="0"
+                            className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start pt-2">
+                    <button
+                      onClick={() => {
+                        removeOption(option.id);
+                        cancelEditOption();
+                      }}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete option"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div
@@ -199,404 +351,52 @@ const OptionsEditor = memo(function OptionsEditor({ options, onChange, integrati
             onDragStart={() => handleDragStart(index)}
             onDragOver={(e) => handleDragOver(e, index)}
             onDragEnd={handleDragEnd}
-            className={`bg-white border-2 border-slate-200 rounded-xl p-5 transition-all ${
+            className={`bg-white border-2 border-slate-200 rounded-xl transition-all ${
               draggedIndex === index ? 'opacity-50' : 'opacity-100'
             } hover:border-slate-300`}
           >
-            <div className="flex gap-4">
-              <div className="flex items-start pt-2 cursor-grab active:cursor-grabbing">
+            <div className="flex gap-3 items-center p-4">
+              <div className="cursor-grab active:cursor-grabbing">
                 <GripVertical className="w-5 h-5 text-slate-400" />
               </div>
 
-              <div className="flex-1 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-slate-500">#{option.sort_order}</span>
-                    {hasIntegrationLink && (
-                      <div className="flex items-center gap-2">
-                        <StateBadge variant="api" text="Linked to API" />
-                        <button
-                          onClick={() => handleIntegrationUnlink(option.id)}
-                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Unlink from integration"
-                        >
-                          <Unlink className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                    {!hasIntegrationLink && integrationSourceId && (
-                      <button
-                        onClick={() => {
-                          setLinkingOptionId(option.id);
-                          setShowApiLinkModal(true);
-                        }}
-                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors flex items-center gap-1"
-                      >
-                        <Link className="w-3 h-3" />
-                        Link to API
-                      </button>
+              <div
+                className="flex-1 cursor-pointer"
+                onClick={() => startEditOption(option)}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-slate-500">#{option.sort_order}</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-slate-900">{option.label || 'Untitled Option'}</div>
+                    {option.description && (
+                      <div className="text-xs text-slate-500 mt-0.5">{option.description}</div>
                     )}
                   </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-medium text-slate-600">Label</label>
-                      {hasIntegrationLink && (
-                        <div className="relative">
-                          {localFields.includes('label') ? (
-                            <>
-                              <button
-                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-label` ? null : `${option.id}-label`)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Custom
-                                <ChevronDown className="w-3 h-3" />
-                              </button>
-                              {openOptionDropdown === `${option.id}-label` && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setOpenOptionDropdown(null)}
-                                  />
-                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
-                                    <button
-                                      onClick={() => {
-                                        clearLocalOverride(option.id, 'label');
-                                        setOpenOptionDropdown(null);
-                                      }}
-                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
-                                    >
-                                      Inherit from API
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
-                              <Link2 className="w-3 h-3" />
-                              Syncing
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="relative">
-                      {!expandedRichTextFields.has(`option-${option.id}-label`) ? (
-                        <>
-                          <input
-                            type="text"
-                            value={option.label ? option.label.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
-                            readOnly
-                            onClick={() => {
-                              const newExpanded = new Set(expandedRichTextFields);
-                              newExpanded.add(`option-${option.id}-label`);
-                              setExpandedRichTextFields(newExpanded);
-                            }}
-                            placeholder="e.g., Small, Medium, Large"
-                            className="w-full px-3 py-2 pr-10 border border-slate-300 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm cursor-pointer"
-                          />
-                          <button
-                            onClick={() => {
-                              const newExpanded = new Set(expandedRichTextFields);
-                              newExpanded.add(`option-${option.id}-label`);
-                              setExpandedRichTextFields(newExpanded);
-                            }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
-                            title="Expand rich text editor"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <div className="border border-blue-500 rounded-lg p-3 bg-blue-50/30">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-slate-700">Editing Label</span>
-                            <button
-                              onClick={() => {
-                                const newExpanded = new Set(expandedRichTextFields);
-                                newExpanded.delete(`option-${option.id}-label`);
-                                setExpandedRichTextFields(newExpanded);
-                              }}
-                              className="text-slate-400 hover:text-slate-600 transition-colors"
-                              title="Collapse editor"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <RichTextEditor
-                            value={option.label || ''}
-                            onChange={(value) => {
-                              if (hasIntegrationLink && !localFields.includes('label')) {
-                                enableLocalOverride(option.id, 'label');
-                              }
-                              updateOption(option.id, { label: value });
-                            }}
-                            placeholder="e.g., Small, Medium, Large"
-                            minHeight="120px"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-medium text-slate-600">Description</label>
-                      {hasIntegrationLink && (
-                        <div className="relative">
-                          {localFields.includes('description') ? (
-                            <>
-                              <button
-                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-description` ? null : `${option.id}-description`)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Custom
-                                <ChevronDown className="w-3 h-3" />
-                              </button>
-                              {openOptionDropdown === `${option.id}-description` && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setOpenOptionDropdown(null)}
-                                  />
-                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
-                                    <button
-                                      onClick={() => {
-                                        clearLocalOverride(option.id, 'description');
-                                        setOpenOptionDropdown(null);
-                                      }}
-                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
-                                    >
-                                      Inherit from API
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
-                              <Link2 className="w-3 h-3" />
-                              Syncing
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="relative">
-                      {!expandedRichTextFields.has(`option-${option.id}-description`) ? (
-                        <>
-                          <input
-                            type="text"
-                            value={option.description ? option.description.replace(/<[^>]*>/g, '').substring(0, 100) : ''}
-                            readOnly
-                            onClick={() => {
-                              const newExpanded = new Set(expandedRichTextFields);
-                              newExpanded.add(`option-${option.id}-description`);
-                              setExpandedRichTextFields(newExpanded);
-                            }}
-                            placeholder="Optional description"
-                            className="w-full px-3 py-2 pr-10 border border-slate-300 bg-slate-50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm cursor-pointer"
-                          />
-                          <button
-                            onClick={() => {
-                              const newExpanded = new Set(expandedRichTextFields);
-                              newExpanded.add(`option-${option.id}-description`);
-                              setExpandedRichTextFields(newExpanded);
-                            }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
-                            title="Expand rich text editor"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <div className="border border-blue-500 rounded-lg p-3 bg-blue-50/30">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-slate-700">Editing Description</span>
-                            <button
-                              onClick={() => {
-                                const newExpanded = new Set(expandedRichTextFields);
-                                newExpanded.delete(`option-${option.id}-description`);
-                                setExpandedRichTextFields(newExpanded);
-                              }}
-                              className="text-slate-400 hover:text-slate-600 transition-colors"
-                              title="Collapse editor"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <RichTextEditor
-                            value={option.description || ''}
-                            onChange={(value) => {
-                              if (hasIntegrationLink && !localFields.includes('description')) {
-                                enableLocalOverride(option.id, 'description');
-                              }
-                              updateOption(option.id, { description: value });
-                            }}
-                            placeholder="Optional description"
-                            minHeight="120px"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-medium text-slate-600">Price</label>
-                      {hasIntegrationLink && (
-                        <div className="relative">
-                          {localFields.includes('price') ? (
-                            <>
-                              <button
-                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-price` ? null : `${option.id}-price`)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Custom
-                                <ChevronDown className="w-3 h-3" />
-                              </button>
-                              {openOptionDropdown === `${option.id}-price` && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setOpenOptionDropdown(null)}
-                                  />
-                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
-                                    <button
-                                      onClick={() => {
-                                        clearLocalOverride(option.id, 'price');
-                                        setOpenOptionDropdown(null);
-                                      }}
-                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
-                                    >
-                                      Inherit from API
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
-                              <Link2 className="w-3 h-3" />
-                              Syncing
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={option.price}
-                        onChange={(e) => {
-                          if (hasIntegrationLink && !localFields.includes('price')) {
-                            enableLocalOverride(option.id, 'price');
-                          }
-                          const value = e.target.value;
-                          if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                            updateOption(option.id, { price: parseFloat(value) || 0 });
-                          }
-                        }}
-                        disabled={!!option.price_calculation}
-                        placeholder="0.00"
-                        className="w-full pl-7 pr-10 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500"
-                      />
-                      {integrationSourceId && (
-                        <button
-                          onClick={() => {
-                            setLinkingOptionId(option.id);
-                            setShowPriceCalcModal(true);
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          title="Add price calculation"
-                        >
-                          <Calculator className={`w-4 h-4 ${option.price_calculation ? 'text-blue-600' : ''}`} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-medium text-slate-600">Calories</label>
-                      {hasIntegrationLink && (
-                        <div className="relative">
-                          {localFields.includes('calories') ? (
-                            <>
-                              <button
-                                onClick={() => setOpenOptionDropdown(openOptionDropdown === `${option.id}-calories` ? null : `${option.id}-calories`)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 font-medium bg-slate-50 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Custom
-                                <ChevronDown className="w-3 h-3" />
-                              </button>
-                              {openOptionDropdown === `${option.id}-calories` && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setOpenOptionDropdown(null)}
-                                  />
-                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
-                                    <button
-                                      onClick={() => {
-                                        clearLocalOverride(option.id, 'calories');
-                                        setOpenOptionDropdown(null);
-                                      }}
-                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg"
-                                    >
-                                      Inherit from API
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-600 font-medium">
-                              <Link2 className="w-3 h-3" />
-                              Syncing
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={option.calories || ''}
-                      onChange={(e) => {
-                        if (hasIntegrationLink && !localFields.includes('calories')) {
-                          enableLocalOverride(option.id, 'calories');
-                        }
-                        const value = e.target.value;
-                        if (value === '' || /^\d*$/.test(value)) {
-                          updateOption(option.id, { calories: parseInt(value) || 0 });
-                        }
-                      }}
-                      placeholder="0"
-                      className="w-full pl-3 pr-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
+                  <div className="flex items-center gap-4 text-sm text-slate-600">
+                    <span className="font-medium">${option.price?.toFixed(2) || '0.00'}</span>
+                    {(option.calories !== undefined && option.calories !== null) && (
+                      <span className="text-slate-500">{option.calories} cal</span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start pt-2">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => removeOption(option.id)}
-                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete option"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateOption(option.id, { active: !option.active });
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    option.active !== false ? 'bg-blue-600' : 'bg-slate-300'
+                  }`}
+                  title={option.active !== false ? 'Active' : 'Disabled'}
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      option.active !== false ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
                 </button>
               </div>
             </div>
