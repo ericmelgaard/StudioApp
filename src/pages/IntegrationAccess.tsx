@@ -96,7 +96,7 @@ export default function IntegrationAccess() {
 
   useEffect(() => {
     loadSourceConfigs();
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     // Load location details for all Qu configs
