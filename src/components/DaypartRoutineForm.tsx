@@ -83,6 +83,11 @@ export default function DaypartRoutineForm({
 }: DaypartRoutineFormProps) {
   const [daypartTypes, setDaypartTypes] = useState<DaypartDefinition[]>([]);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+
+  const isScheduleDisabled = (startTime: string | null, endTime: string | null) => {
+    return startTime === '03:00' && endTime === '03:01';
+  };
+
   const initialFormData = {
     schedule_type: editingRoutine?.schedule_type || preFillScheduleType || 'regular' as 'regular' | 'event_holiday',
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
@@ -96,6 +101,7 @@ export default function DaypartRoutineForm({
     recurrence_config: editingRoutine?.recurrence_config || {}
   };
   const [formData, setFormData] = useState(initialFormData);
+  const [isEnabled, setIsEnabled] = useState(!isScheduleDisabled(initialFormData.start_time, initialFormData.end_time));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUnscheduledPrompt, setShowUnscheduledPrompt] = useState(false);
@@ -172,6 +178,17 @@ export default function DaypartRoutineForm({
   const clearAllDays = () => {
     setFormData({ ...formData, days_of_week: [] });
     setError(null);
+  };
+
+  const handleToggleEnabled = (enabled: boolean) => {
+    setIsEnabled(enabled);
+    if (!enabled) {
+      setFormData({ ...formData, start_time: '03:00', end_time: '03:01' });
+    } else {
+      const defaultStart = preFillStartTime || '06:00';
+      const defaultEnd = preFillEndTime || '11:00';
+      setFormData({ ...formData, start_time: defaultStart, end_time: defaultEnd });
+    }
   };
 
   const handleDaypartChange = (daypartName: string) => {
@@ -578,17 +595,36 @@ export default function DaypartRoutineForm({
           />
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <TimeSelector
-            label="Start Time *"
-            value={formData.start_time || '06:00'}
-            onChange={(time) => setFormData({ ...formData, start_time: time })}
-          />
-          <TimeSelector
-            label="End Time *"
-            value={formData.end_time || '11:00'}
-            onChange={(time) => setFormData({ ...formData, end_time: time })}
-          />
+        <div className="space-y-3">
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => handleToggleEnabled(!isEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                isEnabled ? 'bg-blue-600' : 'bg-slate-300'
+              }`}
+              title={isEnabled ? 'Schedule enabled' : 'Schedule disabled'}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className={`grid grid-cols-2 gap-4 ${!isEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+            <TimeSelector
+              label="Start Time *"
+              value={formData.start_time || '06:00'}
+              onChange={(time) => setFormData({ ...formData, start_time: time })}
+            />
+            <TimeSelector
+              label="End Time *"
+              value={formData.end_time || '11:00'}
+              onChange={(time) => setFormData({ ...formData, end_time: time })}
+            />
+          </div>
         </div>
 
       </div>
