@@ -1008,59 +1008,63 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                   {/* Inherited Event Schedules */}
                                   {daypartInheritedEvents.map((schedule) => (
                                     <div key={schedule.id}>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleEditInherited(schedule)}
-                                        className="w-full p-4 transition-colors text-left"
-                                        style={{ backgroundColor: 'transparent' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                      >
-                                        <div className="flex items-start justify-between gap-3">
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-2">
-                                              <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
-                                                {schedule.event_name || 'Unnamed Event'}
-                                              </span>
-                                              <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
-                                                {getRecurrenceLabel(schedule.recurrence_type)}
-                                              </span>
-                                            </div>
-                                            <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
-                                              <Calendar className="w-3.5 h-3.5 inline mr-1" />
-                                              {formatEventDate(schedule.event_date, schedule.recurrence_type)}
-                                              <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
-                                              <Clock className="w-3.5 h-3.5 inline mr-1" />
-                                              {schedule.runs_on_days === false
-                                                ? 'Does Not Run'
-                                                : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
-                                            </div>
-                                            {schedule.days_of_week.length > 0 && (
-                                              <div className="flex gap-1">
-                                                {DAYS_OF_WEEK.map((day) => {
-                                                  const isActive = schedule.days_of_week.includes(day.value);
-                                                  const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
-                                                  const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
-                                                  return (
-                                                    <div
-                                                      key={day.value}
-                                                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                                        isActive
-                                                          ? `${bgColor} ${textColor}`
-                                                          : 'bg-slate-100 text-slate-400'
-                                                      }`}
-                                                      title={day.label}
-                                                    >
-                                                      {day.letter}
-                                                    </div>
-                                                  );
-                                                })}
+                                      {expandedScheduleId === schedule.id ? (
+                                        renderInlineEditForm(schedule.id, schedule.daypart_name)
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEditInherited(schedule)}
+                                          className="w-full p-4 transition-colors text-left"
+                                          style={{ backgroundColor: 'transparent' }}
+                                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(222, 56, 222, 0.08)'}
+                                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                          <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-3 mb-2">
+                                                <span className="font-medium" style={{ color: 'rgb(156, 39, 176)' }}>
+                                                  {schedule.event_name || 'Unnamed Event'}
+                                                </span>
+                                                <span className="text-xs px-2 py-1 rounded font-medium" style={{ backgroundColor: 'rgba(222, 56, 222, 0.15)', color: 'rgb(156, 39, 176)' }}>
+                                                  {getRecurrenceLabel(schedule.recurrence_type)}
+                                                </span>
                                               </div>
-                                            )}
+                                              <div className="text-sm mb-2" style={{ color: 'rgb(156, 39, 176)' }}>
+                                                <Calendar className="w-3.5 h-3.5 inline mr-1" />
+                                                {formatEventDate(schedule.event_date, schedule.recurrence_type)}
+                                                <span className="mx-2" style={{ color: 'rgba(222, 56, 222, 0.4)' }}>•</span>
+                                                <Clock className="w-3.5 h-3.5 inline mr-1" />
+                                                {schedule.runs_on_days === false
+                                                  ? 'Does Not Run'
+                                                  : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                              </div>
+                                              {schedule.days_of_week.length > 0 && (
+                                                <div className="flex gap-1">
+                                                  {DAYS_OF_WEEK.map((day) => {
+                                                    const isActive = schedule.days_of_week.includes(day.value);
+                                                    const bgColor = colorClass.match(/bg-(\w+)-\d+/)?.[0] || 'bg-slate-100';
+                                                    const textColor = bgColor.replace('bg-', 'text-').replace('-100', '-700');
+                                                    return (
+                                                      <div
+                                                        key={day.value}
+                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                                          isActive
+                                                            ? `${bgColor} ${textColor}`
+                                                            : 'bg-slate-100 text-slate-400'
+                                                        }`}
+                                                        title={day.label}
+                                                      >
+                                                        {day.letter}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
                                           </div>
-                                          <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'rgba(156, 39, 176, 0.4)' }} />
-                                        </div>
-                                      </button>
+                                        </button>
+                                      )}
                                     </div>
                                   ))}
                                 </div>
