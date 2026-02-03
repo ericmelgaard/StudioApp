@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, ChevronLeft, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, ChevronLeft, ArrowLeft, Combine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DaypartRoutineForm, { DaypartRoutine } from './DaypartRoutineForm';
 import Breadcrumb from './Breadcrumb';
@@ -70,6 +70,14 @@ function formatScheduleTime(startTime: string | null, endTime: string | null): s
   return `${formatTime(startTime!)} - ${formatTime(endTime!)}`;
 }
 
+function formatDaysList(days: number[]): string {
+  if (days.length === 7) return 'Every day';
+  if (days.length === 0) return 'No days';
+
+  const dayNames = days.map(d => DAYS_OF_WEEK[d].short);
+  return dayNames.join(', ');
+}
+
 export default function PlacementDaypartOverrides({ placementGroupId }: PlacementDaypartOverridesProps) {
   const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
   const [inheritedSchedules, setInheritedSchedules] = useState<EffectiveSchedule[]>([]);
@@ -87,6 +95,9 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
   const [expandedInherited, setExpandedInherited] = useState<Record<string, boolean>>({});
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [showMergePrompt, setShowMergePrompt] = useState(false);
+  const [mergeableSchedules, setMergeableSchedules] = useState<DaypartRoutine[]>([]);
+  const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -187,6 +198,8 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   };
 
   const handleSave = async (routine: Omit<DaypartRoutine, 'id' | 'created_at' | 'updated_at'>) => {
+    let scheduleId: string | undefined;
+
     if (editingRoutine) {
       const { error } = await supabase
         .from('placement_daypart_overrides')
@@ -197,6 +210,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
         console.error('Update error:', error);
         throw error;
       }
+      scheduleId = editingRoutine.id;
     } else {
       const schedulesToInsert = [routine];
 
@@ -240,6 +254,30 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       }
 
       console.log('Insert successful:', data);
+      scheduleId = data?.[0]?.id;
+    }
+
+    // Check for mergeable schedules (only for regular schedules)
+    if (scheduleId && routine.schedule_type === 'regular') {
+      const { data: otherSchedules, error: queryError } = await supabase
+        .from('placement_daypart_overrides')
+        .select('*')
+        .eq('placement_group_id', placementGroupId)
+        .eq('daypart_name', routine.daypart_name)
+        .eq('start_time', routine.start_time)
+        .eq('end_time', routine.end_time)
+        .eq('schedule_type', 'regular')
+        .neq('id', scheduleId);
+
+      if (queryError) {
+        console.error('Error checking for mergeable schedules:', queryError);
+      } else if (otherSchedules && otherSchedules.length > 0) {
+        // Found schedules with same times but different days
+        setSavedScheduleId(scheduleId);
+        setMergeableSchedules(otherSchedules as DaypartRoutine[]);
+        setShowMergePrompt(true);
+        return; // Don't close the form yet, wait for merge decision
+      }
     }
 
     setExpandedScheduleId(null);
@@ -305,6 +343,73 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
       throw new Error(error.message);
     }
 
+    setExpandedScheduleId(null);
+    setEditingRoutine(null);
+    setEditingInherited(null);
+    setIsAddingNew(false);
+    await loadData();
+  };
+
+  const handleMergeSchedules = async () => {
+    if (!savedScheduleId || mergeableSchedules.length === 0) return;
+
+    try {
+      // Get the current schedule that was just saved
+      const { data: currentSchedule, error: fetchError } = await supabase
+        .from('placement_daypart_overrides')
+        .select('days_of_week')
+        .eq('id', savedScheduleId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!currentSchedule) {
+        throw new Error('Schedule not found');
+      }
+
+      // Combine all days from all schedules
+      const allDays = new Set<number>(currentSchedule.days_of_week);
+      mergeableSchedules.forEach(schedule => {
+        schedule.days_of_week.forEach(day => allDays.add(day));
+      });
+
+      const combinedDays = Array.from(allDays).sort((a, b) => a - b);
+
+      // Delete all other schedules FIRST to avoid collision
+      const schedulesToDelete = mergeableSchedules.map(s => s.id).filter(id => id !== undefined) as string[];
+      const { error: deleteError } = await supabase
+        .from('placement_daypart_overrides')
+        .delete()
+        .in('id', schedulesToDelete);
+
+      if (deleteError) throw deleteError;
+
+      // Now update the current schedule with combined days and clear the name
+      const { error: updateError } = await supabase
+        .from('placement_daypart_overrides')
+        .update({
+          days_of_week: combinedDays,
+          schedule_name: null
+        })
+        .eq('id', savedScheduleId);
+
+      if (updateError) throw updateError;
+
+      // Success - close form and reload
+      setShowMergePrompt(false);
+      setExpandedScheduleId(null);
+      setEditingRoutine(null);
+      setEditingInherited(null);
+      setIsAddingNew(false);
+      await loadData();
+    } catch (err) {
+      console.error('Error merging schedules:', err);
+      alert('Failed to merge schedules. Please try again.');
+      setShowMergePrompt(false);
+    }
+  };
+
+  const handleSkipMerge = async () => {
+    setShowMergePrompt(false);
     setExpandedScheduleId(null);
     setEditingRoutine(null);
     setEditingInherited(null);
@@ -1072,6 +1177,67 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
           <p className="text-sm text-blue-800">
             This placement uses store-level schedules. Click "Store Dayparts" to view and customize schedules for this placement.
           </p>
+        </div>
+      )}
+
+      {/* Merge Prompt Modal */}
+      {showMergePrompt && savedScheduleId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30">
+                  <Combine className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                    Merge Schedules?
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    You have {mergeableSchedules.length + 1} schedules with the same times on different days
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                {mergeableSchedules.map((sched) => (
+                  <div
+                    key={sched.id}
+                    className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {formatDaysList(sched.days_of_week)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 p-3 rounded-lg mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <Sparkles className="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm text-slate-900 dark:text-slate-100">
+                  Combine into one schedule covering all days
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSkipMerge}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                >
+                  Keep Separate
+                </button>
+                <button
+                  onClick={handleMergeSchedules}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors"
+                >
+                  Merge Schedules
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
