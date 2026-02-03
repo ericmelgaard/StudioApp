@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles, Info, Trash2, Pencil } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 import DaySelector from './DaySelector';
 import { supabase } from '../lib/supabase';
@@ -105,7 +105,6 @@ export default function DaypartRoutineForm({
     schedule_name: scheduleType === 'event_holiday' ? eventName : (editingRoutine?.schedule_name || '')
   };
   const [formData, setFormData] = useState(initialFormData);
-  const [isEnabled, setIsEnabled] = useState(!isScheduleDisabled(initialFormData.start_time, initialFormData.end_time));
   const [isEditingName, setIsEditingName] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,17 +182,6 @@ export default function DaypartRoutineForm({
   const clearAllDays = () => {
     setFormData({ ...formData, days_of_week: [] });
     setError(null);
-  };
-
-  const handleToggleEnabled = (enabled: boolean) => {
-    setIsEnabled(enabled);
-    if (!enabled) {
-      setFormData({ ...formData, start_time: '03:00', end_time: '03:01' });
-    } else {
-      const defaultStart = preFillStartTime || '06:00';
-      const defaultEnd = preFillEndTime || '11:00';
-      setFormData({ ...formData, start_time: defaultStart, end_time: defaultEnd });
-    }
   };
 
   const handleDaypartChange = (daypartName: string) => {
@@ -354,27 +342,10 @@ export default function DaypartRoutineForm({
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      {/* Header with Cancel and Save Buttons */}
-      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="px-4 py-1.5 rounded-lg font-medium text-sm transition-all bg-blue-600 text-white hover:bg-blue-700"
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-
-      {/* Schedule Name and Enable/Disable Toggle */}
-      <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between gap-4">
-        <div className="flex-1 min-w-0">
+      {/* Header with Schedule Name, Cancel and Save Buttons */}
+      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
+        {/* Schedule Name with Edit Icon */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           {formData.schedule_type === 'event_holiday' ? (
             <div className="px-2 py-1 text-sm font-medium text-slate-900 truncate">
               {formData.event_name || 'Unnamed Event'}
@@ -395,32 +366,42 @@ export default function DaypartRoutineForm({
               }}
               autoFocus
               placeholder="Schedule name (optional)"
-              className="w-full px-2 py-1 text-sm font-medium text-slate-900 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-2 py-1 text-sm font-medium text-slate-900 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           ) : (
-            <button
-              type="button"
-              onClick={() => setIsEditingName(true)}
-              className="text-left w-full px-2 py-1 text-sm font-medium text-slate-900 hover:bg-slate-100 rounded transition-colors truncate"
-            >
-              {formData.schedule_name || 'Unnamed Schedule'}
-            </button>
+            <>
+              <span className="px-2 py-1 text-sm font-medium text-slate-900 truncate">
+                {formData.schedule_name || 'Unnamed Schedule'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsEditingName(true)}
+                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors flex-shrink-0"
+                title="Edit schedule name"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => handleToggleEnabled(!isEnabled)}
-          className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            isEnabled ? 'bg-[#00adf0] focus:ring-[#00adf0]' : 'bg-slate-300 focus:ring-slate-400'
-          }`}
-          title={isEnabled ? 'Schedule enabled' : 'Schedule disabled'}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              isEnabled ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
-        </button>
+
+        {/* Cancel and Save Buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="px-4 py-1.5 rounded-lg font-medium text-sm transition-all bg-blue-600 text-white hover:bg-blue-700"
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
       </div>
 
       <div className="p-4 space-y-4">
@@ -659,7 +640,7 @@ export default function DaypartRoutineForm({
           />
         )}
 
-        <div className={`grid grid-cols-2 gap-4 ${!isEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="grid grid-cols-2 gap-4">
           <TimeSelector
             label="Start Time *"
             value={formData.start_time || '06:00'}
