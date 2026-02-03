@@ -89,18 +89,20 @@ export default function DaypartRoutineForm({
     return startTime === '03:00' && endTime === '03:01';
   };
 
+  const scheduleType = editingRoutine?.schedule_type || preFillScheduleType || 'regular' as 'regular' | 'event_holiday';
+  const eventName = editingRoutine?.event_name || '';
   const initialFormData = {
-    schedule_type: editingRoutine?.schedule_type || preFillScheduleType || 'regular' as 'regular' | 'event_holiday',
+    schedule_type: scheduleType,
     daypart_name: editingRoutine?.daypart_name || preFillDaypart || '',
     days_of_week: editingRoutine?.days_of_week || preFillDaysOfWeek || [] as number[],
     start_time: editingRoutine?.start_time || preFillStartTime || '06:00',
     end_time: editingRoutine?.end_time || preFillEndTime || '11:00',
     runs_on_days: true,
-    event_name: editingRoutine?.event_name || '',
+    event_name: eventName,
     event_date: editingRoutine?.event_date || '',
     recurrence_type: editingRoutine?.recurrence_type || 'none' as 'none' | 'annual_date' | 'monthly_date' | 'annual_relative' | 'annual_date_range',
     recurrence_config: editingRoutine?.recurrence_config || {},
-    schedule_name: editingRoutine?.schedule_name || ''
+    schedule_name: scheduleType === 'event_holiday' ? eventName : (editingRoutine?.schedule_name || '')
   };
   const [formData, setFormData] = useState(initialFormData);
   const [isEnabled, setIsEnabled] = useState(!isScheduleDisabled(initialFormData.start_time, initialFormData.end_time));
@@ -286,7 +288,7 @@ export default function DaypartRoutineForm({
 
     try {
       const priority_level = calculatePriorityLevel();
-      await onSave({
+      const saveData = {
         placement_group_id: placementGroupId,
         ...formData,
         runs_on_days: true,
@@ -295,7 +297,14 @@ export default function DaypartRoutineForm({
         event_date: formData.event_date || undefined,
         priority_level,
         recurrence_config: Object.keys(formData.recurrence_config).length > 0 ? formData.recurrence_config : undefined
-      });
+      };
+
+      // For event/holiday schedules, ensure schedule_name is set to event_name
+      if (formData.schedule_type === 'event_holiday') {
+        saveData.schedule_name = formData.event_name;
+      }
+
+      await onSave(saveData);
     } catch (err: any) {
       setError(err.message || 'Failed to save daypart routine');
       setSaving(false);
@@ -308,6 +317,7 @@ export default function DaypartRoutineForm({
       const updates: any = {
         ...formData,
         event_name: template.name,
+        schedule_name: template.name,
         recurrence_type: template.recurrence_type || 'none',
         recurrence_config: template.recurrence_config || {}
       };
@@ -365,7 +375,11 @@ export default function DaypartRoutineForm({
       {/* Schedule Name and Enable/Disable Toggle */}
       <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
-          {isEditingName ? (
+          {formData.schedule_type === 'event_holiday' ? (
+            <div className="px-2 py-1 text-sm font-medium text-slate-900 truncate">
+              {formData.event_name || 'Unnamed Event'}
+            </div>
+          ) : isEditingName ? (
             <input
               type="text"
               value={formData.schedule_name || ''}
@@ -446,7 +460,7 @@ export default function DaypartRoutineForm({
               <input
                 type="text"
                 value={formData.event_name}
-                onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, event_name: e.target.value, schedule_name: e.target.value })}
                 placeholder="e.g., Christmas Day, Holiday Season"
                 className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
