@@ -667,7 +667,7 @@ export default function DaypartRoutineForm({
             <button
               type="button"
               onClick={handleDelete}
-              className="px-6 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-2"
+              className="text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-2 px-3 py-1.5"
             >
               <Trash2 className="w-4 h-4" />
               Delete Schedule

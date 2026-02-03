@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, X, ChevronLeft, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, ChevronLeft, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DaypartRoutineForm, { DaypartRoutine } from './DaypartRoutineForm';
 import Breadcrumb from './Breadcrumb';
@@ -431,41 +431,8 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
     const isEventHoliday = preFillScheduleType === 'event_holiday' || editingRoutine?.schedule_type === 'event_holiday' || editingInherited?.schedule_type === 'event_holiday';
 
     return (
-      <div
-        className="rounded-xl overflow-hidden"
-        style={isEventHoliday ? {
-          backgroundColor: 'rgba(222, 56, 222, 0.08)',
-          border: '2px solid rgba(222, 56, 222, 0.2)'
-        } : undefined}
-      >
-        <div className={!isEventHoliday ? "bg-blue-50 dark:bg-slate-700/50 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4" : "p-4"}>
-          {!isEventHoliday && (
-            <div className="flex items-center justify-between mb-4">
-              <h5 className="font-semibold text-slate-900 dark:text-slate-100">
-                {editingRoutine ? 'Edit Schedule' : 'Add Schedule'}
-              </h5>
-              <button
-                onClick={handleCancel}
-                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
-              >
-                <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-              </button>
-            </div>
-          )}
-          {isEventHoliday && (
-            <div className="flex items-center justify-between mb-4">
-              <h5 className="font-semibold" style={{ color: 'rgb(156, 39, 176)' }}>
-                {editingRoutine || editingInherited ? 'Edit Event' : 'Add Event/Holiday'}
-              </h5>
-              <button
-                onClick={handleCancel}
-                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
-              >
-                <X className="w-4 h-4" style={{ color: 'rgb(156, 39, 176)' }} />
-              </button>
-            </div>
-          )}
-          <DaypartRoutineForm
+      <div>
+        <DaypartRoutineForm
             placementGroupId={placementGroupId}
             existingRoutines={allRoutinesForCollision}
             onSave={handleSave}
@@ -494,7 +461,6 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
             daypartDefinition={currentDefinition}
             onDelete={editingRoutine ? handleDelete : undefined}
           />
-        </div>
       </div>
     );
   };
