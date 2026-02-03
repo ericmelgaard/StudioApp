@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar, Sparkles, Info, Trash2, Pencil } from 'lucide-react';
+import { AlertCircle, Calendar, Sparkles, Info, Trash2 } from 'lucide-react';
 import TimeSelector from './TimeSelector';
 import DaySelector from './DaySelector';
 import { supabase } from '../lib/supabase';
@@ -105,7 +105,6 @@ export default function DaypartRoutineForm({
     schedule_name: scheduleType === 'event_holiday' ? eventName : (editingRoutine?.schedule_name || '')
   };
   const [formData, setFormData] = useState(initialFormData);
-  const [isEditingName, setIsEditingName] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUnscheduledPrompt, setShowUnscheduledPrompt] = useState(false);
@@ -342,66 +341,22 @@ export default function DaypartRoutineForm({
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-      {/* Header with Schedule Name, Cancel and Save Buttons */}
-      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
-        {/* Schedule Name with Edit Icon */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {formData.schedule_type === 'event_holiday' ? (
-            <div className="px-2 py-1 text-sm font-medium text-slate-900 truncate">
-              {formData.event_name || 'Unnamed Event'}
-            </div>
-          ) : isEditingName ? (
-            <input
-              type="text"
-              value={formData.schedule_name || ''}
-              onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
-              onBlur={() => setIsEditingName(false)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setIsEditingName(false);
-                }
-                if (e.key === 'Escape') {
-                  setIsEditingName(false);
-                }
-              }}
-              autoFocus
-              placeholder="Schedule name (optional)"
-              className="flex-1 px-2 py-1 text-sm font-medium text-slate-900 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          ) : (
-            <>
-              <span className="px-2 py-1 text-sm font-medium text-slate-900 truncate">
-                {formData.schedule_name || 'Unnamed Schedule'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsEditingName(true)}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors flex-shrink-0"
-                title="Edit schedule name"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Cancel and Save Buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="px-4 py-1.5 rounded-lg font-medium text-sm transition-all bg-blue-600 text-white hover:bg-blue-700"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
+      {/* Header with Cancel and Save Buttons */}
+      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="px-4 py-1.5 rounded-lg font-medium text-sm transition-all bg-blue-600 text-white hover:bg-blue-700"
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
       </div>
 
       <div className="p-4 space-y-4">
@@ -420,6 +375,21 @@ export default function DaypartRoutineForm({
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {formData.schedule_type === 'regular' && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Schedule Name
+            </label>
+            <input
+              type="text"
+              value={formData.schedule_name || ''}
+              onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
+              placeholder="Optional name for this schedule"
+              className="w-full px-3 py-2 border border-slate-300 bg-white text-slate-900 placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
         )}
 
