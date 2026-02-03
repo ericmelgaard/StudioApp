@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles, ArrowLeft } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2, AlertCircle, Check, X, Eye, EyeOff, ChevronDown, ChevronRight, Calendar, Sparkles, ArrowLeft, Combine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import IconPicker from './IconPicker';
 import ScheduleGroupForm from './ScheduleGroupForm';
@@ -65,6 +65,9 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
   const [removedDays, setRemovedDays] = useState<number[]>([]);
   const [showRemovedDaysPrompt, setShowRemovedDaysPrompt] = useState(false);
   const [savedScheduleData, setSavedScheduleData] = useState<{ definitionId: string; schedule: Schedule } | null>(null);
+  const [showMergePrompt, setShowMergePrompt] = useState(false);
+  const [mergeableSchedules, setMergeableSchedules] = useState<DaypartSchedule[]>([]);
+  const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     daypart_name: '',
@@ -366,6 +369,28 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
             .eq('id', editingSchedule.id);
 
           if (updateError) throw updateError;
+
+          // Check for mergeable schedules after updating a regular schedule
+          if (schedule.schedule_type === 'regular' || !schedule.schedule_type) {
+            const { data: otherSchedules, error: queryError } = await supabase
+              .from('daypart_schedules')
+              .select('*')
+              .eq('daypart_definition_id', editingSchedule.daypart_definition_id)
+              .eq('start_time', schedule.start_time)
+              .eq('end_time', schedule.end_time)
+              .eq('schedule_type', 'regular')
+              .neq('id', editingSchedule.id);
+
+            if (queryError) {
+              console.error('Error checking for mergeable schedules:', queryError);
+            } else if (otherSchedules && otherSchedules.length > 0) {
+              // Found schedules with same times but different days
+              setSavedScheduleId(editingSchedule.id);
+              setMergeableSchedules(otherSchedules as DaypartSchedule[]);
+              setShowMergePrompt(true);
+              return; // Don't close the form yet, wait for merge decision
+            }
+          }
         }
       } else if (addingScheduleForDef) {
         const targetDaypartId = addingScheduleForDef;
@@ -450,11 +475,35 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           if (schedule.recurrence_config) insertData.recurrence_config = schedule.recurrence_config;
           if (schedule.runs_on_days !== undefined) insertData.runs_on_days = schedule.runs_on_days;
 
-          const { error: insertError } = await supabase
+          const { data: newScheduleData, error: insertError } = await supabase
             .from('daypart_schedules')
-            .insert([insertData]);
+            .insert([insertData])
+            .select()
+            .single();
 
           if (insertError) throw insertError;
+
+          // Check for mergeable schedules after creating a new regular schedule
+          if (newScheduleData && schedule.schedule_type === 'regular') {
+            const { data: otherSchedules, error: queryError } = await supabase
+              .from('daypart_schedules')
+              .select('*')
+              .eq('daypart_definition_id', targetDaypartId)
+              .eq('start_time', schedule.start_time)
+              .eq('end_time', schedule.end_time)
+              .eq('schedule_type', 'regular')
+              .neq('id', newScheduleData.id);
+
+            if (queryError) {
+              console.error('Error checking for mergeable schedules:', queryError);
+            } else if (otherSchedules && otherSchedules.length > 0) {
+              // Found schedules with same times but different days
+              setSavedScheduleId(newScheduleData.id);
+              setMergeableSchedules(otherSchedules as DaypartSchedule[]);
+              setShowMergePrompt(true);
+              return; // Don't close the form yet, wait for merge decision
+            }
+          }
         }
       }
 
@@ -512,6 +561,81 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
       console.error('Error saving schedule:', err);
       setError(err.message || 'Failed to save schedule');
     }
+  };
+
+  const handleMergeSchedules = async () => {
+    if (!savedScheduleId || mergeableSchedules.length === 0) return;
+
+    try {
+      // Get the current schedule that was just saved
+      const { data: currentSchedule, error: fetchError } = await supabase
+        .from('daypart_schedules')
+        .select('days_of_week')
+        .eq('id', savedScheduleId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!currentSchedule) {
+        throw new Error('Schedule not found');
+      }
+
+      // Combine all days from all schedules
+      const allDays = new Set<number>(currentSchedule.days_of_week);
+      mergeableSchedules.forEach(schedule => {
+        schedule.days_of_week.forEach(day => allDays.add(day));
+      });
+
+      const combinedDays = Array.from(allDays).sort((a, b) => a - b);
+
+      // Delete all other schedules FIRST to avoid collision
+      const schedulesToDelete = mergeableSchedules.map(s => s.id).filter(id => id !== undefined) as string[];
+      const { error: deleteError } = await supabase
+        .from('daypart_schedules')
+        .delete()
+        .in('id', schedulesToDelete);
+
+      if (deleteError) throw deleteError;
+
+      // Now update the current schedule with combined days and clear the name
+      const { error: updateError } = await supabase
+        .from('daypart_schedules')
+        .update({
+          days_of_week: combinedDays,
+          schedule_name: null
+        })
+        .eq('id', savedScheduleId);
+
+      if (updateError) throw updateError;
+
+      // Success - close form and reload
+      setShowMergePrompt(false);
+      setSavedScheduleId(null);
+      setMergeableSchedules([]);
+      setExpandedScheduleId(null);
+      setEditingSchedule(null);
+      setAddingScheduleForDef(null);
+      setNewSchedule(null);
+      setEditingDefinitionContext(null);
+      await loadData();
+      setSuccess('Schedules merged successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('Error merging schedules:', err);
+      setError(err.message || 'Failed to merge schedules');
+      setTimeout(() => setError(null), 5000);
+    }
+  };
+
+  const handleKeepSeparate = () => {
+    setShowMergePrompt(false);
+    setSavedScheduleId(null);
+    setMergeableSchedules([]);
+    setExpandedScheduleId(null);
+    setEditingSchedule(null);
+    setAddingScheduleForDef(null);
+    setNewSchedule(null);
+    setEditingDefinitionContext(null);
+    loadData();
   };
 
   const handleDeleteSchedule = async (scheduleId: string) => {
@@ -1336,6 +1460,69 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                   className="w-full px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
                 >
                   Leave Unscheduled
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Merge Prompt Modal */}
+      {showMergePrompt && savedScheduleId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-blue-100">
+                  <Combine className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                    Merge Schedules?
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    You have {mergeableSchedules.length + 1} schedules with the same times on different days
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                {mergeableSchedules.map((sched) => {
+                  const dayNames = sched.days_of_week.map(d => DAYS_OF_WEEK[d].short);
+                  return (
+                    <div
+                      key={sched.id}
+                      className="p-3 bg-slate-50 rounded-lg border border-slate-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm text-slate-700">{dayNames.join(', ')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-2 p-3 rounded-lg mb-6 bg-blue-50 border border-blue-200">
+                <Sparkles className="w-4 h-4 flex-shrink-0 text-blue-600" />
+                <p className="text-sm text-slate-900">
+                  Combine into one schedule covering all days
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleKeepSeparate}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                >
+                  Keep Separate
+                </button>
+                <button
+                  onClick={handleMergeSchedules}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <Combine className="w-4 h-4" />
+                  Merge
                 </button>
               </div>
             </div>
