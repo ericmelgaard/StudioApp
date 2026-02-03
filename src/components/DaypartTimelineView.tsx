@@ -43,6 +43,17 @@ function minutesToTime(minutes: number): string {
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
+function isScheduleDisabled(startTime: string | null, endTime: string | null): boolean {
+  return startTime === '03:00' && endTime === '03:01';
+}
+
+function formatScheduleTime(startTime: string | null, endTime: string | null): string {
+  if (isScheduleDisabled(startTime, endTime)) {
+    return '----';
+  }
+  return `${startTime} - ${endTime}`;
+}
+
 function detectOverlaps(routines: DaypartRoutine[]): Array<{ routine1: DaypartRoutine; routine2: DaypartRoutine; days: number[] }> {
   const overlaps: Array<{ routine1: DaypartRoutine; routine2: DaypartRoutine; days: number[] }> = [];
 
@@ -167,7 +178,7 @@ export default function DaypartTimelineView({ routines }: DaypartTimelineViewPro
                           {DAYPART_LABELS[routine.daypart_name]}
                         </div>
                         <div className={`text-xs ${colors.text} opacity-75`}>
-                          {routine.start_time} - {routine.end_time}
+                          {formatScheduleTime(routine.start_time, routine.end_time)}
                         </div>
                       </div>
                     );

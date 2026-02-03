@@ -59,6 +59,17 @@ function formatTime(time: string): string {
   return `${displayHour}:${minutes} ${ampm}`;
 }
 
+function isScheduleDisabled(startTime: string | null, endTime: string | null): boolean {
+  return startTime === '03:00' && endTime === '03:01';
+}
+
+function formatScheduleTime(startTime: string | null, endTime: string | null): string {
+  if (isScheduleDisabled(startTime, endTime)) {
+    return '----';
+  }
+  return `${formatTime(startTime!)} - ${formatTime(endTime!)}`;
+}
+
 export default function PlacementDaypartOverrides({ placementGroupId }: PlacementDaypartOverridesProps) {
   const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
   const [inheritedSchedules, setInheritedSchedules] = useState<EffectiveSchedule[]>([]);
@@ -556,7 +567,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                               <span>
                                 {schedule.runs_on_days === false
                                   ? 'Does Not Run'
-                                  : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                  : formatScheduleTime(schedule.start_time, schedule.end_time)}
                               </span>
                             </div>
                           </div>
@@ -732,7 +743,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                       <Clock className="w-3.5 h-3.5 inline mr-1" />
                                       {schedule.runs_on_days === false
                                         ? 'Does Not Run'
-                                        : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                        : formatScheduleTime(schedule.start_time, schedule.end_time)}
                                     </div>
                                     {schedule.days_of_week.length > 0 && (
                                       <div className="flex gap-1">
@@ -874,7 +885,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                         <span>
                                           {schedule.runs_on_days === false
                                             ? 'Does Not Run'
-                                            : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                            : formatScheduleTime(schedule.start_time, schedule.end_time)}
                                         </span>
                                       </div>
                                     </div>
@@ -948,7 +959,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                                 <Clock className="w-3.5 h-3.5 inline mr-1" />
                                                 {schedule.runs_on_days === false
                                                   ? 'Does Not Run'
-                                                  : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                                  : formatScheduleTime(schedule.start_time, schedule.end_time)}
                                               </div>
                                               {schedule.days_of_week.length > 0 && (
                                                 <div className="flex gap-1">
@@ -1010,7 +1021,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                                                 <Clock className="w-3.5 h-3.5 inline mr-1" />
                                                 {schedule.runs_on_days === false
                                                   ? 'Does Not Run'
-                                                  : `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`}
+                                                  : formatScheduleTime(schedule.start_time, schedule.end_time)}
                                               </div>
                                               {schedule.days_of_week.length > 0 && (
                                                 <div className="flex gap-1">

@@ -32,6 +32,17 @@ function formatTime(time: string): string {
   return `${displayHour}:${minutes} ${ampm}`;
 }
 
+function isScheduleDisabled(startTime: string | null, endTime: string | null): boolean {
+  return startTime === '03:00' && endTime === '03:01';
+}
+
+function formatScheduleTime(startTime: string | null, endTime: string | null): string {
+  if (isScheduleDisabled(startTime, endTime)) {
+    return '----';
+  }
+  return `${formatTime(startTime!)} - ${formatTime(endTime!)}`;
+}
+
 export default function SiteDaypartManager({ placementGroupId }: SiteDaypartManagerProps) {
   const [routines, setRoutines] = useState<DaypartRoutine[]>([]);
   const [daypartDefinitions, setDaypartDefinitions] = useState<Record<string, DaypartDefinition>>({});
@@ -236,7 +247,7 @@ export default function SiteDaypartManager({ placementGroupId }: SiteDaypartMana
                             <span className="text-sm font-medium text-slate-900">
                               {routine.runs_on_days === false
                                 ? 'Does Not Run'
-                                : `${formatTime(routine.start_time)} - ${formatTime(routine.end_time)}`}
+                                : formatScheduleTime(routine.start_time, routine.end_time)}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-1">
