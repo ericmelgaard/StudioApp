@@ -576,6 +576,25 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           .eq('id', scheduleId);
 
         if (deleteError) throw deleteError;
+
+        // Check if this was the last schedule for a store-level definition
+        if (currentDefinition && currentDefinition.source_level === 'store') {
+          const remainingSchedules = schedules.filter(
+            s => s.daypart_definition_id === currentDefinition.id && s.id !== scheduleId
+          );
+
+          // If no schedules remain, delete the store-level definition to fall back to inherited
+          if (remainingSchedules.length === 0) {
+            const { error: defDeleteError } = await supabase
+              .from('daypart_definitions')
+              .delete()
+              .eq('id', currentDefinition.id);
+
+            if (defDeleteError) throw defDeleteError;
+
+            setSuccess(`Deleted last schedule and reverted ${currentDefinition.display_label} to inherited settings`);
+          }
+        }
       }
 
       setExpandedScheduleId(null);
