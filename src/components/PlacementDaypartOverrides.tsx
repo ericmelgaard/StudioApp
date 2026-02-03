@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, ChevronLeft, ArrowLeft, Combine } from 'lucide-react';
+import { Plus, Trash2, Clock, AlertCircle, Calendar, ChevronDown, ChevronRight, Sparkles, ChevronLeft, ArrowLeft, Combine, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DaypartRoutineForm, { DaypartRoutine } from './DaypartRoutineForm';
 import Breadcrumb from './Breadcrumb';
@@ -98,6 +98,7 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
   const [showMergePrompt, setShowMergePrompt] = useState(false);
   const [mergeableSchedules, setMergeableSchedules] = useState<DaypartRoutine[]>([]);
   const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
+  const [showUnusedInherited, setShowUnusedInherited] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -908,11 +909,34 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
                     }).length}
                   </span>
                 </div>
-                {inheritedSectionExpanded ? (
-                  <ChevronDown className="w-5 h-5 text-slate-600" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-600" />
-                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUnusedInherited(!showUnusedInherited);
+                    }}
+                    className="flex items-center gap-1.5 px-2 py-1 text-xs rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors"
+                    title={showUnusedInherited ? "Show in-use only" : "Show all dayparts"}
+                  >
+                    {showUnusedInherited ? (
+                      <>
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>All</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-3.5 h-3.5" />
+                        <span>In-Use</span>
+                      </>
+                    )}
+                  </button>
+                  {inheritedSectionExpanded ? (
+                    <ChevronDown className="w-5 h-5 text-slate-600" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-slate-600" />
+                  )}
+                </div>
               </button>
 
               {inheritedSectionExpanded && (
@@ -927,6 +951,13 @@ export default function PlacementDaypartOverrides({ placementGroupId }: Placemen
 
                     // Only show dayparts that are ONLY inherited (no customizations)
                     if (hasCustom || !hasInherited) return null;
+
+                    // Check if daypart is "in use" (has at least one non-disabled schedule)
+                    const isInUse = daypartInheritedSchedules.some(s => !isScheduleDisabled(s.start_time, s.end_time)) ||
+                                    daypartInheritedEvents.length > 0;
+
+                    // Filter based on showUnusedInherited toggle
+                    if (!showUnusedInherited && !isInUse) return null;
 
                     const eventsExpanded = expandedEvents[daypartName];
                     const definition = daypartDefinitions.find(d => d.daypart_name === daypartName);
