@@ -34,6 +34,7 @@ export interface DaypartRoutine {
   start_time: string | null;
   end_time: string | null;
   runs_on_days?: boolean;
+  schedule_name?: string;
   schedule_type?: 'regular' | 'event_holiday';
   event_name?: string;
   event_date?: string;
@@ -98,10 +99,12 @@ export default function DaypartRoutineForm({
     event_name: editingRoutine?.event_name || '',
     event_date: editingRoutine?.event_date || '',
     recurrence_type: editingRoutine?.recurrence_type || 'none' as 'none' | 'annual_date' | 'monthly_date' | 'annual_relative' | 'annual_date_range',
-    recurrence_config: editingRoutine?.recurrence_config || {}
+    recurrence_config: editingRoutine?.recurrence_config || {},
+    schedule_name: editingRoutine?.schedule_name || ''
   };
   const [formData, setFormData] = useState(initialFormData);
   const [isEnabled, setIsEnabled] = useState(!isScheduleDisabled(initialFormData.start_time, initialFormData.end_time));
+  const [isEditingName, setIsEditingName] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUnscheduledPrompt, setShowUnscheduledPrompt] = useState(false);
@@ -359,6 +362,53 @@ export default function DaypartRoutineForm({
         </button>
       </div>
 
+      {/* Schedule Name and Enable/Disable Toggle */}
+      <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          {isEditingName ? (
+            <input
+              type="text"
+              value={formData.schedule_name || ''}
+              onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
+              onBlur={() => setIsEditingName(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsEditingName(false);
+                }
+                if (e.key === 'Escape') {
+                  setIsEditingName(false);
+                }
+              }}
+              autoFocus
+              placeholder="Schedule name (optional)"
+              className="w-full px-2 py-1 text-sm font-medium text-slate-900 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingName(true)}
+              className="text-left w-full px-2 py-1 text-sm font-medium text-slate-900 hover:bg-slate-100 rounded transition-colors truncate"
+            >
+              {formData.schedule_name || 'Unnamed Schedule'}
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => handleToggleEnabled(!isEnabled)}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+            isEnabled ? 'bg-[#00adf0] focus:ring-[#00adf0]' : 'bg-slate-300 focus:ring-slate-400'
+          }`}
+          title={isEnabled ? 'Schedule enabled' : 'Schedule disabled'}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              isEnabled ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
       <div className="p-4 space-y-4">
 
         {formData.schedule_type === 'event_holiday' && (
@@ -595,36 +645,17 @@ export default function DaypartRoutineForm({
           />
         )}
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-end">
-            <button
-              type="button"
-              onClick={() => handleToggleEnabled(!isEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                isEnabled ? 'bg-blue-600' : 'bg-slate-300'
-              }`}
-              title={isEnabled ? 'Schedule enabled' : 'Schedule disabled'}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className={`grid grid-cols-2 gap-4 ${!isEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-            <TimeSelector
-              label="Start Time *"
-              value={formData.start_time || '06:00'}
-              onChange={(time) => setFormData({ ...formData, start_time: time })}
-            />
-            <TimeSelector
-              label="End Time *"
-              value={formData.end_time || '11:00'}
-              onChange={(time) => setFormData({ ...formData, end_time: time })}
-            />
-          </div>
+        <div className={`grid grid-cols-2 gap-4 ${!isEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          <TimeSelector
+            label="Start Time *"
+            value={formData.start_time || '06:00'}
+            onChange={(time) => setFormData({ ...formData, start_time: time })}
+          />
+          <TimeSelector
+            label="End Time *"
+            value={formData.end_time || '11:00'}
+            onChange={(time) => setFormData({ ...formData, end_time: time })}
+          />
         </div>
 
       </div>
