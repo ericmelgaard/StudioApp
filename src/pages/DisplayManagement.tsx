@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Edit3 } from 'lucide-react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Edit3, Signal, Battery, Wifi } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
@@ -16,6 +16,16 @@ interface DisplayManagementProps {
 
 type PlayerType = 'signage' | 'label';
 
+interface HardwareDevice {
+  id: string;
+  serial_number: string;
+  device_type: string;
+  label_type?: string;
+  signal_strength?: number;
+  battery_level?: number;
+  network_status?: string;
+}
+
 interface MediaPlayer {
   id: string;
   device_id: string;
@@ -29,6 +39,7 @@ interface MediaPlayer {
   firmware_version: string;
   placement_group_id: string | null;
   store_id: number;
+  hardware_device?: HardwareDevice;
 }
 
 interface Display {
@@ -913,9 +924,46 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                           ? card.displays.map(d => d.name).join(' + ')
                           : card.name}
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-500">
-                        {card.mediaPlayer.name}
+                      <p className="text-xs font-mono text-slate-500 dark:text-slate-500 mb-2">
+                        {card.mediaPlayer.hardware_device?.serial_number || card.mediaPlayer.name}
                       </p>
+                      {card.mediaPlayer.player_type === 'label' && card.mediaPlayer.hardware_device && (
+                        <div className="flex items-center gap-3 text-xs mt-2">
+                          {card.mediaPlayer.hardware_device.signal_strength !== undefined && (
+                            <div className="flex items-center gap-1" title={`Signal: ${card.mediaPlayer.hardware_device.signal_strength}%`}>
+                              <Signal className={`w-3.5 h-3.5 ${
+                                card.mediaPlayer.hardware_device.signal_strength >= 75 ? 'text-green-600' :
+                                card.mediaPlayer.hardware_device.signal_strength >= 50 ? 'text-yellow-600' :
+                                card.mediaPlayer.hardware_device.signal_strength >= 25 ? 'text-orange-600' :
+                                'text-red-600'
+                              }`} />
+                              <span className="text-slate-600 dark:text-slate-400">{card.mediaPlayer.hardware_device.signal_strength}%</span>
+                            </div>
+                          )}
+                          {card.mediaPlayer.hardware_device.battery_level !== undefined && (
+                            <div className="flex items-center gap-1" title={`Battery: ${card.mediaPlayer.hardware_device.battery_level}%`}>
+                              <Battery className={`w-3.5 h-3.5 ${
+                                card.mediaPlayer.hardware_device.battery_level >= 75 ? 'text-green-600' :
+                                card.mediaPlayer.hardware_device.battery_level >= 50 ? 'text-yellow-600' :
+                                card.mediaPlayer.hardware_device.battery_level >= 25 ? 'text-orange-600' :
+                                'text-red-600'
+                              }`} />
+                              <span className="text-slate-600 dark:text-slate-400">{card.mediaPlayer.hardware_device.battery_level}%</span>
+                            </div>
+                          )}
+                          {card.mediaPlayer.hardware_device.network_status && (
+                            <div className="flex items-center gap-1" title={`Network: ${card.mediaPlayer.hardware_device.network_status}`}>
+                              <Wifi className={`w-3.5 h-3.5 ${
+                                card.mediaPlayer.hardware_device.network_status === 'connected' ? 'text-green-600' :
+                                card.mediaPlayer.hardware_device.network_status === 'synced' ? 'text-green-600' :
+                                card.mediaPlayer.hardware_device.network_status === 'syncing' ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`} />
+                              <span className="text-slate-600 dark:text-slate-400 capitalize">{card.mediaPlayer.hardware_device.network_status === 'synced' ? 'Synced' : card.mediaPlayer.hardware_device.network_status}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
               </div>
             ))}
