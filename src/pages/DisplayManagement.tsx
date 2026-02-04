@@ -6,6 +6,7 @@ import DisplayContentModal from '../components/DisplayContentModal';
 import StoreDevicesManagement from './StoreDevicesManagement';
 import StoreGroupsManagement from './StoreGroupsManagement';
 import QuickActionsEditor from '../components/QuickActionsEditor';
+import MobileShelfLabelsView from '../components/MobileShelfLabelsView';
 
 interface DisplayManagementProps {
   storeId: number;
@@ -120,6 +121,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   const [previewModal, setPreviewModal] = useState<{ display: Display; name: string; orientation: 'horizontal' | 'vertical' } | null>(null);
   const [contentModal, setContentModal] = useState<Display | null>(null);
   const [showQuickActionsEditor, setShowQuickActionsEditor] = useState(false);
+  const [showMobileShelfLabels, setShowMobileShelfLabels] = useState(false);
   const [visibleQuickActions, setVisibleQuickActions] = useState<string[]>([
     'devices',
     'groups',
@@ -719,14 +721,18 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             }
             if (actionId === 'smart_labels') {
               return (
-                <div key="smart_labels" className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+                <button
+                  key="smart_labels"
+                  onClick={() => setShowMobileShelfLabels(true)}
+                  className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:border-orange-400 dark:hover:border-orange-500 transition-all touch-manipulation text-left"
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <Package className="w-4 h-4" style={{ color: '#f59e0b' }} />
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Smart Labels</span>
                   </div>
                   <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSmartLabels}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSmartLabels} online</p>
-                </div>
+                </button>
               );
             }
             if (actionId === 'webview_kiosks') {
@@ -961,6 +967,13 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             setShowQuickActionsEditor(false);
           }}
           currentActions={visibleQuickActions}
+          storeId={storeId}
+        />
+      )}
+
+      {showMobileShelfLabels && (
+        <MobileShelfLabelsView
+          onClose={() => setShowMobileShelfLabels(false)}
           storeId={storeId}
         />
       )}
