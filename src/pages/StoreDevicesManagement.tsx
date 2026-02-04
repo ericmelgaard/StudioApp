@@ -5,6 +5,7 @@ import {
   HardDrive, Network, Clock, Zap, Wrench
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ShelfLabelDetail from './ShelfLabelDetail';
 
 interface StoreDevicesManagementProps {
   storeId: number;
@@ -52,6 +53,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline' | 'error'>('all');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDevices();
@@ -180,6 +182,16 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
     error: devices.filter(d => d.status === 'error').length
   };
 
+  // Show device detail page if device is selected
+  if (selectedDeviceId && filterPlayerType === 'label') {
+    return (
+      <ShelfLabelDetail
+        deviceId={selectedDeviceId}
+        onBack={() => setSelectedDeviceId(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
@@ -273,7 +285,14 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div
+                    className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                    onClick={() => {
+                      if (filterPlayerType === 'label') {
+                        setSelectedDeviceId(device.id);
+                      }
+                    }}
+                  >
                     <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
                       {getStatusIcon(device.status)}
                     </div>
