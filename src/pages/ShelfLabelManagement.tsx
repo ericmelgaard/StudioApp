@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers } from 'lucide-react';
-import BulkAddMediaPlayersModal from '../components/BulkAddMediaPlayersModal';
+import BulkAddShelfLabelsModal from '../components/BulkAddShelfLabelsModal';
 import { useLocation } from '../hooks/useLocation';
 
 type PlayerType = 'signage' | 'label';
@@ -591,10 +591,9 @@ export default function ShelfLabelManagement() {
       )}
 
       {showBulkAddModal && (
-        <BulkAddMediaPlayersModal
+        <BulkAddShelfLabelsModal
           onClose={() => setShowBulkAddModal(false)}
           onSuccess={loadData}
-          availableStores={stores}
           currentLocation={location}
         />
       )}
