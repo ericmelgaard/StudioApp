@@ -24,6 +24,7 @@ const UserManagement = lazy(() => import('./UserManagement'));
 const SiteConfigurationBeta = lazy(() => import('./SiteConfigurationBeta'));
 const DaypartManagement = lazy(() => import('./DaypartManagement'));
 const DevicesDisplaysDashboard = lazy(() => import('./DevicesDisplaysDashboard'));
+const DisplayTypesManagement = lazy(() => import('./DisplayTypesManagement'));
 const AssetLibrary = lazy(() => import('./AssetLibrary'));
 const ThemeBuilderBeta = lazy(() => import('./ThemeBuilderBeta'));
 const LocationSelector = lazy(() => import('../components/LocationSelector'));
@@ -66,7 +67,7 @@ interface Store {
   company_id: number;
 }
 
-type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'themes-beta' | 'theme-builder-beta' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'dayparts' | 'sites-beta' | 'devices-displays' | 'asset-library';
+type ViewType = 'dashboard' | 'signage' | 'labels' | 'products' | 'resources' | 'themes' | 'themes-beta' | 'theme-builder-beta' | 'integration' | 'integration-dashboard' | 'integration-access' | 'wand-templates' | 'wand-mapper' | 'integration-sources' | 'core-attributes' | 'wand-products' | 'users' | 'edit-user' | 'dayparts' | 'sites-beta' | 'devices-displays' | 'display-types' | 'asset-library';
 
 export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
   const { location, setLocation, getLocationDisplay, resetLocation } = useLocation('admin', user.id);
@@ -121,6 +122,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
       { id: 'sites-beta' as ViewType, label: 'Location Manager', icon: MapPin },
       { id: 'users' as ViewType, label: 'Users', icon: Users },
       { id: 'devices-displays' as ViewType, label: 'Devices & Displays', icon: Cpu },
+      { id: 'display-types' as ViewType, label: 'Display Types', icon: Layers },
     ],
     control: [
       { id: 'signage' as ViewType, label: 'Signage', icon: Monitor },
@@ -457,6 +459,7 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             )}
             {currentView === 'sites-beta' && <SiteConfigurationBeta role="admin" userId={user.id} />}
             {currentView === 'devices-displays' && <DevicesDisplaysDashboard />}
+            {currentView === 'display-types' && <DisplayTypesManagement />}
             {currentView === 'asset-library' && <AssetLibrary role="admin" userId={user.id} />}
 
             {currentView === 'dashboard' && (
