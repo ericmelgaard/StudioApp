@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Building, Layers, Clock } from 'lucide-react';
+import { Store, Edit2, Trash2, MapPin, Phone, Globe, Plus, Building2, Building, Layers, Clock, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLocation } from '../hooks/useLocation';
 import { UserRole } from '../lib/supabase';
@@ -1105,10 +1105,13 @@ export default function SiteConfigurationBeta({ role, userId }: SiteConfiguratio
 
                         return (
                           <div key={placement.id} style={{ marginLeft: `${depth * 2.5}rem` }}>
-                            <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors group">
+                            <button
+                              onClick={() => handleEditPlacement(placement)}
+                              className="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-all group text-left hover:shadow-sm"
+                            >
                               <div className="w-1 h-10 bg-amber-400 rounded-full" />
                               <Layers className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                              <div className="flex-1">
+                              <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-slate-900">{placement.name}</h3>
                                 {placement.description && (
                                   <p className="text-sm text-slate-600">{placement.description}</p>
@@ -1125,20 +1128,18 @@ export default function SiteConfigurationBeta({ role, userId }: SiteConfiguratio
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
-                                  onClick={() => handleAddPlacement(placement.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddPlacement(placement.id);
+                                  }}
                                   className="px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors flex items-center gap-2 opacity-0 group-hover:opacity-100"
                                 >
                                   <Plus className="w-4 h-4" />
                                   Add
                                 </button>
-                                <button
-                                  onClick={() => handleEditPlacement(placement)}
-                                  className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
+                                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-amber-600 transition-colors" />
                               </div>
-                            </div>
+                            </button>
                           </div>
                         );
                       });
