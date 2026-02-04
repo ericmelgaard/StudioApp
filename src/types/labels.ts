@@ -11,6 +11,17 @@ export interface HardwareDevice {
   notes: string;
   created_at: string;
   updated_at: string;
+  // ESL-specific fields
+  battery_status?: string | null;
+  signal_strength?: string | null;
+  label_type?: string | null;
+  firmware_version?: string | null;
+  network_status?: boolean | null;
+  template_name?: string | null;
+  product_id?: string | null;
+  product_name?: string | null;
+  last_response_time?: string | null;
+  sync_status?: string | null;
 }
 
 export interface LabelPosition {

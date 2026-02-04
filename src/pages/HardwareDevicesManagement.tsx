@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Search, Cpu, AlertCircle, Tag } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Cpu, AlertCircle, Tag, Battery, Signal, Wifi, WifiOff, Package } from 'lucide-react';
 import { useLocation } from '../hooks/useLocation';
 
 interface HardwareDevice {
@@ -18,6 +18,17 @@ interface HardwareDevice {
     id: string;
     name: string;
   } | null;
+  // ESL-specific fields
+  battery_status?: string | null;
+  signal_strength?: string | null;
+  label_type?: string | null;
+  firmware_version?: string | null;
+  network_status?: boolean | null;
+  template_name?: string | null;
+  product_id?: string | null;
+  product_name?: string | null;
+  last_response_time?: string | null;
+  sync_status?: string | null;
 }
 
 export default function HardwareDevicesManagement() {
@@ -286,6 +297,43 @@ export default function HardwareDevicesManagement() {
     return <Cpu className="w-5 h-5 text-gray-400" />;
   };
 
+  const isESLDevice = (device: HardwareDevice): boolean => {
+    return device.device_type.startsWith('esl_') || device.label_type !== null;
+  };
+
+  const getBatteryStatusColor = (status: string | null | undefined): string => {
+    if (!status) return 'bg-gray-100 text-gray-800';
+    switch (status.toUpperCase()) {
+      case 'GOOD': return 'bg-green-100 text-green-800';
+      case 'LOW': return 'bg-yellow-100 text-yellow-800';
+      case 'CRITICAL': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getSignalStrengthColor = (strength: string | null | undefined): string => {
+    if (!strength) return 'text-gray-400';
+    switch (strength.toUpperCase()) {
+      case 'EXCELLENT': return 'text-green-600';
+      case 'GOOD': return 'text-blue-600';
+      case 'POOR': return 'text-red-600';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const formatTimestamp = (timestamp: string | null | undefined): string => {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return `${Math.floor(diffMins / 1440)}d ago`;
+  };
+
   const getStatusCount = (status: string) => {
     return devices.filter(d => d.status === status).length;
   };
@@ -399,60 +447,115 @@ export default function HardwareDevicesManagement() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredDevices.map((device) => (
-              <tr key={device.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    {getDeviceTypeIcon(device.device_type)}
-                    <div>
-                      <div className="font-medium text-gray-900">{device.device_id}</div>
-                      {device.serial_number && (
-                        <div className="text-xs text-gray-500">SN: {device.serial_number}</div>
+            {filteredDevices.map((device) => {
+              const isESL = isESLDevice(device);
+              return (
+                <tr key={device.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      {getDeviceTypeIcon(device.device_type)}
+                      <div>
+                        <div className="font-medium text-gray-900">{device.device_id}</div>
+                        {device.serial_number && (
+                          <div className="text-xs text-gray-500">
+                            {isESL ? 'Label Code' : 'SN'}: {device.serial_number}
+                          </div>
+                        )}
+                        {isESL && device.label_type && (
+                          <div className="text-xs text-gray-500">
+                            {device.label_type}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {device.device_type.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    </div>
+                    {isESL && (
+                      <div className="flex items-center gap-2 mt-1">
+                        {device.battery_status && (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${getBatteryStatusColor(device.battery_status)}`}>
+                            <Battery className="w-3 h-3" />
+                            {device.battery_status}
+                          </span>
+                        )}
+                        {device.signal_strength && (
+                          <span className={`inline-flex items-center gap-1 text-xs ${getSignalStrengthColor(device.signal_strength)}`}>
+                            <Signal className="w-3 h-3" />
+                            {device.signal_strength}
+                          </span>
+                        )}
+                        {device.network_status !== null && (
+                          device.network_status ? (
+                            <Wifi className="w-3 h-3 text-green-600" title="Online" />
+                          ) : (
+                            <WifiOff className="w-3 h-3 text-red-600" title="Offline" />
+                          )
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(device.status)}`}>
+                      {device.status}
+                    </span>
+                    {isESL && device.firmware_version && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        FW: {device.firmware_version}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {device.media_player ? (
+                        <div className="flex items-center gap-1">
+                          <span>{device.media_player.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Unassigned</span>
                       )}
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {device.device_type.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(device.status)}`}>
-                    {device.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {device.media_player ? (
-                    <div className="flex items-center gap-1">
-                      <span>{device.media_player.name}</span>
+                    {isESL && device.product_name && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                        <Package className="w-3 h-3" />
+                        <span className="truncate max-w-[200px]" title={device.product_name}>
+                          {device.product_name}
+                        </span>
+                      </div>
+                    )}
+                    {isESL && device.last_response_time && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {formatTimestamp(device.last_response_time)}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {device.notes || '-'}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleOpenModal(device)}
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(device)}
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        title="Delete"
+                        disabled={!!device.media_player}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  ) : (
-                    <span className="text-gray-400">Unassigned</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {device.notes || '-'}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => handleOpenModal(device)}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                      title="Edit"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(device)}
-                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                      title="Delete"
-                      disabled={!!device.media_player}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
