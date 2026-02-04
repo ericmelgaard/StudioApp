@@ -6,7 +6,6 @@ import DisplayContentModal from '../components/DisplayContentModal';
 import StoreDevicesManagement from './StoreDevicesManagement';
 import StoreGroupsManagement from './StoreGroupsManagement';
 import QuickActionsEditor from '../components/QuickActionsEditor';
-import MobileShelfLabelsView from '../components/MobileShelfLabelsView';
 
 interface DisplayManagementProps {
   storeId: number;
@@ -121,7 +120,6 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   const [previewModal, setPreviewModal] = useState<{ display: Display; name: string; orientation: 'horizontal' | 'vertical' } | null>(null);
   const [contentModal, setContentModal] = useState<Display | null>(null);
   const [showQuickActionsEditor, setShowQuickActionsEditor] = useState(false);
-  const [showMobileShelfLabels, setShowMobileShelfLabels] = useState(false);
   const [visibleQuickActions, setVisibleQuickActions] = useState<string[]>([
     'devices',
     'groups',
@@ -537,6 +535,8 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         storeId={storeId}
         storeName={storeName}
         onBack={() => setCurrentPage('home')}
+        filterPlayerType="label"
+        title="Smart Labels"
       />
     );
   }
@@ -655,14 +655,14 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                   key="devices"
                   onClick={() => setCurrentPage('devices')}
                   className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
-                  aria-label="View devices"
+                  aria-label="View smart labels"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <Monitor className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#3b82f6' }} />
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Devices</span>
+                    <Package className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: '#f59e0b' }} />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100">Smart Labels</span>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDevices}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineDevices} online</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSmartLabels}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSmartLabels} online</p>
                 </button>
               );
             }
@@ -717,22 +717,6 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                   <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSignagePlayers}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSignagePlayers} online</p>
                 </div>
-              );
-            }
-            if (actionId === 'smart_labels') {
-              return (
-                <button
-                  key="smart_labels"
-                  onClick={() => setShowMobileShelfLabels(true)}
-                  className="flex-shrink-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 min-w-[140px] shadow-sm hover:shadow-md hover:border-orange-400 dark:hover:border-orange-500 transition-all touch-manipulation text-left"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Package className="w-4 h-4" style={{ color: '#f59e0b' }} />
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Smart Labels</span>
-                  </div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSmartLabels}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{stats.onlineSmartLabels} online</p>
-                </button>
               );
             }
             if (actionId === 'webview_kiosks') {
@@ -967,13 +951,6 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
             setShowQuickActionsEditor(false);
           }}
           currentActions={visibleQuickActions}
-          storeId={storeId}
-        />
-      )}
-
-      {showMobileShelfLabels && (
-        <MobileShelfLabelsView
-          onClose={() => setShowMobileShelfLabels(false)}
           storeId={storeId}
         />
       )}

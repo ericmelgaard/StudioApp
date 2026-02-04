@@ -10,6 +10,8 @@ interface StoreDevicesManagementProps {
   storeId: number;
   storeName: string;
   onBack: () => void;
+  filterPlayerType?: 'signage' | 'label';
+  title?: string;
 }
 
 interface MediaPlayer {
@@ -40,7 +42,7 @@ interface MediaPlayer {
   display_count?: number;
 }
 
-export default function StoreDevicesManagement({ storeId, storeName, onBack }: StoreDevicesManagementProps) {
+export default function StoreDevicesManagement({ storeId, storeName, onBack, filterPlayerType, title }: StoreDevicesManagementProps) {
   const [devices, setDevices] = useState<MediaPlayer[]>([]);
   const [filteredDevices, setFilteredDevices] = useState<MediaPlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,14 +61,19 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
   const loadDevices = async () => {
     setLoading(true);
     try {
-      const { data: mediaPlayers, error: mpError } = await supabase
+      let query = supabase
         .from('media_players')
         .select(`
           *,
           hardware_devices(device_id, device_type, status, serial_number, activation_id, client_version)
         `)
-        .eq('store_id', storeId)
-        .order('name');
+        .eq('store_id', storeId);
+
+      if (filterPlayerType) {
+        query = query.eq('player_type', filterPlayerType);
+      }
+
+      const { data: mediaPlayers, error: mpError } = await query.order('name');
 
       if (mpError) throw mpError;
 
@@ -173,7 +180,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
               <ArrowLeft className="w-5 h-5 text-slate-700 dark:text-slate-300" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Devices</h1>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title || 'Devices'}</h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">{storeName}</p>
             </div>
           </div>
