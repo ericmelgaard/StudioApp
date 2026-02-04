@@ -167,15 +167,17 @@ export default function ScheduleGroupForm({
       return;
     }
 
-    completeSave();
-
+    // Check for unscheduled days before saving
     if (scheduleType === 'regular' && !skipDayValidation) {
       const remaining = getUnscheduledDays();
       if (remaining.length > 0) {
         setUnscheduledDays(remaining);
         setShowUnscheduledPrompt(true);
+        return; // Don't save yet, wait for user decision
       }
     }
+
+    completeSave();
   };
 
   const completeSave = () => {
@@ -627,81 +629,62 @@ export default function ScheduleGroupForm({
       )}
 
       {showUnscheduledPrompt && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
-          onClick={() => setShowUnscheduledPrompt(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="h-2"
-              style={{
-                backgroundColor: daypartColor || '#3b82f6'
-              }}
-            />
-
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
             <div className="p-6">
-              <div className="flex items-start gap-4 mb-4">
-                <div
-                  className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{
-                    backgroundColor: daypartColor ? `${daypartColor}20` : '#dbeafe'
-                  }}
-                >
-                  <Calendar
-                    className="w-6 h-6"
-                    style={{ color: daypartColor || '#3b82f6' }}
-                  />
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-amber-100">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                    Schedule Saved Successfully
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                    Days Not Scheduled
                   </h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Your schedule has been saved. However, <span className="font-medium text-slate-900">{unscheduledDays.map(d => DAYS_OF_WEEK[d].label).join(', ')}</span> {unscheduledDays.length === 1 ? 'still has' : 'still have'} no schedule for this daypart.
-                  </p>
-                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                    Would you like to create a schedule for {unscheduledDays.length === 1 ? 'this day' : 'these days'} now?
+                  <p className="text-sm text-slate-600">
+                    {unscheduledDays.length === 1 ? '1 day is' : `${unscheduledDays.length} days are`} not scheduled for this daypart
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 mt-6">
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm text-slate-700">
+                    {unscheduledDays.map(d => DAYS_OF_WEEK[d].short).join(', ')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 p-3 rounded-lg mb-6 bg-amber-50 border border-amber-200">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-600 mt-0.5" />
+                <p className="text-sm text-slate-900">
+                  The daypart will not run on {unscheduledDays.length === 1 ? 'this day' : 'these days'}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    completeSave();
+                    setShowUnscheduledPrompt(false);
+                  }}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                >
+                  Leave As Is
+                </button>
                 {onScheduleUnscheduledDays && (
                   <button
                     onClick={() => {
+                      completeSave();
                       setShowUnscheduledPrompt(false);
                       onScheduleUnscheduledDays(unscheduledDays, localSchedule);
                     }}
-                    className="w-full px-4 py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg text-white"
-                    style={{
-                      backgroundColor: daypartColor || '#3b82f6'
-                    }}
-                    onMouseEnter={(e) => {
-                      const color = daypartColor || '#3b82f6';
-                      e.currentTarget.style.filter = 'brightness(0.9)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.filter = 'brightness(1)';
-                    }}
+                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                   >
                     <Calendar className="w-4 h-4" />
-                    Add Schedule for {unscheduledDays.length === 1 ? 'This Day' : 'These Days'}
+                    Schedule Days
                   </button>
                 )}
-                <button
-                  onClick={() => {
-                    setShowUnscheduledPrompt(false);
-                  }}
-                  className="w-full px-4 py-3 border-2 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
-                  style={{
-                    borderColor: daypartColor ? `${daypartColor}40` : '#cbd5e1'
-                  }}
-                >
-                  {onScheduleUnscheduledDays ? 'Skip for Now' : 'Dismiss'}
-                </button>
               </div>
             </div>
           </div>
