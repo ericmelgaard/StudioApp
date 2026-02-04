@@ -62,7 +62,10 @@ export default function ShelfLabelDetail({ deviceId, onBack }: ShelfLabelDetailP
   }, [deviceId]);
 
   const loadDevice = async () => {
-    if (!deviceId) return;
+    if (!deviceId) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -76,9 +79,9 @@ export default function ShelfLabelDetail({ deviceId, onBack }: ShelfLabelDetailP
         .maybeSingle();
 
       if (error) throw error;
+
       if (data) {
         setDevice(data);
-        // Generate preview image
         await generatePreview(data);
       }
     } catch (error) {

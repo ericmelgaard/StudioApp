@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers, ArrowLeft, Tag, Signal, Battery } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers, ArrowLeft, Tag, Signal, Battery, Eye } from 'lucide-react';
 import BulkAddShelfLabelsModal from '../components/BulkAddShelfLabelsModal';
 import { useLocation } from '../hooks/useLocation';
+import ShelfLabelDetail from './ShelfLabelDetail';
 
 type PlayerType = 'signage' | 'label';
 
@@ -76,6 +77,7 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
   const [showModal, setShowModal] = useState(false);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<MediaPlayer | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     hardware_device_id: '',
@@ -324,6 +326,15 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
     );
   }
 
+  if (selectedDeviceId) {
+    return (
+      <ShelfLabelDetail
+        deviceId={selectedDeviceId}
+        onBack={() => setSelectedDeviceId(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
       <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
@@ -421,7 +432,15 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredPlayers.map((player) => (
-              <tr key={player.id} className="hover:bg-gray-50">
+              <tr
+                key={player.id}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={(e) => {
+                  if (!(e.target as HTMLElement).closest('button')) {
+                    setSelectedDeviceId(player.id);
+                  }
+                }}
+              >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <Monitor className="w-5 h-5 text-gray-400" />
@@ -507,6 +526,13 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setSelectedDeviceId(player.id)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleOpenModal(player)}
                       className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
