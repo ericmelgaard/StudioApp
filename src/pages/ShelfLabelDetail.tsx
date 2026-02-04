@@ -200,7 +200,10 @@ export default function ShelfLabelDetail({ deviceId, onBack }: ShelfLabelDetailP
               </p>
             </div>
           </div>
-          <Breadcrumb />
+          <Breadcrumb items={[
+            { label: 'Devices' },
+            { label: device.name }
+          ]} />
         </div>
       </div>
 
