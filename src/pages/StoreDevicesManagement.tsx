@@ -46,12 +46,19 @@ interface MediaPlayer {
   display_count?: number;
 }
 
+interface PlacementGroup {
+  id: string;
+  name: string;
+}
+
 export default function StoreDevicesManagement({ storeId, storeName, onBack, filterPlayerType, title }: StoreDevicesManagementProps) {
   const [devices, setDevices] = useState<MediaPlayer[]>([]);
   const [filteredDevices, setFilteredDevices] = useState<MediaPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline' | 'error'>('all');
+  const [groupFilter, setGroupFilter] = useState<string>('all');
+  const [placementGroups, setPlacementGroups] = useState<PlacementGroup[]>([]);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
 
@@ -61,7 +68,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
 
   useEffect(() => {
     filterDevices();
-  }, [searchQuery, statusFilter, devices]);
+  }, [searchQuery, statusFilter, groupFilter, devices]);
 
   const loadDevices = async () => {
     setLoading(true);
@@ -95,12 +102,31 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
 
       if (displaysError) throw displaysError;
 
+      // Get unique placement groups from displays
+      const groupsMap = new Map<string, PlacementGroup>();
+      displays?.forEach(d => {
+        if (d.placement_group_id && d.placement_groups) {
+          const pg = Array.isArray(d.placement_groups) ? d.placement_groups[0] : d.placement_groups;
+          if (pg?.id && pg?.name) {
+            groupsMap.set(pg.id, { id: pg.id, name: pg.name });
+          }
+        }
+      });
+      setPlacementGroups(Array.from(groupsMap.values()));
+
       const devicesWithCounts = mediaPlayers?.map(mp => {
         const hardwareDevice = hardwareDevices?.find(hd => hd.serial_number === mp.hardware_device_id);
+        const deviceDisplays = displays?.filter(d => d.media_player_id === mp.id) || [];
+        const placementGroup = deviceDisplays[0]?.placement_groups
+          ? (Array.isArray(deviceDisplays[0].placement_groups) ? deviceDisplays[0].placement_groups[0] : deviceDisplays[0].placement_groups)
+          : null;
+
         return {
           ...mp,
           hardware_devices: hardwareDevice ? [hardwareDevice] : [],
-          display_count: displays?.filter(d => d.media_player_id === mp.id).length || 0
+          display_count: deviceDisplays.length,
+          placement_group: placementGroup,
+          placement_group_id: deviceDisplays[0]?.placement_group_id || null
         };
       }) || [];
 
@@ -127,6 +153,10 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(device => device.status === statusFilter);
+    }
+
+    if (groupFilter !== 'all') {
+      filtered = filtered.filter(device => device.placement_group_id === groupFilter);
     }
 
     setFilteredDevices(filtered);
@@ -176,10 +206,10 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
   };
 
   const stats = {
-    total: devices.length,
-    online: devices.filter(d => d.status === 'online').length,
-    offline: devices.filter(d => d.status === 'offline').length,
-    error: devices.filter(d => d.status === 'error').length
+    total: filteredDevices.length,
+    online: filteredDevices.filter(d => d.status === 'online').length,
+    offline: filteredDevices.filter(d => d.status === 'offline').length,
+    error: filteredDevices.filter(d => d.status === 'error').length
   };
 
   // Show device detail page if device is selected
@@ -214,34 +244,46 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
 
       <div className="p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`bg-white dark:bg-slate-800 border ${statusFilter === 'all' ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900' : 'border-slate-200 dark:border-slate-700'} rounded-lg p-4 text-left transition-all hover:shadow-md active:scale-95`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <Monitor className="w-4 h-4 text-slate-500 dark:text-slate-400" />
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.total}</p>
-          </div>
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+          </button>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'online' ? 'all' : 'online')}
+            className={`bg-white dark:bg-slate-800 border ${statusFilter === 'online' ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-900' : 'border-slate-200 dark:border-slate-700'} rounded-lg p-4 text-left transition-all hover:shadow-md active:scale-95`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <Wifi className="w-4 h-4 text-green-500" />
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Online</span>
             </div>
             <p className="text-2xl font-bold text-green-600 dark:text-green-500">{stats.online}</p>
-          </div>
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+          </button>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'offline' ? 'all' : 'offline')}
+            className={`bg-white dark:bg-slate-800 border ${statusFilter === 'offline' ? 'border-slate-500 ring-2 ring-slate-200 dark:ring-slate-900' : 'border-slate-200 dark:border-slate-700'} rounded-lg p-4 text-left transition-all hover:shadow-md active:scale-95`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <WifiOff className="w-4 h-4 text-slate-400" />
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Offline</span>
             </div>
             <p className="text-2xl font-bold text-slate-600 dark:text-slate-400">{stats.offline}</p>
-          </div>
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+          </button>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'error' ? 'all' : 'error')}
+            className={`bg-white dark:bg-slate-800 border ${statusFilter === 'error' ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-900' : 'border-slate-200 dark:border-slate-700'} rounded-lg p-4 text-left transition-all hover:shadow-md active:scale-95`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-red-500" />
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Errors</span>
             </div>
             <p className="text-2xl font-bold text-red-600 dark:text-red-500">{stats.error}</p>
-          </div>
+          </button>
         </div>
 
         <div className="flex flex-col md:flex-row gap-3 mb-4">
@@ -256,14 +298,14 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
             />
           </div>
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'online' | 'offline' | 'error')}
+            value={groupFilter}
+            onChange={(e) => setGroupFilter(e.target.value)}
             className="px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
           >
-            <option value="all">All Status</option>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-            <option value="error">Error</option>
+            <option value="all">All Devices</option>
+            {placementGroups.map(group => (
+              <option key={group.id} value={group.id}>{group.name}</option>
+            ))}
           </select>
         </div>
 
