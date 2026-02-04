@@ -191,7 +191,9 @@ export default function MediaPlayersManagement() {
         return;
       }
 
-      const deviceId = `MP-${Date.now()}`;
+      // Generate unique device_id from UUID
+      const uniqueId = crypto.randomUUID().split('-')[0];
+      const deviceId = `mp-${uniqueId}`;
 
       if (editingPlayer) {
         const updates: any = {

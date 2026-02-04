@@ -134,32 +134,38 @@ export default function BulkAddMediaPlayersModal({ onClose, onSuccess, available
       }
 
       const startNum = parseInt(formData.start_number);
-      const deviceIdsToCreate: string[] = [];
+      const namesToCreate: string[] = [];
 
+      // Build list of names to create
       for (let i = 0; i < count; i++) {
         const num = startNum + i;
-        const deviceId = `${formData.prefix}${num.toString().padStart(3, '0')}`;
-        deviceIdsToCreate.push(deviceId);
+        const name = `${formData.prefix}${num.toString().padStart(3, '0')}`;
+        namesToCreate.push(name);
       }
 
+      // Check for duplicate names in this store
       const { data: existingPlayers } = await supabase
         .from('media_players')
-        .select('device_id')
-        .in('device_id', deviceIdsToCreate);
+        .select('name')
+        .eq('store_id', parseInt(formData.store_id))
+        .in('name', namesToCreate);
 
       if (existingPlayers && existingPlayers.length > 0) {
-        const conflictingIds = existingPlayers.map(p => p.device_id).join(', ');
-        throw new Error(`The following device IDs already exist: ${conflictingIds}. Please adjust the prefix or start number.`);
+        const conflictingNames = existingPlayers.map(p => p.name).join(', ');
+        throw new Error(`The following names already exist in this store: ${conflictingNames}. Please adjust the prefix or start number.`);
       }
 
       const mediaPlayers = [];
 
       for (let i = 0; i < count; i++) {
-        const deviceId = deviceIdsToCreate[i];
+        const displayName = namesToCreate[i];
+
+        // Generate unique device_id from UUID
+        const uniqueId = crypto.randomUUID().split('-')[0];
 
         const player: any = {
-          device_id: deviceId,
-          name: `Media Player ${deviceId}`,
+          device_id: `mp-${uniqueId}`,
+          name: displayName,
           store_id: parseInt(formData.store_id),
           placement_group_id: formData.placement_group_id || null,
           player_type: formData.player_type,

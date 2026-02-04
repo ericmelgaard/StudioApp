@@ -149,18 +149,19 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
         throw new Error('Display type is required');
       }
 
-      // Fetch ALL existing media players with matching prefix to avoid duplicate device_ids
-      // device_id is UNIQUE across the entire table, not scoped to store or player_type
+      // Fetch existing shelf label names to find next available number
       const { data: existingPlayers } = await supabase
         .from('media_players')
-        .select('device_id')
-        .like('device_id', `${formData.prefix}%`);
+        .select('name')
+        .eq('store_id', parseInt(formData.store_id))
+        .eq('player_type', 'label')
+        .like('name', `${formData.prefix}%`);
 
       // Extract existing numbers to find the next available number
       const existingNumbers = new Set<number>();
       if (existingPlayers) {
         existingPlayers.forEach(player => {
-          const match = player.device_id.match(/\d+$/);
+          const match = player.name.match(/\d+$/);
           if (match) {
             existingNumbers.add(parseInt(match[0]));
           }
@@ -181,11 +182,14 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
 
       const mediaPlayers = selectedHardware.map((device) => {
         const num = findNextAvailable();
-        const deviceId = `${formData.prefix}${num.toString().padStart(3, '0')}`;
+        const displayName = `${formData.prefix}${num.toString().padStart(3, '0')}`;
+
+        // Generate unique device_id from UUID
+        const uniqueId = crypto.randomUUID().split('-')[0];
 
         return {
-          device_id: deviceId,
-          name: `${formData.prefix}${device.device_id}`,
+          device_id: `mp-${uniqueId}`,
+          name: displayName,
           player_type: 'label' as const,
           hardware_device_id: device.id,
           store_id: parseInt(formData.store_id),
