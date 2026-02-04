@@ -1004,28 +1004,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                           {isInUse ? 'In Use' : 'Not In Use'}
                         </button>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {definition.is_customized && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleEditDefinition(definition)}
-                              className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                              title="Edit definition"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteDefinition(definition)}
-                              className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                              title="Delete definition"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
@@ -1114,28 +1092,6 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
                           {eventSchedules.length} {eventSchedules.length === 1 ? 'Event' : 'Events'}
                         </span>
                       )}
-                      <div className="ml-auto flex items-center gap-1">
-                        {definition.is_customized && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleEditDefinition(definition)}
-                              className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                              title="Edit definition"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteDefinition(definition)}
-                              className="p-1.5 hover:bg-white/50 rounded-lg transition-colors"
-                              title="Delete definition"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
                     </div>
                   </div>
                   <div className="p-3 space-y-3">
