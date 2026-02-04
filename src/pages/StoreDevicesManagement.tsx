@@ -34,6 +34,9 @@ interface MediaPlayer {
     serial_number: string | null;
     activation_id?: string;
     client_version?: string;
+    signal_strength?: string;
+    battery_status?: string;
+    sync_status?: string;
   } | null;
   placement_group?: {
     id: string;
@@ -65,7 +68,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
         .from('media_players')
         .select(`
           *,
-          hardware_devices(device_id, device_type, status, serial_number, activation_id, client_version)
+          hardware_devices(device_id, device_type, status, serial_number, activation_id, client_version, signal_strength, battery_status, sync_status)
         `)
         .eq('store_id', storeId);
 
@@ -271,9 +274,43 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
                         </h3>
                         <span className={`w-2 h-2 rounded-full ${getStatusColor(device.status)}`}></span>
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+                      <p className="text-sm font-mono text-slate-500 dark:text-slate-400 mb-2">
                         {device.device_id}
                       </p>
+                      {filterPlayerType === 'label' && device.hardware_device && (
+                        <div className="flex items-center gap-3 text-xs mb-2">
+                          {device.hardware_device.signal_strength && (
+                            <div className="flex items-center gap-1" title={`Signal: ${device.hardware_device.signal_strength}`}>
+                              <Radio className={`w-3.5 h-3.5 ${
+                                device.hardware_device.signal_strength === 'EXCELLENT' ? 'text-green-600' :
+                                device.hardware_device.signal_strength === 'GOOD' ? 'text-green-500' :
+                                device.hardware_device.signal_strength === 'FAIR' ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`} />
+                              <span className="text-slate-600 dark:text-slate-400 capitalize">{device.hardware_device.signal_strength.toLowerCase()}</span>
+                            </div>
+                          )}
+                          {device.hardware_device.battery_status && (
+                            <div className="flex items-center gap-1" title={`Battery: ${device.hardware_device.battery_status}`}>
+                              <Zap className={`w-3.5 h-3.5 ${
+                                device.hardware_device.battery_status === 'GOOD' ? 'text-green-600' :
+                                device.hardware_device.battery_status === 'LOW' ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`} />
+                              <span className="text-slate-600 dark:text-slate-400 capitalize">{device.hardware_device.battery_status.toLowerCase()}</span>
+                            </div>
+                          )}
+                          {device.hardware_device.sync_status && (
+                            <div className="flex items-center gap-1" title={`Last Sync: ${device.hardware_device.sync_status}`}>
+                              <CheckCircle2 className={`w-3.5 h-3.5 ${
+                                device.hardware_device.sync_status === 'SUCCESS' ? 'text-green-600' :
+                                'text-red-600'
+                              }`} />
+                              <span className="text-slate-600 dark:text-slate-400">{device.hardware_device.sync_status === 'SUCCESS' ? 'Synced' : 'Failed'}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-2">
                         {device.hardware_device && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-700 text-xs text-slate-700 dark:text-slate-300 rounded">
