@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Search, Cpu, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Cpu, AlertCircle, Tag } from 'lucide-react';
 import { useLocation } from '../hooks/useLocation';
 
 interface HardwareDevice {
   id: string;
   device_id: string;
   device_type: string;
+  usage_type: string;
   mac_address: string | null;
   serial_number: string | null;
   status: string;
@@ -279,6 +280,9 @@ export default function HardwareDevicesManagement() {
   };
 
   const getDeviceTypeIcon = (type: string) => {
+    if (type.startsWith('esl_')) {
+      return <Tag className="w-5 h-5 text-orange-500" />;
+    }
     return <Cpu className="w-5 h-5 text-gray-400" />;
   };
 
@@ -351,6 +355,9 @@ export default function HardwareDevicesManagement() {
             <option value="intel_nuc">Intel NUC</option>
             <option value="android_box">Android Box</option>
             <option value="windows_pc">Windows PC</option>
+            <option value="esl_42inch">4.2" ESL</option>
+            <option value="esl_29inch">2.9" ESL</option>
+            <option value="esl_75inch">7.5" ESL</option>
             <option value="other">Other</option>
           </select>
           <select
@@ -498,6 +505,9 @@ export default function HardwareDevicesManagement() {
                   <option value="intel_nuc">Intel NUC</option>
                   <option value="android_box">Android Box</option>
                   <option value="windows_pc">Windows PC</option>
+                  <option value="esl_42inch">4.2" ESL</option>
+                  <option value="esl_29inch">2.9" ESL</option>
+                  <option value="esl_75inch">7.5" ESL</option>
                   <option value="other">Other</option>
                 </select>
               </div>
