@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers, ArrowLeft, Tag } from 'lucide-react';
 import BulkAddShelfLabelsModal from '../components/BulkAddShelfLabelsModal';
 import { useLocation } from '../hooks/useLocation';
 
@@ -49,7 +49,11 @@ interface PlacementGroup {
   name: string;
 }
 
-export default function ShelfLabelManagement() {
+interface ShelfLabelManagementProps {
+  onBack?: () => void;
+}
+
+export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementProps) {
   const { location } = useLocation();
   const [mediaPlayers, setMediaPlayers] = useState<MediaPlayer[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<MediaPlayer[]>([]);
@@ -308,32 +312,47 @@ export default function ShelfLabelManagement() {
   }
 
   return (
-    <div className="p-6 animate-in fade-in duration-500">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Media Players</h1>
-            <p className="text-gray-600 mt-1">Manage logical media player configurations</p>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
+      <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              </button>
+            )}
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+              <Tag className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-base md:text-lg font-bold text-slate-900 dark:text-slate-100">Smart Labels</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{location.store?.name || location.concept?.name || location.company?.name || 'All Locations'}</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowBulkAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
             >
               <Layers className="w-4 h-4" />
-              Bulk Add
+              <span className="text-sm font-medium hidden sm:inline">Bulk Add</span>
             </button>
             <button
               onClick={() => handleOpenModal()}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              Create Media Player
+              <span className="text-sm font-medium hidden sm:inline">Create Player</span>
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="flex gap-4">
+      <div className="p-3 md:p-4">
+        <div className="flex gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -356,9 +375,8 @@ export default function ShelfLabelManagement() {
             <option value="maintenance">Maintenance</option>
           </select>
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -472,6 +490,7 @@ export default function ShelfLabelManagement() {
             </p>
           </div>
         )}
+        </div>
       </div>
 
       {showModal && (
