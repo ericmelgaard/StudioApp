@@ -488,7 +488,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                             onDelete={editingSchedule.id ? handleDelete : undefined}
                             onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                             level="placement"
-                            daypartColor={definition.color}
+                            daypartColor="#00adf0"
                           />
                         </div>
                       );
@@ -685,7 +685,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                     onDelete={editingSchedule.id ? handleDelete : undefined}
                                     onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                                     level="placement"
-                                    daypartColor={definition.color}
+                                    daypartColor="#00adf0"
                                   />
                                 </div>
                               );
@@ -798,7 +798,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                 onDelete={undefined}
                                 onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                                 level="placement"
-                                daypartColor={definition.color}
+                                daypartColor="#00adf0"
                               />
                             </div>
                           ) : (
