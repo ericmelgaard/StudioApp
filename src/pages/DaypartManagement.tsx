@@ -326,6 +326,23 @@ export default function DaypartManagement() {
     }
   };
 
+  const handleScheduleUnscheduledDays = (days: number[], template: any) => {
+    const definition = definitions.find(d => d.daypart_name === template.daypart_name);
+    if (definition) {
+      const newSchedule: Schedule = {
+        daypart_name: definition.daypart_name,
+        daypart_definition_id: definition.id,
+        days_of_week: days,
+        start_time: template.start_time,
+        end_time: template.end_time,
+        runs_on_days: true,
+        schedule_name: template.schedule_name || ''
+      };
+      setEditingSchedule(newSchedule);
+      setAddingScheduleForDef(definition.id);
+    }
+  };
+
   const toggleEventsExpanded = (defId: string) => {
     setExpandedEvents(prev => ({
       ...prev,
@@ -555,6 +572,7 @@ export default function DaypartManagement() {
                             onSave={() => handleSaveSchedule(editingSchedule)}
                             onCancel={() => setEditingSchedule(null)}
                             onDelete={editingSchedule.id ? () => handleDeleteSchedule(editingSchedule.id!) : undefined}
+                            onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                             level="site"
                             daypartColor={definition.color}
                           />
@@ -633,6 +651,7 @@ export default function DaypartManagement() {
                         onUpdate={() => {}}
                         onSave={(updatedSchedule) => handleSaveSchedule(updatedSchedule)}
                         onCancel={() => setAddingScheduleForDef(null)}
+                        onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                         level="site"
                         daypartColor={definition.color}
                       />
@@ -689,6 +708,7 @@ export default function DaypartManagement() {
                                     onSave={() => handleSaveSchedule(editingSchedule)}
                                     onCancel={() => setEditingSchedule(null)}
                                     onDelete={editingSchedule.id ? () => handleDeleteSchedule(editingSchedule.id!) : undefined}
+                                    onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                                     level="site"
                                     daypartColor={definition.color}
                                   />

@@ -246,6 +246,24 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setEditingDefinitionContext(null);
   };
 
+  const handleScheduleUnscheduledDays = (days: number[], template: any) => {
+    const definition = definitions.find(d => d.daypart_name === template.daypart_name);
+    if (definition) {
+      const newSchedule: DaypartSchedule = {
+        id: '',
+        daypart_definition_id: definition.id,
+        days_of_week: days,
+        start_time: template.start_time,
+        end_time: template.end_time,
+        runs_on_days: true,
+        schedule_name: template.schedule_name || '',
+        schedule_type: 'regular'
+      };
+      setNewSchedule(newSchedule);
+      setAddingScheduleForDef(definition.id);
+    }
+  };
+
   const handleAddSchedule = (
     defId: string,
     scheduleType: 'regular' | 'event_holiday' = 'regular',
@@ -816,6 +834,7 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
           onCancel={handleCancel}
           onDelete={canDelete ? handleDeleteSchedule : undefined}
           onRemovedDays={setRemovedDays}
+          onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
           level="site"
           skipDayValidation={false}
           disableCollisionDetection={false}

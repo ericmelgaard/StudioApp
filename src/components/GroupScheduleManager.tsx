@@ -300,6 +300,23 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
     setIsInheritedEdit(false);
   };
 
+  const handleScheduleUnscheduledDays = (days: number[], template: any) => {
+    // Create a new schedule with the unscheduled days
+    const newSchedule: Schedule = {
+      id: '',
+      placement_group_id: groupId,
+      daypart_name: template.daypart_name,
+      days_of_week: days,
+      start_time: template.start_time,
+      end_time: template.end_time,
+      runs_on_days: true,
+      schedule_name: template.schedule_name || '',
+      schedule_type: 'regular'
+    };
+    setEditingSchedule(newSchedule);
+    setEditingDaypartName(template.daypart_name);
+  };
+
   const regularSchedules = schedules.filter(s => s.schedule_type !== 'event_holiday');
   const eventSchedules = schedules.filter(s => s.schedule_type === 'event_holiday');
 
@@ -423,6 +440,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                             onSave={() => handleSave(editingSchedule!)}
                             onCancel={handleCancel}
                             onDelete={editingSchedule.id ? handleDelete : undefined}
+                            onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                             level="placement"
                             daypartColor="#00adf0"
                           />
@@ -490,6 +508,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onUpdate={setEditingSchedule}
                         onSave={() => handleSave(editingSchedule!)}
                         onCancel={handleCancel}
+                        onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                         level="placement"
                         daypartColor="#00adf0"
                       />
@@ -511,6 +530,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onUpdate={setEditingSchedule}
                         onSave={() => handleSave(editingSchedule!)}
                         onCancel={handleCancel}
+                        onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                         level="placement"
                         daypartColor="#00adf0"
                       />
@@ -617,6 +637,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                     onSave={() => handleSave(editingSchedule!)}
                                     onCancel={handleCancel}
                                     onDelete={editingSchedule.id ? handleDelete : undefined}
+                                    onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                                     level="placement"
                                     daypartColor="#00adf0"
                                   />
@@ -729,6 +750,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                 onSave={() => handleSave(editingSchedule!)}
                                 onCancel={handleCancel}
                                 onDelete={undefined}
+                                onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                                 level="placement"
                                 daypartColor="#00adf0"
                               />
