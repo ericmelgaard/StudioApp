@@ -24,6 +24,11 @@ interface MediaPlayer {
     device_id: string;
     device_type: string;
     status: string;
+    serial_number: string;
+    label_type?: string;
+    battery_status?: string;
+    signal_strength?: string;
+    firmware_version?: string;
   } | null;
   store?: {
     id: number;
@@ -37,6 +42,11 @@ interface HardwareDevice {
   device_id: string;
   device_type: string;
   status: string;
+  serial_number: string;
+  label_type?: string;
+  battery_status?: string;
+  signal_strength?: string;
+  firmware_version?: string;
 }
 
 interface Store {
@@ -88,7 +98,11 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
     setLoading(true);
     try {
       let storesQuery = supabase.from('stores').select('id, name, company_id, companies!inner(id, name, concept_id)').order('name');
-      let playersQuery = supabase.from('media_players').select('*, hardware_devices(*), stores!inner(id, name, company_id, companies!inner(id, name, concept_id))').eq('player_type', 'label').order('name');
+      let playersQuery = supabase
+        .from('media_players')
+        .select('*, hardware_devices!media_players_hardware_device_serial_fkey(*), stores!inner(id, name, company_id, companies!inner(id, name, concept_id))')
+        .eq('player_type', 'label')
+        .order('name');
 
       if (location.store) {
         storesQuery = storesQuery.eq('id', location.store.id);
@@ -216,13 +230,13 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
             await supabase
               .from('hardware_devices')
               .update({ status: 'available' })
-              .eq('id', editingPlayer.hardware_device_id);
+              .eq('serial_number', editingPlayer.hardware_device_id);
           }
 
           await supabase
             .from('hardware_devices')
             .update({ status: 'assigned' })
-            .eq('id', formData.hardware_device_id);
+            .eq('serial_number', formData.hardware_device_id);
         }
       } else {
         const { error } = await supabase
@@ -243,7 +257,7 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
           await supabase
             .from('hardware_devices')
             .update({ status: 'assigned' })
-            .eq('id', formData.hardware_device_id);
+            .eq('serial_number', formData.hardware_device_id);
         }
       }
 
@@ -277,7 +291,7 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
         await supabase
           .from('hardware_devices')
           .update({ status: 'available' })
-          .eq('id', player.hardware_device_id);
+          .eq('serial_number', player.hardware_device_id);
       }
 
       await loadData();
@@ -384,7 +398,7 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
                 Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hardware Device
+                Label Code
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Store
@@ -418,8 +432,8 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
                 <td className="px-6 py-4">
                   {player.hardware_device ? (
                     <div>
-                      <div className="text-sm text-gray-900">{player.hardware_device.device_id}</div>
-                      <div className="text-xs text-gray-500">{player.hardware_device.device_type}</div>
+                      <div className="text-sm font-mono text-gray-900">{player.hardware_device.serial_number}</div>
+                      <div className="text-xs text-gray-500">{player.hardware_device.label_type || player.hardware_device.device_type}</div>
                     </div>
                   ) : (
                     <span className="text-gray-400">No device assigned</span>
@@ -529,12 +543,12 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
                   <option value="">No device assigned</option>
                   {editingPlayer?.hardware_device && (
                     <option value={editingPlayer.hardware_device_id!}>
-                      {editingPlayer.hardware_device.device_id} (Current)
+                      {editingPlayer.hardware_device.serial_number} (Current)
                     </option>
                   )}
                   {availableDevices.map(device => (
-                    <option key={device.id} value={device.id}>
-                      {device.device_id} - {device.device_type}
+                    <option key={device.serial_number} value={device.serial_number}>
+                      {device.serial_number} - {device.label_type || device.device_type}
                     </option>
                   ))}
                 </select>

@@ -12,9 +12,12 @@ interface ShelfLabel {
   name: string;
   device_id: string;
   status: 'online' | 'offline';
-  hardware_device_id: number | null;
+  hardware_device_id: string | null;
   hardware_device?: {
     serial_number: string;
+    battery_status: string;
+    signal_strength: string;
+    label_type: string;
   };
 }
 
@@ -65,8 +68,11 @@ export default function MobileShelfLabelsView({ onClose, storeId }: MobileShelfL
           device_id,
           status,
           hardware_device_id,
-          hardware_devices (
-            serial_number
+          hardware_devices!media_players_hardware_device_serial_fkey (
+            serial_number,
+            battery_status,
+            signal_strength,
+            label_type
           )
         `)
         .eq('store_id', storeId)
