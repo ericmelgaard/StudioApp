@@ -284,12 +284,6 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
                             {device.placement_group.name}
                           </span>
                         )}
-                        {device.display_count > 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-xs text-green-700 dark:text-green-400 rounded">
-                            <Monitor className="w-3 h-3" />
-                            {device.display_count} display{device.display_count !== 1 ? 's' : ''}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -325,36 +319,6 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack }: S
                         </button>
                       </div>
                     )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">IP Address</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {device.ip_address || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">MAC Address</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                      {device.mac_address || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Client Version</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {device.hardware_device?.client_version || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Last Seen
-                    </p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {calculateUptime(device.last_heartbeat)}
-                    </p>
                   </div>
                 </div>
               </div>
