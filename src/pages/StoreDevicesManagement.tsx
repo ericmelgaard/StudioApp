@@ -318,19 +318,9 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                          {device.hardware_devices?.[0]?.serial_number || device.device_id}
-                        </p>
-                        {device.hardware_devices?.[0]?.activation_id && (
-                          <>
-                            <span className="text-slate-300 dark:text-slate-600">•</span>
-                            <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
-                              {device.hardware_devices?.[0].activation_id}
-                            </span>
-                          </>
-                        )}
-                      </div>
+                      <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5">
+                        {device.hardware_devices?.[0]?.serial_number || device.device_id}
+                      </p>
                     </div>
                   </div>
                   <div className="relative ml-2">
