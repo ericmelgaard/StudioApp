@@ -63,6 +63,7 @@ export default function ScheduleGroupForm({
   const [localSchedule, setLocalSchedule] = useState(schedule);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const scheduleType = schedule.schedule_type || 'regular';
+  const [scheduleName, setScheduleName] = useState(schedule.schedule_name || '');
   const [eventName, setEventName] = useState(schedule.event_name || '');
   const [eventDate, setEventDate] = useState(schedule.event_date || '');
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(schedule.recurrence_type || 'none');
@@ -182,7 +183,8 @@ export default function ScheduleGroupForm({
       ...localSchedule,
       schedule_type: scheduleType,
       runs_on_days: true,
-      priority_level: scheduleType === 'event_holiday' ? getPriorityLevel(recurrenceType) : 10
+      priority_level: scheduleType === 'event_holiday' ? getPriorityLevel(recurrenceType) : 10,
+      schedule_name: scheduleType === 'regular' ? scheduleName : undefined
     };
 
     if (scheduleType === 'event_holiday') {
@@ -190,6 +192,7 @@ export default function ScheduleGroupForm({
       updatedSchedule.event_date = eventDate || undefined;
       updatedSchedule.recurrence_type = recurrenceType;
       updatedSchedule.recurrence_config = recurrenceConfig;
+      updatedSchedule.schedule_name = eventName;
     }
 
     onUpdate(updatedSchedule);
@@ -237,7 +240,8 @@ export default function ScheduleGroupForm({
     const regularFieldsChanged =
       JSON.stringify(schedule.days_of_week) !== JSON.stringify(localSchedule.days_of_week) ||
       schedule.start_time !== localSchedule.start_time ||
-      schedule.end_time !== localSchedule.end_time;
+      schedule.end_time !== localSchedule.end_time ||
+      (scheduleType === 'regular' && schedule.schedule_name !== scheduleName);
 
     const eventFieldsChanged = scheduleType === 'event_holiday' && (
       schedule.event_name !== eventName ||
@@ -316,6 +320,21 @@ export default function ScheduleGroupForm({
         <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm flex items-start gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {scheduleType === 'regular' && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Schedule Name
+          </label>
+          <input
+            type="text"
+            value={scheduleName}
+            onChange={(e) => setScheduleName(e.target.value)}
+            placeholder="Optional name for this schedule"
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+          />
         </div>
       )}
 
