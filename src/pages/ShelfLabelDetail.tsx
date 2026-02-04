@@ -40,10 +40,6 @@ interface MediaPlayer {
   status: string;
   player_type: string;
   store_id: string;
-  placement_group: {
-    id: string;
-    name: string;
-  } | null;
   hardware_devices: HardwareDevice[];
 }
 
@@ -72,8 +68,7 @@ export default function ShelfLabelDetail({ deviceId, onBack }: ShelfLabelDetailP
         .from('media_players')
         .select(`
           *,
-          placement_group:placement_groups(id, name),
-          hardware_devices(*)
+          hardware_devices!media_players_hardware_device_serial_fkey(*)
         `)
         .eq('id', deviceId)
         .maybeSingle();
@@ -317,17 +312,11 @@ export default function ShelfLabelDetail({ deviceId, onBack }: ShelfLabelDetailP
                 </span>
               </div>
               {hardware.last_seen && (
-                <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-700">
+                <div className="flex justify-between py-2">
                   <span className="text-slate-600 dark:text-slate-400">Last Seen</span>
                   <span className="text-slate-900 dark:text-slate-100">
                     {new Date(hardware.last_seen).toLocaleString()}
                   </span>
-                </div>
-              )}
-              {device.placement_group && (
-                <div className="flex justify-between py-2">
-                  <span className="text-slate-600 dark:text-slate-400">Placement Group</span>
-                  <span className="text-slate-900 dark:text-slate-100">{device.placement_group.name}</span>
                 </div>
               )}
             </div>
