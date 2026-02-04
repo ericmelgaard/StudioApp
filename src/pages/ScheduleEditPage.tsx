@@ -108,7 +108,7 @@ export default function ScheduleEditPage({
   const isDaypartLocked = (!!schedule?.id && !isSchedulingRemovedDays) || isSuggestedDays;
 
   const selectedDaypart = dayparts.find(d => d.id === formData.daypart_definition_id);
-  const daypartColor = selectedDaypart?.color || '#00adf0';
+  const daypartColor = '#00adf0'; // Always use consistent blue for day pills
   const daypartColorStyles = getDaypartColorStyles(daypartColor);
 
   const hasChanges = () => {
