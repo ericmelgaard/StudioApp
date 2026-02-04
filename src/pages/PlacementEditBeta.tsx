@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
-import { Save, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe, X, Info } from 'lucide-react';
+import { Save, AlertCircle, Clock, Utensils, Palette, Nfc, MapPin, Phone, Globe, X, Info, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import SiteDaypartManager from '../components/SiteDaypartManager';
 import PlacementDaypartOverrides from '../components/PlacementDaypartOverrides';
@@ -32,12 +32,13 @@ interface PlacementEditBetaProps {
   placementName?: string;
   onBack: () => void;
   onSave: () => void;
+  onDelete?: () => void;
   onNavigate?: (level: 'wand' | 'concept' | 'company' | 'store') => void;
 }
 
 const DEVICE_SIZES = ['4.2"', '5"', '7"'];
 
-export default function PlacementEditBeta({ placementId, storeId, parentId, conceptName, companyName, storeName, placementName, onBack, onSave, onNavigate }: PlacementEditBetaProps) {
+export default function PlacementEditBeta({ placementId, storeId, parentId, conceptName, companyName, storeName, placementName, onBack, onSave, onDelete, onNavigate }: PlacementEditBetaProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -351,6 +352,10 @@ export default function PlacementEditBeta({ placementId, storeId, parentId, conc
       { id: 'device-templates', label: 'Device Templates', icon: Palette },
       { id: 'nfc-settings', label: 'NFC Settings', icon: Nfc }
     );
+
+    if (onDelete && placementId) {
+      sections.push({ id: 'danger-zone', label: 'Danger Zone', icon: Trash2 });
+    }
 
     return sections;
   };
@@ -717,6 +722,30 @@ export default function PlacementEditBeta({ placementId, storeId, parentId, conc
               placeholder="https://example.com/menu"
             />
           </div>
+
+            {onDelete && placementId && (
+              <div
+                id="danger-zone"
+                ref={(el) => (sectionRefs.current['danger-zone'] = el)}
+                className="bg-white rounded-lg border-2 border-red-200 p-6 shadow-sm scroll-mt-20"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                  <h3 className="text-lg font-semibold text-slate-900">Danger Zone</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-4">
+                  Once you delete this placement, there is no going back. This action cannot be undone.
+                </p>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Placement
+                </button>
+              </div>
+            )}
 
             {isDirty && (
               <div className="sticky bottom-0 bg-white rounded-lg border border-slate-200 p-6 shadow-lg transition-all duration-300 ease-in-out">

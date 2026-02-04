@@ -870,6 +870,12 @@ export default function SiteConfigurationBeta({ role, userId }: SiteConfiguratio
               setParentForNewPlacement(null);
               await loadStoreLevelData();
             }}
+            onDelete={editingPlacement?.id && !editingPlacement?.is_store_root ? async () => {
+              await handleDeletePlacement(editingPlacement);
+              setViewLevel('store');
+              setEditingPlacement(null);
+              setParentForNewPlacement(null);
+            } : undefined}
             onNavigate={(level) => {
               if (level === 'wand') {
                 setLocation({});
@@ -1130,12 +1136,6 @@ export default function SiteConfigurationBeta({ role, userId }: SiteConfiguratio
                                   className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                                 >
                                   <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeletePlacement(placement)}
-                                  className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
