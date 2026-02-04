@@ -29,7 +29,6 @@ interface ScheduleGroupFormProps {
   onDelete?: (scheduleId: string, source?: 'site' | 'store') => Promise<void>;
   onRemovedDays?: (days: number[]) => void;
   onScheduleUnscheduledDays?: (days: number[], template: Schedule) => void;
-  daypartColor?: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -50,7 +49,6 @@ export default function ScheduleGroupForm({
   onCancel,
   level = 'global',
   showDaypartSelector = false,
-  daypartColor,
   availableDayparts = [],
   selectedDaypartId = '',
   onDaypartChange,
@@ -521,7 +519,6 @@ export default function ScheduleGroupForm({
                   currentDaypartName={localSchedule.daypart_name}
                   editingScheduleId={localSchedule.id}
                   showPresets={false}
-                  daypartColor="#d97706"
                   disableCollisionDetection={true}
                   hideLabel={true}
                 />
@@ -558,7 +555,6 @@ export default function ScheduleGroupForm({
           currentDaypartName={localSchedule.daypart_name}
           editingScheduleId={localSchedule.id}
           showPresets={false}
-          daypartColor={daypartColor}
         />
       )}
 

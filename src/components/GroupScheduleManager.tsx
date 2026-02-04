@@ -488,7 +488,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                             onDelete={editingSchedule.id ? handleDelete : undefined}
                             onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                             level="placement"
-                            daypartColor="#00adf0"
                           />
                         </div>
                       );
@@ -556,7 +555,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onCancel={handleCancel}
                         onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                         level="placement"
-                        daypartColor="#00adf0"
                       />
                     </div>
                   ) : editingSchedule && !editingSchedule.id && editingDaypartName === daypartName && editingSchedule.schedule_type === 'event_holiday' ? (
@@ -578,7 +576,6 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onCancel={handleCancel}
                         onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                         level="placement"
-                        daypartColor="#00adf0"
                       />
                     </div>
                   ) : (
@@ -685,8 +682,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                     onDelete={editingSchedule.id ? handleDelete : undefined}
                                     onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                                     level="placement"
-                                    daypartColor="#00adf0"
-                                  />
+                                              />
                                 </div>
                               );
                             }
@@ -798,8 +794,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                 onDelete={undefined}
                                 onScheduleUnscheduledDays={handleScheduleUnscheduledDays}
                                 level="placement"
-                                daypartColor="#00adf0"
-                              />
+                                      />
                             </div>
                           ) : (
                             daypartInheritedSchedules.map((schedule) => (

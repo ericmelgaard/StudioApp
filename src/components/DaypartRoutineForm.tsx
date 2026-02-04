@@ -583,7 +583,6 @@ export default function DaypartRoutineForm({
             currentDaypartName={formData.daypart_name}
             editingScheduleId={editingRoutine?.id}
             showPresets={false}
-            daypartColor="#00adf0"
           />
         )}
 

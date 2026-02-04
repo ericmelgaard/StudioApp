@@ -118,8 +118,8 @@ export default function DaySelector({
             ? getDayCollisionStatus(schedules, currentDaypartName, day.value, selectedDays, editingScheduleId)
             : false;
 
-          const selectedBgColor = daypartColor || 'rgb(0, 173, 240)';
-          const selectedHoverColor = daypartColor ? `${daypartColor}dd` : 'rgb(0, 148, 209)';
+          const selectedBgColor = '#00adf0';
+          const selectedHoverColor = '#0094d1';
 
           return (
             <button
@@ -127,6 +127,7 @@ export default function DaySelector({
               type="button"
               onClick={() => (hasCollision && !isSelected) ? undefined : onToggleDay(day.value)}
               disabled={hasCollision && !isSelected}
+              style={isSelected ? { backgroundColor: selectedBgColor } : undefined}
               className={`w-8 h-8 rounded-full text-sm font-medium transition-all ${
                 isSelected
                   ? 'text-white shadow-md'
@@ -134,9 +135,6 @@ export default function DaySelector({
                   ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed ring-2 ring-red-400 dark:ring-red-500'
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
-              style={isSelected ? {
-                backgroundColor: selectedBgColor
-              } : {}}
               onMouseEnter={(e) => {
                 if (isSelected) {
                   e.currentTarget.style.backgroundColor = selectedHoverColor;
