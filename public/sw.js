@@ -1,6 +1,6 @@
 // Service Worker for PWA with automatic updates
-const CACHE_VERSION = 'v4-20260124-2';
-const BUILD_TIMESTAMP = '20260124-2';
+const CACHE_VERSION = 'v5-20260204-1';
+const BUILD_TIMESTAMP = '20260204-1';
 const CACHE_NAME = `wand-operator-hub-${CACHE_VERSION}`;
 const HTML_CACHE = `wand-html-${CACHE_VERSION}`;
 const ASSETS_CACHE = `wand-assets-${CACHE_VERSION}`;
