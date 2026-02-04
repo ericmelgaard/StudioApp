@@ -424,7 +424,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                             onCancel={handleCancel}
                             onDelete={editingSchedule.id ? handleDelete : undefined}
                             level="placement"
-                            daypartColor={definition.color}
+                            daypartColor="#00adf0"
                           />
                         </div>
                       );
@@ -491,7 +491,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onSave={() => handleSave(editingSchedule!)}
                         onCancel={handleCancel}
                         level="placement"
-                        daypartColor={definition.color}
+                        daypartColor="#00adf0"
                       />
                     </div>
                   ) : editingSchedule && !editingSchedule.id && editingDaypartName === daypartName && editingSchedule.schedule_type === 'event_holiday' ? (
@@ -512,7 +512,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                         onSave={() => handleSave(editingSchedule!)}
                         onCancel={handleCancel}
                         level="placement"
-                        daypartColor={definition.color}
+                        daypartColor="#00adf0"
                       />
                     </div>
                   ) : (
@@ -618,7 +618,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                     onCancel={handleCancel}
                                     onDelete={editingSchedule.id ? handleDelete : undefined}
                                     level="placement"
-                                    daypartColor={definition.color}
+                                    daypartColor="#00adf0"
                                   />
                                 </div>
                               );
@@ -730,7 +730,7 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
                                 onCancel={handleCancel}
                                 onDelete={undefined}
                                 level="placement"
-                                daypartColor={definition.color}
+                                daypartColor="#00adf0"
                               />
                             </div>
                           ) : (
