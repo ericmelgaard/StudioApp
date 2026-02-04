@@ -45,6 +45,7 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
   const [displayTypes, setDisplayTypes] = useState<DisplayType[]>([]);
   const [deviceTypeFilter, setDeviceTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectFirstN, setSelectFirstN] = useState<string>('50');
   const [formData, setFormData] = useState({
     prefix: 'ESL-',
     store_id: currentLocation.store ? currentLocation.store.id.toString() : '',
@@ -120,6 +121,14 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
     } else {
       setSelectedDevices(new Set(filteredDevices.map(d => d.id)));
     }
+  };
+
+  const handleSelectFirstN = () => {
+    const limit = parseInt(selectFirstN);
+    if (isNaN(limit) || limit <= 0) return;
+
+    const firstN = filteredDevices.slice(0, limit).map(d => d.id);
+    setSelectedDevices(new Set(firstN));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -325,14 +334,35 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
                 </select>
               </div>
 
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={selectAll}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  {selectedDevices.size === filteredDevices.length ? 'Deselect All' : 'Select All'}
-                </button>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={selectAll}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    {selectedDevices.size === filteredDevices.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                  <span className="text-slate-300">|</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600">Select first:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={filteredDevices.length}
+                      value={selectFirstN}
+                      onChange={(e) => setSelectFirstN(e.target.value)}
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSelectFirstN}
+                      className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
                 <span className="text-sm text-slate-600">
                   {selectedDevices.size} of {filteredDevices.length} selected
                 </span>
