@@ -149,10 +149,39 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
         throw new Error('Display type is required');
       }
 
+      // Fetch existing media players for this store to avoid duplicate device_ids
+      const { data: existingPlayers } = await supabase
+        .from('media_players')
+        .select('device_id')
+        .eq('store_id', parseInt(formData.store_id))
+        .eq('player_type', 'label')
+        .like('device_id', `${formData.prefix}%`);
+
+      // Extract existing numbers to find the next available number
+      const existingNumbers = new Set<number>();
+      if (existingPlayers) {
+        existingPlayers.forEach(player => {
+          const match = player.device_id.match(/\d+$/);
+          if (match) {
+            existingNumbers.add(parseInt(match[0]));
+          }
+        });
+      }
+
+      // Find the next available number
+      let nextNum = 1;
+      const findNextAvailable = () => {
+        while (existingNumbers.has(nextNum)) {
+          nextNum++;
+        }
+        existingNumbers.add(nextNum);
+        return nextNum;
+      };
+
       const selectedHardware = availableDevices.filter(d => selectedDevices.has(d.id));
 
-      const mediaPlayers = selectedHardware.map((device, index) => {
-        const num = index + 1;
+      const mediaPlayers = selectedHardware.map((device) => {
+        const num = findNextAvailable();
         const deviceId = `${formData.prefix}${num.toString().padStart(3, '0')}`;
 
         return {
