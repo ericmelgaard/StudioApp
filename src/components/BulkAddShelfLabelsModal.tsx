@@ -77,7 +77,7 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
         .from('display_types')
         .select('*')
         .eq('status', 'active')
-        .eq('category', 'label')
+        .eq('category', 'esl')
         .order('name')
     ]);
 
