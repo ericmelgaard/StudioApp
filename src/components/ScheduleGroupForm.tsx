@@ -70,8 +70,6 @@ export default function ScheduleGroupForm({
   const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig>(schedule.recurrence_config || {});
   const [initialDays] = useState<number[]>(schedule?.days_of_week || []);
   const [removedDays, setRemovedDays] = useState<number[]>([]);
-  const [showUnscheduledPrompt, setShowUnscheduledPrompt] = useState(false);
-  const [unscheduledDays, setUnscheduledDays] = useState<number[]>([]);
 
   const collision = useScheduleCollisionDetection(
     allSchedules,
@@ -128,25 +126,6 @@ export default function ScheduleGroupForm({
     setRecurrenceConfig({ ...recurrenceConfig, [field]: value });
   };
 
-  const getUnscheduledDays = (): number[] => {
-    const allDays = [0, 1, 2, 3, 4, 5, 6];
-    const scheduledDays = new Set<number>();
-
-    allSchedules
-      .filter(s =>
-        s.schedule_type === 'regular' &&
-        s.daypart_name === localSchedule.daypart_name &&
-        s.id !== localSchedule.id
-      )
-      .forEach(s => {
-        s.days_of_week?.forEach(day => scheduledDays.add(day));
-      });
-
-    localSchedule.days_of_week?.forEach(day => scheduledDays.add(day));
-
-    return allDays.filter(day => !scheduledDays.has(day));
-  };
-
   const handleSave = () => {
     if (showDaypartSelector && !selectedDaypartId) {
       return;
@@ -165,16 +144,6 @@ export default function ScheduleGroupForm({
     if (localSchedule.start_time === localSchedule.end_time) {
       alert('Start time and end time must be different');
       return;
-    }
-
-    // Check for unscheduled days before saving
-    if (scheduleType === 'regular' && !skipDayValidation) {
-      const remaining = getUnscheduledDays();
-      if (remaining.length > 0) {
-        setUnscheduledDays(remaining);
-        setShowUnscheduledPrompt(true);
-        return; // Don't save yet, wait for user decision
-      }
     }
 
     completeSave();
@@ -628,67 +597,6 @@ export default function ScheduleGroupForm({
         />
       )}
 
-      {showUnscheduledPrompt && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-amber-100">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                    Days Not Scheduled
-                  </h3>
-                  <p className="text-sm text-slate-600">
-                    {unscheduledDays.length === 1 ? '1 day is' : `${unscheduledDays.length} days are`} not scheduled for this daypart
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-700">
-                    {unscheduledDays.map(d => DAYS_OF_WEEK[d].short).join(', ')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-3 rounded-lg mb-6 bg-amber-50 border border-amber-200">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-600 mt-0.5" />
-                <p className="text-sm text-slate-900">
-                  The daypart will not run on {unscheduledDays.length === 1 ? 'this day' : 'these days'}
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    completeSave();
-                    setShowUnscheduledPrompt(false);
-                  }}
-                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
-                >
-                  Leave As Is
-                </button>
-                {onScheduleUnscheduledDays && (
-                  <button
-                    onClick={() => {
-                      setShowUnscheduledPrompt(false);
-                      onScheduleUnscheduledDays(unscheduledDays, localSchedule);
-                    }}
-                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Schedule Days
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
