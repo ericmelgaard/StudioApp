@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Search, Tag, ChevronRight, Nfc, Signal, Battery, Wifi } from 'lucide-react';
+import { X, Search, Tag, ChevronRight, Nfc, Signal, Battery, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface MobileShelfLabelsViewProps {
@@ -15,9 +15,10 @@ interface ShelfLabel {
   hardware_device_id: string | null;
   hardware_device?: {
     serial_number: string;
-    battery_level?: number;
-    signal_strength?: number;
-    network_status?: string;
+    battery_status?: string; // "GOOD", "LOW", "CRITICAL"
+    signal_strength?: string; // "EXCELLENT", "GOOD", "FAIR", "POOR"
+    network_status?: boolean;
+    sync_status?: string; // "SUCCESS", "FAILED"
     label_type: string;
   };
 }
@@ -70,9 +71,10 @@ export default function MobileShelfLabelsView({ onClose, storeId }: MobileShelfL
           hardware_device_id,
           hardware_devices!media_players_hardware_device_serial_fkey (
             serial_number,
-            battery_level,
+            battery_status,
             signal_strength,
             network_status,
+            sync_status,
             label_type
           )
         `)
@@ -219,37 +221,34 @@ export default function MobileShelfLabelsView({ onClose, storeId }: MobileShelfL
                   </p>
                   {label.hardware_device && (
                     <div className="flex items-center gap-3 text-xs mt-1">
-                      {label.hardware_device.signal_strength !== undefined && (
-                        <div className="flex items-center gap-1" title={`Signal: ${label.hardware_device.signal_strength}%`}>
+                      {label.hardware_device.signal_strength && (
+                        <div className="flex items-center gap-1" title={`Signal: ${label.hardware_device.signal_strength}`}>
                           <Signal className={`w-3.5 h-3.5 ${
-                            label.hardware_device.signal_strength >= 75 ? 'text-green-600' :
-                            label.hardware_device.signal_strength >= 50 ? 'text-yellow-600' :
-                            label.hardware_device.signal_strength >= 25 ? 'text-orange-600' :
+                            label.hardware_device.signal_strength === 'EXCELLENT' ? 'text-green-600' :
+                            label.hardware_device.signal_strength === 'GOOD' ? 'text-green-500' :
+                            label.hardware_device.signal_strength === 'FAIR' ? 'text-yellow-600' :
                             'text-red-600'
                           }`} />
-                          <span className="text-slate-600 dark:text-slate-400">{label.hardware_device.signal_strength}%</span>
+                          <span className="text-slate-600 dark:text-slate-400 capitalize">{label.hardware_device.signal_strength.toLowerCase()}</span>
                         </div>
                       )}
-                      {label.hardware_device.battery_level !== undefined && (
-                        <div className="flex items-center gap-1" title={`Battery: ${label.hardware_device.battery_level}%`}>
+                      {label.hardware_device.battery_status && (
+                        <div className="flex items-center gap-1" title={`Battery: ${label.hardware_device.battery_status}`}>
                           <Battery className={`w-3.5 h-3.5 ${
-                            label.hardware_device.battery_level >= 75 ? 'text-green-600' :
-                            label.hardware_device.battery_level >= 50 ? 'text-yellow-600' :
-                            label.hardware_device.battery_level >= 25 ? 'text-orange-600' :
+                            label.hardware_device.battery_status === 'GOOD' ? 'text-green-600' :
+                            label.hardware_device.battery_status === 'LOW' ? 'text-yellow-600' :
                             'text-red-600'
                           }`} />
-                          <span className="text-slate-600 dark:text-slate-400">{label.hardware_device.battery_level}%</span>
+                          <span className="text-slate-600 dark:text-slate-400 capitalize">{label.hardware_device.battery_status.toLowerCase()}</span>
                         </div>
                       )}
-                      {label.hardware_device.network_status && (
-                        <div className="flex items-center gap-1" title={`Network: ${label.hardware_device.network_status}`}>
-                          <Wifi className={`w-3.5 h-3.5 ${
-                            label.hardware_device.network_status === 'connected' ? 'text-green-600' :
-                            label.hardware_device.network_status === 'synced' ? 'text-green-600' :
-                            label.hardware_device.network_status === 'syncing' ? 'text-yellow-600' :
+                      {label.hardware_device.sync_status && (
+                        <div className="flex items-center gap-1" title={`Last Sync: ${label.hardware_device.sync_status}`}>
+                          <CheckCircle2 className={`w-3.5 h-3.5 ${
+                            label.hardware_device.sync_status === 'SUCCESS' ? 'text-green-600' :
                             'text-red-600'
                           }`} />
-                          <span className="text-slate-600 dark:text-slate-400 capitalize">{label.hardware_device.network_status === 'synced' ? 'Synced' : label.hardware_device.network_status}</span>
+                          <span className="text-slate-600 dark:text-slate-400">{label.hardware_device.sync_status === 'SUCCESS' ? 'Synced' : 'Failed'}</span>
                         </div>
                       )}
                     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers, ArrowLeft, Tag } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Monitor, MapPin, Users, Layers, ArrowLeft, Tag, Signal, Battery } from 'lucide-react';
 import BulkAddShelfLabelsModal from '../components/BulkAddShelfLabelsModal';
 import { useLocation } from '../hooks/useLocation';
 
@@ -403,6 +403,9 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
                 Store
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Device Stats
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -448,6 +451,35 @@ export default function ShelfLabelManagement({ onBack }: ShelfLabelManagementPro
                     </div>
                   ) : (
                     <span className="text-gray-400">Unassigned</span>
+                  )}
+                </td>
+                <td className="px-6 py-4">
+                  {player.hardware_device ? (
+                    <div className="flex items-center gap-3 text-xs">
+                      {player.hardware_device.signal_strength && (
+                        <div className="flex items-center gap-1" title={`Signal: ${player.hardware_device.signal_strength}`}>
+                          <Signal className={`w-3.5 h-3.5 ${
+                            player.hardware_device.signal_strength === 'EXCELLENT' ? 'text-green-600' :
+                            player.hardware_device.signal_strength === 'GOOD' ? 'text-green-500' :
+                            player.hardware_device.signal_strength === 'FAIR' ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`} />
+                          <span className="text-gray-600 capitalize">{player.hardware_device.signal_strength.toLowerCase()}</span>
+                        </div>
+                      )}
+                      {player.hardware_device.battery_status && (
+                        <div className="flex items-center gap-1" title={`Battery: ${player.hardware_device.battery_status}`}>
+                          <Battery className={`w-3.5 h-3.5 ${
+                            player.hardware_device.battery_status === 'GOOD' ? 'text-green-600' :
+                            player.hardware_device.battery_status === 'LOW' ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`} />
+                          <span className="text-gray-600 capitalize">{player.hardware_device.battery_status.toLowerCase()}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">—</span>
                   )}
                 </td>
                 <td className="px-6 py-4">

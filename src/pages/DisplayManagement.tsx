@@ -21,9 +21,10 @@ interface HardwareDevice {
   serial_number: string;
   device_type: string;
   label_type?: string;
-  signal_strength?: number;
-  battery_level?: number;
-  network_status?: string;
+  signal_strength?: string; // "EXCELLENT", "GOOD", "FAIR", "POOR"
+  battery_status?: string; // "GOOD", "LOW", "CRITICAL"
+  network_status?: boolean;
+  sync_status?: string; // "SUCCESS", "FAILED"
 }
 
 interface MediaPlayer {
@@ -929,37 +930,34 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                       </p>
                       {card.mediaPlayer.player_type === 'label' && card.mediaPlayer.hardware_device && (
                         <div className="flex items-center gap-3 text-xs mt-2">
-                          {card.mediaPlayer.hardware_device.signal_strength !== undefined && (
-                            <div className="flex items-center gap-1" title={`Signal: ${card.mediaPlayer.hardware_device.signal_strength}%`}>
+                          {card.mediaPlayer.hardware_device.signal_strength && (
+                            <div className="flex items-center gap-1" title={`Signal: ${card.mediaPlayer.hardware_device.signal_strength}`}>
                               <Signal className={`w-3.5 h-3.5 ${
-                                card.mediaPlayer.hardware_device.signal_strength >= 75 ? 'text-green-600' :
-                                card.mediaPlayer.hardware_device.signal_strength >= 50 ? 'text-yellow-600' :
-                                card.mediaPlayer.hardware_device.signal_strength >= 25 ? 'text-orange-600' :
+                                card.mediaPlayer.hardware_device.signal_strength === 'EXCELLENT' ? 'text-green-600' :
+                                card.mediaPlayer.hardware_device.signal_strength === 'GOOD' ? 'text-green-500' :
+                                card.mediaPlayer.hardware_device.signal_strength === 'FAIR' ? 'text-yellow-600' :
                                 'text-red-600'
                               }`} />
-                              <span className="text-slate-600 dark:text-slate-400">{card.mediaPlayer.hardware_device.signal_strength}%</span>
+                              <span className="text-slate-600 dark:text-slate-400 capitalize">{card.mediaPlayer.hardware_device.signal_strength.toLowerCase()}</span>
                             </div>
                           )}
-                          {card.mediaPlayer.hardware_device.battery_level !== undefined && (
-                            <div className="flex items-center gap-1" title={`Battery: ${card.mediaPlayer.hardware_device.battery_level}%`}>
+                          {card.mediaPlayer.hardware_device.battery_status && (
+                            <div className="flex items-center gap-1" title={`Battery: ${card.mediaPlayer.hardware_device.battery_status}`}>
                               <Battery className={`w-3.5 h-3.5 ${
-                                card.mediaPlayer.hardware_device.battery_level >= 75 ? 'text-green-600' :
-                                card.mediaPlayer.hardware_device.battery_level >= 50 ? 'text-yellow-600' :
-                                card.mediaPlayer.hardware_device.battery_level >= 25 ? 'text-orange-600' :
+                                card.mediaPlayer.hardware_device.battery_status === 'GOOD' ? 'text-green-600' :
+                                card.mediaPlayer.hardware_device.battery_status === 'LOW' ? 'text-yellow-600' :
                                 'text-red-600'
                               }`} />
-                              <span className="text-slate-600 dark:text-slate-400">{card.mediaPlayer.hardware_device.battery_level}%</span>
+                              <span className="text-slate-600 dark:text-slate-400 capitalize">{card.mediaPlayer.hardware_device.battery_status.toLowerCase()}</span>
                             </div>
                           )}
-                          {card.mediaPlayer.hardware_device.network_status && (
-                            <div className="flex items-center gap-1" title={`Network: ${card.mediaPlayer.hardware_device.network_status}`}>
-                              <Wifi className={`w-3.5 h-3.5 ${
-                                card.mediaPlayer.hardware_device.network_status === 'connected' ? 'text-green-600' :
-                                card.mediaPlayer.hardware_device.network_status === 'synced' ? 'text-green-600' :
-                                card.mediaPlayer.hardware_device.network_status === 'syncing' ? 'text-yellow-600' :
+                          {card.mediaPlayer.hardware_device.sync_status && (
+                            <div className="flex items-center gap-1" title={`Last Sync: ${card.mediaPlayer.hardware_device.sync_status}`}>
+                              <CheckCircle2 className={`w-3.5 h-3.5 ${
+                                card.mediaPlayer.hardware_device.sync_status === 'SUCCESS' ? 'text-green-600' :
                                 'text-red-600'
                               }`} />
-                              <span className="text-slate-600 dark:text-slate-400 capitalize">{card.mediaPlayer.hardware_device.network_status === 'synced' ? 'Synced' : card.mediaPlayer.hardware_device.network_status}</span>
+                              <span className="text-slate-600 dark:text-slate-400">{card.mediaPlayer.hardware_device.sync_status === 'SUCCESS' ? 'Synced' : 'Failed'}</span>
                             </div>
                           )}
                         </div>
