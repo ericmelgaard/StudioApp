@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Edit3, Signal, Battery, Wifi } from 'lucide-react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Edit3, Signal, Battery, Wifi, Radio, Wrench } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
@@ -264,25 +264,84 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       allDisplaysByMediaPlayer[mpId].push(d);
     });
 
-    // Create display cards for ALL media players at this location
+    // Group displays by display type
+    const displaysByType: Record<string, Array<{ mp: MediaPlayer; disps: Display[] }>> = {};
+
     mediaPlayers?.forEach(mp => {
       const disps = allDisplaysByMediaPlayer[mp.id] || [];
-      const uptime = calculateUptime(mp.last_heartbeat);
-      const screenshotUrl = disps[0]?.configuration?.screenshot_url;
-      const thumbnail = screenshotUrl || disps[0]?.thumbnail_url || null;
-      const orientation = disps[0] ? getDisplayOrientation(disps[0]) : 'horizontal';
+      if (disps.length > 0) {
+        const displayTypeId = disps[0].display_type_id;
+        if (!displaysByType[displayTypeId]) {
+          displaysByType[displayTypeId] = [];
+        }
+        displaysByType[displayTypeId].push({ mp, disps });
+      } else {
+        // Media player without displays - still show it
+        const uptime = calculateUptime(mp.last_heartbeat);
+        cards.push({
+          id: mp.id,
+          name: mp.name,
+          status: mp.status,
+          uptime,
+          thumbnail: null,
+          mediaPlayer: mp,
+          displays: [],
+          isGroup: false,
+          orientation: 'horizontal'
+        });
+      }
+    });
 
-      cards.push({
-        id: mp.id,
-        name: mp.name,
-        status: mp.status,
-        uptime,
-        thumbnail,
-        mediaPlayer: mp,
-        displays: disps,
-        isGroup: false,
-        orientation
-      });
+    // Create grouped display cards
+    Object.entries(displaysByType).forEach(([displayTypeId, items]) => {
+      if (items.length === 1) {
+        // Single display - show as individual card
+        const { mp, disps } = items[0];
+        const uptime = calculateUptime(mp.last_heartbeat);
+        const screenshotUrl = disps[0]?.configuration?.screenshot_url;
+        const thumbnail = screenshotUrl || disps[0]?.thumbnail_url || null;
+        const orientation = disps[0] ? getDisplayOrientation(disps[0]) : 'horizontal';
+
+        cards.push({
+          id: mp.id,
+          name: mp.name,
+          status: mp.status,
+          uptime,
+          thumbnail,
+          mediaPlayer: mp,
+          displays: disps,
+          isGroup: false,
+          orientation
+        });
+      } else {
+        // Multiple displays of same type - create grouped card
+        const firstItem = items[0];
+        const displayTypeName = firstItem.disps[0]?.display_types?.name || 'Display Group';
+        const allOnline = items.every(item => item.mp.status === 'online');
+        const anyError = items.some(item => item.mp.status === 'error');
+        const groupStatus = anyError ? 'error' : (allOnline ? 'online' : 'offline');
+        const screenshotUrl = firstItem.disps[0]?.configuration?.screenshot_url;
+        const thumbnail = screenshotUrl || firstItem.disps[0]?.thumbnail_url || null;
+        const orientation = firstItem.disps[0] ? getDisplayOrientation(firstItem.disps[0]) : 'horizontal';
+
+        cards.push({
+          id: displayTypeId,
+          name: displayTypeName,
+          status: groupStatus,
+          uptime: `${items.length} devices`,
+          thumbnail,
+          mediaPlayer: firstItem.mp,
+          displays: firstItem.disps,
+          isGroup: true,
+          groupInfo: {
+            id: displayTypeId,
+            name: displayTypeName,
+            playerCount: items.length,
+            onlineCount: items.filter(item => item.mp.status === 'online').length
+          },
+          orientation
+        });
+      }
     });
 
     // Calculate placement groups stats (for the Groups button)
@@ -847,7 +906,13 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                         )}
                         <div className="absolute top-2 left-2 flex items-center gap-2">
                           <span className={`w-3 h-3 rounded-full ${getStatusColor(card.status)}`}></span>
-                          <span className="text-xs bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 px-2 py-1 rounded shadow-sm">{card.uptime}</span>
+                          {card.isGroup && card.groupInfo ? (
+                            <span className="text-xs bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 px-2 py-1 rounded shadow-sm">
+                              {card.groupInfo.onlineCount} / {card.groupInfo.playerCount} online
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 px-2 py-1 rounded shadow-sm">{card.uptime}</span>
+                          )}
                         </div>
                         {card.orientation === 'vertical' && (
                           <div className="absolute bottom-2 right-2">
@@ -857,11 +922,19 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
                             </div>
                           </div>
                         )}
-                        {card.displays.length > 1 && (
+                        {card.displays.length > 1 && !card.isGroup && (
                           <div className="absolute bottom-2 left-2">
                             <span className="text-xs bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded shadow-sm">
                               Dual Display
                             </span>
+                          </div>
+                        )}
+                        {card.isGroup && card.groupInfo && (
+                          <div className="absolute bottom-2 left-2">
+                            <div className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
+                              <Monitor className="w-4 h-4" />
+                              <span className="text-sm font-bold">{card.groupInfo.playerCount}</span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -878,43 +951,70 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
                         {activeMenu === card.id && (
                           <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden z-20">
-                            <button
-                              onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'reboot')}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
-                            >
-                              <RotateCw className="w-4 h-4" />
-                              <span className="text-sm">Reboot</span>
-                            </button>
-                            <button
-                              onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'refresh')}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                              <span className="text-sm">Refresh Content</span>
-                            </button>
-                            <button
-                              onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'clear_storage')}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
-                            >
-                              <Trash className="w-4 h-4" />
-                              <span className="text-sm">Clear Storage</span>
-                            </button>
-                            <div className="border-t border-slate-200 dark:border-slate-700"></div>
-                            <button
-                              onClick={() => handleViewPreview(card)}
-                              disabled={!card.displays[0]?.configuration?.preview_url}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Eye className="w-4 h-4" />
-                              <span className="text-sm">View Live Preview</span>
-                            </button>
-                            <button
-                              onClick={() => handleManageContent(card)}
-                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
-                            >
-                              <Settings className="w-4 h-4" />
-                              <span className="text-sm">Manage Content</span>
-                            </button>
+                            {card.mediaPlayer.player_type === 'label' ? (
+                              <>
+                                <button
+                                  onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'blink')}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
+                                >
+                                  <Zap className="w-4 h-4" />
+                                  <span className="text-sm">Blink</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'repair')}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
+                                >
+                                  <Wrench className="w-4 h-4" />
+                                  <span className="text-sm">Repair</span>
+                                </button>
+                                <button
+                                  onClick={() => handleManageContent(card)}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
+                                >
+                                  <Settings className="w-4 h-4" />
+                                  <span className="text-sm">Edit</span>
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleViewPreview(card)}
+                                  disabled={!card.displays[0]?.configuration?.preview_url}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  <span className="text-sm">View Details</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'identify')}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
+                                >
+                                  <Radio className="w-4 h-4" />
+                                  <span className="text-sm">Identify</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'reboot')}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
+                                >
+                                  <RotateCw className="w-4 h-4" />
+                                  <span className="text-sm">Restart</span>
+                                </button>
+                                <button
+                                  onClick={() => handleManageContent(card)}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-slate-700 dark:text-slate-300"
+                                >
+                                  <Settings className="w-4 h-4" />
+                                  <span className="text-sm">Edit</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDisplayAction(card.id, card.mediaPlayer.id, 'delete')}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left text-red-600 dark:text-red-400"
+                                >
+                                  <Trash className="w-4 h-4" />
+                                  <span className="text-sm">Delete</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
