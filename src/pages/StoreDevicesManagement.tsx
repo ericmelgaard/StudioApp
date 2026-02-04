@@ -27,7 +27,7 @@ interface MediaPlayer {
   placement_group_id: string | null;
   store_id: number;
   created_at: string;
-  hardware_device?: {
+  hardware_devices?: Array<{
     device_id: string;
     device_type: string;
     status: string;
@@ -37,7 +37,7 @@ interface MediaPlayer {
     signal_strength?: string;
     battery_status?: string;
     sync_status?: string;
-  } | null;
+  }>;
   placement_group?: {
     id: string;
     name: string;
@@ -277,50 +277,50 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
                       <p className="text-sm font-mono text-slate-500 dark:text-slate-400 mb-2">
                         {device.device_id}
                       </p>
-                      {filterPlayerType === 'label' && device.hardware_device && (
+                      {filterPlayerType === 'label' && device.hardware_devices?.[0] && (
                         <div className="flex items-center gap-3 text-xs mb-2">
-                          {device.hardware_device.signal_strength && (
-                            <div className="flex items-center gap-1" title={`Signal: ${device.hardware_device.signal_strength}`}>
+                          {device.hardware_devices?.[0].signal_strength && (
+                            <div className="flex items-center gap-1" title={`Signal: ${device.hardware_devices?.[0].signal_strength}`}>
                               <Radio className={`w-3.5 h-3.5 ${
-                                device.hardware_device.signal_strength === 'EXCELLENT' ? 'text-green-600' :
-                                device.hardware_device.signal_strength === 'GOOD' ? 'text-green-500' :
-                                device.hardware_device.signal_strength === 'FAIR' ? 'text-yellow-600' :
+                                device.hardware_devices?.[0].signal_strength === 'EXCELLENT' ? 'text-green-600' :
+                                device.hardware_devices?.[0].signal_strength === 'GOOD' ? 'text-green-500' :
+                                device.hardware_devices?.[0].signal_strength === 'FAIR' ? 'text-yellow-600' :
                                 'text-red-600'
                               }`} />
-                              <span className="text-slate-600 dark:text-slate-400 capitalize">{device.hardware_device.signal_strength.toLowerCase()}</span>
+                              <span className="text-slate-600 dark:text-slate-400 capitalize">{device.hardware_devices?.[0].signal_strength.toLowerCase()}</span>
                             </div>
                           )}
-                          {device.hardware_device.battery_status && (
-                            <div className="flex items-center gap-1" title={`Battery: ${device.hardware_device.battery_status}`}>
+                          {device.hardware_devices?.[0].battery_status && (
+                            <div className="flex items-center gap-1" title={`Battery: ${device.hardware_devices?.[0].battery_status}`}>
                               <Zap className={`w-3.5 h-3.5 ${
-                                device.hardware_device.battery_status === 'GOOD' ? 'text-green-600' :
-                                device.hardware_device.battery_status === 'LOW' ? 'text-yellow-600' :
+                                device.hardware_devices?.[0].battery_status === 'GOOD' ? 'text-green-600' :
+                                device.hardware_devices?.[0].battery_status === 'LOW' ? 'text-yellow-600' :
                                 'text-red-600'
                               }`} />
-                              <span className="text-slate-600 dark:text-slate-400 capitalize">{device.hardware_device.battery_status.toLowerCase()}</span>
+                              <span className="text-slate-600 dark:text-slate-400 capitalize">{device.hardware_devices?.[0].battery_status.toLowerCase()}</span>
                             </div>
                           )}
-                          {device.hardware_device.sync_status && (
-                            <div className="flex items-center gap-1" title={`Last Sync: ${device.hardware_device.sync_status}`}>
+                          {device.hardware_devices?.[0].sync_status && (
+                            <div className="flex items-center gap-1" title={`Last Sync: ${device.hardware_devices?.[0].sync_status}`}>
                               <CheckCircle2 className={`w-3.5 h-3.5 ${
-                                device.hardware_device.sync_status === 'SUCCESS' ? 'text-green-600' :
+                                device.hardware_devices?.[0].sync_status === 'SUCCESS' ? 'text-green-600' :
                                 'text-red-600'
                               }`} />
-                              <span className="text-slate-600 dark:text-slate-400">{device.hardware_device.sync_status === 'SUCCESS' ? 'Synced' : 'Failed'}</span>
+                              <span className="text-slate-600 dark:text-slate-400">{device.hardware_devices?.[0].sync_status === 'SUCCESS' ? 'Synced' : 'Failed'}</span>
                             </div>
                           )}
                         </div>
                       )}
                       <div className="flex flex-wrap gap-2">
-                        {device.hardware_device && (
+                        {device.hardware_devices?.[0] && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-700 text-xs text-slate-700 dark:text-slate-300 rounded">
                             <HardDrive className="w-3 h-3" />
-                            {device.hardware_device.device_type}
+                            {device.hardware_devices?.[0].device_type}
                           </span>
                         )}
-                        {device.hardware_device?.activation_id && (
+                        {device.hardware_devices?.[0]?.activation_id && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-xs font-mono text-emerald-700 dark:text-emerald-400 rounded">
-                            {device.hardware_device.activation_id}
+                            {device.hardware_devices?.[0].activation_id}
                           </span>
                         )}
                         {device.placement_group && (
