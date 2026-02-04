@@ -246,21 +246,29 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
     setEditingDefinitionContext(null);
   };
 
-  const handleScheduleUnscheduledDays = (days: number[], template: any) => {
-    const definition = definitions.find(d => d.daypart_name === template.daypart_name);
-    if (definition) {
-      const newSchedule: DaypartSchedule = {
-        id: '',
-        daypart_definition_id: definition.id,
-        days_of_week: days,
-        start_time: template.start_time,
-        end_time: template.end_time,
-        runs_on_days: true,
-        schedule_name: template.schedule_name || '',
-        schedule_type: 'regular'
-      };
-      setNewSchedule(newSchedule);
-      setAddingScheduleForDef(definition.id);
+  const handleScheduleUnscheduledDays = async (days: number[], template: any) => {
+    try {
+      // First save the current schedule
+      await handleSaveSchedule(template);
+
+      // Then create a new schedule with the unscheduled days
+      const definition = definitions.find(d => d.daypart_name === template.daypart_name);
+      if (definition) {
+        const newSchedule: DaypartSchedule = {
+          id: '',
+          daypart_definition_id: definition.id,
+          days_of_week: days,
+          start_time: template.start_time,
+          end_time: template.end_time,
+          runs_on_days: true,
+          schedule_name: template.schedule_name || '',
+          schedule_type: 'regular'
+        };
+        setNewSchedule(newSchedule);
+        setAddingScheduleForDef(definition.id);
+      }
+    } catch (error) {
+      console.error('Error handling unscheduled days:', error);
     }
   };
 

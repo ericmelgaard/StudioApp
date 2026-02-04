@@ -675,7 +675,6 @@ export default function ScheduleGroupForm({
                 {onScheduleUnscheduledDays && (
                   <button
                     onClick={() => {
-                      completeSave();
                       setShowUnscheduledPrompt(false);
                       onScheduleUnscheduledDays(unscheduledDays, localSchedule);
                     }}
