@@ -66,10 +66,7 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
     try {
       let query = supabase
         .from('media_players')
-        .select(`
-          *,
-          hardware_devices(device_id, device_type, status, serial_number, activation_id, client_version, signal_strength, battery_status, sync_status)
-        `)
+        .select('*')
         .eq('store_id', storeId);
 
       if (filterPlayerType) {
@@ -80,6 +77,15 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
 
       if (mpError) throw mpError;
 
+      const hardwareDeviceIds = mediaPlayers?.map(mp => mp.hardware_device_id).filter(Boolean) || [];
+
+      const { data: hardwareDevices, error: hdError } = await supabase
+        .from('hardware_devices')
+        .select('device_id, device_type, status, serial_number, activation_id, client_version, signal_strength, battery_status, sync_status')
+        .in('serial_number', hardwareDeviceIds);
+
+      if (hdError) throw hdError;
+
       const { data: displays, error: displaysError } = await supabase
         .from('displays')
         .select('id, media_player_id, placement_group_id, placement_groups(id, name)')
@@ -87,10 +93,14 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
 
       if (displaysError) throw displaysError;
 
-      const devicesWithCounts = mediaPlayers?.map(mp => ({
-        ...mp,
-        display_count: displays?.filter(d => d.media_player_id === mp.id).length || 0
-      })) || [];
+      const devicesWithCounts = mediaPlayers?.map(mp => {
+        const hardwareDevice = hardwareDevices?.find(hd => hd.serial_number === mp.hardware_device_id);
+        return {
+          ...mp,
+          hardware_devices: hardwareDevice ? [hardwareDevice] : [],
+          display_count: displays?.filter(d => d.media_player_id === mp.id).length || 0
+        };
+      }) || [];
 
       setDevices(devicesWithCounts);
     } catch (error) {
