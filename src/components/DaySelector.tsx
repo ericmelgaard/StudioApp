@@ -129,12 +129,12 @@ export default function DaySelector({
               disabled={hasCollision && !isSelected}
               className={`w-8 h-8 rounded-full text-sm font-medium transition-all ${
                 isSelected
-                  ? 'text-white shadow-md'
+                  ? 'text-white shadow-md [background-color:rgb(0,173,240)]'
                   : hasCollision
-                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed ring-2 ring-red-400 dark:ring-red-500'
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
-              } ${hasCollision && !isSelected ? 'ring-2 ring-red-400' : ''}`}
-              style={isSelected ? {
+              }`}
+              style={isSelected && daypartColor ? {
                 backgroundColor: selectedBgColor
               } : {}}
               onMouseEnter={(e) => {
