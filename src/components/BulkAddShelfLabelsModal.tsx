@@ -149,12 +149,11 @@ export default function BulkAddShelfLabelsModal({ onClose, onSuccess, currentLoc
         throw new Error('Display type is required');
       }
 
-      // Fetch existing media players for this store to avoid duplicate device_ids
+      // Fetch ALL existing media players with matching prefix to avoid duplicate device_ids
+      // device_id is UNIQUE across the entire table, not scoped to store or player_type
       const { data: existingPlayers } = await supabase
         .from('media_players')
         .select('device_id')
-        .eq('store_id', parseInt(formData.store_id))
-        .eq('player_type', 'label')
         .like('device_id', `${formData.prefix}%`);
 
       // Extract existing numbers to find the next available number
