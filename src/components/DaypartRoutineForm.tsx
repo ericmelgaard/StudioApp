@@ -55,6 +55,7 @@ export interface DaypartRoutine {
 interface DaypartDefinition {
   daypart_name: string;
   display_label: string;
+  color?: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -119,7 +120,7 @@ export default function DaypartRoutineForm({
   const loadDaypartTypes = async () => {
     const { data, error } = await supabase
       .from('daypart_definitions')
-      .select('daypart_name, display_label')
+      .select('daypart_name, display_label, color')
       .eq('is_active', true)
       .order('sort_order');
 
@@ -583,6 +584,10 @@ export default function DaypartRoutineForm({
             currentDaypartName={formData.daypart_name}
             editingScheduleId={editingRoutine?.id}
             showPresets={false}
+            daypartColor={
+              daypartDefinition?.color ||
+              daypartTypes.find(d => d.daypart_name === formData.daypart_name)?.color
+            }
           />
         )}
 
