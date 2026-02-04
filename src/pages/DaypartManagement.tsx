@@ -328,10 +328,48 @@ export default function DaypartManagement() {
 
   const handleScheduleUnscheduledDays = async (days: number[], template: any) => {
     try {
-      // First save the current schedule
-      await handleSaveSchedule(template);
+      // Save the current schedule without closing form
+      const schedule = template;
 
-      // Then create a new schedule with the unscheduled days
+      if (schedule.id) {
+        // Update existing schedule
+        const updateData: any = {
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (schedule.schedule_name !== undefined) updateData.schedule_name = schedule.schedule_name;
+
+        const { error: updateError } = await supabase
+          .from('daypart_schedules')
+          .update(updateData)
+          .eq('id', schedule.id);
+
+        if (updateError) throw updateError;
+      } else if (schedule.daypart_definition_id) {
+        // Insert new schedule
+        const insertData: any = {
+          daypart_definition_id: schedule.daypart_definition_id,
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+        };
+
+        if (schedule.schedule_name !== undefined) insertData.schedule_name = schedule.schedule_name;
+
+        const { error: insertError } = await supabase
+          .from('daypart_schedules')
+          .insert([insertData]);
+
+        if (insertError) throw insertError;
+      }
+
+      // Reload data
+      await loadData();
+
+      // Create a new schedule with the unscheduled days
       const definition = definitions.find(d => d.daypart_name === template.daypart_name);
       if (definition) {
         const newSchedule: Schedule = {
@@ -348,6 +386,7 @@ export default function DaypartManagement() {
       }
     } catch (error) {
       console.error('Error handling unscheduled days:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save schedule');
     }
   };
 

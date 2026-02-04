@@ -302,10 +302,49 @@ export default function GroupScheduleManager({ groupId, groupName }: GroupSchedu
 
   const handleScheduleUnscheduledDays = async (days: number[], template: any) => {
     try {
-      // First, save the current schedule
-      await handleSave(template);
+      // Save the current schedule without closing the form
+      if (template.id) {
+        const { error } = await supabase
+          .from('placement_daypart_overrides')
+          .update({
+            daypart_name: template.daypart_name,
+            days_of_week: template.days_of_week,
+            start_time: template.start_time,
+            end_time: template.end_time,
+            runs_on_days: template.runs_on_days,
+            schedule_name: template.schedule_name,
+            schedule_type: template.schedule_type,
+            event_name: template.event_name,
+            event_date: template.event_date,
+            recurrence_type: template.recurrence_type
+          })
+          .eq('id', template.id);
 
-      // Then create a new schedule with the unscheduled days
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('placement_daypart_overrides')
+          .insert({
+            placement_group_id: groupId,
+            daypart_name: template.daypart_name,
+            days_of_week: template.days_of_week,
+            start_time: template.start_time,
+            end_time: template.end_time,
+            runs_on_days: template.runs_on_days,
+            schedule_name: template.schedule_name,
+            schedule_type: template.schedule_type,
+            event_name: template.event_name,
+            event_date: template.event_date,
+            recurrence_type: template.recurrence_type
+          });
+
+        if (error) throw error;
+      }
+
+      // Reload data
+      await loadData();
+
+      // Create a new schedule with the unscheduled days
       const newSchedule: Schedule = {
         id: '',
         placement_group_id: groupId,

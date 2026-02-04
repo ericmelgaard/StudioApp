@@ -248,11 +248,53 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
 
   const handleScheduleUnscheduledDays = async (days: number[], template: any) => {
     try {
-      // First save the current schedule
-      await handleSaveSchedule(template);
-
-      // Then create a new schedule with the unscheduled days
+      // Save the current schedule without closing form
+      const schedule = template;
       const definition = definitions.find(d => d.daypart_name === template.daypart_name);
+
+      if (schedule.id) {
+        // Update existing schedule
+        const updateData: any = {
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (schedule.schedule_name !== undefined) updateData.schedule_name = schedule.schedule_name;
+        if (schedule.schedule_type) updateData.schedule_type = schedule.schedule_type;
+        if (schedule.runs_on_days !== undefined) updateData.runs_on_days = schedule.runs_on_days;
+
+        const { error: updateError } = await supabase
+          .from('daypart_schedules')
+          .update(updateData)
+          .eq('id', schedule.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new schedule
+        const insertData: any = {
+          daypart_definition_id: schedule.daypart_definition_id,
+          days_of_week: schedule.days_of_week,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+        };
+
+        if (schedule.schedule_name) insertData.schedule_name = schedule.schedule_name;
+        if (schedule.schedule_type) insertData.schedule_type = schedule.schedule_type;
+        if (schedule.runs_on_days !== undefined) insertData.runs_on_days = schedule.runs_on_days;
+
+        const { error: insertError } = await supabase
+          .from('daypart_schedules')
+          .insert([insertData]);
+
+        if (insertError) throw insertError;
+      }
+
+      // Reload data
+      await loadData();
+
+      // Create a new schedule with the unscheduled days
       if (definition) {
         const newSchedule: DaypartSchedule = {
           id: '',
@@ -266,9 +308,11 @@ export default function StoreDaypartDefinitions({ storeId }: StoreDaypartDefinit
         };
         setNewSchedule(newSchedule);
         setAddingScheduleForDef(definition.id);
+        setExpandedScheduleId('new-' + definition.id);
       }
     } catch (error) {
       console.error('Error handling unscheduled days:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save schedule');
     }
   };
 
