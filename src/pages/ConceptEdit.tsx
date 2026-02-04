@@ -430,7 +430,7 @@ export default function ConceptEdit({ conceptId, conceptName, onBack, onSave, on
           )}
 
           <div className="flex gap-8">
-            <aside className="w-64 flex-shrink-0">
+            <aside className="hidden lg:block w-64 flex-shrink-0">
               <div className="sticky top-[124px] z-10 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wide">
                   Sections

@@ -365,7 +365,7 @@ export default function StoreManagement({ onBack }: StoreManagementProps) {
           </div>
 
           <div className="flex gap-6 h-[calc(100%-80px)] px-4">
-            <aside className="w-56 flex-shrink-0">
+            <aside className="hidden lg:block w-56 flex-shrink-0">
               <div className="sticky top-4 bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
                 <h3 className="text-xs font-semibold text-slate-900 mb-2 uppercase tracking-wide px-2">
                   Sections
