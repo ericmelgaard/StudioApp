@@ -44,7 +44,6 @@ export default function MobileShelfLabelsView({ onClose, storeId }: MobileShelfL
         labels.filter(
           (label) =>
             label.name.toLowerCase().includes(query) ||
-            label.device_id.toLowerCase().includes(query) ||
             label.hardware_device?.serial_number?.toLowerCase().includes(query)
         )
       );

@@ -137,8 +137,7 @@ export default function SignageManagement() {
     if (searchTerm) {
       filtered = filtered.filter(player =>
         player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.device_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.hardware_device?.device_id.toLowerCase().includes(searchTerm.toLowerCase())
+        player.hardware_device?.serial_number?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -393,14 +392,16 @@ export default function SignageManagement() {
                     <Monitor className="w-5 h-5 text-gray-400" />
                     <div>
                       <div className="font-medium text-gray-900">{player.name}</div>
-                      <div className="text-xs text-gray-500">{player.device_id}</div>
+                      <div className="text-xs font-mono text-gray-500">
+                        {player.hardware_device?.serial_number || 'No hardware assigned'}
+                      </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   {player.hardware_device ? (
                     <div>
-                      <div className="text-sm text-gray-900">{player.hardware_device.device_id}</div>
+                      <div className="text-sm font-mono text-gray-900">{player.hardware_device.serial_number}</div>
                       <div className="text-xs text-gray-500">{player.hardware_device.device_type}</div>
                     </div>
                   ) : (
