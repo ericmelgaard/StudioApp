@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Monitor, Search, MoreVertical, Eye, Settings, Trash2,
   RefreshCw, Wifi, WifiOff, AlertTriangle, CheckCircle2, Radio,
-  HardDrive, Network, Clock
+  HardDrive, Network, Clock, Zap, Wrench
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -304,26 +304,45 @@ export default function StoreDevicesManagement({ storeId, storeName, onBack, fil
                     </button>
                     {activeMenu === device.id && (
                       <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-10">
-                        <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
-                          <Eye className="w-4 h-4" />
-                          View Details
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
-                          <Radio className="w-4 h-4" />
-                          Identify
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
-                          <RefreshCw className="w-4 h-4" />
-                          Restart
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
-                          <Settings className="w-4 h-4" />
-                          Edit
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
+                        {filterPlayerType === 'label' ? (
+                          <>
+                            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <Zap className="w-4 h-4" />
+                              Blink
+                            </button>
+                            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <Wrench className="w-4 h-4" />
+                              Repair
+                            </button>
+                            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <Settings className="w-4 h-4" />
+                              Edit
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <Eye className="w-4 h-4" />
+                              View Details
+                            </button>
+                            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <Radio className="w-4 h-4" />
+                              Identify
+                            </button>
+                            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <RefreshCw className="w-4 h-4" />
+                              Restart
+                            </button>
+                            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <Settings className="w-4 h-4" />
+                              Edit
+                            </button>
+                            <button className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
