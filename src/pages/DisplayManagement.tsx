@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Edit3, Signal, Battery, Wifi, Radio, Wrench } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Monitor, ShoppingCart, Moon, Zap, Leaf, AlertTriangle, CheckCircle2, Layers, History, Grid3x3, List, Search, MoreVertical, RotateCw, RefreshCw, Trash, Eye, Settings, Smartphone, Package, Globe, Sun, Coffee, Clock, Sunrise, Sunset, Star as Stars, Edit3, Signal, Battery, Wifi, Radio, Wrench, Filter, ChevronDown, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
 import DisplayContentModal from '../components/DisplayContentModal';
@@ -141,13 +141,41 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     'smart_labels',
     'webview_kiosks'
   ]);
+  const [displayTypes, setDisplayTypes] = useState<Array<{ id: string; name: string; category: string }>>([]);
+  const [selectedDisplayTypes, setSelectedDisplayTypes] = useState<string[]>([]);
+  const [selectedPlayerTypes, setSelectedPlayerTypes] = useState<PlayerType[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<Array<'online' | 'offline' | 'error'>>([]);
+  const [showTypeFilter, setShowTypeFilter] = useState(false);
+  const [showPlayerTypeFilter, setShowPlayerTypeFilter] = useState(false);
+  const [showStatusFilter, setShowStatusFilter] = useState(false);
+  const typeFilterRef = useRef<HTMLDivElement>(null);
+  const playerTypeFilterRef = useRef<HTMLDivElement>(null);
+  const statusFilterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadStoreOperationStatus();
     loadDisplayData();
     loadActiveDayparts();
     loadQuickActionsPreferences();
+    loadDisplayTypes();
   }, [storeId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (typeFilterRef.current && !typeFilterRef.current.contains(event.target as Node)) {
+        setShowTypeFilter(false);
+      }
+      if (playerTypeFilterRef.current && !playerTypeFilterRef.current.contains(event.target as Node)) {
+        setShowPlayerTypeFilter(false);
+      }
+      if (statusFilterRef.current && !statusFilterRef.current.contains(event.target as Node)) {
+        setShowStatusFilter(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const loadQuickActionsPreferences = async () => {
     try {
@@ -164,6 +192,61 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
       console.error('Error loading quick actions preferences:', error);
     }
   };
+
+  const loadDisplayTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('display_types')
+        .select('id, name, category')
+        .eq('status', 'active')
+        .order('name');
+
+      if (!error && data) {
+        setDisplayTypes(data);
+      }
+    } catch (error) {
+      console.error('Error loading display types:', error);
+    }
+  };
+
+  const toggleDisplayType = (typeId: string) => {
+    setSelectedDisplayTypes(prev =>
+      prev.includes(typeId) ? prev.filter(id => id !== typeId) : [...prev, typeId]
+    );
+  };
+
+  const togglePlayerType = (type: PlayerType) => {
+    setSelectedPlayerTypes(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    );
+  };
+
+  const toggleStatus = (status: 'online' | 'offline' | 'error') => {
+    setSelectedStatuses(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    );
+  };
+
+  const removeDisplayTypeFilter = (typeId: string) => {
+    setSelectedDisplayTypes(prev => prev.filter(id => id !== typeId));
+  };
+
+  const removePlayerTypeFilter = (type: PlayerType) => {
+    setSelectedPlayerTypes(prev => prev.filter(t => t !== type));
+  };
+
+  const removeStatusFilter = (status: 'online' | 'offline' | 'error') => {
+    setSelectedStatuses(prev => prev.filter(s => s !== status));
+  };
+
+  const clearAllFilters = () => {
+    setSelectedDisplayTypes([]);
+    setSelectedPlayerTypes([]);
+    setSelectedStatuses([]);
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters = selectedDisplayTypes.length > 0 || selectedPlayerTypes.length > 0 || selectedStatuses.length > 0;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -573,9 +656,34 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
     }
   };
 
-  const filteredDisplays = displayCards.filter(card =>
-    card.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDisplays = displayCards.filter(card => {
+    // Search query filter
+    if (searchQuery && !card.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Display type filter
+    if (selectedDisplayTypes.length > 0) {
+      const hasMatchingType = card.displays.some(d => selectedDisplayTypes.includes(d.display_type_id));
+      if (!hasMatchingType) return false;
+    }
+
+    // Player type filter
+    if (selectedPlayerTypes.length > 0) {
+      if (!selectedPlayerTypes.includes(card.mediaPlayer.player_type)) {
+        return false;
+      }
+    }
+
+    // Status filter
+    if (selectedStatuses.length > 0) {
+      if (!selectedStatuses.includes(card.status)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -829,6 +937,230 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
           </button>
         </div>
 
+        {/* Filter Bar */}
+        <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
+          {/* Display Type Filter */}
+          <div className="relative flex-shrink-0" ref={typeFilterRef}>
+            <button
+              onClick={() => {
+                setShowTypeFilter(!showTypeFilter);
+                setShowPlayerTypeFilter(false);
+                setShowStatusFilter(false);
+              }}
+              className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
+                selectedDisplayTypes.length > 0
+                  ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                  : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Type</span>
+              {selectedDisplayTypes.length > 0 && (
+                <span className="bg-blue-600 dark:bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
+                  {selectedDisplayTypes.length}
+                </span>
+              )}
+              <ChevronDown className="w-4 h-4" />
+            </button>
+
+            {showTypeFilter && (
+              <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                <div className="p-2">
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1">Display Types</div>
+                  {displayTypes.map(type => (
+                    <label
+                      key={type.id}
+                      className="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedDisplayTypes.includes(type.id)}
+                        onChange={() => toggleDisplayType(type.id)}
+                        className="w-4 h-4 text-blue-600 dark:text-blue-500 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
+                      />
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{type.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Player Type Filter */}
+          <div className="relative flex-shrink-0" ref={playerTypeFilterRef}>
+            <button
+              onClick={() => {
+                setShowPlayerTypeFilter(!showPlayerTypeFilter);
+                setShowTypeFilter(false);
+                setShowStatusFilter(false);
+              }}
+              className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
+                selectedPlayerTypes.length > 0
+                  ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                  : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Player</span>
+              {selectedPlayerTypes.length > 0 && (
+                <span className="bg-blue-600 dark:bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
+                  {selectedPlayerTypes.length}
+                </span>
+              )}
+              <ChevronDown className="w-4 h-4" />
+            </button>
+
+            {showPlayerTypeFilter && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50">
+                <div className="p-2">
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1">Player Types</div>
+                  <label className="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedPlayerTypes.includes('signage')}
+                      onChange={() => togglePlayerType('signage')}
+                      className="w-4 h-4 text-blue-600 dark:text-blue-500 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Signage</span>
+                  </label>
+                  <label className="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedPlayerTypes.includes('label')}
+                      onChange={() => togglePlayerType('label')}
+                      className="w-4 h-4 text-blue-600 dark:text-blue-500 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Label</span>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Status Filter */}
+          <div className="relative flex-shrink-0" ref={statusFilterRef}>
+            <button
+              onClick={() => {
+                setShowStatusFilter(!showStatusFilter);
+                setShowTypeFilter(false);
+                setShowPlayerTypeFilter(false);
+              }}
+              className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
+                selectedStatuses.length > 0
+                  ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                  : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Status</span>
+              {selectedStatuses.length > 0 && (
+                <span className="bg-blue-600 dark:bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
+                  {selectedStatuses.length}
+                </span>
+              )}
+              <ChevronDown className="w-4 h-4" />
+            </button>
+
+            {showStatusFilter && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50">
+                <div className="p-2">
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1">Device Status</div>
+                  <label className="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes('online')}
+                      onChange={() => toggleStatus('online')}
+                      className="w-4 h-4 text-blue-600 dark:text-blue-500 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Online</span>
+                  </label>
+                  <label className="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes('offline')}
+                      onChange={() => toggleStatus('offline')}
+                      className="w-4 h-4 text-blue-600 dark:text-blue-500 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Offline</span>
+                  </label>
+                  <label className="flex items-center gap-2 px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes('error')}
+                      onChange={() => toggleStatus('error')}
+                      className="w-4 h-4 text-blue-600 dark:text-blue-500 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Error</span>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Active Filter Chips */}
+          {selectedDisplayTypes.map(typeId => {
+            const type = displayTypes.find(t => t.id === typeId);
+            return type ? (
+              <div
+                key={typeId}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-sm rounded-full flex-shrink-0"
+              >
+                <span>{type.name}</span>
+                <button
+                  onClick={() => removeDisplayTypeFilter(typeId)}
+                  className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
+                  title="Remove filter"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : null;
+          })}
+
+          {selectedPlayerTypes.map(type => (
+            <div
+              key={type}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 text-sm rounded-full flex-shrink-0"
+            >
+              <span className="capitalize">{type}</span>
+              <button
+                onClick={() => removePlayerTypeFilter(type)}
+                className="hover:bg-green-200 dark:hover:bg-green-800 rounded-full p-0.5 transition-colors"
+                title="Remove filter"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+
+          {selectedStatuses.map(status => (
+            <div
+              key={status}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-sm rounded-full flex-shrink-0"
+            >
+              <span className="capitalize">{status}</span>
+              <button
+                onClick={() => removeStatusFilter(status)}
+                className="hover:bg-purple-200 dark:hover:bg-purple-800 rounded-full p-0.5 transition-colors"
+                title="Remove filter"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+
+          {/* Clear All Button */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+              <span>Clear all</span>
+            </button>
+          )}
+        </div>
+
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
           <input
@@ -848,7 +1180,17 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
         ) : filteredDisplays.length === 0 ? (
           <div className="text-center py-12">
             <Monitor className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400">No displays found</p>
+            <p className="text-slate-600 dark:text-slate-400">
+              {hasActiveFilters || searchQuery ? 'No displays match your filters' : 'No displays found'}
+            </p>
+            {(hasActiveFilters || searchQuery) && (
+              <button
+                onClick={clearAllFilters}
+                className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>

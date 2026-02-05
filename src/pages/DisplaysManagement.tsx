@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, Monitor, Grid, List, Filter, X, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Monitor, Grid, List } from 'lucide-react';
 import LocationRequired from '../components/LocationRequired';
 import { useLocation } from '../hooks/useLocation';
 
@@ -57,20 +57,12 @@ interface DisplayType {
 export default function DisplaysManagement() {
   const { location } = useLocation();
   const [displays, setDisplays] = useState<Display[]>([]);
-  const [filteredDisplays, setFilteredDisplays] = useState<Display[]>([]);
   const [mediaPlayers, setMediaPlayers] = useState<MediaPlayer[]>([]);
   const [displayTypes, setDisplayTypes] = useState<DisplayType[]>([]);
-  const [placementGroups, setPlacementGroups] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDisplayTypes, setSelectedDisplayTypes] = useState<string[]>([]);
-  const [selectedPlacementGroups, setSelectedPlacementGroups] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [showModal, setShowModal] = useState(false);
   const [editingDisplay, setEditingDisplay] = useState<Display | null>(null);
-  const [showTypeFilter, setShowTypeFilter] = useState(false);
-  const [showPlacementFilter, setShowPlacementFilter] = useState(false);
-  const typeFilterRef = useRef<HTMLDivElement>(null);
-  const placementFilterRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     name: '',
     media_player_id: '',
@@ -81,25 +73,6 @@ export default function DisplaysManagement() {
   useEffect(() => {
     loadData();
   }, [location]);
-
-  useEffect(() => {
-    filterDisplays();
-  }, [selectedDisplayTypes, selectedPlacementGroups, displays]);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (typeFilterRef.current && !typeFilterRef.current.contains(event.target as Node)) {
-        setShowTypeFilter(false);
-      }
-      if (placementFilterRef.current && !placementFilterRef.current.contains(event.target as Node)) {
-        setShowPlacementFilter(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -141,73 +114,12 @@ export default function DisplaysManagement() {
       setDisplays(displaysRes.data);
       setMediaPlayers(playersWithCounts);
       setDisplayTypes(typesRes.data);
-
-      // Extract unique placement groups
-      const groups = new Set<string>();
-      displaysRes.data.forEach((display: Display) => {
-        if (display.display_types?.category) {
-          groups.add(display.display_types.category);
-        }
-      });
-      setPlacementGroups(Array.from(groups).sort());
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  const filterDisplays = () => {
-    let filtered = displays;
-
-    // Filter by display type
-    if (selectedDisplayTypes.length > 0) {
-      filtered = filtered.filter(display =>
-        selectedDisplayTypes.includes(display.display_type_id)
-      );
-    }
-
-    // Filter by placement group (category)
-    if (selectedPlacementGroups.length > 0) {
-      filtered = filtered.filter(display =>
-        display.display_types?.category &&
-        selectedPlacementGroups.includes(display.display_types.category)
-      );
-    }
-
-    setFilteredDisplays(filtered);
-  };
-
-  const toggleDisplayType = (typeId: string) => {
-    setSelectedDisplayTypes(prev =>
-      prev.includes(typeId)
-        ? prev.filter(id => id !== typeId)
-        : [...prev, typeId]
-    );
-  };
-
-  const togglePlacementGroup = (group: string) => {
-    setSelectedPlacementGroups(prev =>
-      prev.includes(group)
-        ? prev.filter(g => g !== group)
-        : [...prev, group]
-    );
-  };
-
-  const removeDisplayTypeFilter = (typeId: string) => {
-    setSelectedDisplayTypes(prev => prev.filter(id => id !== typeId));
-  };
-
-  const removePlacementGroupFilter = (group: string) => {
-    setSelectedPlacementGroups(prev => prev.filter(g => g !== group));
-  };
-
-  const clearAllFilters = () => {
-    setSelectedDisplayTypes([]);
-    setSelectedPlacementGroups([]);
-  };
-
-  const hasActiveFilters = selectedDisplayTypes.length > 0 || selectedPlacementGroups.length > 0;
 
   const handleOpenModal = (display?: Display) => {
     if (display) {
@@ -326,7 +238,7 @@ export default function DisplaysManagement() {
   };
 
   const getDisplayTypesByCategory = () => {
-    const grouped = filteredDisplays.reduce((acc, display) => {
+    const grouped = displays.reduce((acc, display) => {
       const typeName = display.display_types?.name || 'Unknown';
       if (!acc[typeName]) {
         acc[typeName] = [];
@@ -387,12 +299,8 @@ export default function DisplaysManagement() {
           </button>
         </div>
 
-        {/* Inline Filter Bar with Chips */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-2"
-          style={{ scrollbarWidth: 'thin' }}
-        >
-          {/* View Mode Toggle */}
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('list')}
               className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-600'}`}
@@ -408,145 +316,6 @@ export default function DisplaysManagement() {
               <Grid className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Display Type Filter Dropdown */}
-          <div className="relative flex-shrink-0" ref={typeFilterRef}>
-            <button
-              onClick={() => {
-                setShowTypeFilter(!showTypeFilter);
-                setShowPlacementFilter(false);
-              }}
-              className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
-                selectedDisplayTypes.length > 0
-                  ? 'bg-blue-50 border-blue-300 text-blue-700'
-                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>Display Type</span>
-              {selectedDisplayTypes.length > 0 && (
-                <span className="bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
-                  {selectedDisplayTypes.length}
-                </span>
-              )}
-              <ChevronDown className="w-4 h-4" />
-            </button>
-
-            {showTypeFilter && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
-                <div className="p-2">
-                  <div className="text-xs font-medium text-gray-500 px-2 py-1">Select Display Types</div>
-                  {displayTypes.map(type => (
-                    <label
-                      key={type.id}
-                      className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedDisplayTypes.includes(type.id)}
-                        onChange={() => toggleDisplayType(type.id)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">{type.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Placement Group Filter Dropdown */}
-          <div className="relative flex-shrink-0" ref={placementFilterRef}>
-            <button
-              onClick={() => {
-                setShowPlacementFilter(!showPlacementFilter);
-                setShowTypeFilter(false);
-              }}
-              className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
-                selectedPlacementGroups.length > 0
-                  ? 'bg-blue-50 border-blue-300 text-blue-700'
-                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>Category</span>
-              {selectedPlacementGroups.length > 0 && (
-                <span className="bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
-                  {selectedPlacementGroups.length}
-                </span>
-              )}
-              <ChevronDown className="w-4 h-4" />
-            </button>
-
-            {showPlacementFilter && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
-                <div className="p-2">
-                  <div className="text-xs font-medium text-gray-500 px-2 py-1">Select Categories</div>
-                  {placementGroups.map(group => (
-                    <label
-                      key={group}
-                      className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedPlacementGroups.includes(group)}
-                        onChange={() => togglePlacementGroup(group)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 capitalize">{group}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Active Filter Chips */}
-          {selectedDisplayTypes.map(typeId => {
-            const type = displayTypes.find(t => t.id === typeId);
-            return type ? (
-              <div
-                key={typeId}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 text-sm rounded-full flex-shrink-0"
-              >
-                <span>{type.name}</span>
-                <button
-                  onClick={() => removeDisplayTypeFilter(typeId)}
-                  className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-                  title="Remove filter"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : null;
-          })}
-
-          {selectedPlacementGroups.map(group => (
-            <div
-              key={group}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 text-sm rounded-full flex-shrink-0"
-            >
-              <span className="capitalize">{group}</span>
-              <button
-                onClick={() => removePlacementGroupFilter(group)}
-                className="hover:bg-green-200 rounded-full p-0.5 transition-colors"
-                title="Remove filter"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-
-          {/* Clear All Button */}
-          {hasActiveFilters && (
-            <button
-              onClick={clearAllFilters}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-            >
-              <X className="w-4 h-4" />
-              <span>Clear all</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -579,7 +348,7 @@ export default function DisplaysManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDisplays.map((display) => (
+              {displays.map((display) => (
                 <tr key={display.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -632,13 +401,11 @@ export default function DisplaysManagement() {
             </tbody>
           </table>
 
-          {filteredDisplays.length === 0 && (
+          {displays.length === 0 && (
             <div className="text-center py-12">
               <Monitor className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No displays found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {hasActiveFilters ? 'Try adjusting your filters' : 'Get started by adding a new display'}
-              </p>
+              <p className="mt-1 text-sm text-gray-500">Get started by adding a new display</p>
             </div>
           )}
         </div>
@@ -690,9 +457,7 @@ export default function DisplaysManagement() {
             <div className="bg-white rounded-lg shadow text-center py-12">
               <Monitor className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No displays found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {hasActiveFilters ? 'Try adjusting your filters' : 'Get started by adding a new display'}
-              </p>
+              <p className="mt-1 text-sm text-gray-500">Get started by adding a new display</p>
             </div>
           )}
         </div>
