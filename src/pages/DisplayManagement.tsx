@@ -132,15 +132,7 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
   const [previewModal, setPreviewModal] = useState<{ display: Display; name: string; orientation: 'horizontal' | 'vertical' } | null>(null);
   const [contentModal, setContentModal] = useState<Display | null>(null);
   const [showQuickActionsEditor, setShowQuickActionsEditor] = useState(false);
-  const [visibleQuickActions, setVisibleQuickActions] = useState<string[]>([
-    'devices',
-    'groups',
-    'activity',
-    'products',
-    'signage',
-    'smart_labels',
-    'webview_kiosks'
-  ]);
+  const [visibleQuickActions, setVisibleQuickActions] = useState<string[]>([]);
   const [displayTypes, setDisplayTypes] = useState<Array<{ id: string; name: string; category: string }>>([]);
   const [selectedDisplayTypes, setSelectedDisplayTypes] = useState<string[]>([]);
   const [selectedPlayerTypes, setSelectedPlayerTypes] = useState<PlayerType[]>([]);
@@ -187,9 +179,30 @@ export default function DisplayManagement({ storeId, storeName, onBack, isHomePa
 
       if (data?.visible_actions) {
         setVisibleQuickActions(data.visible_actions as string[]);
+      } else {
+        // Set default if no preferences exist
+        setVisibleQuickActions([
+          'devices',
+          'groups',
+          'activity',
+          'products',
+          'signage',
+          'smart_labels',
+          'webview_kiosks'
+        ]);
       }
     } catch (error) {
       console.error('Error loading quick actions preferences:', error);
+      // Set default on error
+      setVisibleQuickActions([
+        'devices',
+        'groups',
+        'activity',
+        'products',
+        'signage',
+        'smart_labels',
+        'webview_kiosks'
+      ]);
     }
   };
 

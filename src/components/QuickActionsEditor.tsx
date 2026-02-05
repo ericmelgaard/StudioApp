@@ -148,22 +148,28 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
         .maybeSingle();
 
       if (existingPref) {
-        await supabase
+        const { error } = await supabase
           .from('quick_actions_preferences')
           .update({ visible_actions: visibleActions })
           .eq('id', existingPref.id);
+
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('quick_actions_preferences')
           .insert({
             store_id: storeId,
             visible_actions: visibleActions
           });
+
+        if (error) throw error;
       }
 
+      // Only call onSave after successful database save
       onSave(visibleActions);
     } catch (error) {
       console.error('Error saving preferences:', error);
+      alert('Failed to save preferences. Please try again.');
     } finally {
       setSaving(false);
     }
