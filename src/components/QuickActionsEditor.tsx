@@ -20,10 +20,10 @@ interface QuickActionDefinition {
 const AVAILABLE_ACTIONS: QuickActionDefinition[] = [
   {
     id: 'devices',
-    label: 'Devices',
-    icon: Monitor,
-    description: 'Total devices and online status',
-    color: '#3b82f6'
+    label: 'Smart Labels',
+    icon: Tag,
+    description: 'Manage smart label devices',
+    color: '#f59e0b'
   },
   {
     id: 'groups',
@@ -52,13 +52,6 @@ const AVAILABLE_ACTIONS: QuickActionDefinition[] = [
     icon: Tv,
     description: 'Signage players count',
     color: '#3b82f6'
-  },
-  {
-    id: 'smart_labels',
-    label: 'Smart Labels',
-    icon: Tag,
-    description: 'Smart label players count',
-    color: '#f59e0b'
   },
   {
     id: 'webview_kiosks',
