@@ -63,7 +63,9 @@ const AVAILABLE_ACTIONS: QuickActionDefinition[] = [
 ];
 
 export default function QuickActionsEditor({ onClose, onSave, currentActions, storeId }: QuickActionsEditorProps) {
-  const [visibleActions, setVisibleActions] = useState<string[]>(currentActions);
+  const [visibleActions, setVisibleActions] = useState<string[]>(
+    currentActions.filter(actionId => AVAILABLE_ACTIONS.some(a => a.id === actionId))
+  );
   const [saving, setSaving] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -207,6 +209,7 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
               <div className="space-y-2">
                 {visibleActions.map((actionId, index) => {
                   const action = getActionDefinition(actionId);
+                  if (!action) return null; // Skip actions that no longer exist
                   const Icon = action.icon;
                   const isDragging = draggedIndex === index;
                   const isDragOver = dragOverIndex === index;
@@ -292,6 +295,7 @@ export default function QuickActionsEditor({ onClose, onSave, currentActions, st
               <div className="space-y-2">
                 {hiddenActions.map(actionId => {
                   const action = getActionDefinition(actionId);
+                  if (!action) return null; // Skip actions that no longer exist
                   const Icon = action.icon;
                   return (
                     <div
