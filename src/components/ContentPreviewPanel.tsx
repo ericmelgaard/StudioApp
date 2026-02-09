@@ -84,7 +84,7 @@ export function ContentPreviewPanel({
 
     if (selectedContent.content_type === 'template') {
       return (
-        <div className="w-full h-full flex items-center justify-center bg-slate-100 p-4">
+        <div className="w-full h-full flex items-start justify-center bg-slate-100 p-4 pt-12">
           <div className="relative bg-slate-900" style={{ aspectRatio: '16/9', width: '100%', maxWidth: '100%', maxHeight: '100%' }}>
             <div className="absolute inset-0 flex flex-col items-center justify-center p-12 bg-gradient-to-br from-slate-800 to-slate-900">
               <div className="w-24 h-24 bg-blue-600/20 rounded-full flex items-center justify-center mb-6">
@@ -107,7 +107,7 @@ export function ContentPreviewPanel({
 
       if (selectedAsset.asset_type === 'video') {
         return (
-          <div className="w-full h-full flex items-center justify-center bg-slate-100 p-4">
+          <div className="w-full h-full flex items-start justify-center bg-slate-100 p-4 pt-12">
             <div className="relative bg-black" style={{ aspectRatio: '16/9', width: '100%', maxWidth: '100%', maxHeight: '100%' }}>
               <video
                 key={selectedContent.id}
@@ -123,7 +123,7 @@ export function ContentPreviewPanel({
       }
 
       return (
-        <div className="w-full h-full flex items-center justify-center bg-slate-100 p-4">
+        <div className="w-full h-full flex items-start justify-center bg-slate-100 p-4 pt-12">
           <div className="relative bg-black" style={{ aspectRatio: '16/9', width: '100%', maxWidth: '100%', maxHeight: '100%' }}>
             <img
               src={assetUrl}
