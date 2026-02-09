@@ -410,7 +410,15 @@ export default function AdminDashboard({ onBack, user }: AdminDashboardProps) {
             {currentView === 'labels' && <ShelfLabelManagement onBack={() => setCurrentView('dashboard')} />}
             {currentView === 'products' && <ProductManagement showBackButton={false} />}
             {currentView === 'resources' && <ResourceManagement onBack={() => setCurrentView('dashboard')} />}
-            {currentView === 'themes' && <ThemeManagement onBack={() => setCurrentView('dashboard')} />}
+            {currentView === 'themes' && (
+              <ThemeManagement
+                onBack={() => setCurrentView('dashboard')}
+                onEditContent={(themeId, themeName) => {
+                  setThemeContext({ themeId, themeName });
+                  setCurrentView('theme-builder-beta');
+                }}
+              />
+            )}
             {currentView === 'themes-beta' && (
               <DisplayThemesBeta
                 onBack={() => setCurrentView('dashboard')}

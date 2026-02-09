@@ -27,9 +27,10 @@ interface ThemeWithStats extends Theme {
 
 interface ThemeManagementProps {
   onBack?: () => void;
+  onEditContent?: (themeId: string, themeName: string) => void;
 }
 
-export default function ThemeManagement({ onBack }: ThemeManagementProps) {
+export default function ThemeManagement({ onBack, onEditContent }: ThemeManagementProps) {
   const [themes, setThemes] = useState<ThemeWithStats[]>([]);
   const [displayTypes, setDisplayTypes] = useState<DisplayType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,7 +299,9 @@ export default function ThemeManagement({ onBack }: ThemeManagementProps) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        alert('Theme editor coming soon!');
+                        if (onEditContent) {
+                          onEditContent(theme.id, theme.name);
+                        }
                       }}
                       className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                     >
