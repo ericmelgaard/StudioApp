@@ -15,7 +15,7 @@ interface AddContentModalProps {
   storeId?: number | null;
 }
 
-type ContentSource = 'asset_library' | 'shared_library' | 'upload' | 'design_tool';
+type ContentSource = 'asset_library' | 'shared_library' | 'direct_upload' | 'external_design';
 
 export function AddContentModal({
   boardId,
@@ -54,7 +54,7 @@ export function AddContentModal({
         status: 'active'
       };
 
-      if (selectedSource === 'asset_library' || selectedSource === 'upload') {
+      if (selectedSource === 'asset_library' || selectedSource === 'direct_upload') {
         contentData.asset_id = selectedAssetId;
       } else if (selectedSource === 'shared_library') {
         contentData.shared_content_id = selectedSharedContentId;
@@ -88,13 +88,13 @@ export function AddContentModal({
       description: 'Curated collections'
     },
     {
-      id: 'upload' as ContentSource,
+      id: 'direct_upload' as ContentSource,
       label: 'Upload',
       icon: UploadIcon,
       description: 'From your computer'
     },
     {
-      id: 'design_tool' as ContentSource,
+      id: 'external_design' as ContentSource,
       label: 'Design',
       icon: Palette,
       description: 'Create or import'
@@ -102,7 +102,7 @@ export function AddContentModal({
   ];
 
   const canAddContent = () => {
-    if (selectedSource === 'asset_library' || selectedSource === 'upload') {
+    if (selectedSource === 'asset_library' || selectedSource === 'direct_upload') {
       return selectedAssetId !== null;
     } else if (selectedSource === 'shared_library') {
       return selectedSharedContentId !== null;
@@ -183,7 +183,7 @@ export function AddContentModal({
             />
           )}
 
-          {selectedSource === 'upload' && (
+          {selectedSource === 'direct_upload' && (
             <UploadTab
               selectedAssetId={selectedAssetId}
               onSelectAsset={setSelectedAssetId}
@@ -193,7 +193,7 @@ export function AddContentModal({
             />
           )}
 
-          {selectedSource === 'design_tool' && (
+          {selectedSource === 'external_design' && (
             <DesignTab
               selectedAssetId={selectedAssetId}
               onSelectAsset={setSelectedAssetId}
