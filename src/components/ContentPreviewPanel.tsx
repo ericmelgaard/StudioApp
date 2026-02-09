@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Maximize2, Image as ImageIcon, Video, Layout } from 'lucide-react';
 import type { BoardContent } from '../types/themeBuilder';
 import type { Asset } from '../types/assets';
+import { assetService } from '../lib/assetService';
 
 interface ContentPreviewPanelProps {
   selectedContent: BoardContent | null;
@@ -83,30 +84,18 @@ export function ContentPreviewPanel({
 
     if (selectedContent.content_type === 'template') {
       return (
-        <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Layout className="w-8 h-8 text-blue-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 text-center mb-2">
-              {selectedContent.config_data?.template_name || 'Template Content'}
-            </h3>
-            <p className="text-slate-600 text-center mb-6">
-              Template preview will be rendered here
-            </p>
-            <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-slate-500">Type:</span>
-                  <span className="ml-2 font-medium text-slate-900">Template</span>
-                </div>
-                <div>
-                  <span className="text-slate-500">Duration:</span>
-                  <span className="ml-2 font-medium text-slate-900">
-                    {selectedContent.duration_seconds === 0 ? 'Infinite' : `${selectedContent.duration_seconds}s`}
-                  </span>
-                </div>
+        <div className="w-full h-full flex items-center justify-center bg-slate-100 p-4">
+          <div className="relative bg-slate-900" style={{ aspectRatio: '16/9', width: '100%', maxWidth: '100%', maxHeight: '100%' }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-12 bg-gradient-to-br from-slate-800 to-slate-900">
+              <div className="w-24 h-24 bg-blue-600/20 rounded-full flex items-center justify-center mb-6">
+                <Layout className="w-12 h-12 text-blue-400" />
               </div>
+              <h3 className="text-4xl font-bold text-white text-center mb-3">
+                {selectedContent.config_data?.template_name || 'Template Content'}
+              </h3>
+              <p className="text-slate-300 text-center text-lg">
+                Template preview rendering
+              </p>
             </div>
           </div>
         </div>
@@ -114,30 +103,34 @@ export function ContentPreviewPanel({
     }
 
     if (selectedAsset) {
-      const assetUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/assets/${selectedAsset.storage_path}`;
+      const assetUrl = assetService.getPublicUrl(selectedAsset.storage_path);
 
       if (selectedAsset.asset_type === 'video') {
         return (
-          <div className="flex items-center justify-center h-full bg-slate-900 p-8">
-            <video
-              key={selectedContent.id}
-              src={assetUrl}
-              className="max-w-full max-h-full rounded-lg shadow-2xl"
-              controls={false}
-              autoPlay={isPlaying}
-              loop={selectedContent.duration_seconds === 0}
-            />
+          <div className="w-full h-full flex items-center justify-center bg-slate-100 p-4">
+            <div className="relative bg-black" style={{ aspectRatio: '16/9', width: '100%', maxWidth: '100%', maxHeight: '100%' }}>
+              <video
+                key={selectedContent.id}
+                src={assetUrl}
+                className="w-full h-full object-cover"
+                controls={false}
+                autoPlay={isPlaying}
+                loop={selectedContent.duration_seconds === 0}
+              />
+            </div>
           </div>
         );
       }
 
       return (
-        <div className="flex items-center justify-center h-full bg-slate-900 p-8">
-          <img
-            src={assetUrl}
-            alt={selectedAsset.title}
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-          />
+        <div className="w-full h-full flex items-center justify-center bg-slate-100 p-4">
+          <div className="relative bg-black" style={{ aspectRatio: '16/9', width: '100%', maxWidth: '100%', maxHeight: '100%' }}>
+            <img
+              src={assetUrl}
+              alt={selectedAsset.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
         </div>
       );
     }
