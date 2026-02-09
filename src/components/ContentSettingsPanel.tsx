@@ -77,15 +77,17 @@ export function ContentSettingsPanel({
 
   if (!selectedContent) {
     return (
-      <div className="w-96 bg-white border-l border-slate-200 flex items-center justify-center p-6">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Settings className="w-8 h-8 text-slate-400" />
+      <div className="w-96 bg-white border-l border-slate-200 flex flex-col">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Settings className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-700 mb-2">No Content Selected</h3>
+            <p className="text-sm text-slate-500">
+              Select content from the library to edit its settings
+            </p>
           </div>
-          <h3 className="text-lg font-medium text-slate-700 mb-2">No Content Selected</h3>
-          <p className="text-sm text-slate-500">
-            Select content from the library to edit its settings
-          </p>
         </div>
       </div>
     );
@@ -94,15 +96,15 @@ export function ContentSettingsPanel({
   const maxPosition = Math.max(...allContent.map(c => c.order_position), 1);
 
   return (
-    <div className="w-96 bg-white border-l border-slate-200 flex flex-col h-full">
-      <div className="p-4 border-b border-slate-200">
+    <div className="w-96 bg-white border-l border-slate-200 flex flex-col">
+      <div className="p-4 border-b border-slate-200 flex-shrink-0">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
           <Settings className="w-5 h-5" />
           Content Settings
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
         {selectedAsset && (
           <div className="pb-6 border-b border-slate-200">
             <h3 className="text-sm font-medium text-slate-700 mb-3">Content Info</h3>

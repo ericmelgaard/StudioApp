@@ -103,8 +103,8 @@ export function ContentLibraryPanel({
   const sortedContent = [...content].sort((a, b) => a.order_position - b.order_position);
 
   return (
-    <div className="bg-white border-r border-slate-200 flex flex-col h-full">
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+    <div className="bg-white border-r border-slate-200 flex flex-col">
+      <div className="p-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
         <h2 className="text-lg font-semibold text-slate-900">Content</h2>
         <button
           onClick={onAddContent}
@@ -115,7 +115,7 @@ export function ContentLibraryPanel({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {sortedContent.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
