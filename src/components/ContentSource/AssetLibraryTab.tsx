@@ -64,7 +64,7 @@ export function AssetLibraryTab({
   );
 
   const getAssetUrl = (asset: Asset) => {
-    return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${asset.storage_path}`;
+    return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/assets/${asset.storage_path}`;
   };
 
   const getScopeLabel = (asset: Asset) => {

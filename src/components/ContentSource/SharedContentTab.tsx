@@ -102,7 +102,7 @@ export function SharedContentTab({
   );
 
   const getContentUrl = (item: SharedContent) => {
-    return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${item.storage_path}`;
+    return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/assets/${item.storage_path}`;
   };
 
   return (

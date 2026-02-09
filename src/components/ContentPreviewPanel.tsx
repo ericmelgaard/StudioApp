@@ -114,7 +114,7 @@ export function ContentPreviewPanel({
     }
 
     if (selectedAsset) {
-      const assetUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${selectedAsset.storage_path}`;
+      const assetUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/assets/${selectedAsset.storage_path}`;
 
       if (selectedAsset.asset_type === 'video') {
         return (
