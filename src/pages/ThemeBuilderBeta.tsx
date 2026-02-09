@@ -433,6 +433,7 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
           boardId={currentBoard.id}
           onClose={() => setShowAddContent(false)}
           onContentAdded={handleContentAdded}
+          conceptId={theme?.concept_id || null}
         />
       )}
     </div>
