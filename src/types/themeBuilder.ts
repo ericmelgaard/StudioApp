@@ -1,4 +1,26 @@
-export type TransitionType = 'fade' | 'slide' | 'zoom' | 'none';
+export type TransitionType = 'fade' | 'slide' | 'zoom' | 'none' | 'wipe';
+export type ContentType = 'asset' | 'template' | 'custom';
+export type ContentStatus = 'active' | 'draft' | 'archived';
+
+export interface BoardContent {
+  id: string;
+  board_id: string;
+  content_type: ContentType;
+  asset_id?: string | null;
+  template_id?: string | null;
+  order_position: number;
+  duration_seconds: number;
+  transition_effect: TransitionType;
+  start_date?: string | null;
+  end_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  days_of_week?: number[];
+  config_data?: Record<string, any>;
+  status: ContentStatus;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface PlaylistAsset {
   id: string;

@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Play, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { themeBuilderService } from '../lib/themeBuilderService';
-import { AssetLibraryModal } from '../components/AssetLibraryModal';
-import { BoardPlaylistPanel } from '../components/BoardPlaylistPanel';
-import { BoardPreviewPanel } from '../components/BoardPreviewPanel';
-import { BoardSettingsPanel } from '../components/BoardSettingsPanel';
-import type { Theme, DisplayType, DaypartDefinition, ThemeContent, PlaylistAsset } from '../types/themeBuilder';
+import { ContentLibraryPanel } from '../components/ContentLibraryPanel';
+import { ContentPreviewPanel } from '../components/ContentPreviewPanel';
+import { ContentSettingsPanel } from '../components/ContentSettingsPanel';
+import { AddContentModal } from '../components/AddContentModal';
+import type { Theme, DisplayType, DaypartDefinition, ThemeBoard, BoardContent } from '../types/themeBuilder';
 import type { Asset } from '../types/assets';
 
 interface ThemeBuilderBetaProps {
@@ -28,14 +27,13 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
   const [dayparts, setDayparts] = useState<DaypartConfig[]>([]);
   const [selectedDisplayType, setSelectedDisplayType] = useState<DisplayType | null>(null);
   const [selectedDaypart, setSelectedDaypart] = useState<string>('');
-  const [themeContent, setThemeContent] = useState<ThemeContent | null>(null);
-  const [playlistAssets, setPlaylistAssets] = useState<PlaylistAsset[]>([]);
+  const [currentBoard, setCurrentBoard] = useState<ThemeBoard | null>(null);
+  const [boardContent, setBoardContent] = useState<BoardContent[]>([]);
   const [assetDetails, setAssetDetails] = useState<Map<string, Asset>>(new Map());
-  const [selectedPlaylistAsset, setSelectedPlaylistAsset] = useState<PlaylistAsset | null>(null);
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showAssetLibrary, setShowAssetLibrary] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
+  const [showAddContent, setShowAddContent] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,22 +41,16 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
   }, [themeId]);
 
   useEffect(() => {
-    if (theme && selectedDisplayType) {
-      loadThemeContent();
+    if (theme && selectedDisplayType && selectedDaypart) {
+      loadBoardAndContent();
     }
-  }, [theme, selectedDisplayType]);
+  }, [theme, selectedDisplayType, selectedDaypart]);
 
   useEffect(() => {
-    if (themeContent && selectedDaypart) {
-      loadPlaylistForDaypart();
-    }
-  }, [themeContent, selectedDaypart]);
-
-  useEffect(() => {
-    if (playlistAssets.length > 0) {
+    if (boardContent.length > 0) {
       loadAssetDetails();
     }
-  }, [playlistAssets]);
+  }, [boardContent]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -135,47 +127,67 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
     }
   };
 
-  const loadThemeContent = async () => {
-    if (!theme || !selectedDisplayType) return;
+  const loadBoardAndContent = async () => {
+    if (!theme || !selectedDisplayType || !selectedDaypart) return;
 
     try {
-      let content = await themeBuilderService.getThemeContent(
-        theme.id,
-        selectedDisplayType.id
-      );
+      const { data: boardData, error: boardError } = await supabase
+        .from('theme_boards')
+        .select('*')
+        .eq('theme_id', theme.id)
+        .eq('display_type_id', selectedDisplayType.id)
+        .eq('daypart_id', selectedDaypart)
+        .eq('status', 'active')
+        .maybeSingle();
 
-      if (!content) {
-        content = await themeBuilderService.createThemeContent(
-          theme.id,
-          selectedDisplayType.id
-        );
+      if (boardError) throw boardError;
+
+      if (!boardData) {
+        const { data: newBoard, error: createError } = await supabase
+          .from('theme_boards')
+          .insert({
+            theme_id: theme.id,
+            display_type_id: selectedDisplayType.id,
+            daypart_id: selectedDaypart,
+            layout_config: { type: 'fullscreen', width: '100%', height: '100%' },
+            status: 'active'
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        setCurrentBoard(newBoard as ThemeBoard);
+        setBoardContent([]);
+        setSelectedContentId(null);
+        return;
       }
 
-      setThemeContent(content);
+      setCurrentBoard(boardData as ThemeBoard);
+
+      const { data: contentData, error: contentError } = await supabase
+        .from('board_content')
+        .select('*')
+        .eq('board_id', boardData.id)
+        .order('order_position', { ascending: true });
+
+      if (contentError) throw contentError;
+
+      setBoardContent(contentData || []);
+      setSelectedContentId(null);
     } catch (error) {
-      console.error('Error loading theme content:', error);
-    }
-  };
-
-  const loadPlaylistForDaypart = async () => {
-    if (!themeContent) return;
-
-    try {
-      const boardConfig = await themeBuilderService.getBoardConfiguration(
-        themeContent.id,
-        selectedDaypart
-      );
-
-      setPlaylistAssets(boardConfig?.playlist_assets || []);
-      setSelectedPlaylistAsset(null);
-    } catch (error) {
-      console.error('Error loading playlist:', error);
+      console.error('Error loading board and content:', error);
     }
   };
 
   const loadAssetDetails = async () => {
-    const assetIds = playlistAssets.map(pa => pa.asset_id);
-    if (assetIds.length === 0) return;
+    const assetIds = boardContent
+      .filter(c => c.asset_id)
+      .map(c => c.asset_id as string);
+
+    if (assetIds.length === 0) {
+      setAssetDetails(new Map());
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -193,87 +205,90 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
     }
   };
 
-  const handleAddAssets = async (assets: Asset[]) => {
-    if (!themeContent) return;
+  const handleContentAdded = async () => {
+    await loadBoardAndContent();
+    setShowAddContent(false);
+  };
+
+  const handleDeleteContent = async (contentId: string) => {
+    if (!currentBoard) return;
 
     setSaving(true);
     try {
-      for (const asset of assets) {
-        await themeBuilderService.addAssetToPlaylist(
-          themeContent.id,
-          selectedDaypart,
-          asset.id,
-          asset.asset_type === 'video' ? 15 : 10
-        );
-      }
-      await loadPlaylistForDaypart();
-      setShowAssetLibrary(false);
+      const { error } = await supabase
+        .from('board_content')
+        .delete()
+        .eq('id', contentId);
+
+      if (error) throw error;
+
+      await loadBoardAndContent();
     } catch (error) {
-      console.error('Error adding assets:', error);
-      alert('Failed to add assets to playlist');
+      console.error('Error deleting content:', error);
+      alert('Failed to delete content');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleRemoveAsset = async (playlistAssetId: string) => {
-    if (!themeContent) return;
-    if (!confirm('Remove this asset from the playlist?')) return;
-
-    setSaving(true);
-    try {
-      await themeBuilderService.removeAssetFromPlaylist(
-        themeContent.id,
-        selectedDaypart,
-        playlistAssetId
-      );
-      await loadPlaylistForDaypart();
-    } catch (error) {
-      console.error('Error removing asset:', error);
-      alert('Failed to remove asset');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleUpdatePlaylistAsset = async (
-    playlistAssetId: string,
-    updates: Partial<PlaylistAsset>
+  const handleUpdateContent = async (
+    contentId: string,
+    updates: Partial<BoardContent>
   ) => {
-    if (!themeContent) return;
+    if (!currentBoard) return;
 
     try {
-      await themeBuilderService.updatePlaylistAsset(
-        themeContent.id,
-        selectedDaypart,
-        playlistAssetId,
-        updates
+      const { error } = await supabase
+        .from('board_content')
+        .update(updates)
+        .eq('id', contentId);
+
+      if (error) throw error;
+
+      setBoardContent(prev =>
+        prev.map(c => c.id === contentId ? { ...c, ...updates } : c)
       );
-      await loadPlaylistForDaypart();
     } catch (error) {
-      console.error('Error updating playlist asset:', error);
-      alert('Failed to update asset settings');
+      console.error('Error updating content:', error);
+      alert('Failed to update content settings');
     }
   };
 
-  const handleReorderAssets = async (reorderedAssets: PlaylistAsset[]) => {
-    if (!themeContent) return;
+  const handleReorderContent = async (contentId: string, newPosition: number) => {
+    if (!currentBoard) return;
 
     try {
-      await themeBuilderService.reorderPlaylistAssets(
-        themeContent.id,
-        selectedDaypart,
-        reorderedAssets
-      );
-      setPlaylistAssets(reorderedAssets);
+      const reordered = [...boardContent];
+      const itemIndex = reordered.findIndex(c => c.id === contentId);
+      if (itemIndex === -1) return;
+
+      const [item] = reordered.splice(itemIndex, 1);
+      reordered.splice(newPosition - 1, 0, item);
+
+      const updates = reordered.map((item, index) => ({
+        id: item.id,
+        order_position: index + 1
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from('board_content')
+          .update({ order_position: update.order_position })
+          .eq('id', update.id);
+      }
+
+      await loadBoardAndContent();
     } catch (error) {
-      console.error('Error reordering assets:', error);
-      alert('Failed to reorder assets');
+      console.error('Error reordering content:', error);
+      alert('Failed to reorder content');
     }
   };
 
   const getTotalDuration = () => {
-    return playlistAssets.reduce((sum, asset) => sum + asset.duration_seconds, 0);
+    return boardContent.reduce((sum, item) => {
+      if (item.duration_seconds === 0) return sum;
+      return sum + item.duration_seconds;
+    }, 0);
   };
 
   const formatDuration = (seconds: number) => {
@@ -281,6 +296,14 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const selectedContent = selectedContentId
+    ? boardContent.find(c => c.id === selectedContentId) || null
+    : null;
+
+  const selectedAsset = selectedContent?.asset_id
+    ? assetDetails.get(selectedContent.asset_id) || null
+    : null;
 
   if (loading) {
     return (
@@ -366,7 +389,7 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
 
         <div className="flex items-center gap-3">
           <div className="text-sm text-slate-600">
-            {playlistAssets.length} assets • {formatDuration(getTotalDuration())}
+            {boardContent.length} items • {formatDuration(getTotalDuration())}
           </div>
           {saving && (
             <div className="flex items-center gap-2 text-blue-600 text-sm">
@@ -377,38 +400,39 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-[320px_1fr_360px] gap-0 overflow-hidden">
-        <BoardPlaylistPanel
-          playlistAssets={playlistAssets}
-          assetDetails={assetDetails}
-          selectedPlaylistAsset={selectedPlaylistAsset}
-          onSelectAsset={setSelectedPlaylistAsset}
-          onAddAssets={() => setShowAssetLibrary(true)}
-          onRemoveAsset={handleRemoveAsset}
-          onReorderAssets={handleReorderAssets}
+      <div className="flex-1 grid grid-cols-[320px_1fr_384px] gap-0 overflow-hidden">
+        <ContentLibraryPanel
+          boardId={currentBoard?.id || ''}
+          content={boardContent}
+          assets={assetDetails}
+          selectedContentId={selectedContentId}
+          onSelectContent={setSelectedContentId}
+          onAddContent={() => setShowAddContent(true)}
+          onReorderContent={handleReorderContent}
+          onDeleteContent={handleDeleteContent}
         />
 
-        <BoardPreviewPanel
-          selectedPlaylistAsset={selectedPlaylistAsset}
-          playlistAssets={playlistAssets}
-          assetDetails={assetDetails}
-          displayType={selectedDisplayType}
-          previewMode={previewMode}
-          onTogglePreviewMode={() => setPreviewMode(!previewMode)}
+        <ContentPreviewPanel
+          selectedContent={selectedContent}
+          selectedAsset={selectedAsset}
+          allContent={boardContent}
+          onSelectContent={setSelectedContentId}
         />
 
-        <BoardSettingsPanel
-          selectedPlaylistAsset={selectedPlaylistAsset}
-          selectedAsset={selectedPlaylistAsset ? assetDetails.get(selectedPlaylistAsset.asset_id) : null}
-          onUpdateAsset={handleUpdatePlaylistAsset}
+        <ContentSettingsPanel
+          selectedContent={selectedContent}
+          selectedAsset={selectedAsset}
+          allContent={boardContent}
+          onUpdateContent={handleUpdateContent}
+          onDeleteContent={handleDeleteContent}
         />
       </div>
 
-      {showAssetLibrary && (
-        <AssetLibraryModal
-          onClose={() => setShowAssetLibrary(false)}
-          onSelectAssets={handleAddAssets}
-          multiSelect={true}
+      {showAddContent && currentBoard && (
+        <AddContentModal
+          boardId={currentBoard.id}
+          onClose={() => setShowAddContent(false)}
+          onContentAdded={handleContentAdded}
         />
       )}
     </div>
