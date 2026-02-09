@@ -85,7 +85,7 @@ export function UploadTab({
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `assets/${fileName}`;
+      const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
         .from('assets')
@@ -101,6 +101,7 @@ export function UploadTab({
         .insert({
           filename: file.name,
           storage_path: filePath,
+          preview_path: filePath,
           file_type: file.type,
           file_size: file.size,
           asset_type: assetType,
