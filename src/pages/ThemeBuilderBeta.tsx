@@ -338,8 +338,8 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
   }
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 text-slate-900">
-      <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+    <div className="h-screen flex flex-col bg-slate-50 text-slate-900 overflow-hidden">
+      <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
@@ -400,7 +400,7 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-[240px_1fr_280px] gap-0 min-h-0">
+      <div className="flex-1 grid grid-cols-[240px_1fr_280px] gap-0 overflow-hidden">
         <ContentLibraryPanel
           boardId={currentBoard?.id || ''}
           content={boardContent}
