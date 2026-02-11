@@ -77,15 +77,15 @@ export function ContentSettingsPanel({
 
   if (!selectedContent) {
     return (
-      <div className="w-96 bg-white border-l border-slate-200 flex flex-col">
-        <div className="flex-1 flex items-center justify-center p-6">
+      <div className="bg-white border-l border-slate-200 flex flex-col">
+        <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Settings className="w-8 h-8 text-slate-400" />
+            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Settings className="w-6 h-6 text-slate-400" />
             </div>
-            <h3 className="text-lg font-medium text-slate-700 mb-2">No Content Selected</h3>
-            <p className="text-sm text-slate-500">
-              Select content from the library to edit its settings
+            <h3 className="text-sm font-medium text-slate-700 mb-1">No Selection</h3>
+            <p className="text-xs text-slate-500">
+              Select content to edit settings
             </p>
           </div>
         </div>
@@ -96,31 +96,31 @@ export function ContentSettingsPanel({
   const maxPosition = Math.max(...allContent.map(c => c.order_position), 1);
 
   return (
-    <div className="w-96 bg-white border-l border-slate-200 flex flex-col">
-      <div className="p-4 border-b border-slate-200 flex-shrink-0">
-        <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900">
-          <Settings className="w-5 h-5" />
-          Content Settings
+    <div className="bg-white border-l border-slate-200 flex flex-col">
+      <div className="p-3 border-b border-slate-200 flex-shrink-0">
+        <h2 className="text-base font-semibold flex items-center gap-2 text-slate-900">
+          <Settings className="w-4 h-4" />
+          Settings
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
+      <div className="flex-1 overflow-y-auto p-3 space-y-4 min-h-0">
         {selectedAsset && (
-          <div className="pb-6 border-b border-slate-200">
-            <h3 className="text-sm font-medium text-slate-700 mb-3">Content Info</h3>
-            <div className="space-y-2">
+          <div className="pb-4 border-b border-slate-200">
+            <h3 className="text-xs font-medium text-slate-700 mb-2">Content Info</h3>
+            <div className="space-y-1.5">
               <div>
-                <div className="text-xs text-slate-500 mb-1">Title</div>
-                <div className="text-sm text-slate-900 font-medium">{selectedAsset.title}</div>
+                <div className="text-xs text-slate-500">Title</div>
+                <div className="text-xs text-slate-900 font-medium">{selectedAsset.title}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-500 mb-1">Type</div>
-                <div className="text-sm text-slate-900 capitalize">{selectedAsset.asset_type}</div>
+                <div className="text-xs text-slate-500">Type</div>
+                <div className="text-xs text-slate-900 capitalize">{selectedAsset.asset_type}</div>
               </div>
               {selectedAsset.description && (
                 <div>
-                  <div className="text-xs text-slate-500 mb-1">Description</div>
-                  <div className="text-sm text-slate-600">{selectedAsset.description}</div>
+                  <div className="text-xs text-slate-500">Description</div>
+                  <div className="text-xs text-slate-600">{selectedAsset.description}</div>
                 </div>
               )}
             </div>
@@ -128,13 +128,13 @@ export function ContentSettingsPanel({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">
             ORDER
           </label>
           <select
             value={localSettings.order_position || 1}
             onChange={(e) => handleUpdate({ order_position: parseInt(e.target.value) })}
-            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {Array.from({ length: maxPosition }, (_, i) => i + 1).map((pos) => (
               <option key={pos} value={pos}>
@@ -145,8 +145,8 @@ export function ContentSettingsPanel({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            PLAY LENGTH
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">
+            DURATION
           </label>
           <div className="flex items-center gap-2">
             <input
@@ -155,21 +155,21 @@ export function ContentSettingsPanel({
               max="3600"
               value={localSettings.duration_seconds ?? 10}
               onChange={(e) => handleUpdate({ duration_seconds: parseInt(e.target.value) || 0 })}
-              className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <span className="text-sm text-slate-600 font-medium">secs</span>
+            <span className="text-xs text-slate-600 font-medium">sec</span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">Enter 0 for infinity.</p>
+          <p className="text-xs text-slate-500 mt-1">0 = infinite</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">
             TRANSITION
           </label>
           <select
             value={localSettings.transition_effect || 'fade'}
             onChange={(e) => handleUpdate({ transition_effect: e.target.value as any })}
-            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {TRANSITIONS.map(transition => (
               <option key={transition.value} value={transition.value}>
@@ -180,85 +180,59 @@ export function ContentSettingsPanel({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            START DATE & TIME
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">
+            START DATE
           </label>
-          <div className="flex items-center gap-2 mb-2">
+          <input
+            type="date"
+            value={localSettings.start_date || ''}
+            onChange={(e) => handleUpdate({ start_date: e.target.value || null })}
+            className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">
+            END DATE <span className="text-slate-400 font-normal">(opt)</span>
+          </label>
+          <input
+            type="date"
+            value={localSettings.end_date || ''}
+            onChange={(e) => handleUpdate({ end_date: e.target.value || null })}
+            className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">
+            TIME RANGE <span className="text-slate-400 font-normal">(opt)</span>
+          </label>
+          <div className="grid grid-cols-2 gap-1.5">
             <input
-              type="date"
-              value={localSettings.start_date || ''}
-              onChange={(e) => handleUpdate({ start_date: e.target.value || null })}
-              className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              type="time"
+              value={localSettings.start_time || ''}
+              onChange={(e) => handleUpdate({ start_time: e.target.value || null })}
+              className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-              <Calendar className="w-4 h-4 text-slate-600" />
-            </button>
-            <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-              <Clock className="w-4 h-4 text-slate-600" />
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            END DATE & TIME <span className="text-slate-400 text-xs font-normal">(optional)</span>
-          </label>
-          <div className="flex items-center gap-2 mb-2">
             <input
-              type="date"
-              value={localSettings.end_date || ''}
-              onChange={(e) => handleUpdate({ end_date: e.target.value || null })}
-              className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              type="time"
+              value={localSettings.end_time || ''}
+              onChange={(e) => handleUpdate({ end_time: e.target.value || null })}
+              className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-              <Calendar className="w-4 h-4 text-slate-600" />
-            </button>
-            <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-              <Clock className="w-4 h-4 text-slate-600" />
-            </button>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            TIME OF DAY <span className="text-slate-400 text-xs font-normal">(optional)</span>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">
+            DAYS
           </label>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-2">
-              <input
-                type="time"
-                value={localSettings.start_time || ''}
-                onChange={(e) => handleUpdate({ start_time: e.target.value || null })}
-                className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                <Clock className="w-4 h-4 text-slate-600" />
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="time"
-                value={localSettings.end_time || ''}
-                onChange={(e) => handleUpdate({ end_time: e.target.value || null })}
-                className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                <Clock className="w-4 h-4 text-slate-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            DAYS OF WEEK
-          </label>
-          <div className="grid grid-cols-7 gap-1 mb-2">
+          <div className="grid grid-cols-7 gap-0.5 mb-1.5">
             {DAYS_OF_WEEK.map(day => (
               <button
                 key={day.value}
                 onClick={() => toggleDayOfWeek(day.value)}
-                className={`px-2 py-2 rounded text-xs font-medium transition-colors ${
+                className={`px-1 py-1.5 rounded text-xs font-medium transition-colors ${
                   (localSettings.days_of_week || []).includes(day.value)
                     ? 'bg-blue-600 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-300'
@@ -269,27 +243,21 @@ export function ContentSettingsPanel({
             ))}
           </div>
           {(localSettings.days_of_week || []).length === 0 && (
-            <div className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+            <div className="flex items-start gap-1.5 p-1.5 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
               <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-              <span>No days selected means content runs every day</span>
+              <span>All days</span>
             </div>
           )}
         </div>
 
-        <div className="pt-6 border-t border-slate-200">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            REMOVE FROM BOARD
-          </label>
+        <div className="pt-4 border-t border-slate-200">
           <button
             onClick={handleRemoveFromBoard}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors font-medium text-sm"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors font-medium text-xs"
           >
-            <Trash2 className="w-4 h-4" />
-            Remove Content
+            <Trash2 className="w-3.5 h-3.5" />
+            Remove
           </button>
-          <p className="text-xs text-slate-500 mt-2">
-            This will permanently remove this content from the board.
-          </p>
         </div>
       </div>
     </div>
