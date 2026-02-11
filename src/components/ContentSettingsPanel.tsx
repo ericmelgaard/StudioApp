@@ -77,7 +77,7 @@ export function ContentSettingsPanel({
 
   if (!selectedContent) {
     return (
-      <div className="bg-white border-l border-slate-200 flex flex-col">
+      <div className="h-full bg-white border-l border-slate-200 flex flex-col">
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
             <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -96,7 +96,7 @@ export function ContentSettingsPanel({
   const maxPosition = Math.max(...allContent.map(c => c.order_position), 1);
 
   return (
-    <div className="bg-white border-l border-slate-200 flex flex-col">
+    <div className="h-full bg-white border-l border-slate-200 flex flex-col">
       <div className="p-3 border-b border-slate-200 flex-shrink-0">
         <h2 className="text-base font-semibold flex items-center gap-2 text-slate-900">
           <Settings className="w-4 h-4" />
@@ -104,7 +104,7 @@ export function ContentSettingsPanel({
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-4 min-h-0">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4 min-h-0">
         {selectedAsset && (
           <div className="pb-4 border-b border-slate-200">
             <h3 className="text-xs font-medium text-slate-700 mb-2">Content Info</h3>

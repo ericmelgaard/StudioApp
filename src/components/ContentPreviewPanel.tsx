@@ -62,7 +62,7 @@ export function ContentPreviewPanel({
 
   if (allContent.length === 0) {
     return (
-      <div className="flex-1 flex flex-col bg-slate-50">
+      <div className="h-full flex flex-col bg-slate-50">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center p-8">
             <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -80,14 +80,14 @@ export function ContentPreviewPanel({
 
   return (
     <div
-      className="flex-1 flex flex-col bg-slate-50 relative"
+      className="h-full flex flex-col bg-slate-50 relative"
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >
       {/* Scroll Container */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-8 py-6 space-y-6"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-8 py-6 space-y-6 min-h-0"
         style={{ scrollBehavior: 'smooth' }}
       >
         {sortedContent.map((content) => {
