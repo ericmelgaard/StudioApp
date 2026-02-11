@@ -400,7 +400,7 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-[240px_1fr_280px] gap-0 overflow-hidden">
+      <div className="flex-1 grid grid-cols-[240px_1fr_280px] gap-0 overflow-hidden min-h-0">
         <ContentLibraryPanel
           boardId={currentBoard?.id || ''}
           content={boardContent}
