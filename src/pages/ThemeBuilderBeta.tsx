@@ -307,7 +307,7 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex items-center justify-center bg-slate-50 min-h-[500px]">
         <div className="flex items-center gap-3 text-slate-900">
           <Loader2 className="w-8 h-8 animate-spin" />
           <span className="text-lg">Loading Theme Builder...</span>
@@ -318,7 +318,7 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
 
   if (schemaError) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex items-center justify-center bg-slate-50 min-h-[500px]">
         <div className="max-w-md">
           <div className="bg-white rounded-lg shadow-lg border border-amber-300 p-8 text-center">
             <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
@@ -338,7 +338,7 @@ export default function ThemeBuilderBeta({ themeId, themeName, onBack }: ThemeBu
   }
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 text-slate-900 overflow-hidden">
+    <div className="flex flex-col bg-slate-50 text-slate-900 overflow-hidden">
       <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
